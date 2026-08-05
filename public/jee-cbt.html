@@ -327,7 +327,7 @@ async function parsePaper(file,subject,onProgress){
     const yTop=m.y-m.h-4;
     const cv=await canvasOf(p);
     // options
-    const optRe=/^\(([a-d])\)$/i;
+    const optRe=/^\(?([a-d])\)$/i;
     const opts=p.items.filter(i=>optRe.test(i.s)&&i.x>=x0&&i.x<=x0+W*0.10&&i.y>yTop&&i.y<yEnd)
       .sort((a,b)=>a.y-b.y);
     const stemEnd=opts.length?opts[0].y-opts[0].h-2:yEnd;
@@ -345,7 +345,6 @@ async function parsePaper(file,subject,onProgress){
         img:await cropStore(cv,x0,oy,x1,oe)
       });
     }
-    if(q.options.length<4){q.type="integer";q.options=[];}
     questions.push(q);
     onProgress&&onProgress(`${subject}: question ${k+1}/${qMarks.length}`);
   }
@@ -377,10 +376,14 @@ async function parsePaper(file,subject,onProgress){
       pending=null;
     } else if(allIdx){pending=cells.map(Number);}
   }
+  // The answer key is the source of truth for question type:
+  // a letter => single-correct MCQ, a number => numerical (integer) question.
   questions.forEach(q=>{
     const raw=(answers[q.no]||"").trim();
-    q.answer = q.type==="mcq" ? raw.toLowerCase().replace(/[^a-d]/g,"")
-                              : (raw.replace(/[^0-9.\-]/g,"")||"");
+    const isLetter=/^[a-dA-D]$/.test(raw);
+    if(isLetter && q.options.length>=2){q.type="mcq";q.answer=raw.toLowerCase();}
+    else if(isLetter){q.type="mcq";q.answer=raw.toLowerCase();}
+    else {q.type="integer";q.options=[];q.answer=raw.replace(/[^0-9.\-]/g,"");}
   });
 
   // ---- solutions (single column) ----
