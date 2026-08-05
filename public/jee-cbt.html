@@ -321,7 +321,7 @@ async function parsePaper(file,subject,onProgress){
     const x0=m.col?W*0.505:W*0.02, x1=m.col?W*0.99:W*0.495;
     const nxt=qMarks[k+1];
     let yEnd;
-    if(nxt&&nxt.page.n===p.n&&nxt.col===m.col) yEnd=nxt.y-4;
+    if(nxt&&nxt.page.n===p.n&&nxt.col===m.col) yEnd=nxt.y-(nxt.h||10)-4;
     else if(p.n===akPos.p) yEnd=akPos.y-6;
     else yEnd=H-28;
     const yTop=m.y-m.h-4;
@@ -339,10 +339,11 @@ async function parsePaper(file,subject,onProgress){
     for(let o=0;o<opts.length;o++){
       const oy=opts[o].y-opts[o].h-2;
       const oe=o+1<opts.length?opts[o+1].y-opts[o+1].h-2:yEnd;
+      const ox=opts[o].x+13;   // skip the printed "(a)" label — the UI draws its own
       q.options.push({
         label:opts[o].s.replace(/[()]/g,"").toLowerCase(),
-        text:textIn(p.items,x0,oy,x1,oe),
-        img:await cropStore(cv,x0,oy,x1,oe)
+        text:textIn(p.items,ox,oy,x1,oe),
+        img:await cropStore(cv,ox,oy,x1,oe)
       });
     }
     questions.push(q);
@@ -397,7 +398,7 @@ async function parsePaper(file,subject,onProgress){
   for(let k=0;k<solMarks.length;k++){
     const m=solMarks[k],p=m.page,q=questions[k]; if(!q) break;
     const nxt=solMarks[k+1];
-    const yEnd=(nxt&&nxt.page.n===p.n)?nxt.y-4:p.H-26;
+    const yEnd=(nxt&&nxt.page.n===p.n)?nxt.y-(nxt.h||10)-4:p.H-26;
     const cv=await canvasOf(p);
     q.solText=textIn(p.items,p.W*0.02,m.y-m.h-3,p.W*0.99,yEnd);
     q.solImg=await cropStore(cv,p.W*0.02,m.y-m.h-3,p.W*0.99,yEnd);
