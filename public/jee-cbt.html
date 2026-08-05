@@ -11,16 +11,20 @@
    DESIGN TOKENS
    ============================================================ */
 :root{
-  --blue:#0b57a4; --blue-d:#083f78; --blue-l:#1a73c7; --blue-soft:#e8f1fb;
-  --bg:#f2f6fb; --panel:#ffffff; --ink:#12243a; --muted:#5c7086; --line:#d7e2ee;
+  /* Vedantu-inspired brand palette: orange primary on deep indigo */
+  --blue:#f26722; --blue-d:#d9531a; --blue-l:#f57c34; --blue-soft:#fff1e8;
+  --ink-nav-a:#1b1b4b; --ink-nav-b:#2b2b7a;
+  --bg:#fbf7f4; --panel:#ffffff; --ink:#1b1b3a; --muted:#6b6b85; --line:#eadfd7;
   --green:#1e9e57; --red:#d33b3b; --purple:#7a3ec8; --amber:#e0a106;
-  --radius:14px; --shadow:0 4px 18px rgba(11,87,164,.10);
-  --font:"Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --radius:14px; --shadow:0 4px 18px rgba(242,103,34,.12);
+  --font:"Nunito Sans","Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
 }
 html.dark{
-  --bg:#0d1520; --panel:#141f2e; --ink:#e6eef8; --muted:#93a6bb; --line:#25344a;
-  --blue-soft:#16283f; --shadow:0 4px 18px rgba(0,0,0,.4);
+  --bg:#14121c; --panel:#1e1b29; --ink:#f2ece6; --muted:#a79fb5; --line:#332e42;
+  --ink-nav-a:#141232; --ink-nav-b:#221f4d;
+  --blue-soft:#3a2317; --shadow:0 4px 18px rgba(0,0,0,.4);
 }
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;-webkit-text-size-adjust:100%}
@@ -29,10 +33,10 @@ a{color:var(--blue-l);text-decoration:none}
 h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25}
 .hide{display:none !important}
 /* ---------- layout ---------- */
-.topbar{position:sticky;top:0;z-index:40;background:linear-gradient(90deg,var(--blue-d),var(--blue));color:#fff;
+.topbar{position:sticky;top:0;z-index:40;background:linear-gradient(90deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;
   display:flex;align-items:center;gap:12px;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .topbar .brand{font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px;font-size:16px}
-.logo{width:30px;height:30px;border-radius:8px;background:#fff;color:var(--blue);display:grid;place-items:center;font-weight:800;font-size:13px}
+.logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(140deg,var(--blue-l),var(--blue-d));color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
 .topbar .spacer{flex:1}
 .iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;padding:7px 11px;cursor:pointer;transition:.18s}
 .iconbtn:hover{background:rgba(255,255,255,.28)}
@@ -73,8 +77,8 @@ input:focus,select:focus{border-color:var(--blue-l)}
 .drop.busy{border-color:var(--blue-l)}
 /* ---------- exam shell ---------- */
 #examView{position:fixed;inset:0;background:var(--bg);z-index:60;display:flex;flex-direction:column}
-.exam-head{background:linear-gradient(90deg,var(--blue-d),var(--blue));color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap}
-.timer{background:#fff;color:var(--blue-d);font-weight:800;border-radius:8px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.exam-head{background:linear-gradient(90deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap}
+.timer{background:var(--blue);color:#fff;font-weight:800;border-radius:8px;padding:6px 12px;font-variant-numeric:tabular-nums}
 .timer.warn{background:#fff3cd;color:#8a6100} .timer.crit{background:#ffd9d9;color:#a11;animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.55}}
 .subtabs{display:flex;gap:6px;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;overflow-x:auto}
