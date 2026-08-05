@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<title>Eklavya JEE Main CBT Platform</title>
+<meta name="description" content="Offline NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs and get a full 75-question CBT with analytics." />
+<link rel="icon" href="/favicon.ico" />
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root{
+  --blue:#0b57a4; --blue-d:#083f78; --blue-l:#1a73c7; --blue-soft:#e8f1fb;
+  --bg:#f2f6fb; --panel:#ffffff; --ink:#12243a; --muted:#5c7086; --line:#d7e2ee;
+  --green:#1e9e57; --red:#d33b3b; --purple:#7a3ec8; --amber:#e0a106;
+  --radius:14px; --shadow:0 4px 18px rgba(11,87,164,.10);
+  --font:"Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+}
+html.dark{
+  --bg:#0d1520; --panel:#141f2e; --ink:#e6eef8; --muted:#93a6bb; --line:#25344a;
+  --blue-soft:#16283f; --shadow:0 4px 18px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--blue-l);text-decoration:none}
+h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25}
+.hide{display:none !important}
+/* ---------- layout ---------- */
+.topbar{position:sticky;top:0;z-index:40;background:linear-gradient(90deg,var(--blue-d),var(--blue));color:#fff;
+  display:flex;align-items:center;gap:12px;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.topbar .brand{font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px;font-size:16px}
+.logo{width:30px;height:30px;border-radius:8px;background:#fff;color:var(--blue);display:grid;place-items:center;font-weight:800;font-size:13px}
+.topbar .spacer{flex:1}
+.iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;padding:7px 11px;cursor:pointer;transition:.18s}
+.iconbtn:hover{background:rgba(255,255,255,.28)}
+.nav{display:flex;gap:4px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;position:sticky;top:50px;z-index:35}
+.nav button{background:transparent;border:0;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600;transition:.18s}
+.nav button.active{background:var(--blue);color:#fff}
+.nav button:hover:not(.active){background:var(--blue-soft);color:var(--blue-l)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 14px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.g4,.g3,.g2{grid-template-columns:1fr}}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.stat .v{font-size:26px;font-weight:800;color:var(--blue-l)}
+.stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+.btn{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;transition:.18s;box-shadow:0 2px 8px rgba(11,87,164,.25)}
+.btn:hover{background:var(--blue-l);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;color:var(--blue-l);border:1px solid var(--line);box-shadow:none}
+.btn.green{background:var(--green)} .btn.red{background:var(--red)} .btn.purple{background:var(--purple)}
+.btn.sm{padding:6px 11px;font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.muted{color:var(--muted)} .small{font-size:13px}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--blue-soft);color:var(--blue-l)}
+.badge.g{background:rgba(30,158,87,.15);color:var(--green)} .badge.r{background:rgba(211,59,59,.15);color:var(--red)}
+.badge.p{background:rgba(122,62,200,.15);color:var(--purple)} .badge.a{background:rgba(224,161,6,.16);color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.progress{height:9px;background:var(--blue-soft);border-radius:999px;overflow:hidden}
+.progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-l));transition:width .5s}
+input[type=text],input[type=number],input[type=date],select{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;outline:0}
+input:focus,select:focus{border-color:var(--blue-l)}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:20px;text-align:center;transition:.2s;background:var(--panel)}
+.drop.ok{border-color:var(--green);background:rgba(30,158,87,.06)}
+.drop.busy{border-color:var(--blue-l)}
+/* ---------- exam shell ---------- */
+#examView{position:fixed;inset:0;background:var(--bg);z-index:60;display:flex;flex-direction:column}
+.exam-head{background:linear-gradient(90deg,var(--blue-d),var(--blue));color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap}
+.timer{background:#fff;color:var(--blue-d);font-weight:800;border-radius:8px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.timer.warn{background:#fff3cd;color:#8a6100} .timer.crit{background:#ffd9d9;color:#a11;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.subtabs{display:flex;gap:6px;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;overflow-x:auto}
+.subtabs button{border:1px solid var(--line);background:transparent;border-radius:8px 8px 0 0;padding:7px 16px;font-weight:700;cursor:pointer;color:var(--muted)}
+.subtabs button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.exam-body{flex:1;display:flex;min-height:0}
+.qpane{flex:1;overflow:auto;padding:14px}
+.palette{width:290px;border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px}
+@media(max-width:860px){
+  .exam-body{flex-direction:column}
+  .palette{width:auto;max-height:46vh;border-left:0;border-top:1px solid var(--line)}
+  .palette.collapsed{display:none}
+}
+.pal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:7px}
+.pnum{height:38px;border-radius:8px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:700;transition:.15s;position:relative}
+.pnum:hover{transform:scale(1.07)}
+.pnum.cur{outline:3px solid var(--blue-l);outline-offset:1px}
+.pnum.answered{background:var(--green);color:#fff;border-color:var(--green)}
+.pnum.notanswered{background:var(--red);color:#fff;border-color:var(--red)}
+.pnum.marked{background:var(--purple);color:#fff;border-color:var(--purple)}
+.pnum.markedans{background:var(--purple);color:#fff;border-color:var(--purple)}
+.pnum.markedans:after{content:"";position:absolute;right:3px;bottom:3px;width:9px;height:9px;border-radius:50%;background:var(--green);border:1px solid #fff}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:15px;height:15px;border-radius:5px;border:1px solid var(--line);display:inline-block}
+.qimg{max-width:100%;display:block;border-radius:8px}
+html.dark .qimg{filter:invert(1) hue-rotate(180deg)}
+.optrow{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;cursor:pointer;background:var(--panel);transition:.15s}
+.optrow:hover{border-color:var(--blue-l);background:var(--blue-soft)}
+.optrow.sel{border-color:var(--blue);background:var(--blue-soft);box-shadow:inset 0 0 0 1px var(--blue)}
+.optrow.correct{border-color:var(--green);background:rgba(30,158,87,.10)}
+.optrow.wrong{border-color:var(--red);background:rgba(211,59,59,.10)}
+.optlab{min-width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:13px}
+.optrow.sel .optlab{background:var(--blue);color:#fff;border-color:var(--blue)}
+.exam-foot{display:flex;gap:8px;flex-wrap:wrap;padding:10px;border-top:1px solid var(--line);background:var(--panel)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;z-index:200;box-shadow:var(--shadow);animation:fade .25s}
+.modal{position:fixed;inset:0;background:rgba(5,15,30,.6);display:grid;place-items:center;z-index:150;padding:16px}
+.modal .box{background:var(--panel);border-radius:var(--radius);padding:20px;max-width:520px;width:100%;box-shadow:var(--shadow);animation:fade .25s}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
+.cal .cell.has{background:var(--blue-soft);font-weight:700;cursor:pointer}
+.cal .cell.done{background:rgba(30,158,87,.18)}
+.cal .cell.today{outline:2px solid var(--blue-l)}
+.chip{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line)}
+canvas.chart{width:100%;height:210px;display:block}
+.heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.heat div{padding:9px;border-radius:9px;font-size:12px;font-weight:600;color:#fff;text-align:center}
+.qrev{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--panel)}
+.bar{height:8px;border-radius:6px;background:var(--blue-soft);overflow:hidden}
+.bar>i{display:block;height:100%}
+ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">JEE</div>
+  <div class="brand">Eklavya JEE Main&nbsp;<span style="opacity:.8;font-weight:500">CBT Platform</span></div>
+  <div class="spacer"></div>
+  <button class="iconbtn" id="themeBtn" title="Toggle theme">🌙</button>
+</div>
+
+<div class="nav" id="nav"></div>
+<div class="wrap" id="app"></div>
+
+<!-- ================= EXAM VIEW (full screen) ================= -->
+<div id="examView" class="hide">
+  <div class="exam-head">
+    <strong id="exTitle">Test</strong>
+    <span class="badge" id="exCand">Candidate</span>
+    <div class="spacer" style="flex:1"></div>
+    <span class="small">Time Left</span>
+    <span class="timer" id="exTimer">03:00:00</span>
+    <button class="iconbtn" id="fsBtn">⛶</button>
+    <button class="iconbtn" id="palBtn">☰</button>
+  </div>
+  <div class="subtabs" id="exSubs"></div>
+  <div class="exam-body">
+    <div class="qpane" id="exQ"></div>
+    <div class="palette" id="exPal"></div>
+  </div>
+  <div class="exam-foot" id="exFoot"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+/* ============================================================================
+   Eklavya JEE Main CBT Platform — single file, vanilla JS.
+   Sections:
+     1. Utilities
+     2. Storage (localStorage meta + IndexedDB images)
+     3. PDF parsing engine (fixed Vedantu HWT format)
+     4. Test model / scoring
+     5. Views: Dashboard, Upload, Planner, Analytics, Practice, Search, Result
+     6. Exam runtime (NTA-style)
+   ========================================================================== */
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ------------------------------- 1. UTILS -------------------------------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (t,c,h)=>{const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;};
+const uid = ()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
+const fmtTime=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return (h?String(h).padStart(2,"0")+":":"")+String(m).padStart(2,"0")+":"+String(x).padStart(2,"0");};
+const fmtDate=d=>new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+const todayKey=d=>new Date(d).toISOString().slice(0,10);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(msg,ms=2600){const t=el("div","toast",esc(msg));document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
+function confirmBox(title,body,onYes,yesLabel="Yes"){
+  const m=el("div","modal");
+  m.innerHTML=`<div class="box"><h3>${esc(title)}</h3><p class="muted">${body}</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-no>Cancel</button>
+    <button class="btn" data-yes>${esc(yesLabel)}</button></div></div>`;
+  m.querySelector("[data-no]").onclick=()=>m.remove();
+  m.querySelector("[data-yes]").onclick=()=>{m.remove();onYes();};
+  document.body.appendChild(m);
+}
+const SUBJECTS=["Physics","Chemistry","Mathematics"];
+const SUBCOLOR={Physics:"#0b57a4",Chemistry:"#1e9e57",Mathematics:"#7a3ec8"};
+
+/* ------------------------------ 2. STORAGE ------------------------------- */
+const LS="jeecbt.v1";
+const DB_NAME="jeecbt-img", DB_STORE="img";
+let _db=null;
+function db(){return _db||(_db=new Promise((res,rej)=>{
+  const r=indexedDB.open(DB_NAME,1);
+  r.onupgradeneeded=()=>r.result.createObjectStore(DB_STORE);
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+}));}
+async function imgPut(k,v){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(DB_STORE,"readwrite");t.objectStore(DB_STORE).put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error);});}
+async function imgGet(k){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(DB_STORE,"readonly").objectStore(DB_STORE).get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error);});}
+const imgCache=new Map();
+async function imgURL(k){if(!k)return null;if(imgCache.has(k))return imgCache.get(k);const v=await imgGet(k);imgCache.set(k,v);return v;}
+/** <img> that lazily resolves its IndexedDB source. */
+function imgTag(key,cls="qimg"){
+  const i=el("img",cls); i.alt="";
+  if(key) imgURL(key).then(u=>{if(u)i.src=u;});
+  return i;
+}
+
+const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],settings:{theme:"light",candidate:"Candidate"}};
+let S = load();
+function load(){try{return Object.assign({},DEFAULT,JSON.parse(localStorage.getItem(LS)||"{}"));}catch(e){return JSON.parse(JSON.stringify(DEFAULT));}}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){toast("Storage full — delete an old test.");}}
+
+/* --------------------------- 3. PDF PARSING ------------------------------ */
+/* The Vedantu HWT papers have a fixed structure:
+   [2-column question pages] -> "Answer Key" grid -> "Solutions" (single column).
+   Strategy: locate question numbers via text coordinates, then CROP the rendered
+   page bitmap for each question / option / solution. Cropping preserves
+   equations, tables and figures exactly as printed.                          */
+
+const RENDER_SCALE=2.0;
+
+function trimCanvas(cv){                     // remove surrounding white space
+  const ctx=cv.getContext("2d"),w=cv.width,h=cv.height;
+  if(!w||!h) return cv;
+  const d=ctx.getImageData(0,0,w,h).data;
+  let top=h,left=w,right=0,bottom=0,found=false;
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){const i=(y*w+x)*4;
+    if(d[i]<245||d[i+1]<245||d[i+2]<245){found=true;
+      if(y<top)top=y; if(y>bottom)bottom=y; if(x<left)left=x; if(x>right)right=x;}}}
+  if(!found) return null;
+  const pad=6;
+  left=clamp(left-pad,0,w); top=clamp(top-pad,0,h);
+  right=clamp(right+pad,0,w); bottom=clamp(bottom+pad,0,h);
+  const out=document.createElement("canvas");
+  out.width=right-left; out.height=bottom-top;
+  out.getContext("2d").drawImage(cv,left,top,out.width,out.height,0,0,out.width,out.height);
+  return out;
+}
+async function cropStore(pageCanvas,x0,y0,x1,y1){
+  const w=Math.max(1,Math.round((x1-x0)*RENDER_SCALE)),h=Math.max(1,Math.round((y1-y0)*RENDER_SCALE));
+  const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+  const c=cv.getContext("2d"); c.fillStyle="#fff"; c.fillRect(0,0,w,h);
+  c.drawImage(pageCanvas,x0*RENDER_SCALE,y0*RENDER_SCALE,w,h,0,0,w,h);
+  const t=trimCanvas(cv); if(!t) return null;
+  const key="img:"+uid();
+  await imgPut(key,t.toDataURL("image/jpeg",0.78));
+  return key;
+}
+/** Extract text items with top-left coordinates in PDF points. */
+async function pageItems(page){
+  const vp=page.getViewport({scale:1}); const tc=await page.getTextContent();
+  return {W:vp.width,H:vp.height,items:tc.items.filter(i=>i.str.trim()).map(i=>({
+    s:i.str.trim(), x:i.transform[4], y:vp.height-i.transform[5], h:Math.abs(i.transform[3])||10
+  }))};
+}
+async function renderPage(page){
+  const vp=page.getViewport({scale:RENDER_SCALE});
+  const cv=document.createElement("canvas"); cv.width=vp.width; cv.height=vp.height;
+  const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height);
+  await page.render({canvasContext:ctx,viewport:vp}).promise;
+  return cv;
+}
+/** Text inside a rectangle (used for search + AI topic hints). */
+function textIn(items,x0,y0,x1,y1){
+  return items.filter(i=>i.x>=x0-2&&i.x<=x1&&i.y>=y0-2&&i.y<=y1)
+    .sort((a,b)=>a.y-b.y||a.x-b.x).map(i=>i.s).join(" ").replace(/\s+/g," ").trim();
+}
+
+async function parsePaper(file,subject,onProgress){
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg=await pdf.getPage(p);
+    const meta=await pageItems(pg);
+    pages.push({n:p,pg,...meta,canvas:null});
+    onProgress&&onProgress(`Reading page ${p}/${pdf.numPages}`);
+  }
+  const canvasOf=async pi=>pi.canvas||(pi.canvas=await renderPage(pi.pg));
+
+  // ---- locate section markers ----
+  let akPos=null, solPos=null;
+  pages.forEach(p=>p.items.forEach(i=>{
+    if(!akPos && /^answer\s*key$/i.test(i.s)) akPos={p:p.n,y:i.y};
+    if(!solPos && /^solutions?$/i.test(i.s)) solPos={p:p.n,y:i.y};
+  }));
+  akPos=akPos||{p:pages.length,y:0}; solPos=solPos||{p:pages.length,y:0};
+  const before=(a,b)=>a.p<b.p||(a.p===b.p&&a.y<b.y);
+
+  // ---- collect sequential question-number markers in the question section --
+  const numRe=/^(\d{1,2})[.)]$/;
+  const qMarks=[]; let expect=1;
+  for(const p of pages){
+    if(p.n>akPos.p) break;
+    const W=p.W;
+    const cands=p.items.filter(i=>numRe.test(i.s)&&(i.x<W*0.12||(i.x>W*0.48&&i.x<W*0.62)))
+      .map(i=>({...i,col:i.x<W*0.5?0:1,page:p}))
+      .sort((a,b)=>a.col-b.col||a.y-b.y);
+    for(const c of cands){
+      if(p.n===akPos.p && c.y>=akPos.y-4) continue;
+      if(+c.s.replace(/\D/g,"")===expect){qMarks.push(c);expect++;}
+    }
+  }
+  // ---- build question objects ----
+  const questions=[];
+  for(let k=0;k<qMarks.length;k++){
+    const m=qMarks[k], p=m.page, W=p.W, H=p.H;
+    const x0=m.col?W*0.505:W*0.02, x1=m.col?W*0.99:W*0.495;
+    const nxt=qMarks[k+1];
+    let yEnd;
+    if(nxt&&nxt.page.n===p.n&&nxt.col===m.col) yEnd=nxt.y-(nxt.h||10)-4;
+    else if(p.n===akPos.p) yEnd=akPos.y-6;
+    else yEnd=H-28;
+    const yTop=m.y-m.h-4;
+    const cv=await canvasOf(p);
+    // options
+    const optRe=/^\(?([a-d])\)$/i;
+    const opts=p.items.filter(i=>optRe.test(i.s)&&i.x>=x0&&i.x<=x0+W*0.10&&i.y>yTop&&i.y<yEnd)
+      .sort((a,b)=>a.y-b.y);
+    const stemEnd=opts.length?opts[0].y-opts[0].h-2:yEnd;
+    const q={
+      id:uid(), subject, no:k+1, type:opts.length>=4?"mcq":"integer",
+      text:textIn(p.items,x0,yTop,x1,stemEnd),
+      img:await cropStore(cv,x0,yTop,x1,stemEnd), options:[]
+    };
+    for(let o=0;o<opts.length;o++){
+      const oy=opts[o].y-opts[o].h-2;
+      const oe=o+1<opts.length?opts[o+1].y-opts[o+1].h-2:yEnd;
+      const ox=opts[o].x+13;   // skip the printed "(a)" label — the UI draws its own
+      q.options.push({
+        label:opts[o].s.replace(/[()]/g,"").toLowerCase(),
+        text:textIn(p.items,ox,oy,x1,oe),
+        img:await cropStore(cv,ox,oy,x1,oe)
+      });
+    }
+    questions.push(q);
+    onProgress&&onProgress(`${subject}: question ${k+1}/${qMarks.length}`);
+  }
+
+  // ---- answer key grid: pairs of (index row, answer row) ----
+  const keyItems=[];
+  pages.forEach(p=>{
+    if(p.n<akPos.p||p.n>solPos.p) return;
+    p.items.forEach(i=>{
+      const after = p.n>akPos.p || i.y>akPos.y+2;
+      const beforeSol = p.n<solPos.p || i.y<solPos.y-2;
+      if(after&&beforeSol) keyItems.push({...i,page:p.n});
+    });
+  });
+  const rows=[];
+  keyItems.sort((a,b)=>a.page-b.page||a.y-b.y||a.x-b.x).forEach(i=>{
+    const last=rows[rows.length-1];
+    if(last&&last.page===i.page&&Math.abs(last.y-i.y)<6){last.cells.push(i);last.y=(last.y+i.y)/2;}
+    else rows.push({page:i.page,y:i.y,cells:[i]});
+  });
+  const answers={}; let pending=null;
+  for(const r of rows){
+    const cells=r.cells.sort((a,b)=>a.x-b.x).map(c=>c.s);
+    const allIdx=cells.length>1&&cells.every(c=>/^\d{1,2}$/.test(c))&&
+      cells.every((c,i2)=>i2===0||+c===+cells[i2-1]+1);
+    if(allIdx&&(!pending)){pending=cells.map(Number);continue;}
+    if(pending&&cells.length===pending.length){
+      pending.forEach((n,i2)=>answers[n]=cells[i2]);
+      pending=null;
+    } else if(allIdx){pending=cells.map(Number);}
+  }
+  // The answer key is the source of truth for question type:
+  // a letter => single-correct MCQ, a number => numerical (integer) question.
+  questions.forEach(q=>{
+    const raw=(answers[q.no]||"").trim();
+    const isLetter=/^[a-dA-D]$/.test(raw);
+    if(isLetter && q.options.length>=2){q.type="mcq";q.answer=raw.toLowerCase();}
+    else if(isLetter){q.type="mcq";q.answer=raw.toLowerCase();}
+    else {q.type="integer";q.options=[];q.answer=raw.replace(/[^0-9.\-]/g,"");}
+  });
+
+  // ---- solutions (single column) ----
+  const solMarks=[]; expect=1;
+  for(const p of pages){
+    if(p.n<solPos.p) continue;
+    const cands=p.items.filter(i=>numRe.test(i.s)&&i.x<p.W*0.10&&(p.n>solPos.p||i.y>solPos.y))
+      .sort((a,b)=>a.y-b.y);
+    for(const c of cands) if(+c.s.replace(/\D/g,"")===expect){solMarks.push({...c,page:p});expect++;}
+  }
+  for(let k=0;k<solMarks.length;k++){
+    const m=solMarks[k],p=m.page,q=questions[k]; if(!q) break;
+    const nxt=solMarks[k+1];
+    const yEnd=(nxt&&nxt.page.n===p.n)?nxt.y-(nxt.h||10)-4:p.H-26;
+    const cv=await canvasOf(p);
+    q.solText=textIn(p.items,p.W*0.02,m.y-m.h-3,p.W*0.99,yEnd);
+    q.solImg=await cropStore(cv,p.W*0.02,m.y-m.h-3,p.W*0.99,yEnd);
+    onProgress&&onProgress(`${subject}: solution ${k+1}/${solMarks.length}`);
+  }
+  pages.forEach(p=>p.canvas=null);
+  return questions;
+}
+
+/** Planner PDF -> schedule rows. */
+async function parsePlanner(file){
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const out=[]; const dateRe=/^(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})$/;
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg=await pdf.getPage(p); const {items}=await pageItems(pg);
+    const rows=[];
+    items.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(i=>{
+      const last=rows[rows.length-1];
+      if(last&&Math.abs(last.y-i.y)<5){last.cells.push(i);}else rows.push({y:i.y,cells:[i]});
+    });
+    let cur=null;
+    for(const r of rows){
+      const cells=r.cells.sort((a,b)=>a.x-b.x);
+      const txt=cells.map(c=>c.s);
+      const di=txt.findIndex(t=>dateRe.test(t));
+      if(di>=0){
+        if(cur)out.push(cur);
+        const time=(txt.find(t=>/AM|PM/.test(t)&&/[-–]/.test(t))||"").trim();
+        const name=(txt.find(t=>/test/i.test(t)&&!/AM|PM/.test(t))||"").trim();
+        const topics=txt.slice(di+1).filter(t=>t!==time&&t!==name&&!/^\d+$/.test(t)&&!/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/.test(t));
+        cur={id:uid(),date:new Date(txt[di]+" 00:00").toISOString(),time,name,
+             subject:/physic/i.test(name)?"Physics":/chem/i.test(name)?"Chemistry":/math/i.test(name)?"Mathematics":"Mixed",
+             topics:topics.join(" ").replace(/\s*•\s*/g,"; ").trim(),done:false};
+      } else if(cur){
+        const extra=txt.filter(t=>!/^(PHYSICS|CHEMISTRY|MATHS|Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/i.test(t));
+        if(extra.length && /^[A-Za-z•]/.test(extra[0]) && cur.topics.length<160)
+          cur.topics=(cur.topics+" "+extra.join(" ")).replace(/\s*•\s*/g,"; ").trim();
+      }
+    }
+    if(cur)out.push(cur);
+  }
+  return out.filter(r=>r.name);
+}
+
+/* --------------------------- 4. TEST / SCORING --------------------------- */
+const MARK_C=4, MARK_W=-1, TEST_MINUTES=180;
+function buildTest(name,packs){
+  const questions=[];
+  SUBJECTS.forEach(sub=>(packs[sub]||[]).forEach(q=>questions.push(q)));
+  questions.forEach((q,i)=>q.index=i);
+  return {id:uid(),name,createdAt:Date.now(),date:new Date().toISOString(),
+          duration:TEST_MINUTES*60,questions,chapter:{}};
+}
+function testById(id){return S.tests.find(t=>t.id===id);}
+function attemptsOf(id){return S.attempts.filter(a=>a.testId===id);}
+function isRight(q,ans){
+  if(ans==null||ans==="")return false;
+  if(q.type==="mcq")return String(ans).toLowerCase()===String(q.answer||"").toLowerCase();
+  const a=parseFloat(ans),b=parseFloat(q.answer);
+  return isFinite(a)&&isFinite(b)&&Math.abs(a-b)<0.01;
+}
+function evaluate(test,resp){
+  const per={},all={correct:0,wrong:0,skipped:0,marks:0,neg:0,time:0,total:test.questions.length};
+  SUBJECTS.forEach(s=>per[s]={correct:0,wrong:0,skipped:0,marks:0,total:0,time:0});
+  test.questions.forEach(q=>{
+    const r=resp[q.id]||{}; const p=per[q.subject]; p.total++;
+    const t=r.time||0; p.time+=t; all.time+=t;
+    if(r.ans==null||r.ans===""){p.skipped++;all.skipped++;}
+    else if(isRight(q,r.ans)){p.correct++;all.correct++;p.marks+=MARK_C;all.marks+=MARK_C;}
+    else {p.wrong++;all.wrong++;p.marks+=MARK_W;all.marks+=MARK_W;all.neg+=Math.abs(MARK_W);}
+  });
+  const attempted=all.correct+all.wrong;
+  all.accuracy=pct(all.correct,attempted);
+  all.percentage=pct(all.marks,all.total*MARK_C);
+  all.max=all.total*MARK_C;
+  return {per,all};
+}
+
+/* --------------------------- 5. AI ANALYSIS ------------------------------ */
+/* Deterministic, on-device analysis engine (no network). */
+function analyse(test,attempt){
+  const r=attempt.result, resp=attempt.responses, qs=test.questions;
+  const times=qs.map(q=>(resp[q.id]||{}).time||0);
+  const avgT=times.reduce((a,b)=>a+b,0)/(qs.length||1);
+  const rows=qs.map(q=>{
+    const x=resp[q.id]||{};
+    const status=(x.ans==null||x.ans==="")?"skipped":(isRight(q,x.ans)?"correct":"wrong");
+    return {q,ans:x.ans,time:x.time||0,status,chapter:q.chapter||test.chapter[q.subject]||q.subject+" — General",
+      guess:(x.changes||0)>2||((x.time||0)<20&&status!=="skipped")};
+  });
+  const bySub={};SUBJECTS.forEach(s=>bySub[s]=r.per[s]);
+  const strongSub=SUBJECTS.slice().sort((a,b)=>bySub[b].marks-bySub[a].marks);
+  const chMap={};
+  rows.forEach(x=>{const c=chMap[x.chapter]=chMap[x.chapter]||{c:0,w:0,s:0,t:0,n:0};
+    c.n++;c.t+=x.time;c[x.status==="correct"?"c":x.status==="wrong"?"w":"s"]++;});
+  const chapters=Object.entries(chMap).map(([k,v])=>({name:k,...v,acc:pct(v.c,v.n)}));
+  const slow=rows.slice().sort((a,b)=>b.time-a.time).slice(0,5);
+  const easyMissed=rows.filter(x=>x.status!=="correct"&&x.time<avgT*0.6);
+  const hardSolved=rows.filter(x=>x.status==="correct"&&x.time>avgT*1.6);
+  const careless=rows.filter(x=>x.status==="wrong"&&x.time<avgT*0.5);
+  const calc=rows.filter(x=>x.status==="wrong"&&x.time>avgT*1.3);
+  const conceptual=rows.filter(x=>x.status==="wrong"&&x.time>=avgT*0.5&&x.time<=avgT*1.3);
+  const guesses=rows.filter(x=>x.guess&&x.status!=="skipped");
+  const guessAcc=pct(guesses.filter(g=>g.status==="correct").length,guesses.length);
+  // expected JEE metrics (300-mark scale)
+  const score300=Math.round(r.all.percentage/100*300);
+  const percentile=+(clamp(100*(1-Math.exp(-Math.pow(score300/300,1.6)*3.6)),0.5,99.99)).toFixed(3);
+  const rank=Math.max(1,Math.round((100-percentile)/100*1200000));
+  const trend=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt).map(a=>a.result.all.percentage);
+  const improving=trend.length>1?trend[trend.length-1]-trend[0]:0;
+  const weakCh=chapters.slice().sort((a,b)=>a.acc-b.acc).slice(0,5);
+  const strongCh=chapters.slice().sort((a,b)=>b.acc-a.acc).slice(0,5);
+  const recs=[];
+  if(r.all.accuracy<60)recs.push("Accuracy below 60% — attempt fewer questions but verify each step before locking the answer.");
+  if(careless.length>2)recs.push(`${careless.length} careless errors detected (fast wrong answers). Re-read the question stem once before answering.`);
+  if(calc.length>2)recs.push(`${calc.length} likely calculation errors. Practise timed numerical drills without a calculator.`);
+  if(r.all.skipped>15)recs.push(`${r.all.skipped} questions left unattempted — improve speed with sectional timing (36 min per subject block).`);
+  if(guesses.length>5&&guessAcc<35)recs.push("Guess accuracy is poor; avoid negative marking by skipping when unsure between more than 2 options.");
+  strongSub.slice(-1).forEach(s=>recs.push(`${s} is your lowest scoring subject — allocate 40% of daily revision to it this week.`));
+  weakCh.slice(0,3).forEach(c=>recs.push(`Revise "${c.name}" — accuracy only ${c.acc}%.`));
+  if(!recs.length)recs.push("Excellent balanced performance — maintain the current routine and increase difficulty.");
+  return {rows,avgT,chapters,weakCh,strongCh,slow,easyMissed,hardSolved,careless,calc,conceptual,
+    guesses,guessAcc,score300,percentile,rank,improving,strongSub,recs};
+}
+
+/* ------------------------------- 6. ROUTER ------------------------------- */
+const ROUTES=[["dash","Dashboard"],["upload","Upload PDFs"],["planner","Planner"],
+  ["analytics","Analytics"],["practice","Practice"],["review","Review"],["search","Search"]];
+let route="dash", routeArg=null;
+function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
+function renderNav(){
+  const n=$("#nav");n.innerHTML="";
+  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);b.onclick=()=>go(k);n.appendChild(b);});
+}
+function render(){
+  renderNav();
+  const a=$("#app"); a.innerHTML="";
+  ({dash:viewDash,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
+    practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
+}
+
+/* ------------------------------ DASHBOARD -------------------------------- */
+function globalStats(){
+  const done=S.attempts.filter(a=>a.submittedAt);
+  const marks=done.map(a=>a.result.all.marks);
+  const acc=done.map(a=>a.result.all.accuracy);
+  const subAgg={};SUBJECTS.forEach(s=>subAgg[s]={c:0,n:0});
+  done.forEach(a=>SUBJECTS.forEach(s=>{const p=a.result.per[s];if(p){subAgg[s].c+=p.correct;subAgg[s].n+=p.total;}}));
+  const ranked=SUBJECTS.map(s=>({s,acc:pct(subAgg[s].c,subAgg[s].n),n:subAgg[s].n})).filter(x=>x.n).sort((a,b)=>b.acc-a.acc);
+  return {done,total:done.length,avg:marks.length?Math.round(marks.reduce((x,y)=>x+y,0)/marks.length):0,
+    high:marks.length?Math.max(...marks):0,avgAcc:acc.length?Math.round(acc.reduce((x,y)=>x+y,0)/acc.length*10)/10:0,
+    strong:ranked[0],weak:ranked[ranked.length-1],ranked};
+}
+function statCard(k,v,extra=""){return `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div>${extra}</div>`;}
+function viewDash(root){
+  const g=globalStats();
+  const upcoming=S.tests.filter(t=>!attemptsOf(t.id).some(a=>a.submittedAt));
+  root.appendChild(el("div","card",`
+    <div class="row" style="justify-content:space-between">
+      <div><h2 style="margin:0">Welcome back 👋</h2>
+      <div class="muted small">${S.tests.length} test(s) in library · ${g.total} attempt(s) completed</div></div>
+      <div class="row">
+        <button class="btn" id="qs">▶ Quick Start Test</button>
+        <button class="btn ghost" id="up">⬆ Upload PDFs</button>
+        <button class="btn ghost" id="pl">🗓 Planner</button>
+      </div></div>`));
+  $("#qs").onclick=()=>{const t=upcoming[0]||S.tests[0];t?startExam(t.id):go("upload");};
+  $("#up").onclick=()=>go("upload"); $("#pl").onclick=()=>go("planner");
+
+  root.appendChild(el("div","grid g4",
+    statCard("Total Tests",S.tests.length)+statCard("Completed",g.total)+
+    statCard("Average Marks",g.avg)+statCard("Highest Marks",g.high)));
+  root.appendChild(el("div","grid g4",
+    statCard("Average Accuracy",g.avgAcc+"%")+statCard("Upcoming Tests",upcoming.length)+
+    statCard("Strong Subject",g.strong?g.strong.s:"—",g.strong?`<div class="small muted">${g.strong.acc}% accuracy</div>`:"")+
+    statCard("Weak Subject",g.weak?g.weak.s:"—",g.weak?`<div class="small muted">${g.weak.acc}% accuracy</div>`:"")));
+
+  // test library
+  const lib=el("div","card");
+  lib.innerHTML=`<h3>Test Library</h3>`;
+  if(!S.tests.length) lib.innerHTML+=`<p class="muted">No tests yet. Upload your Physics, Chemistry and Maths PDFs to auto-generate a 75-question paper.</p>`;
+  else{
+    const tb=el("table");
+    tb.innerHTML=`<tr><th>Test</th><th>Questions</th><th>Status</th><th>Best</th><th></th></tr>`;
+    S.tests.slice().reverse().forEach(t=>{
+      const at=attemptsOf(t.id).filter(a=>a.submittedAt);
+      const best=at.length?Math.max(...at.map(a=>a.result.all.marks)):null;
+      const tr=el("tr");
+      tr.innerHTML=`<td><b>${esc(t.name)}</b><div class="small muted">${fmtDate(t.createdAt)}</div></td>
+        <td>${t.questions.length}</td>
+        <td>${at.length?`<span class="badge g">Completed ×${at.length}</span>`:`<span class="badge a">Upcoming</span>`}</td>
+        <td>${best==null?"—":best+" / "+t.questions.length*4}</td><td></td>`;
+      const td=tr.lastElementChild;
+      const b1=el("button","btn sm",at.length?"Retake":"Start");b1.onclick=()=>startExam(t.id);
+      td.appendChild(b1);
+      if(at.length){const b2=el("button","btn sm ghost","Result");b2.style.marginLeft="6px";
+        b2.onclick=()=>go("result",at[at.length-1].id);td.appendChild(b2);}
+      const b3=el("button","btn sm ghost","🗑");b3.style.marginLeft="6px";
+      b3.onclick=()=>confirmBox("Delete test?","This removes the paper and its attempts.",()=>{
+        S.tests=S.tests.filter(x=>x.id!==t.id);S.attempts=S.attempts.filter(x=>x.testId!==t.id);save();render();});
+      td.appendChild(b3);
+      tb.appendChild(tr);
+    });
+    lib.appendChild(tb);
+  }
+  root.appendChild(lib);
+
+  // recent performance + chart
+  const rec=el("div","card");
+  rec.innerHTML=`<h3>Recent Performance</h3>`;
+  if(!g.done.length) rec.innerHTML+=`<p class="muted">Complete a test to see your performance trend.</p>`;
+  else{
+    const cv=el("canvas","chart");rec.appendChild(cv);
+    const list=g.done.slice(-8);
+    setTimeout(()=>lineChart(cv,list.map(a=>a.result.all.marks),list.map(a=>(testById(a.testId)||{}).name||"Test"),"Marks"),0);
+    const tb=el("table");tb.innerHTML=`<tr><th>Date</th><th>Test</th><th>Marks</th><th>Accuracy</th><th></th></tr>`;
+    g.done.slice(-6).reverse().forEach(a=>{
+      const tr=el("tr");
+      tr.innerHTML=`<td>${fmtDate(a.submittedAt)}</td><td>${esc((testById(a.testId)||{}).name||"—")}</td>
+        <td><b>${a.result.all.marks}</b>/${a.result.all.max}</td><td>${a.result.all.accuracy}%</td><td></td>`;
+      const b=el("button","btn sm ghost","Analysis");b.onclick=()=>go("result",a.id);tr.lastElementChild.appendChild(b);
+      tb.appendChild(tr);
+    });
+    rec.appendChild(tb);
+  }
+  root.appendChild(rec);
+}
+
+/* ------------------------------- UPLOAD ---------------------------------- */
+const pending={Physics:null,Chemistry:null,Mathematics:null};
+function viewUpload(root){
+  const c=el("div","card");
+  c.innerHTML=`<h2>Upload Question Papers</h2>
+   <p class="muted small">Upload one PDF per subject in the standard HWT format. Questions, options, answer key
+   and solutions are detected automatically — figures, tables and equations are preserved exactly as printed.</p>`;
+  const grid=el("div","grid g3");
+  SUBJECTS.forEach(sub=>{
+    const d=el("div","drop");
+    d.innerHTML=`<div style="font-size:30px">${sub==="Physics"?"⚛️":sub==="Chemistry"?"🧪":"📐"}</div>
+      <h4>${sub}</h4><div class="small muted" data-st>No file selected</div>`;
+    const inp=el("input");inp.type="file";inp.accept="application/pdf";inp.className="hide";
+    const b=el("button","btn sm","Choose PDF");b.onclick=()=>inp.click();
+    inp.onchange=async()=>{
+      const f=inp.files[0]; if(!f)return;
+      d.classList.add("busy");b.disabled=true;
+      const st=d.querySelector("[data-st]");
+      try{
+        const qs=await parsePaper(f,sub,m=>st.textContent=m);
+        if(!qs.length) throw new Error("No questions detected");
+        pending[sub]=qs;
+        d.classList.remove("busy");d.classList.add("ok");
+        st.innerHTML=`<b>${qs.length}</b> questions · ${qs.filter(q=>q.type==="integer").length} integer · key ${qs.filter(q=>q.answer).length}/${qs.length}`;
+      }catch(e){d.classList.remove("busy");st.textContent="Failed: "+e.message;}
+      b.disabled=false;update();
+    };
+    d.appendChild(inp);d.appendChild(el("div","row",""));d.lastElementChild.style.justifyContent="center";
+    d.lastElementChild.appendChild(b);
+    grid.appendChild(d);
+  });
+  c.appendChild(grid);
+  const foot=el("div","row");foot.style.marginTop="14px";
+  const name=el("input");name.type="text";name.placeholder="Test name";name.value="HWT Test "+(S.tests.length+1);name.style.flex="1";
+  const mk=el("button","btn","Create Test (75 Q)");mk.disabled=true;
+  foot.appendChild(name);foot.appendChild(mk);c.appendChild(foot);
+  const status=el("div","small muted");status.style.marginTop="8px";c.appendChild(status);
+  function update(){
+    const ready=SUBJECTS.filter(s=>pending[s]);
+    mk.disabled=ready.length===0;
+    status.textContent=ready.length===3?"All three subjects ready — create the merged paper.":
+      `${ready.length}/3 subjects uploaded${ready.length?" ("+ready.join(", ")+")":""}.`;
+  }
+  update();
+  mk.onclick=()=>{
+    const packs={};SUBJECTS.forEach(s=>{if(pending[s])packs[s]=pending[s];});
+    const t=buildTest(name.value.trim()||"Untitled Test",packs);
+    // attach topics from planner (matched by subject + next pending date)
+    SUBJECTS.forEach(s=>{const pl=S.planner.find(p=>p.subject===s&&!p.done);if(pl)t.chapter[s]=pl.topics||s;});
+    t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
+    S.tests.push(t);save();
+    SUBJECTS.forEach(s=>pending[s]=null);
+    toast("Test created with "+t.questions.length+" questions");
+    go("dash");
+  };
+  root.appendChild(c);
+
+  // planner upload
+  const p=el("div","card");
+  p.innerHTML=`<h3>Planner PDF (optional)</h3><p class="muted small">Import the Eklavya Test Series planner to fill your calendar.</p>`;
+  const pin=el("input");pin.type="file";pin.accept="application/pdf";pin.className="hide";
+  const pb=el("button","btn ghost","Import Planner");pb.onclick=()=>pin.click();
+  pin.onchange=async()=>{const f=pin.files[0];if(!f)return;pb.disabled=true;pb.textContent="Parsing…";
+    try{const rows=await parsePlanner(f);S.planner=rows;save();toast(rows.length+" scheduled tests imported");go("planner");}
+    catch(e){toast("Planner parse failed");}pb.disabled=false;pb.textContent="Import Planner";};
+  p.appendChild(pin);p.appendChild(pb);root.appendChild(p);
+}
+
+/* ------------------------------- PLANNER --------------------------------- */
+function viewPlanner(root){
+  const rows=S.planner.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const now=Date.now();
+  const done=rows.filter(r=>r.done).length;
+  const today=rows.filter(r=>todayKey(r.date)===todayKey(now));
+  const head=el("div","card");
+  head.innerHTML=`<div class="row" style="justify-content:space-between"><h2 style="margin:0">Test Planner</h2>
+    <span class="badge">${rows.length} scheduled</span></div>
+    <div style="margin-top:10px" class="progress"><i style="width:${pct(done,rows.length)}%"></i></div>
+    <div class="small muted" style="margin-top:6px">Completion ${pct(done,rows.length)}% · ${done} of ${rows.length} tests done</div>`;
+  root.appendChild(head);
+  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner imported yet. Go to <b>Upload PDFs → Import Planner</b>.</p>`));return;}
+
+  root.appendChild(el("div","grid g4",
+    statCard("Upcoming",rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(now))).length)+
+    statCard("Completed",done)+statCard("Today's Tests",today.length)+
+    statCard("Progress",pct(done,rows.length)+"%")));
+
+  // today
+  const t=el("div","card");t.innerHTML=`<h3>Today's Test</h3>`;
+  if(!today.length)t.innerHTML+=`<p class="muted">Nothing scheduled today — great time for a practice test.</p>`;
+  today.forEach(r=>t.appendChild(plannerRow(r)));
+  root.appendChild(t);
+
+  // calendar (current + next month)
+  const cal=el("div","card");cal.innerHTML=`<h3>Calendar</h3>`;
+  const months=[...new Set(rows.map(r=>new Date(r.date).toISOString().slice(0,7)))].slice(0,12);
+  const sel=el("select");months.forEach(m=>{const o=el("option",null,new Date(m+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}));o.value=m;sel.appendChild(o);});
+  const cur=new Date().toISOString().slice(0,7); if(months.includes(cur))sel.value=cur;
+  const grid=el("div","cal");grid.style.marginTop="10px";
+  function drawCal(){
+    grid.innerHTML="";
+    ["S","M","T","W","T","F","S"].forEach(d=>{const c=el("div","small muted",d);c.style.textAlign="center";grid.appendChild(c);});
+    const [y,m]=sel.value.split("-").map(Number);
+    const first=new Date(y,m-1,1).getDay(), days=new Date(y,m,0).getDate();
+    for(let i=0;i<first;i++)grid.appendChild(el("div"));
+    for(let d=1;d<=days;d++){
+      const key=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      const list=rows.filter(r=>todayKey(r.date)===key);
+      const c=el("div","cell"+(list.length?" has":"")+(list.length&&list.every(r=>r.done)?" done":"")+(key===todayKey(now)?" today":""));
+      c.innerHTML=`<div>${d}</div>`+(list.length?`<div class="small" style="color:var(--blue-l)">${list.length} test</div>`:"");
+      if(list.length)c.onclick=()=>toast(list.map(r=>r.name).join(" · "));
+      grid.appendChild(c);
+    }
+  }
+  sel.onchange=drawCal;drawCal();
+  cal.appendChild(sel);cal.appendChild(grid);root.appendChild(cal);
+
+  const up=el("div","card");up.innerHTML=`<h3>Upcoming Tests</h3>`;
+  rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
+  root.appendChild(up);
+  const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
+  const dl=rows.filter(r=>r.done);
+  if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
+  dl.slice(-12).reverse().forEach(r=>dn.appendChild(plannerRow(r)));
+  root.appendChild(dn);
+}
+function plannerRow(r){
+  const d=el("div","row");
+  d.style.cssText="justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0";
+  d.innerHTML=`<div style="min-width:200px;flex:1">
+    <b>${esc(r.name)}</b> <span class="chip" style="color:${SUBCOLOR[r.subject]||"var(--muted)"}">${esc(r.subject)}</span>
+    <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
+    <div class="small">${esc(r.topics||"")}</div></div>`;
+  const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
+  b.onclick=()=>{r.done=!r.done;save();render();};
+  d.appendChild(b);return d;
+}
+
+/* ------------------------------ ANALYTICS -------------------------------- */
+function lineChart(cv,data,labels,title,color="#0b57a4"){
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=210;
+  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);
+  c.clearRect(0,0,w,h);
+  const pad={l:36,r:12,t:18,b:26};
+  const max=Math.max(1,...data),min=Math.min(0,...data);
+  const X=i=>pad.l+(w-pad.l-pad.r)*(data.length<2?0.5:i/(data.length-1));
+  const Y=v=>h-pad.b-(h-pad.t-pad.b)*((v-min)/((max-min)||1));
+  c.strokeStyle=getComputedStyle(document.body).getPropertyValue("--line");c.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=pad.t+(h-pad.t-pad.b)*i/4;c.beginPath();c.moveTo(pad.l,y);c.lineTo(w-pad.r,y);c.stroke();
+    c.fillStyle=getComputedStyle(document.body).getPropertyValue("--muted");c.font="10px sans-serif";
+    c.fillText(Math.round(max-(max-min)*i/4),4,y+3);}
+  c.strokeStyle=color;c.lineWidth=2.5;c.beginPath();
+  data.forEach((v,i)=>i?c.lineTo(X(i),Y(v)):c.moveTo(X(i),Y(v)));c.stroke();
+  c.fillStyle=color+"22";c.lineTo(X(data.length-1),h-pad.b);c.lineTo(X(0),h-pad.b);c.closePath();c.fill();
+  data.forEach((v,i)=>{c.fillStyle=color;c.beginPath();c.arc(X(i),Y(v),3.5,0,7);c.fill();});
+  c.fillStyle=getComputedStyle(document.body).getPropertyValue("--muted");c.font="11px sans-serif";
+  c.fillText(title,pad.l,12);
+}
+function barChart(cv,vals,labels,colors){
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=210;
+  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  const pad={l:34,r:10,t:12,b:28},max=Math.max(1,...vals);
+  const bw=(w-pad.l-pad.r)/vals.length;
+  vals.forEach((v,i)=>{
+    const bh=(h-pad.t-pad.b)*(v/max);
+    c.fillStyle=(colors&&colors[i])||"#0b57a4";
+    const x=pad.l+i*bw+bw*0.18,y=h-pad.b-bh;
+    c.beginPath();c.roundRect(x,y,bw*0.64,bh,6);c.fill();
+    c.fillStyle=getComputedStyle(document.body).getPropertyValue("--muted");c.font="10px sans-serif";
+    c.textAlign="center";c.fillText(String(labels[i]).slice(0,10),x+bw*0.32,h-10);
+    c.fillStyle=getComputedStyle(document.body).getPropertyValue("--ink");c.fillText(v,x+bw*0.32,y-4);
+    c.textAlign="left";
+  });
+}
+function viewAnalytics(root){
+  const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
+  root.appendChild(el("div","card",`<h2>Analytics Dashboard</h2>
+    <div class="muted small">Trends across ${done.length} completed attempt(s).</div>`));
+  if(!done.length){root.appendChild(el("div","card",`<p class="muted">No attempts yet.</p>`));return;}
+  const labels=done.map((a,i)=>"T"+(i+1));
+  const mk=(title,fn)=>{const c=el("div","card");c.innerHTML=`<h3>${title}</h3>`;const cv=el("canvas","chart");c.appendChild(cv);root.appendChild(c);setTimeout(()=>fn(cv),0);};
+  mk("Marks Trend",cv=>lineChart(cv,done.map(a=>a.result.all.marks),labels,"Marks"));
+  mk("Accuracy Trend",cv=>lineChart(cv,done.map(a=>a.result.all.accuracy),labels,"Accuracy %","#1e9e57"));
+  mk("Time Trend (minutes used)",cv=>lineChart(cv,done.map(a=>Math.round(a.result.all.time/60)),labels,"Minutes","#7a3ec8"));
+  const subAvg=SUBJECTS.map(s=>{const v=done.map(a=>(a.result.per[s]||{}).marks||0);return Math.round(v.reduce((x,y)=>x+y,0)/v.length);});
+  mk("Subject Wise Average Marks",cv=>barChart(cv,subAvg,SUBJECTS.map(s=>s.slice(0,4)),SUBJECTS.map(s=>SUBCOLOR[s])));
+  // chapter graph + heatmap
+  const chAgg={};
+  done.forEach(a=>{const t=testById(a.testId);if(!t)return;
+    t.questions.forEach(q=>{const c=q.chapter||q.subject;const o=chAgg[c]=chAgg[c]||{c:0,n:0};
+      const r=a.responses[q.id]||{};o.n++;if(isRight(q,r.ans))o.c++;});});
+  const chs=Object.entries(chAgg).map(([k,v])=>({k,acc:pct(v.c,v.n),n:v.n})).sort((a,b)=>a.acc-b.acc);
+  if(chs.length){
+    mk("Chapter Wise Accuracy",cv=>barChart(cv,chs.slice(0,8).map(c=>c.acc),chs.slice(0,8).map(c=>c.k),chs.slice(0,8).map(c=>c.acc<40?"#d33b3b":c.acc<70?"#e0a106":"#1e9e57")));
+    const hm=el("div","card");hm.innerHTML=`<h3>Weakness Heatmap</h3>`;
+    const g=el("div","heat");
+    chs.forEach(c=>{const d=el("div",null,`${esc(c.k).slice(0,42)}<br><b>${c.acc}%</b>`);
+      d.style.background=c.acc<40?"#d33b3b":c.acc<60?"#e0770a":c.acc<80?"#e0a106":"#1e9e57";g.appendChild(d);});
+    hm.appendChild(g);root.appendChild(hm);
+  }
+  const imp=done.length>1?Math.round(done[done.length-1].result.all.percentage-done[0].result.all.percentage):0;
+  root.appendChild(el("div","grid g3",
+    statCard("Improvement",(imp>0?"+":"")+imp+"%")+
+    statCard("Best Marks",Math.max(...done.map(a=>a.result.all.marks)))+
+    statCard("Avg Time / Question",fmtTime(done.reduce((s,a)=>s+a.result.all.time,0)/done.reduce((s,a)=>s+a.result.all.total,0)))));
+}
+
+/* ------------------------------- PRACTICE -------------------------------- */
+function collectQuestions(kind){
+  const out=[];const seen=new Set();
+  const push=(t,q)=>{if(!seen.has(q.id)){seen.add(q.id);out.push({t,q});}};
+  const done=S.attempts.filter(a=>a.submittedAt);
+  if(kind==="bookmarked"){
+    S.tests.forEach(t=>t.questions.forEach(q=>{if(S.bookmarks.includes(q.id))push(t,q);}));
+  } else if(kind==="weak"){
+    const acc={};done.forEach(a=>{const t=testById(a.testId);if(!t)return;t.questions.forEach(q=>{
+      const c=q.chapter||q.subject;const o=acc[c]=acc[c]||{c:0,n:0};o.n++;if(isRight(q,(a.responses[q.id]||{}).ans))o.c++;});});
+    const weak=Object.entries(acc).filter(([,v])=>pct(v.c,v.n)<60).map(([k])=>k);
+    S.tests.forEach(t=>t.questions.forEach(q=>{if(weak.includes(q.chapter||q.subject))push(t,q);}));
+  } else if(kind==="mixed"){
+    S.tests.forEach(t=>t.questions.forEach(q=>push(t,q)));
+    out.sort(()=>Math.random()-0.5); return out.slice(0,25);
+  } else {
+    done.forEach(a=>{const t=testById(a.testId);if(!t)return;t.questions.forEach(q=>{
+      const r=a.responses[q.id]||{};
+      const skipped=r.ans==null||r.ans==="";
+      if(kind==="wrong"&&!skipped&&!isRight(q,r.ans))push(t,q);
+      if(kind==="skipped"&&skipped)push(t,q);});});
+  }
+  return out;
+}
+function viewPractice(root){
+  root.appendChild(el("div","card",`<h2>Practice Mode</h2>
+    <div class="muted small">Auto-generated revision papers built from your own history.</div>`));
+  const kinds=[["wrong","Wrong Questions Test","Every question you answered incorrectly"],
+    ["skipped","Skipped Questions Test","Questions you left unattempted"],
+    ["weak","Weak Chapter Test","Chapters below 60% accuracy"],
+    ["bookmarked","Bookmarked Questions Test","Everything you bookmarked in review"],
+    ["mixed","Mixed Revision Test","25 random questions from all papers"]];
+  const g=el("div","grid g2");
+  kinds.forEach(([k,title,desc])=>{
+    const pool=collectQuestions(k);
+    const c=el("div","card");c.style.margin="0";
+    c.innerHTML=`<h3>${title}</h3><div class="small muted">${desc}</div>
+      <div style="margin:10px 0"><span class="badge">${pool.length} questions</span></div>`;
+    const b=el("button","btn sm",pool.length?"Start":"Nothing available");b.disabled=!pool.length;
+    b.onclick=()=>{
+      const t={id:uid(),name:title+" · "+fmtDate(Date.now()),createdAt:Date.now(),date:new Date().toISOString(),
+        practice:true,duration:Math.max(600,pool.length*90),chapter:{},
+        questions:pool.map((x,i)=>({...x.q,id:x.q.id,index:i,no:i+1}))};
+      S.tests.push(t);save();startExam(t.id);
+    };
+    c.appendChild(b);g.appendChild(c);
+  });
+  root.appendChild(g);
+}
+
+/* -------------------------------- SEARCH --------------------------------- */
+function viewSearch(root){
+  const c=el("div","card");
+  c.innerHTML=`<h2>Search Questions</h2><div class="muted small">Search by question number, keyword, chapter, topic, formula or subject.</div>`;
+  const row=el("div","row");row.style.marginTop="10px";
+  const q=el("input");q.type="text";q.placeholder="e.g. dimensional, 12, complex numbers, mole…";q.style.flex="1";
+  const sub=el("select");["All",...SUBJECTS].forEach(s=>{const o=el("option",null,s);o.value=s;sub.appendChild(o);});
+  row.appendChild(q);row.appendChild(sub);c.appendChild(row);
+  const res=el("div");res.style.marginTop="12px";c.appendChild(res);root.appendChild(c);
+  const run=()=>{
+    const term=q.value.trim().toLowerCase();res.innerHTML="";
+    if(!term){res.innerHTML=`<p class="muted">Type to search across every uploaded paper.</p>`;return;}
+    let n=0;
+    S.tests.forEach(t=>t.questions.forEach(qq=>{
+      if(sub.value!=="All"&&qq.subject!==sub.value)return;
+      const hay=[qq.no,qq.text,qq.chapter,qq.subject,qq.solText,...(qq.options||[]).map(o=>o.text)].join(" ").toLowerCase();
+      if(!(hay.includes(term)||String(qq.no)===term))return;
+      if(n++>=40)return;
+      const d=el("div","qrev");
+      d.innerHTML=`<div class="row" style="justify-content:space-between">
+        <b>Q${qq.no} · ${esc(qq.subject)}</b><span class="small muted">${esc(t.name)}</span></div>`;
+      d.appendChild(imgTag(qq.img));
+      const b=el("button","btn sm ghost","Show solution");b.style.marginTop="8px";
+      b.onclick=()=>{b.remove();d.appendChild(imgTag(qq.solImg));};
+      d.appendChild(b);res.appendChild(d);
+    }));
+    if(!n)res.innerHTML=`<p class="muted">No matches.</p>`;
+  };
+  q.oninput=run;sub.onchange=run;run();
+}
+
+/* ----------------------------- REVIEW LIST ------------------------------- */
+function viewReview(root){
+  const done=S.attempts.filter(a=>a.submittedAt).slice().reverse();
+  root.appendChild(el("div","card",`<h2>Question Review</h2>
+    <div class="muted small">Open any completed attempt to review every question with solutions.</div>`));
+  if(!done.length){root.appendChild(el("div","card",`<p class="muted">No completed attempts yet.</p>`));return;}
+  const c=el("div","card");
+  done.forEach(a=>{
+    const t=testById(a.testId)||{name:"Deleted test"};
+    const r=el("div","row");r.style.cssText="justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0";
+    r.innerHTML=`<div><b>${esc(t.name)}</b><div class="small muted">${fmtDate(a.submittedAt)} · ${a.result.all.marks}/${a.result.all.max} · ${a.result.all.accuracy}% accuracy</div></div>`;
+    const b=el("button","btn sm","Open");b.onclick=()=>go("result",a.id);r.appendChild(b);
+    c.appendChild(r);
+  });
+  root.appendChild(c);
+}
+
+/* ------------------------------- RESULT ---------------------------------- */
+function viewResult(root){
+  const a=S.attempts.find(x=>x.id===routeArg)||S.attempts.filter(x=>x.submittedAt).slice(-1)[0];
+  if(!a){root.appendChild(el("div","card","<p class='muted'>No result.</p>"));return;}
+  const t=testById(a.testId);
+  if(!t){root.appendChild(el("div","card","<p class='muted'>Test was deleted.</p>"));return;}
+  const r=a.result, ai=analyse(t,a);
+
+  const head=el("div","card");
+  head.innerHTML=`<div class="row" style="justify-content:space-between">
+    <div><h2 style="margin:0">${esc(t.name)}</h2>
+      <div class="muted small">Submitted ${fmtDate(a.submittedAt)} · Time taken ${fmtTime(a.timeTaken||r.all.time)}</div></div>
+    <div style="text-align:right"><div style="font-size:34px;font-weight:800;color:var(--blue-l)">${r.all.marks}<span class="muted" style="font-size:16px">/${r.all.max}</span></div>
+    <div class="small muted">${r.all.percentage}% · ${r.all.accuracy}% accuracy</div></div></div>`;
+  root.appendChild(head);
+  root.appendChild(el("div","grid g4",
+    statCard("Correct",r.all.correct)+statCard("Wrong",r.all.wrong)+
+    statCard("Skipped",r.all.skipped)+statCard("Negative Marks","-"+r.all.neg)));
+  root.appendChild(el("div","grid g4",
+    statCard("Accuracy",r.all.accuracy+"%")+statCard("Percentage",r.all.percentage+"%")+
+    statCard("Time Taken",fmtTime(a.timeTaken||r.all.time))+statCard("Avg / Question",fmtTime(ai.avgT))));
+
+  // subject-wise
+  const sc=el("div","card");sc.innerHTML=`<h3>Subject Wise Performance</h3>`;
+  const tb=el("table");tb.innerHTML=`<tr><th>Subject</th><th>Marks</th><th>Correct</th><th>Wrong</th><th>Skipped</th><th>Accuracy</th><th>Time</th></tr>`;
+  SUBJECTS.forEach(s=>{const p=r.per[s];if(!p||!p.total)return;
+    tb.innerHTML+=`<tr><td><b style="color:${SUBCOLOR[s]}">${s}</b></td><td>${p.marks}/${p.total*4}</td>
+      <td>${p.correct}</td><td>${p.wrong}</td><td>${p.skipped}</td><td>${pct(p.correct,p.correct+p.wrong)}%</td><td>${fmtTime(p.time)}</td></tr>`;});
+  sc.appendChild(tb);
+  const cv=el("canvas","chart");sc.appendChild(cv);
+  setTimeout(()=>barChart(cv,SUBJECTS.map(s=>r.per[s].marks),SUBJECTS.map(s=>s.slice(0,4)),SUBJECTS.map(s=>SUBCOLOR[s])),0);
+  root.appendChild(sc);
+
+  // AI analysis
+  const ac=el("div","card");
+  ac.innerHTML=`<h3>🤖 AI Performance Analysis</h3>
+   <div class="grid g3" style="margin:10px 0">
+     ${statCard("Expected JEE Score",ai.score300+"/300")}
+     ${statCard("Expected Percentile",ai.percentile)}
+     ${statCard("Expected Rank","~"+ai.rank.toLocaleString("en-IN"))}
+   </div>
+   <div class="grid g2">
+     <div><h4>Mistake Pattern</h4><ul class="tight small">
+       <li>Conceptual mistakes: <b>${ai.conceptual.length}</b></li>
+       <li>Calculation mistakes: <b>${ai.calc.length}</b></li>
+       <li>Careless mistakes: <b>${ai.careless.length}</b></li>
+       <li>Guessed attempts: <b>${ai.guesses.length}</b> (accuracy ${ai.guessAcc}%)</li>
+       <li>Negative marking: <b>-${r.all.neg}</b> across ${r.all.wrong} wrong answers</li>
+       <li>Easy questions missed: <b>${ai.easyMissed.length}</b> · Hard solved: <b>${ai.hardSolved.length}</b></li>
+     </ul></div>
+     <div><h4>Timing</h4><ul class="tight small">
+       <li>Average per question: <b>${fmtTime(ai.avgT)}</b></li>
+       ${SUBJECTS.filter(s=>r.per[s].total).map(s=>`<li>${s}: <b>${fmtTime(r.per[s].time/r.per[s].total)}</b> per question (${fmtTime(r.per[s].time)} total)</li>`).join("")}
+       <li>Improvement trend: <b>${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b> since first test</li>
+     </ul></div>
+     <div><h4>Strong Areas</h4><ul class="tight small">
+       <li>Subject: <b>${ai.strongSub[0]}</b></li>
+       ${ai.strongCh.map(c=>`<li>${esc(c.name).slice(0,60)} — ${c.acc}%</li>`).join("")}
+     </ul></div>
+     <div><h4>Weak Areas / Priority Chapters</h4><ul class="tight small">
+       <li>Subject: <b>${ai.strongSub[ai.strongSub.length-1]}</b></li>
+       ${ai.weakCh.map(c=>`<li>${esc(c.name).slice(0,60)} — ${c.acc}%</li>`).join("")}
+     </ul></div>
+   </div>
+   <h4 style="margin-top:12px">Most Time Consuming Questions</h4>
+   <div class="small">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")}</div>
+   <h4 style="margin-top:12px">Study Recommendations</h4>
+   <ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  root.appendChild(ac);
+
+  // question review
+  const rc=el("div","card");
+  rc.innerHTML=`<h3>Question Review</h3>`;
+  const filt=el("div","row");
+  ["all","correct","wrong","skipped","bookmarked"].forEach(f=>{
+    const b=el("button","btn sm "+(f==="all"?"":"ghost"),f[0].toUpperCase()+f.slice(1));
+    b.onclick=()=>{[...filt.children].forEach(x=>x.className="btn sm ghost");b.className="btn sm";draw(f);};
+    filt.appendChild(b);
+  });
+  rc.appendChild(filt);
+  const list=el("div");list.style.marginTop="12px";rc.appendChild(list);
+  function draw(f){
+    list.innerHTML="";
+    ai.rows.forEach(x=>{
+      if(f==="bookmarked"&&!S.bookmarks.includes(x.q.id))return;
+      if(f!=="all"&&f!=="bookmarked"&&x.status!==f)return;
+      const d=el("div","qrev");
+      const badge=x.status==="correct"?`<span class="badge g">Correct +4</span>`:
+        x.status==="wrong"?`<span class="badge r">Wrong -1</span>`:`<span class="badge a">Skipped</span>`;
+      d.innerHTML=`<div class="row" style="justify-content:space-between">
+        <div><b>Q${x.q.no}</b> <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span> ${badge}</div>
+        <div class="small muted">⏱ ${fmtTime(x.time)}</div></div>`;
+      d.appendChild(imgTag(x.q.img));
+      (x.q.options||[]).forEach(o=>{
+        const isAns=String(o.label)===String(x.ans), isCor=String(o.label)===String(x.q.answer);
+        const row=el("div","optrow"+(isCor?" correct":isAns?" wrong":""));
+        row.appendChild(el("div","optlab",o.label.toUpperCase()));
+        const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
+        d.appendChild(row);
+      });
+      d.appendChild(el("div","small",`<b>Your answer:</b> ${x.ans?esc(String(x.ans).toUpperCase()):"—"} &nbsp;·&nbsp; <b>Correct:</b> ${esc(String(x.q.answer||"").toUpperCase())}`));
+      const sb=el("button","btn sm ghost","Show solution");sb.style.margin="8px 8px 0 0";
+      sb.onclick=()=>{sb.remove();d.appendChild(imgTag(x.q.solImg));};
+      const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark");
+      bm.onclick=()=>{const i=S.bookmarks.indexOf(x.q.id);i<0?S.bookmarks.push(x.q.id):S.bookmarks.splice(i,1);
+        save();bm.textContent=S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark";};
+      d.appendChild(sb);d.appendChild(bm);
+      list.appendChild(d);
+    });
+    if(!list.children.length)list.innerHTML=`<p class="muted">Nothing here.</p>`;
+  }
+  draw("all");
+  root.appendChild(rc);
+}
+
+/* --------------------------- 6. EXAM RUNTIME ----------------------------- */
+let EX=null; // {test, attempt, cur, timerId, tick}
+function startExam(testId){
+  const t=testById(testId);if(!t)return;
+  const attempt={id:uid(),testId,startedAt:Date.now(),responses:{},submittedAt:null};
+  t.questions.forEach(q=>attempt.responses[q.id]={ans:null,status:"notvisited",time:0,changes:0});
+  EX={test:t,attempt,cur:0,left:t.duration,lastTick:Date.now(),warned:{}};
+  $("#examView").classList.remove("hide");
+  $("#exTitle").textContent=t.name;
+  $("#exCand").textContent=S.settings.candidate;
+  buildSubTabs();buildFoot();drawQuestion();startTimer();
+  document.body.style.overflow="hidden";
+}
+function endExamUI(){$("#examView").classList.add("hide");document.body.style.overflow="";clearInterval(EX&&EX.timerId);EX=null;}
+function subjectsInTest(){return [...new Set(EX.test.questions.map(q=>q.subject))];}
+function buildSubTabs(){
+  const w=$("#exSubs");w.innerHTML="";
+  subjectsInTest().forEach(s=>{
+    const b=el("button",null,s);
+    b.onclick=()=>{const i=EX.test.questions.findIndex(q=>q.subject===s);if(i>=0){commitTime();EX.cur=i;drawQuestion();}};
+    w.appendChild(b);
+  });
+}
+function syncTabs(){
+  const cs=EX.test.questions[EX.cur].subject;
+  [...$("#exSubs").children].forEach(b=>b.className=b.textContent===cs?"active":"");
+}
+function buildFoot(){
+  const f=$("#exFoot");f.innerHTML="";
+  const mk=(cls,label,fn)=>{const b=el("button","btn "+cls,label);b.onclick=fn;f.appendChild(b);return b;};
+  mk("ghost","◀ Previous",()=>move(-1));
+  mk("ghost","Clear Response",()=>{const q=cq();const r=res(q);r.ans=null;r.status="notanswered";drawQuestion();});
+  mk("purple","Mark for Review & Next",()=>{const r=res(cq());r.status=r.ans?"markedans":"marked";move(1,true);});
+  mk("green","Save & Next",()=>{const r=res(cq());r.status=r.ans?"answered":"notanswered";move(1,true);});
+  mk("ghost","Next ▶",()=>move(1));
+  const sp=el("div");sp.style.flex="1";f.appendChild(sp);
+  mk("red","Submit Test",()=>confirmBox("Submit test?",summaryHTML(),()=>submitExam(false),"Submit"));
+}
+const cq=()=>EX.test.questions[EX.cur];
+const res=q=>EX.attempt.responses[q.id];
+function commitTime(){
+  const now=Date.now(); const q=cq(); if(q) res(q).time+=(now-EX.lastTick)/1000;
+  EX.lastTick=now;
+}
+function move(d,keep){
+  commitTime();
+  const n=EX.cur+d;
+  if(n<0||n>=EX.test.questions.length){if(keep)toast("End of paper");return;}
+  EX.cur=n;drawQuestion();
+}
+function drawQuestion(){
+  const q=cq(),r=res(q);
+  if(r.status==="notvisited")r.status=r.ans?"answered":"notanswered";
+  EX.lastTick=Date.now();
+  const p=$("#exQ");p.innerHTML="";
+  const head=el("div","row");head.style.justifyContent="space-between";
+  head.innerHTML=`<div><b>Question ${q.no}</b> <span class="chip" style="color:${SUBCOLOR[q.subject]}">${esc(q.subject)}</span>
+    <span class="badge">${q.type==="mcq"?"Single Correct (+4 / -1)":"Numerical (+4 / -1)"}</span></div>
+    <div class="small muted">${EX.cur+1} of ${EX.test.questions.length}</div>`;
+  p.appendChild(head);
+  const box=el("div","card");box.style.margin="10px 0";
+  box.appendChild(imgTag(q.img));
+  if(q.type==="mcq"){
+    q.options.forEach(o=>{
+      const row=el("div","optrow"+(r.ans===o.label?" sel":""));
+      row.appendChild(el("div","optlab",o.label.toUpperCase()));
+      const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
+      row.onclick=()=>{if(r.ans!==o.label)r.changes++;r.ans=o.label;
+        if(r.status!=="marked"&&r.status!=="markedans")r.status="answered";else r.status="markedans";
+        drawQuestion();};
+      box.appendChild(row);
+    });
+  } else {
+    const inp=el("input");inp.type="text";inp.inputMode="decimal";inp.placeholder="Enter numerical answer";
+    inp.value=r.ans==null?"":r.ans;inp.style.marginTop="10px";inp.style.width="240px";
+    inp.oninput=()=>{r.changes++;r.ans=inp.value.trim()||null;paintPalette();};
+    box.appendChild(inp);
+  }
+  p.appendChild(box);
+  syncTabs();paintPalette();
+}
+function counts(){
+  const c={answered:0,notanswered:0,marked:0,markedans:0,notvisited:0};
+  EX.test.questions.forEach(q=>{const r=res(q);
+    const st=r.status==="notvisited"?"notvisited":(r.status==="marked"||r.status==="markedans")?
+      (r.ans?"markedans":"marked"):(r.ans?"answered":"notanswered");
+    c[st]++;});
+  return c;
+}
+function paintPalette(){
+  const p=$("#exPal");const c=counts();
+  p.innerHTML=`<div class="legend">
+    <span><i class="dot" style="background:var(--green)"></i>Answered ${c.answered}</span>
+    <span><i class="dot" style="background:var(--red)"></i>Not Answered ${c.notanswered}</span>
+    <span><i class="dot" style="background:var(--purple)"></i>Marked ${c.marked+c.markedans}</span>
+    <span><i class="dot" style="background:var(--panel)"></i>Not Visited ${c.notvisited}</span>
+  </div>`;
+  subjectsInTest().forEach(s=>{
+    p.appendChild(el("div","small muted",`<b style="color:${SUBCOLOR[s]}">${s}</b>`));
+    const g=el("div","pal-grid");g.style.margin="6px 0 12px";
+    EX.test.questions.forEach((q,i)=>{
+      if(q.subject!==s)return;
+      const r=res(q);
+      const st=r.status==="notvisited"?"":(r.status==="marked"||r.status==="markedans")?
+        (r.ans?"markedans":"marked"):(r.ans?"answered":"notanswered");
+      const b=el("button","pnum "+st+(i===EX.cur?" cur":""),String(q.no));
+      b.onclick=()=>{commitTime();EX.cur=i;drawQuestion();};
+      g.appendChild(b);
+    });
+    p.appendChild(g);
+  });
+}
+function summaryHTML(){
+  const c=counts();
+  return `Answered <b>${c.answered+c.markedans}</b> · Not answered <b>${c.notanswered}</b> ·
+   Marked for review <b>${c.marked+c.markedans}</b> · Not visited <b>${c.notvisited}</b>.<br>
+   Time left <b>${fmtTime(EX.left)}</b>. You cannot change answers after submitting.`;
+}
+function startTimer(){
+  const t=$("#exTimer");
+  const upd=()=>{
+    EX.left--;
+    t.textContent=fmtTime(EX.left);
+    t.className="timer"+(EX.left<=300?" crit":EX.left<=1800?" warn":"");
+    [[1800,"30 minutes remaining"],[600,"10 minutes remaining"],[300,"5 minutes remaining"],[60,"1 minute remaining"]]
+      .forEach(([s,m])=>{if(EX.left===s&&!EX.warned[s]){EX.warned[s]=1;toast("⚠ "+m,4000);}});
+    if(EX.left<=0)submitExam(true);
+  };
+  t.textContent=fmtTime(EX.left);
+  EX.timerId=setInterval(upd,1000);
+}
+function submitExam(auto){
+  commitTime();
+  const {test,attempt}=EX;
+  attempt.submittedAt=Date.now();
+  attempt.timeTaken=(attempt.submittedAt-attempt.startedAt)/1000;
+  attempt.autoSubmitted=!!auto;
+  attempt.result=evaluate(test,attempt.responses);
+  Object.values(attempt.responses).forEach(r=>r.time=Math.round(r.time));
+  S.attempts.push(attempt);
+  // mark matching planner entry as done
+  const pl=S.planner.find(p=>!p.done&&todayKey(p.date)===todayKey(Date.now()));
+  if(pl)pl.done=true;
+  save();
+  const id=attempt.id;
+  endExamUI();
+  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+  toast(auto?"Time up — test auto submitted":"Test submitted");
+  go("result",id);
+}
+/* exam controls */
+$("#fsBtn").onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});};
+$("#palBtn").onclick=()=>$("#exPal").classList.toggle("collapsed");
+document.addEventListener("keydown",e=>{
+  if(!EX||$("#examView").classList.contains("hide"))return;
+  if(e.target.tagName==="INPUT")return;
+  if(e.key==="ArrowRight")move(1);
+  else if(e.key==="ArrowLeft")move(-1);
+  else if(/^[1-4]$/.test(e.key)){const q=cq();if(q.type==="mcq"){const o=q.options[+e.key-1];if(o){res(q).ans=o.label;res(q).status="answered";drawQuestion();}}}
+  else if(e.key.toLowerCase()==="m"){const r=res(cq());r.status=r.ans?"markedans":"marked";paintPalette();}
+  else if(e.key.toLowerCase()==="c"){const r=res(cq());r.ans=null;r.status="notanswered";drawQuestion();}
+});
+window.addEventListener("beforeunload",e=>{if(EX){e.preventDefault();e.returnValue="";}});
+
+/* ------------------------------- THEME ----------------------------------- */
+function applyTheme(){
+  document.documentElement.classList.toggle("dark",S.settings.theme==="dark");
+  $("#themeBtn").textContent=S.settings.theme==="dark"?"☀️":"🌙";
+}
+$("#themeBtn").onclick=()=>{S.settings.theme=S.settings.theme==="dark"?"light":"dark";save();applyTheme();render();};
+
+/* -------------------------------- BOOT ----------------------------------- */
+applyTheme();
+render();
+</script>
+</body>
+</html>

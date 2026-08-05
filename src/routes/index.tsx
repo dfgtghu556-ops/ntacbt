@@ -1,24 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
+      {
+        name: "description",
+        content:
+          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+      },
+      { property: "og:title", content: "Eklavya JEE Main CBT Platform" },
+      {
+        property: "og:description",
+        content:
+          "Upload your HWT PDFs and get a full NTA-style 75-question CBT with timer, palette, results and AI analysis.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+/** The whole app is a standalone single HTML file served from /jee-cbt.html. */
 function Index() {
+  useEffect(() => {
+    window.location.replace("/jee-cbt.html");
+  }, []);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="text-center">
+        <h1 className="text-xl font-semibold text-foreground">Eklavya JEE Main CBT Platform</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Opening the exam portal… <a href="/jee-cbt.html">Click here</a> if it doesn't load.
+        </p>
+      </div>
+    </main>
   );
 }
