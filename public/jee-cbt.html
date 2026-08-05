@@ -11,16 +11,20 @@
    DESIGN TOKENS
    ============================================================ */
 :root{
-  --blue:#0b57a4; --blue-d:#083f78; --blue-l:#1a73c7; --blue-soft:#e8f1fb;
-  --bg:#f2f6fb; --panel:#ffffff; --ink:#12243a; --muted:#5c7086; --line:#d7e2ee;
+  /* Vedantu-inspired brand palette: orange primary on deep indigo */
+  --blue:#f26722; --blue-d:#d9531a; --blue-l:#f57c34; --blue-soft:#fff1e8;
+  --ink-nav-a:#1b1b4b; --ink-nav-b:#2b2b7a;
+  --bg:#fbf7f4; --panel:#ffffff; --ink:#1b1b3a; --muted:#6b6b85; --line:#eadfd7;
   --green:#1e9e57; --red:#d33b3b; --purple:#7a3ec8; --amber:#e0a106;
-  --radius:14px; --shadow:0 4px 18px rgba(11,87,164,.10);
-  --font:"Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --radius:14px; --shadow:0 4px 18px rgba(242,103,34,.12);
+  --font:"Nunito Sans","Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
 }
 html.dark{
-  --bg:#0d1520; --panel:#141f2e; --ink:#e6eef8; --muted:#93a6bb; --line:#25344a;
-  --blue-soft:#16283f; --shadow:0 4px 18px rgba(0,0,0,.4);
+  --bg:#14121c; --panel:#1e1b29; --ink:#f2ece6; --muted:#a79fb5; --line:#332e42;
+  --ink-nav-a:#141232; --ink-nav-b:#221f4d;
+  --blue-soft:#3a2317; --shadow:0 4px 18px rgba(0,0,0,.4);
 }
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;-webkit-text-size-adjust:100%}
