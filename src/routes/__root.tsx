@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
+      { name: "description", content: "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
+      { property: "og:description", content: "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
+      { name: "twitter:description", content: "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c6518cda-ca53-4d1a-ad5e-648f275d1e9d/id-preview-884cc5d7--6e87cfc9-38f2-4b70-88ba-1b1c475d73ef.lovable.app-1785922129626.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c6518cda-ca53-4d1a-ad5e-648f275d1e9d/id-preview-884cc5d7--6e87cfc9-38f2-4b70-88ba-1b1c475d73ef.lovable.app-1785922129626.png" },
     ],
     links: [
       {

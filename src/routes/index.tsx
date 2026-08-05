@@ -10,11 +10,11 @@ export const Route = createFileRoute("/")({
         content:
           "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
       },
-      { property: "og:title", content: "Eklavya JEE Main CBT Platform" },
+      { property: "og:title", content: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
       {
         property: "og:description",
         content:
-          "Upload your HWT PDFs and get a full NTA-style 75-question CBT with timer, palette, results and AI analysis.",
+          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
