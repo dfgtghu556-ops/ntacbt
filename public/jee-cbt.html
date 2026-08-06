@@ -130,6 +130,29 @@ canvas.chart{width:100%;height:210px;display:block}
 .bar{height:8px;border-radius:6px;background:var(--blue-soft);overflow:hidden}
 .bar>i{display:block;height:100%}
 ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
+.revision-list{display:grid;gap:10px;margin-top:12px}
+.revision-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 92%,var(--blue-soft))}
+.revision-links{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.revision-link{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--blue) 35%,var(--line));border-radius:9px;background:var(--panel);color:var(--blue-d);font-size:12px;font-weight:800}
+.revision-link:hover{background:var(--blue-soft);transform:translateY(-1px)}
+.ai-shell{padding:0;overflow:hidden;border-color:color-mix(in srgb,var(--blue) 30%,var(--line))}
+.ai-hero{padding:20px;background:linear-gradient(120deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;display:flex;justify-content:space-between;gap:18px;align-items:center}
+.ai-hero .muted{color:rgba(255,255,255,.72)}
+.ai-score{min-width:112px;text-align:center;padding:12px;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(255,255,255,.09)}
+.ai-score b{display:block;font-size:28px;color:#fff}
+.ai-body{padding:18px}
+.ai-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.ai-metric{padding:14px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 90%,var(--blue-soft));position:relative;overflow:hidden}
+.ai-metric:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--blue)}
+.ai-metric .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}.ai-metric .v{font-size:24px;font-weight:900;margin-top:4px}
+.ai-panels{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ai-panel{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.ai-panel h4{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.ai-signal{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:9px 0;font-size:13px}
+.ai-signal .bar{grid-column:1/-1;height:6px}.ai-signal .bar i{background:var(--green)}
+.ai-panel.warn .ai-signal .bar i{background:var(--amber)}
+.ai-recs{margin-top:12px;border-left:4px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0}
+@media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}}
 </style>
 </head>
 <body>
@@ -860,6 +883,7 @@ function viewPlanner(root){
   const up=el("div","card");up.innerHTML=`<h3>Upcoming Tests</h3>`;
   rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
   root.appendChild(up);
+  root.appendChild(revisionSection(rows));
   const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
   const dl=rows.filter(r=>r.done);
   if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
@@ -876,6 +900,30 @@ function plannerRow(r){
   const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
   b.onclick=()=>{r.done=!r.done;save();render();};
   d.appendChild(b);return d;
+}
+
+function revisionTopics(r){
+  const raw=(r.topics||r.subject||"").split(/;|•|\||,(?=\s*[A-Z])/).map(x=>x.trim()).filter(Boolean);
+  return [...new Set(raw)].slice(0,3);
+}
+function revisionVideoLink(subject,topic){
+  const source=subject==="Physics"?"Eduniti":subject==="Chemistry"?"DexterChem":"MathonGo";
+  return "https://www.youtube.com/results?search_query="+encodeURIComponent(`${topic} JEE Main one shot short revision ${source}`);
+}
+function revisionSection(rows){
+  const upcoming=rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(Date.now()))).slice(0,6);
+  const c=el("div","card");
+  c.innerHTML=`<div class="row" style="justify-content:space-between"><div><h3>Upcoming Test Revision</h3><div class="small muted">Short revision and one-shot links matched to the scheduled syllabus.</div></div><span class="badge">${upcoming.length} tests</span></div>`;
+  if(!upcoming.length){c.innerHTML+=`<p class="muted small" style="margin-top:12px">No upcoming syllabus is available.</p>`;return c;}
+  const list=el("div","revision-list");
+  upcoming.forEach(r=>{
+    const topics=revisionTopics(r),item=el("div","revision-item");
+    item.innerHTML=`<div><b>${esc(r.name)}</b><div class="small muted">${fmtDate(r.date)} · ${esc(r.subject)}</div><div class="small" style="margin-top:4px">${esc(r.topics||r.subject)}</div></div>`;
+    const links=el("div","revision-links");
+    topics.forEach(topic=>{const a=el("a","revision-link",`▶ ${esc(topic).slice(0,28)}`);a.href=revisionVideoLink(r.subject,topic);a.target="_blank";a.rel="noopener noreferrer";a.title=`Find a short ${r.subject} revision video for ${topic}`;links.appendChild(a);});
+    item.appendChild(links);list.appendChild(item);
+  });
+  c.appendChild(list);return c;
 }
 
 /* ------------------------------ ANALYTICS -------------------------------- */
@@ -1079,40 +1127,32 @@ function viewResult(root){
   root.appendChild(sc);
 
   // AI analysis
-  const ac=el("div","card");
-  ac.innerHTML=`<h3>🤖 AI Performance Analysis</h3>
-   <div class="grid g3" style="margin:10px 0">
-     ${statCard("Expected JEE Score",ai.score300+"/300")}
-     ${statCard("Expected Percentile",ai.percentile)}
-     ${statCard("Expected Rank","~"+ai.rank.toLocaleString("en-IN"))}
+  const ac=el("div","card ai-shell");
+  ac.innerHTML=`<div class="ai-hero"><div><span class="badge a">AI PERFORMANCE REPORT</span><h3 style="margin-top:8px">Your Test Intelligence</h3><div class="muted small">A focused diagnosis of score potential, accuracy, speed and revision priorities.</div></div><div class="ai-score"><span class="small">Readiness</span><b>${Math.min(100,Math.round((r.all.accuracy+Number(ai.percentile))/2))}%</b><span class="small">JEE Main</span></div></div>
+   <div class="ai-body"><div class="ai-metrics">
+     <div class="ai-metric"><div class="k">Expected JEE Score</div><div class="v">${ai.score300}<span class="muted small"> /300</span></div></div>
+     <div class="ai-metric"><div class="k">Expected Percentile</div><div class="v">${ai.percentile}</div></div>
+     <div class="ai-metric"><div class="k">Expected Rank</div><div class="v">~${ai.rank.toLocaleString("en-IN")}</div></div>
    </div>
-   <div class="grid g2">
-     <div><h4>Mistake Pattern</h4><ul class="tight small">
+   <div class="ai-panels">
+     <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4><ul class="tight small">
        <li>Conceptual mistakes: <b>${ai.conceptual.length}</b></li>
        <li>Calculation mistakes: <b>${ai.calc.length}</b></li>
        <li>Careless mistakes: <b>${ai.careless.length}</b></li>
        <li>Guessed attempts: <b>${ai.guesses.length}</b> (accuracy ${ai.guessAcc}%)</li>
        <li>Negative marking: <b>-${r.all.neg}</b> across ${r.all.wrong} wrong answers</li>
        <li>Easy questions missed: <b>${ai.easyMissed.length}</b> · Hard solved: <b>${ai.hardSolved.length}</b></li>
-     </ul></div>
-     <div><h4>Timing</h4><ul class="tight small">
+      </ul></div>
+      <div class="ai-panel"><h4>⏱ Timing Intelligence</h4><ul class="tight small">
        <li>Average per question: <b>${fmtTime(ai.avgT)}</b></li>
        ${SUBJECTS.filter(s=>r.per[s].total).map(s=>`<li>${s}: <b>${fmtTime(r.per[s].time/r.per[s].total)}</b> per question (${fmtTime(r.per[s].time)} total)</li>`).join("")}
        <li>Improvement trend: <b>${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b> since first test</li>
      </ul></div>
-     <div><h4>Strong Areas</h4><ul class="tight small">
-       <li>Subject: <b>${ai.strongSub[0]}</b></li>
-       ${ai.strongCh.map(c=>`<li>${esc(c.name).slice(0,60)} — ${c.acc}%</li>`).join("")}
-     </ul></div>
-     <div><h4>Weak Areas / Priority Chapters</h4><ul class="tight small">
-       <li>Subject: <b>${ai.strongSub[ai.strongSub.length-1]}</b></li>
-       ${ai.weakCh.map(c=>`<li>${esc(c.name).slice(0,60)} — ${c.acc}%</li>`).join("")}
-     </ul></div>
+      <div class="ai-panel"><h4>✓ Strong Areas</h4><div class="ai-signal"><span>${ai.strongSub[0]}</span><b>${r.per[ai.strongSub[0]]?.accuracy||0}%</b><div class="bar"><i style="width:${r.per[ai.strongSub[0]]?.accuracy||0}%"></i></div></div>${ai.strongCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
+      <div class="ai-panel warn"><h4>↗ Priority Chapters</h4><div class="ai-signal"><span>${ai.strongSub[ai.strongSub.length-1]}</span><b>Focus</b><div class="bar"><i style="width:${r.per[ai.strongSub[ai.strongSub.length-1]]?.accuracy||0}%"></i></div></div>${ai.weakCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
    </div>
-   <h4 style="margin-top:12px">Most Time Consuming Questions</h4>
-   <div class="small">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")}</div>
-   <h4 style="margin-top:12px">Study Recommendations</h4>
-   <ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+    <div class="ai-recs"><h4>Personalized Study Plan</h4><ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div style="margin-top:14px"><h4>Most Time Consuming Questions</h4><div class="small muted">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")||"No timing outliers detected."}</div></div></div>`;
   root.appendChild(ac);
 
   // question review
