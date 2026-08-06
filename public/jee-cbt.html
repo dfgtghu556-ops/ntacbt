@@ -169,7 +169,7 @@ ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
    Eklavya JEE Main CBT Platform — single file, vanilla JS.
    Sections:
      1. Utilities
-     2. Storage (localStorage meta + IndexedDB images)
+      2. Storage (private progress locally + public tests in cloud storage)
      3. PDF parsing engine (fixed Vedantu HWT format)
      4. Test model / scoring
      5. Views: Dashboard, Upload, Planner, Analytics, Practice, Search, Result
@@ -218,14 +218,104 @@ async function imgURL(k){if(!k)return null;if(imgCache.has(k))return imgCache.ge
 /** <img> that lazily resolves its IndexedDB source. */
 function imgTag(key,cls="qimg"){
   const i=el("img",cls); i.alt="";
-  if(key) imgURL(key).then(u=>{if(u)i.src=u;});
+  if(key) (key.startsWith("cloud:")?cloudObjectURL(key.slice(6)):imgURL(key)).then(u=>{if(u)i.src=u;});
   return i;
 }
 
 const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],settings:{theme:"light",candidate:"Candidate"}};
 let S = load();
-function load(){try{return Object.assign({},DEFAULT,JSON.parse(localStorage.getItem(LS)||"{}"));}catch(e){return JSON.parse(JSON.stringify(DEFAULT));}}
-function save(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){toast("Storage full — delete an old test.");}}
+function load(){
+  try{
+    const saved=Object.assign({},DEFAULT,JSON.parse(localStorage.getItem(LS)||"{}"));
+    saved.tests=(saved.tests||[]).filter(t=>t.practice);
+    return saved;
+  }catch(e){return JSON.parse(JSON.stringify(DEFAULT));}
+}
+function save(){
+  try{localStorage.setItem(LS,JSON.stringify({...S,tests:S.tests.filter(t=>t.practice)}));}
+  catch(e){toast("Local progress storage is full.");}
+}
+
+/* Public test papers live in Lovable Cloud. Results, bookmarks, planner and
+   personal progress remain in this browser and are never uploaded. */
+let CLOUD=null, cloudTests=[], cloudRefresh=null;
+const pendingFiles={Physics:null,Chemistry:null,Mathematics:null};
+async function cloudInit(){
+  if(CLOUD)return CLOUD;
+  const r=await fetch("/api/public/cloud-config");
+  if(!r.ok)throw new Error("Cloud storage is unavailable");
+  CLOUD=await r.json();return CLOUD;
+}
+async function cloudFetch(path,options={}){
+  const c=await cloudInit();
+  const headers=new Headers(options.headers||{});
+  headers.set("apikey",c.publishableKey);headers.set("Authorization","Bearer "+c.publishableKey);
+  const r=await fetch(c.url+path,{...options,headers});
+  if(!r.ok)throw new Error((await r.text())||("Cloud request failed ("+r.status+")"));
+  return r;
+}
+const objectPath=p=>p.split("/").map(encodeURIComponent).join("/");
+async function cloudObjectURL(path){
+  if(imgCache.has("cloud:"+path))return imgCache.get("cloud:"+path);
+  const r=await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path));
+  const u=URL.createObjectURL(await r.blob());imgCache.set("cloud:"+path,u);return u;
+}
+async function uploadObject(path,body,contentType){
+  await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path),{
+    method:"POST",headers:{"Content-Type":contentType,"x-upsert":"false"},body
+  });
+}
+async function cloudifyTest(test,files,onProgress){
+  const copy=structuredClone(test),base=test.id;
+  for(const sub of SUBJECTS){
+    const f=files[sub];if(!f)throw new Error(sub+" PDF is missing");
+    onProgress("Uploading "+sub+" PDF…");
+    await uploadObject(`${base}/source/${sub.toLowerCase()}.pdf`,f,"application/pdf");
+  }
+  const refs=[];
+  copy.questions.forEach(q=>{
+    if(q.img)refs.push([q,"img",q.img]);if(q.solImg)refs.push([q,"solImg",q.solImg]);
+    (q.options||[]).forEach(o=>{if(o.img)refs.push([o,"img",o.img]);});
+  });
+  for(let i=0;i<refs.length;i++){
+    const [owner,key,localKey]=refs[i],data=await imgGet(localKey);
+    if(!data)continue;
+    const blob=await (await fetch(data)).blob(),path=`${base}/assets/${String(i+1).padStart(4,"0")}.jpg`;
+    onProgress(`Uploading test assets ${i+1}/${refs.length}…`);
+    await uploadObject(path,blob,"image/jpeg");owner[key]="cloud:"+path;
+  }
+  return copy;
+}
+function rowToTest(row){
+  const t=row.parsed_test;
+  return {...t,id:row.id,name:row.title,createdAt:new Date(row.created_at).getTime(),cloud:true,
+    testId:row.test_id,shareSlug:row.share_slug};
+}
+async function loadPublicTests(silent=false){
+  try{
+    const r=await cloudFetch("/rest/v1/public_tests?select=*&is_published=eq.true&order=created_at.desc");
+    const rows=await r.json(),before=cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
+    cloudTests=rows.map(rowToTest);
+    S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
+    const changed=before!==cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
+    if(!silent||(changed&&(route==="dash"||route==="library")))render();
+    const slug=new URLSearchParams(location.search).get("test");
+    if(slug&&!window.__sharedTestOpened){const t=cloudTests.find(x=>x.shareSlug===slug);if(t){window.__sharedTestOpened=true;startExam(t.id);}}
+  }catch(e){if(!silent)toast("Public Test Library could not load");}
+}
+async function publishPublicTest(test,files,onProgress){
+  const publicTest=await cloudifyTest(test,files,onProgress);
+  onProgress("Publishing test to the public library…");
+  const payload={id:test.id,title:test.name,physics_pdf_path:`${test.id}/source/physics.pdf`,
+    chemistry_pdf_path:`${test.id}/source/chemistry.pdf`,mathematics_pdf_path:`${test.id}/source/mathematics.pdf`,
+    parsed_test:publicTest,question_count:test.questions.length,duration_minutes:Math.round(test.duration/60)};
+  const r=await cloudFetch("/rest/v1/public_tests",{method:"POST",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(payload)});
+  return rowToTest((await r.json())[0]);
+}
+function shareTest(t){
+  const url=location.origin+location.pathname+"?test="+encodeURIComponent(t.shareSlug);
+  navigator.clipboard.writeText(url).then(()=>toast("Public test link copied"),()=>prompt("Copy this public test link",url));
+}
 
 /* --------------------------- 3. PDF PARSING ------------------------------ */
 /* The Vedantu HWT papers have a fixed structure:
@@ -529,7 +619,7 @@ function analyse(test,attempt){
 }
 
 /* ------------------------------- 6. ROUTER ------------------------------- */
-const ROUTES=[["dash","Dashboard"],["upload","Upload PDFs"],["planner","Planner"],
+const ROUTES=[["dash","Dashboard"],["library","Test Library"],["upload","Upload PDFs"],["planner","Planner"],
   ["analytics","Analytics"],["practice","Practice"],["review","Review"],["search","Search"]];
 let route="dash", routeArg=null;
 function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
@@ -540,7 +630,7 @@ function renderNav(){
 function render(){
   renderNav();
   const a=$("#app"); a.innerHTML="";
-  ({dash:viewDash,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
+  ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
 }
 
@@ -580,18 +670,18 @@ function viewDash(root){
     statCard("Strong Subject",g.strong?g.strong.s:"—",g.strong?`<div class="small muted">${g.strong.acc}% accuracy</div>`:"")+
     statCard("Weak Subject",g.weak?g.weak.s:"—",g.weak?`<div class="small muted">${g.weak.acc}% accuracy</div>`:"")));
 
-  // test library
+  // public test library
   const lib=el("div","card");
-  lib.innerHTML=`<h3>Test Library</h3>`;
-  if(!S.tests.length) lib.innerHTML+=`<p class="muted">No tests yet. Upload your Physics, Chemistry and Maths PDFs to auto-generate a 75-question paper.</p>`;
+  lib.innerHTML=`<h3>Public Test Library</h3>`;
+  if(!cloudTests.length) lib.innerHTML+=`<p class="muted">No public tests yet. Upload your Physics, Chemistry and Maths PDFs to publish the first paper.</p>`;
   else{
     const tb=el("table");
     tb.innerHTML=`<tr><th>Test</th><th>Questions</th><th>Status</th><th>Best</th><th></th></tr>`;
-    S.tests.slice().reverse().forEach(t=>{
+    cloudTests.forEach(t=>{
       const at=attemptsOf(t.id).filter(a=>a.submittedAt);
       const best=at.length?Math.max(...at.map(a=>a.result.all.marks)):null;
       const tr=el("tr");
-      tr.innerHTML=`<td><b>${esc(t.name)}</b><div class="small muted">${fmtDate(t.createdAt)}</div></td>
+      tr.innerHTML=`<td><b>${esc(t.name)}</b><div class="small muted">${esc(t.testId)} · ${fmtDate(t.createdAt)}</div></td>
         <td>${t.questions.length}</td>
         <td>${at.length?`<span class="badge g">Completed ×${at.length}</span>`:`<span class="badge a">Upcoming</span>`}</td>
         <td>${best==null?"—":best+" / "+t.questions.length*4}</td><td></td>`;
@@ -600,9 +690,7 @@ function viewDash(root){
       td.appendChild(b1);
       if(at.length){const b2=el("button","btn sm ghost","Result");b2.style.marginLeft="6px";
         b2.onclick=()=>go("result",at[at.length-1].id);td.appendChild(b2);}
-      const b3=el("button","btn sm ghost","🗑");b3.style.marginLeft="6px";
-      b3.onclick=()=>confirmBox("Delete test?","This removes the paper and its attempts.",()=>{
-        S.tests=S.tests.filter(x=>x.id!==t.id);S.attempts=S.attempts.filter(x=>x.testId!==t.id);save();render();});
+      const b3=el("button","btn sm ghost","Share");b3.style.marginLeft="6px";b3.onclick=()=>shareTest(t);
       td.appendChild(b3);
       tb.appendChild(tr);
     });
@@ -631,6 +719,22 @@ function viewDash(root){
   root.appendChild(rec);
 }
 
+function viewLibrary(root){
+  const head=el("div","card",`<div class="row" style="justify-content:space-between"><div><h2>Public Test Library</h2>
+    <div class="muted small">All uploaded tests are available to attempt from any device.</div></div>
+    <button class="btn ghost" id="refreshLib">Refresh</button></div>`);
+  root.appendChild(head);$("#refreshLib").onclick=()=>loadPublicTests();
+  const lib=el("div","card");
+  if(!cloudTests.length)lib.innerHTML=`<p class="muted">No public tests have been uploaded yet.</p>`;
+  cloudTests.forEach(t=>{
+    const row=el("div","row");row.style.cssText="justify-content:space-between;border-bottom:1px solid var(--line);padding:12px 0";
+    row.innerHTML=`<div><b>${esc(t.name)}</b><div class="small muted">${esc(t.testId)} · ${t.questions.length} questions · ${fmtDate(t.createdAt)}</div></div>`;
+    const actions=el("div","row"),start=el("button","btn sm","Start"),share=el("button","btn sm ghost","Share");
+    start.onclick=()=>startExam(t.id);share.onclick=()=>shareTest(t);actions.append(start,share);row.appendChild(actions);lib.appendChild(row);
+  });
+  root.appendChild(lib);
+}
+
 /* ------------------------------- UPLOAD ---------------------------------- */
 const pending={Physics:null,Chemistry:null,Mathematics:null};
 function viewUpload(root){
@@ -652,7 +756,7 @@ function viewUpload(root){
       try{
         const qs=await parsePaper(f,sub,m=>st.textContent=m);
         if(!qs.length) throw new Error("No questions detected");
-        pending[sub]=qs;
+        pending[sub]=qs;pendingFiles[sub]=f;
         d.classList.remove("busy");d.classList.add("ok");
         st.innerHTML=`<b>${qs.length}</b> questions · ${qs.filter(q=>q.type==="integer").length} integer · key ${qs.filter(q=>q.answer).length}/${qs.length}`;
       }catch(e){d.classList.remove("busy");st.textContent="Failed: "+e.message;}
@@ -675,16 +779,21 @@ function viewUpload(root){
       `${ready.length}/3 subjects uploaded${ready.length?" ("+ready.join(", ")+")":""}.`;
   }
   update();
-  mk.onclick=()=>{
+  mk.onclick=async()=>{
+    if(SUBJECTS.some(s=>!pending[s]||!pendingFiles[s])){toast("Upload all three subject PDFs before publishing");return;}
+    mk.disabled=true;
     const packs={};SUBJECTS.forEach(s=>{if(pending[s])packs[s]=pending[s];});
     const t=buildTest(name.value.trim()||"Untitled Test",packs);
+    t.id=crypto.randomUUID();
     // attach topics from planner (matched by subject + next pending date)
     SUBJECTS.forEach(s=>{const pl=S.planner.find(p=>p.subject===s&&!p.done);if(pl)t.chapter[s]=pl.topics||s;});
     t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
-    S.tests.push(t);save();
-    SUBJECTS.forEach(s=>pending[s]=null);
-    toast("Test created with "+t.questions.length+" questions");
-    go("dash");
+    try{
+      const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m);
+      cloudTests.unshift(published);S.tests.push(published);
+      SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
+      toast("Public test created · "+published.testId);go("library");
+    }catch(e){toast("Publish failed: "+e.message,5000);mk.disabled=false;status.textContent="Upload failed. Your local PDFs were not removed — try again.";}
   };
   root.appendChild(c);
 
@@ -1225,6 +1334,8 @@ $("#themeBtn").onclick=()=>{S.settings.theme=S.settings.theme==="dark"?"light":"
 /* -------------------------------- BOOT ----------------------------------- */
 applyTheme();
 render();
+loadPublicTests();
+cloudRefresh=setInterval(()=>loadPublicTests(true),15000);
 </script>
 </body>
 </html>
