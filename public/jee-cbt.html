@@ -294,9 +294,11 @@ function rowToTest(row){
 async function loadPublicTests(silent=false){
   try{
     const r=await cloudFetch("/rest/v1/public_tests?select=*&is_published=eq.true&order=created_at.desc");
-    const rows=await r.json();cloudTests=rows.map(rowToTest);
+    const rows=await r.json(),before=cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
+    cloudTests=rows.map(rowToTest);
     S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
-    if(!silent)render();
+    const changed=before!==cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
+    if(!silent||(changed&&(route==="dash"||route==="library")))render();
     const slug=new URLSearchParams(location.search).get("test");
     if(slug&&!window.__sharedTestOpened){const t=cloudTests.find(x=>x.shareSlug===slug);if(t){window.__sharedTestOpened=true;startExam(t.id);}}
   }catch(e){if(!silent)toast("Public Test Library could not load");}
