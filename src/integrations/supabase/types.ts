@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      public_tests: {
+        Row: {
+          chemistry_pdf_path: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          is_published: boolean
+          mathematics_pdf_path: string
+          parsed_test: Json
+          physics_pdf_path: string
+          question_count: number
+          share_slug: string
+          test_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chemistry_pdf_path: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          is_published?: boolean
+          mathematics_pdf_path: string
+          parsed_test: Json
+          physics_pdf_path: string
+          question_count?: number
+          share_slug?: string
+          test_id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chemistry_pdf_path?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          is_published?: boolean
+          mathematics_pdf_path?: string
+          parsed_test?: Json
+          physics_pdf_path?: string
+          question_count?: number
+          share_slug?: string
+          test_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
