@@ -130,6 +130,29 @@ canvas.chart{width:100%;height:210px;display:block}
 .bar{height:8px;border-radius:6px;background:var(--blue-soft);overflow:hidden}
 .bar>i{display:block;height:100%}
 ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
+.revision-list{display:grid;gap:10px;margin-top:12px}
+.revision-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 92%,var(--blue-soft))}
+.revision-links{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.revision-link{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--blue) 35%,var(--line));border-radius:9px;background:var(--panel);color:var(--blue-d);font-size:12px;font-weight:800}
+.revision-link:hover{background:var(--blue-soft);transform:translateY(-1px)}
+.ai-shell{padding:0;overflow:hidden;border-color:color-mix(in srgb,var(--blue) 30%,var(--line))}
+.ai-hero{padding:20px;background:linear-gradient(120deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;display:flex;justify-content:space-between;gap:18px;align-items:center}
+.ai-hero .muted{color:rgba(255,255,255,.72)}
+.ai-score{min-width:112px;text-align:center;padding:12px;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(255,255,255,.09)}
+.ai-score b{display:block;font-size:28px;color:#fff}
+.ai-body{padding:18px}
+.ai-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.ai-metric{padding:14px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 90%,var(--blue-soft));position:relative;overflow:hidden}
+.ai-metric:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--blue)}
+.ai-metric .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}.ai-metric .v{font-size:24px;font-weight:900;margin-top:4px}
+.ai-panels{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ai-panel{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.ai-panel h4{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.ai-signal{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:9px 0;font-size:13px}
+.ai-signal .bar{grid-column:1/-1;height:6px}.ai-signal .bar i{background:var(--green)}
+.ai-panel.warn .ai-signal .bar i{background:var(--amber)}
+.ai-recs{margin-top:12px;border-left:4px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0}
+@media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}}
 </style>
 </head>
 <body>
@@ -876,6 +899,30 @@ function plannerRow(r){
   const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
   b.onclick=()=>{r.done=!r.done;save();render();};
   d.appendChild(b);return d;
+}
+
+function revisionTopics(r){
+  const raw=(r.topics||r.subject||"").split(/;|•|\||,(?=\s*[A-Z])/).map(x=>x.trim()).filter(Boolean);
+  return [...new Set(raw)].slice(0,3);
+}
+function revisionVideoLink(subject,topic){
+  const source=subject==="Physics"?"Eduniti":subject==="Chemistry"?"DexterChem":"MathonGo";
+  return "https://www.youtube.com/results?search_query="+encodeURIComponent(`${topic} JEE Main one shot short revision ${source}`);
+}
+function revisionSection(rows){
+  const upcoming=rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(Date.now()))).slice(0,6);
+  const c=el("div","card");
+  c.innerHTML=`<div class="row" style="justify-content:space-between"><div><h3>Upcoming Test Revision</h3><div class="small muted">Short revision and one-shot links matched to the scheduled syllabus.</div></div><span class="badge">${upcoming.length} tests</span></div>`;
+  if(!upcoming.length){c.innerHTML+=`<p class="muted small" style="margin-top:12px">No upcoming syllabus is available.</p>`;return c;}
+  const list=el("div","revision-list");
+  upcoming.forEach(r=>{
+    const topics=revisionTopics(r),item=el("div","revision-item");
+    item.innerHTML=`<div><b>${esc(r.name)}</b><div class="small muted">${fmtDate(r.date)} · ${esc(r.subject)}</div><div class="small" style="margin-top:4px">${esc(r.topics||r.subject)}</div></div>`;
+    const links=el("div","revision-links");
+    topics.forEach(topic=>{const a=el("a","revision-link",`▶ ${esc(topic).slice(0,28)}`);a.href=revisionVideoLink(r.subject,topic);a.target="_blank";a.rel="noopener noreferrer";a.title=`Find a short ${r.subject} revision video for ${topic}`;links.appendChild(a);});
+    item.appendChild(links);list.appendChild(item);
+  });
+  c.appendChild(list);return c;
 }
 
 /* ------------------------------ ANALYTICS -------------------------------- */
