@@ -883,6 +883,7 @@ function viewPlanner(root){
   const up=el("div","card");up.innerHTML=`<h3>Upcoming Tests</h3>`;
   rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
   root.appendChild(up);
+  root.appendChild(revisionSection(rows));
   const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
   const dl=rows.filter(r=>r.done);
   if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
@@ -1126,40 +1127,32 @@ function viewResult(root){
   root.appendChild(sc);
 
   // AI analysis
-  const ac=el("div","card");
-  ac.innerHTML=`<h3>🤖 AI Performance Analysis</h3>
-   <div class="grid g3" style="margin:10px 0">
-     ${statCard("Expected JEE Score",ai.score300+"/300")}
-     ${statCard("Expected Percentile",ai.percentile)}
-     ${statCard("Expected Rank","~"+ai.rank.toLocaleString("en-IN"))}
+  const ac=el("div","card ai-shell");
+  ac.innerHTML=`<div class="ai-hero"><div><span class="badge a">AI PERFORMANCE REPORT</span><h3 style="margin-top:8px">Your Test Intelligence</h3><div class="muted small">A focused diagnosis of score potential, accuracy, speed and revision priorities.</div></div><div class="ai-score"><span class="small">Readiness</span><b>${Math.min(100,Math.round((r.all.accuracy+Number(ai.percentile))/2))}%</b><span class="small">JEE Main</span></div></div>
+   <div class="ai-body"><div class="ai-metrics">
+     <div class="ai-metric"><div class="k">Expected JEE Score</div><div class="v">${ai.score300}<span class="muted small"> /300</span></div></div>
+     <div class="ai-metric"><div class="k">Expected Percentile</div><div class="v">${ai.percentile}</div></div>
+     <div class="ai-metric"><div class="k">Expected Rank</div><div class="v">~${ai.rank.toLocaleString("en-IN")}</div></div>
    </div>
-   <div class="grid g2">
-     <div><h4>Mistake Pattern</h4><ul class="tight small">
+   <div class="ai-panels">
+     <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4><ul class="tight small">
        <li>Conceptual mistakes: <b>${ai.conceptual.length}</b></li>
        <li>Calculation mistakes: <b>${ai.calc.length}</b></li>
        <li>Careless mistakes: <b>${ai.careless.length}</b></li>
        <li>Guessed attempts: <b>${ai.guesses.length}</b> (accuracy ${ai.guessAcc}%)</li>
        <li>Negative marking: <b>-${r.all.neg}</b> across ${r.all.wrong} wrong answers</li>
        <li>Easy questions missed: <b>${ai.easyMissed.length}</b> · Hard solved: <b>${ai.hardSolved.length}</b></li>
-     </ul></div>
-     <div><h4>Timing</h4><ul class="tight small">
+      </ul></div>
+      <div class="ai-panel"><h4>⏱ Timing Intelligence</h4><ul class="tight small">
        <li>Average per question: <b>${fmtTime(ai.avgT)}</b></li>
        ${SUBJECTS.filter(s=>r.per[s].total).map(s=>`<li>${s}: <b>${fmtTime(r.per[s].time/r.per[s].total)}</b> per question (${fmtTime(r.per[s].time)} total)</li>`).join("")}
        <li>Improvement trend: <b>${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b> since first test</li>
      </ul></div>
-     <div><h4>Strong Areas</h4><ul class="tight small">
-       <li>Subject: <b>${ai.strongSub[0]}</b></li>
-       ${ai.strongCh.map(c=>`<li>${esc(c.name).slice(0,60)} — ${c.acc}%</li>`).join("")}
-     </ul></div>
-     <div><h4>Weak Areas / Priority Chapters</h4><ul class="tight small">
-       <li>Subject: <b>${ai.strongSub[ai.strongSub.length-1]}</b></li>
-       ${ai.weakCh.map(c=>`<li>${esc(c.name).slice(0,60)} — ${c.acc}%</li>`).join("")}
-     </ul></div>
+      <div class="ai-panel"><h4>✓ Strong Areas</h4><div class="ai-signal"><span>${ai.strongSub[0]}</span><b>${r.per[ai.strongSub[0]]?.accuracy||0}%</b><div class="bar"><i style="width:${r.per[ai.strongSub[0]]?.accuracy||0}%"></i></div></div>${ai.strongCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
+      <div class="ai-panel warn"><h4>↗ Priority Chapters</h4><div class="ai-signal"><span>${ai.strongSub[ai.strongSub.length-1]}</span><b>Focus</b><div class="bar"><i style="width:${r.per[ai.strongSub[ai.strongSub.length-1]]?.accuracy||0}%"></i></div></div>${ai.weakCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
    </div>
-   <h4 style="margin-top:12px">Most Time Consuming Questions</h4>
-   <div class="small">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")}</div>
-   <h4 style="margin-top:12px">Study Recommendations</h4>
-   <ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+    <div class="ai-recs"><h4>Personalized Study Plan</h4><ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div style="margin-top:14px"><h4>Most Time Consuming Questions</h4><div class="small muted">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")||"No timing outliers detected."}</div></div></div>`;
   root.appendChild(ac);
 
   // question review
