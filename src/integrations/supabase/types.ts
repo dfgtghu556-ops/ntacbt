@@ -16,9 +16,13 @@ export type Database = {
     Tables: {
       public_tests: {
         Row: {
+          attempts_count: number
+          chapters: string[]
           chemistry_pdf_path: string
           created_at: string
+          difficulty: string
           duration_minutes: number
+          exam_year: number | null
           id: string
           is_published: boolean
           mathematics_pdf_path: string
@@ -26,14 +30,20 @@ export type Database = {
           physics_pdf_path: string
           question_count: number
           share_slug: string
+          subject_chapters: Json
           test_id: string
+          test_type: string
           title: string
           updated_at: string
         }
         Insert: {
+          attempts_count?: number
+          chapters?: string[]
           chemistry_pdf_path: string
           created_at?: string
+          difficulty?: string
           duration_minutes?: number
+          exam_year?: number | null
           id?: string
           is_published?: boolean
           mathematics_pdf_path: string
@@ -41,14 +51,20 @@ export type Database = {
           physics_pdf_path: string
           question_count?: number
           share_slug?: string
+          subject_chapters?: Json
           test_id?: string
+          test_type?: string
           title: string
           updated_at?: string
         }
         Update: {
+          attempts_count?: number
+          chapters?: string[]
           chemistry_pdf_path?: string
           created_at?: string
+          difficulty?: string
           duration_minutes?: number
+          exam_year?: number | null
           id?: string
           is_published?: boolean
           mathematics_pdf_path?: string
@@ -56,7 +72,9 @@ export type Database = {
           physics_pdf_path?: string
           question_count?: number
           share_slug?: string
+          subject_chapters?: Json
           test_id?: string
+          test_type?: string
           title?: string
           updated_at?: string
         }
@@ -67,7 +85,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      register_test_attempt: { Args: { _test_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
