@@ -153,6 +153,76 @@ ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
 .ai-panel.warn .ai-signal .bar i{background:var(--amber)}
 .ai-recs{margin-top:12px;border-left:4px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0}
 @media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}}
+
+/* ============================================================
+   PERSONALIZATION LAYER — accents, density, font size, card style
+   ============================================================ */
+html[data-accent="orange"]{--blue:#f26722;--blue-d:#d9531a;--blue-l:#f57c34;--blue-soft:#fff1e8}
+html[data-accent="indigo"]{--blue:#4f46e5;--blue-d:#3d35c4;--blue-l:#6d66f0;--blue-soft:#eeedff}
+html[data-accent="emerald"]{--blue:#0f9d68;--blue-d:#0b7d53;--blue-l:#17b87c;--blue-soft:#e6f7f0}
+html[data-accent="rose"]{--blue:#e0396b;--blue-d:#bd2955;--blue-l:#ef567f;--blue-soft:#ffecf1}
+html[data-accent="sky"]{--blue:#0b7ec4;--blue-d:#0a65a0;--blue-l:#1a97e0;--blue-soft:#e7f4fd}
+html[data-accent="violet"]{--blue:#7a3ec8;--blue-d:#642fa8;--blue-l:#9257e0;--blue-soft:#f3ecff}
+html.dark[data-accent]{--blue-soft:color-mix(in srgb,var(--blue) 22%,#16131f)}
+html[data-density="compact"]{--radius:10px}
+html[data-density="compact"] .card{padding:11px;margin-bottom:11px}
+html[data-density="compact"] .wrap{padding:12px 10px 48px}
+html[data-density="compact"] .grid{gap:10px}
+html[data-fs="sm"] body{font-size:14px} html[data-fs="lg"] body{font-size:16.5px}
+html[data-cards="flat"] .card,html[data-cards="flat"] .stat{box-shadow:none}
+html[data-cards="elevated"] .card,html[data-cards="elevated"] .stat{box-shadow:0 14px 34px -18px rgba(20,10,40,.45),0 2px 8px rgba(20,10,40,.06)}
+html[data-cards="glass"] .card,html[data-cards="glass"] .stat{
+  background:color-mix(in srgb,var(--panel) 72%,transparent);backdrop-filter:blur(16px) saturate(1.25);
+  border-color:color-mix(in srgb,var(--blue) 18%,var(--line))}
+html[data-cards="glass"] body{background-image:radial-gradient(900px 420px at 8% -8%,color-mix(in srgb,var(--blue) 22%,transparent),transparent 60%),radial-gradient(700px 380px at 100% 0%,color-mix(in srgb,var(--purple) 16%,transparent),transparent 62%);background-attachment:fixed}
+html[data-anim="off"] *{animation:none !important;transition:none !important}
+
+/* ---------- premium UI primitives ---------- */
+.section-title{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.section-title .ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue-d);font-size:15px;flex:0 0 auto}
+.hero-card{background:linear-gradient(125deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;border:0;position:relative;overflow:hidden}
+.hero-card:after{content:"";position:absolute;width:320px;height:320px;border-radius:50%;background:color-mix(in srgb,var(--blue) 55%,transparent);filter:blur(70px);top:-140px;right:-90px}
+.hero-card .muted{color:rgba(255,255,255,.74)}
+.hero-card h2{color:#fff}
+.hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px;position:relative}
+.hero-stats>div{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:11px}
+.hero-stats b{display:block;font-size:22px}
+.hero-stats span{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.72)}
+@media(max-width:700px){.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:15px;display:flex;flex-direction:column;gap:10px;transition:.2s;box-shadow:var(--shadow)}
+.tcard:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
+.tcard .meta{display:flex;flex-wrap:wrap;gap:6px}
+.tcard .foot{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--blue-soft);color:var(--blue-d);border:1px solid color-mix(in srgb,var(--blue) 22%,transparent)}
+.pill.g{background:rgba(30,158,87,.14);color:var(--green);border-color:rgba(30,158,87,.3)}
+.pill.r{background:rgba(211,59,59,.14);color:var(--red);border-color:rgba(211,59,59,.3)}
+.pill.a{background:rgba(224,161,6,.16);color:#a87b04;border-color:rgba(224,161,6,.34)}
+.pill.n{background:transparent;color:var(--muted);border-color:var(--line)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:12px}
+.skel{position:relative;overflow:hidden;background:color-mix(in srgb,var(--line) 60%,var(--panel));border-radius:10px;height:14px}
+.skel:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--panel) 70%,#fff),transparent);animation:shimmer 1.3s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.empty{text-align:center;padding:34px 16px;color:var(--muted)}
+.empty .big{font-size:40px;margin-bottom:6px}
+.streak{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.streak i{width:26px;height:26px;border-radius:8px;background:var(--line);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;color:var(--muted)}
+.streak i.on{background:var(--blue);color:#fff}
+.mastery-row{display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:10px;align-items:center;margin:9px 0}
+.mastery-row .bar{grid-column:1/-1}
+.donutwrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.donut-legend{display:grid;gap:6px;font-size:13px}
+.donut-legend span{display:flex;align-items:center;gap:7px}
+.kbd{display:inline-block;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;background:var(--panel)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 12px;cursor:pointer;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--blue);color:#fff}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:10px;border:2px solid transparent;cursor:pointer}
+.swatch.on{border-color:var(--ink);box-shadow:0 0 0 3px var(--blue-soft)}
+.vidlist{display:grid;gap:8px;margin-top:10px}
+.vidlink{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);font-size:13px;font-weight:700;color:var(--ink)}
+.vidlink:hover{border-color:var(--blue);background:var(--blue-soft)}
+.vidlink small{font-weight:600;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -245,7 +315,8 @@ function imgTag(key,cls="qimg"){
   return i;
 }
 
-const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],settings:{theme:"light",candidate:"Candidate"}};
+const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],notes:{},studyLog:{},
+  settings:{theme:"system",accent:"orange",density:"comfortable",fontSize:"md",cards:"elevated",anim:"on",candidate:"Candidate"}};
 let S = load();
 function load(){
   try{
@@ -312,7 +383,10 @@ async function cloudifyTest(test,files,onProgress){
 function rowToTest(row){
   const t=row.parsed_test;
   return {...t,id:row.id,name:row.title,createdAt:new Date(row.created_at).getTime(),cloud:true,
-    testId:row.test_id,shareSlug:row.share_slug};
+    testId:row.test_id,shareSlug:row.share_slug,
+    meta:{year:row.exam_year||null,difficulty:row.difficulty||"Moderate",type:row.test_type||"Full Syllabus",
+      chapters:row.chapters||[],subjectChapters:row.subject_chapters||{},attempts:row.attempts_count||0,
+      durationMin:row.duration_minutes||Math.round((t.duration||10800)/60)}};
 }
 async function loadPublicTests(silent=false){
   try{
@@ -326,14 +400,25 @@ async function loadPublicTests(silent=false){
     if(slug&&!window.__sharedTestOpened){const t=cloudTests.find(x=>x.shareSlug===slug);if(t){window.__sharedTestOpened=true;startExam(t.id);}}
   }catch(e){if(!silent)toast("Public Test Library could not load");}
 }
-async function publishPublicTest(test,files,onProgress){
+async function publishPublicTest(test,files,onProgress,meta={}){
   const publicTest=await cloudifyTest(test,files,onProgress);
   onProgress("Publishing test to the public library…");
+  const subjectChapters=meta.subjectChapters||test.chapter||{};
+  const chapters=[...new Set(Object.values(subjectChapters).join(",").split(/[,;•|]/).map(x=>x.trim()).filter(Boolean))];
   const payload={id:test.id,title:test.name,physics_pdf_path:`${test.id}/source/physics.pdf`,
     chemistry_pdf_path:`${test.id}/source/chemistry.pdf`,mathematics_pdf_path:`${test.id}/source/mathematics.pdf`,
-    parsed_test:publicTest,question_count:test.questions.length,duration_minutes:Math.round(test.duration/60)};
+    parsed_test:publicTest,question_count:test.questions.length,duration_minutes:Math.round(test.duration/60),
+    exam_year:meta.year||new Date().getFullYear(),difficulty:meta.difficulty||"Moderate",
+    test_type:meta.type||"Full Syllabus",chapters,subject_chapters:subjectChapters};
   const r=await cloudFetch("/rest/v1/public_tests",{method:"POST",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(payload)});
   return rowToTest((await r.json())[0]);
+}
+/** Public counter — increments only the attempt tally of a published test. */
+async function registerAttempt(testId){
+  try{
+    await cloudFetch("/rest/v1/rpc/register_test_attempt",{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({_test_id:testId})});
+  }catch(e){/* attempt counting is best-effort and never blocks the exam */}
 }
 function shareTest(t){
   const url=location.origin+location.pathname+"?test="+encodeURIComponent(t.shareSlug);
@@ -643,7 +728,8 @@ function analyse(test,attempt){
 
 /* ------------------------------- 6. ROUTER ------------------------------- */
 const ROUTES=[["dash","Dashboard"],["library","Test Library"],["upload","Upload PDFs"],["planner","Planner"],
-  ["analytics","Analytics"],["practice","Practice"],["review","Review"],["search","Search"]];
+  ["analytics","Analytics"],["mastery","Mastery"],["notebook","Mistake Notebook"],["formulas","Formulas"],
+  ["practice","Practice"],["review","Review"],["search","Search"],["settings","Settings"]];
 let route="dash", routeArg=null;
 function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
 function renderNav(){
@@ -654,6 +740,7 @@ function render(){
   renderNav();
   const a=$("#app"); a.innerHTML="";
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
+    mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
     practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
 }
 
@@ -790,15 +877,32 @@ function viewUpload(root){
     grid.appendChild(d);
   });
   c.appendChild(grid);
+  // ---- test details (powers the public library filters) ----
+  const metaBox=el("div");metaBox.style.marginTop="16px";
+  metaBox.innerHTML=`<div class="section-title"><span class="ico">🏷</span><h3 style="margin:0">Test details</h3></div>
+    <div class="small muted">These tags are attached to the public test so everyone can filter the library.</div>`;
+  const name=el("input");name.type="text";name.placeholder="Test name";name.value="HWT Test "+(S.tests.length+1);
+  const year=el("input");year.type="number";year.min="2015";year.max="2035";year.value=new Date().getFullYear();
+  const diff=el("select");["Easy","Moderate","Hard","Advanced"].forEach(x=>{const o=el("option",null,x);o.value=x;diff.appendChild(o);});
+  diff.value="Moderate";
+  const type=el("select");["Full Syllabus","Part Test","HWT","Chapter Test","PYQ Paper","Revision Test"].forEach(x=>{const o=el("option",null,x);o.value=x;type.appendChild(o);});
+  const chapIn={};
+  const mgrid=el("div","filters");
+  const field=(label,node)=>{const w=el("div");w.style.display="grid";w.style.gap="4px";
+    w.appendChild(el("label","small muted",label));node.style.width="100%";w.appendChild(node);return w;};
+  mgrid.append(field("Test name",name),field("Year",year),field("Difficulty",diff),field("Test type",type));
+  SUBJECTS.forEach(s=>{const i=el("input");i.type="text";i.placeholder="e.g. Rotation, Thermodynamics";chapIn[s]=i;
+    mgrid.appendChild(field(s+" chapters",i));});
+  metaBox.appendChild(mgrid);c.appendChild(metaBox);
+
   const foot=el("div","row");foot.style.marginTop="14px";
-  const name=el("input");name.type="text";name.placeholder="Test name";name.value="HWT Test "+(S.tests.length+1);name.style.flex="1";
-  const mk=el("button","btn","Create Test (75 Q)");mk.disabled=true;
-  foot.appendChild(name);foot.appendChild(mk);c.appendChild(foot);
+  const mk=el("button","btn","Publish Test to Library");mk.disabled=true;
+  foot.appendChild(mk);c.appendChild(foot);
   const status=el("div","small muted");status.style.marginTop="8px";c.appendChild(status);
   function update(){
     const ready=SUBJECTS.filter(s=>pending[s]);
     mk.disabled=ready.length===0;
-    status.textContent=ready.length===3?"All three subjects ready — create the merged paper.":
+    status.textContent=ready.length===3?"All three subjects ready — publish the merged paper.":
       `${ready.length}/3 subjects uploaded${ready.length?" ("+ready.join(", ")+")":""}.`;
   }
   update();
@@ -808,11 +912,16 @@ function viewUpload(root){
     const packs={};SUBJECTS.forEach(s=>{if(pending[s])packs[s]=pending[s];});
     const t=buildTest(name.value.trim()||"Untitled Test",packs);
     t.id=crypto.randomUUID();
-    // attach topics from planner (matched by subject + next pending date)
-    SUBJECTS.forEach(s=>{const pl=S.planner.find(p=>p.subject===s&&!p.done);if(pl)t.chapter[s]=pl.topics||s;});
+    // chapters: manual entry wins, otherwise fall back to the next planner slot
+    SUBJECTS.forEach(s=>{
+      const manual=chapIn[s].value.trim();
+      const pl=S.planner.find(p=>p.subject===s&&!p.done);
+      t.chapter[s]=manual||(pl&&pl.topics)||s;
+    });
     t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
+    const meta={year:+year.value||new Date().getFullYear(),difficulty:diff.value,type:type.value,subjectChapters:t.chapter};
     try{
-      const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m);
+      const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m,meta);
       cloudTests.unshift(published);S.tests.push(published);
       SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
       toast("Public test created · "+published.testId);go("library");
@@ -945,6 +1054,21 @@ function lineChart(cv,data,labels,title,color="#0b57a4"){
   data.forEach((v,i)=>{c.fillStyle=color;c.beginPath();c.arc(X(i),Y(v),3.5,0,7);c.fill();});
   c.fillStyle=getComputedStyle(document.body).getPropertyValue("--muted");c.font="11px sans-serif";
   c.fillText(title,pad.l,12);
+}
+function donutChart(cv,slices,centerText){
+  const c=cv.getContext("2d"),w=cv.width,h=cv.height,R=Math.min(w,h)/2-6,cx=w/2,cy=h/2;
+  c.clearRect(0,0,w,h);
+  const total=slices.reduce((s,[v])=>s+v,0)||1;
+  let a0=-Math.PI/2;
+  slices.forEach(([v,col])=>{
+    const a1=a0+(v/total)*Math.PI*2;
+    c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,R,a0,a1);c.closePath();c.fillStyle=col;c.fill();a0=a1;
+  });
+  c.globalCompositeOperation="destination-out";
+  c.beginPath();c.arc(cx,cy,R*0.62,0,Math.PI*2);c.fill();
+  c.globalCompositeOperation="source-over";
+  c.fillStyle=getComputedStyle(document.body).getPropertyValue("--ink")||"#000";
+  c.font="bold 46px sans-serif";c.textAlign="center";c.fillText(centerText,cx,cy+16);c.textAlign="left";
 }
 function barChart(cv,vals,labels,colors){
   const dpr=devicePixelRatio||1,w=cv.clientWidth,h=210;
@@ -1155,6 +1279,57 @@ function viewResult(root){
     <div style="margin-top:14px"><h4>Most Time Consuming Questions</h4><div class="small muted">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")||"No timing outliers detected."}</div></div></div>`;
   root.appendChild(ac);
 
+  // ---- visual analytics: answer split, subject accuracy, chapter table ----
+  const vis=el("div","card");
+  vis.innerHTML=`<div class="section-title"><span class="ico">🧠</span><h3 style="margin:0">Visual Breakdown</h3></div>
+    <div class="small muted">Answer distribution, subject accuracy and chapter-level detail for this attempt.</div>`;
+  const dw=el("div","donutwrap");dw.style.marginTop="14px";
+  const dcv=el("canvas");dcv.style.width="190px";dcv.style.height="190px";dcv.width=380;dcv.height=380;
+  dw.appendChild(dcv);
+  dw.appendChild(el("div","donut-legend",
+    `<span><i class="dot" style="background:var(--green)"></i>Correct — <b>${r.all.correct}</b></span>
+     <span><i class="dot" style="background:var(--red)"></i>Wrong — <b>${r.all.wrong}</b></span>
+     <span><i class="dot" style="background:var(--line)"></i>Skipped — <b>${r.all.skipped}</b></span>
+     <span class="small muted">${r.all.accuracy}% accuracy on ${r.all.correct+r.all.wrong} attempts</span>`));
+  vis.appendChild(dw);
+  setTimeout(()=>donutChart(dcv,[
+    [r.all.correct,"#1e9e57"],[r.all.wrong,"#d33b3b"],
+    [r.all.skipped,getComputedStyle(document.body).getPropertyValue("--line").trim()||"#eee"]],r.all.percentage+"%"),0);
+  const accCv=el("canvas","chart");accCv.style.marginTop="14px";vis.appendChild(accCv);
+  setTimeout(()=>barChart(accCv,SUBJECTS.map(s=>r.per[s]?pct(r.per[s].correct,r.per[s].correct+r.per[s].wrong):0),
+    SUBJECTS.map(s=>s.slice(0,4)),SUBJECTS.map(s=>SUBCOLOR[s])),0);
+  const chTb=el("table");chTb.style.marginTop="14px";
+  chTb.innerHTML=`<tr><th>Chapter</th><th>Q</th><th>Correct</th><th>Wrong</th><th>Accuracy</th><th>Time</th></tr>`;
+  ai.chapters.slice().sort((a,b)=>a.acc-b.acc).forEach(c=>{
+    chTb.innerHTML+=`<tr><td>${esc(c.name).slice(0,52)}</td><td>${c.n}</td><td>${c.c}</td><td>${c.w}</td>
+      <td><b style="color:${c.acc<50?"var(--red)":c.acc<75?"var(--amber)":"var(--green)"}">${c.acc}%</b></td><td>${fmtTime(c.t)}</td></tr>`;});
+  vis.appendChild(chTb);
+  root.appendChild(vis);
+
+  // ---- comparison with the previous attempt ----
+  const doneAll=S.attempts.filter(x=>x.submittedAt).sort((x,y)=>x.submittedAt-y.submittedAt);
+  const idx=doneAll.findIndex(x=>x.id===a.id), prev=idx>0?doneAll[idx-1]:null;
+  if(prev){
+    const delta=(cur,old,suffix="")=>{const d=Math.round((cur-old)*10)/10;
+      return `<b style="color:${d>=0?"var(--green)":"var(--red)"}">${d>=0?"+":""}${d}${suffix}</b>`;};
+    root.appendChild(el("div","card",`<div class="section-title"><span class="ico">⚖</span><h3 style="margin:0">Compared to your previous test</h3></div>
+      <div class="small muted">${esc((testById(prev.testId)||{}).name||"Previous test")} · ${fmtDate(prev.submittedAt)}</div>
+      <div class="grid g4" style="margin-top:12px">
+        <div class="stat"><div class="v">${delta(r.all.marks,prev.result.all.marks)}</div><div class="k">Marks</div></div>
+        <div class="stat"><div class="v">${delta(r.all.accuracy,prev.result.all.accuracy,"%")}</div><div class="k">Accuracy</div></div>
+        <div class="stat"><div class="v">${delta(r.all.correct,prev.result.all.correct)}</div><div class="k">Correct</div></div>
+        <div class="stat"><div class="v">${delta(prev.result.all.skipped,r.all.skipped)}</div><div class="k">Fewer Skipped</div></div>
+      </div>`));
+  }
+
+  // ---- revision videos for this attempt's weak chapters ----
+  const recVids=ai.weakCh.slice(0,6).map(c=>{
+    const row=ai.rows.find(x=>x.chapter===c.name);
+    return {topic:c.name.replace(/\s*—.*$/,""),subject:(row&&row.q.subject)||"Physics",
+      reason:`${c.acc}% accuracy in this test · ${c.w} wrong, ${c.s} skipped`};
+  });
+  root.appendChild(videoCard("Revision videos for this test","One-shot and short revision links for the chapters that cost you marks.",recVids));
+
   // question review
   const rc=el("div","card");
   rc.innerHTML=`<h3>Question Review</h3>`;
@@ -1202,11 +1377,25 @@ function viewResult(root){
 
 /* --------------------------- 6. EXAM RUNTIME ----------------------------- */
 let EX=null; // {test, attempt, cur, timerId, tick}
-function startExam(testId){
+const RESUME_KEY="jeecbt.resume";
+/** Snapshot the live attempt so a crash, refresh or closed tab loses nothing. */
+function examAutosave(){
+  if(!EX)return;
+  try{localStorage.setItem(RESUME_KEY,JSON.stringify({testId:EX.test.id,attempt:EX.attempt,cur:EX.cur,left:EX.left,at:Date.now()}));}
+  catch(e){/* quota — the attempt still lives in memory */}
+}
+function clearAutosave(){try{localStorage.removeItem(RESUME_KEY);}catch(e){}}
+function pendingResume(){
+  try{const r=JSON.parse(localStorage.getItem(RESUME_KEY)||"null");
+    return r&&r.left>10&&testById(r.testId)?r:null;}catch(e){return null;}
+}
+function startExam(testId,resume){
   const t=testById(testId);if(!t)return;
-  const attempt={id:uid(),testId,startedAt:Date.now(),responses:{},submittedAt:null};
-  t.questions.forEach(q=>attempt.responses[q.id]={ans:null,status:"notvisited",time:0,changes:0});
-  EX={test:t,attempt,cur:0,left:t.duration,lastTick:Date.now(),warned:{}};
+  const attempt=resume?resume.attempt:{id:uid(),testId,startedAt:Date.now(),responses:{},submittedAt:null};
+  t.questions.forEach(q=>attempt.responses[q.id]=attempt.responses[q.id]||{ans:null,status:"notvisited",time:0,changes:0});
+  EX={test:t,attempt,cur:resume?resume.cur:0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{}};
+  if(!resume&&t.cloud)registerAttempt(t.id);
+  examAutosave();
   $("#examView").classList.remove("hide");
   $("#exTitle").textContent=t.name;
   $("#exCand").textContent=S.settings.candidate;
@@ -1311,6 +1500,7 @@ function paintPalette(){
     });
     p.appendChild(g);
   });
+  examAutosave();
 }
 function summaryHTML(){
   const c=counts();
@@ -1326,6 +1516,7 @@ function startTimer(){
     t.className="timer"+(EX.left<=300?" crit":EX.left<=1800?" warn":"");
     [[1800,"30 minutes remaining"],[600,"10 minutes remaining"],[300,"5 minutes remaining"],[60,"1 minute remaining"]]
       .forEach(([s,m])=>{if(EX.left===s&&!EX.warned[s]){EX.warned[s]=1;toast("⚠ "+m,4000);}});
+    if(EX.left%5===0){commitTime();examAutosave();}
     if(EX.left<=0)submitExam(true);
   };
   t.textContent=fmtTime(EX.left);
@@ -1340,10 +1531,10 @@ function submitExam(auto){
   attempt.result=evaluate(test,attempt.responses);
   Object.values(attempt.responses).forEach(r=>r.time=Math.round(r.time));
   S.attempts.push(attempt);
-  // mark matching planner entry as done
+  S.studyLog[todayKey(Date.now())]=(S.studyLog[todayKey(Date.now())]||0)+1;
   const pl=S.planner.find(p=>!p.done&&todayKey(p.date)===todayKey(Date.now()));
   if(pl)pl.done=true;
-  save();
+  save();clearAutosave();
   const id=attempt.id;
   endExamUI();
   if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
@@ -1353,23 +1544,430 @@ function submitExam(auto){
 /* exam controls */
 $("#fsBtn").onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});};
 $("#palBtn").onclick=()=>$("#exPal").classList.toggle("collapsed");
+function shortcutHelp(){
+  const m=el("div","modal");
+  m.innerHTML=`<div class="box"><h3>Keyboard shortcuts</h3>
+    <div class="grid g2 small" style="margin:10px 0">
+      <div><span class="kbd">←</span> / <span class="kbd">→</span> previous / next</div>
+      <div><span class="kbd">1</span>–<span class="kbd">4</span> choose option</div>
+      <div><span class="kbd">S</span> save &amp; next</div>
+      <div><span class="kbd">M</span> mark for review</div>
+      <div><span class="kbd">C</span> clear response</div>
+      <div><span class="kbd">B</span> bookmark question</div>
+      <div><span class="kbd">P</span> toggle palette</div>
+      <div><span class="kbd">?</span> this help</div>
+    </div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-x>Got it</button></div></div>`;
+  m.querySelector("[data-x]").onclick=()=>m.remove();
+  document.body.appendChild(m);
+}
 document.addEventListener("keydown",e=>{
   if(!EX||$("#examView").classList.contains("hide"))return;
   if(e.target.tagName==="INPUT")return;
+  const k=e.key.toLowerCase();
   if(e.key==="ArrowRight")move(1);
   else if(e.key==="ArrowLeft")move(-1);
   else if(/^[1-4]$/.test(e.key)){const q=cq();if(q.type==="mcq"){const o=q.options[+e.key-1];if(o){res(q).ans=o.label;res(q).status="answered";drawQuestion();}}}
-  else if(e.key.toLowerCase()==="m"){const r=res(cq());r.status=r.ans?"markedans":"marked";paintPalette();}
-  else if(e.key.toLowerCase()==="c"){const r=res(cq());r.ans=null;r.status="notanswered";drawQuestion();}
+  else if(k==="m"){const r=res(cq());r.status=r.ans?"markedans":"marked";paintPalette();}
+  else if(k==="c"){const r=res(cq());r.ans=null;r.status="notanswered";drawQuestion();}
+  else if(k==="s"){const r=res(cq());r.status=r.ans?"answered":"notanswered";move(1,true);}
+  else if(k==="p"){$("#exPal").classList.toggle("collapsed");}
+  else if(k==="b"){const id=cq().id;const i=S.bookmarks.indexOf(id);i<0?S.bookmarks.push(id):S.bookmarks.splice(i,1);save();toast(i<0?"Bookmarked":"Bookmark removed",1200);}
+  else if(e.key==="?"||k==="h")shortcutHelp();
 });
-window.addEventListener("beforeunload",e=>{if(EX){e.preventDefault();e.returnValue="";}});
+window.addEventListener("beforeunload",e=>{if(EX){examAutosave();e.preventDefault();e.returnValue="";}});
 
-/* ------------------------------- THEME ----------------------------------- */
+/* ==========================================================================
+   7. THEME + PERSONALIZATION
+   ========================================================================== */
+const ACCENTS=[["orange","#f26722"],["indigo","#4f46e5"],["emerald","#0f9d68"],["rose","#e0396b"],["sky","#0b7ec4"],["violet","#7a3ec8"]];
+const systemDark=()=>window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
 function applyTheme(){
-  document.documentElement.classList.toggle("dark",S.settings.theme==="dark");
-  $("#themeBtn").textContent=S.settings.theme==="dark"?"☀️":"🌙";
+  const st=S.settings, root=document.documentElement;
+  const dark=st.theme==="dark"||(st.theme==="system"&&systemDark());
+  root.classList.toggle("dark",dark);
+  root.dataset.accent=st.accent||"orange";
+  root.dataset.density=st.density||"comfortable";
+  root.dataset.fs=st.fontSize||"md";
+  root.dataset.cards=st.cards||"elevated";
+  root.dataset.anim=st.anim||"on";
+  $("#themeBtn").textContent=st.theme==="system"?"🖥":dark?"☀️":"🌙";
+  $("#themeBtn").title="Theme: "+(st.theme||"system");
 }
-$("#themeBtn").onclick=()=>{S.settings.theme=S.settings.theme==="dark"?"light":"dark";save();applyTheme();render();};
+$("#themeBtn").onclick=()=>{
+  const order=["light","dark","system"];
+  S.settings.theme=order[(order.indexOf(S.settings.theme)+1)%3];
+  save();applyTheme();toast("Theme: "+S.settings.theme,1200);
+};
+if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(S.settings.theme==="system")applyTheme();});
+
+function viewSettings(root){
+  const st=S.settings;
+  const c=el("div","card");
+  c.innerHTML=`<div class="section-title"><span class="ico">🎨</span><h2 style="margin:0">Theme &amp; Personalization</h2></div>
+    <div class="muted small">Every preference is stored on this device only.</div>`;
+  const block=(label,node,hint)=>{const w=el("div");w.style.margin="16px 0";
+    w.appendChild(el("h4",null,label));if(hint)w.appendChild(el("div","small muted",hint));
+    node.style.marginTop="8px";w.appendChild(node);return w;};
+  const seg=(opts,cur,fn)=>{const s=el("div","seg");
+    opts.forEach(([v,l])=>{const b=el("button",v===cur?"on":"",l);b.onclick=()=>{fn(v);save();applyTheme();render();};s.appendChild(b);});return s;};
+  c.appendChild(block("Appearance",seg([["light","☀ Light"],["dark","🌙 Dark"],["system","🖥 System"]],st.theme,v=>st.theme=v)));
+  const sw=el("div","swatches");
+  ACCENTS.forEach(([k,hex])=>{const b=el("button","swatch"+(st.accent===k?" on":""));b.style.background=hex;b.title=k;
+    b.onclick=()=>{st.accent=k;save();applyTheme();render();};sw.appendChild(b);});
+  c.appendChild(block("Accent colour",sw));
+  c.appendChild(block("Card style",seg([["flat","Flat"],["elevated","Elevated"],["glass","Glass"]],st.cards,v=>st.cards=v),"Glass adds a frosted, gradient-lit surface."));
+  c.appendChild(block("Layout density",seg([["comfortable","Comfortable"],["compact","Compact"]],st.density,v=>st.density=v)));
+  c.appendChild(block("Font size",seg([["sm","Small"],["md","Medium"],["lg","Large"]],st.fontSize,v=>st.fontSize=v)));
+  c.appendChild(block("Animations",seg([["on","Enabled"],["off","Reduced"]],st.anim,v=>st.anim=v),"Reduced motion disables all transitions."));
+  const nameIn=el("input");nameIn.type="text";nameIn.value=st.candidate||"Candidate";nameIn.style.maxWidth="320px";
+  nameIn.oninput=()=>{st.candidate=nameIn.value||"Candidate";save();};
+  c.appendChild(block("Candidate name",nameIn,"Shown on the exam header, exactly like the NTA console."));
+  root.appendChild(c);
+
+  const d=el("div","card");
+  d.innerHTML=`<div class="section-title"><span class="ico">🧹</span><h3 style="margin:0">Local data</h3></div>
+    <div class="small muted">Public test papers live in the cloud. Attempts, bookmarks, notes and planner data are local.</div>`;
+  const row=el("div","row");row.style.marginTop="12px";
+  const exp=el("button","btn ghost sm","Export my data");
+  exp.onclick=()=>{const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+    const a=el("a");a.href=URL.createObjectURL(blob);a.download="jee-cbt-progress.json";a.click();};
+  const clr=el("button","btn red sm","Reset local progress");
+  clr.onclick=()=>confirmBox("Reset local progress?","Attempts, bookmarks, notes and planner entries on this device will be deleted. Public tests are not affected.",
+    ()=>{const keep=S.settings;S=JSON.parse(JSON.stringify(DEFAULT));S.settings=keep;save();loadPublicTests();toast("Local progress cleared");go("dash");},"Reset");
+  row.append(exp,clr);d.appendChild(row);root.appendChild(d);
+}
+
+/* ==========================================================================
+   8. STUDY INTELLIGENCE — streaks, mastery, notebook, revision videos
+   ========================================================================== */
+function streakInfo(){
+  const days=[];let streak=0;
+  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);days.push({key:todayKey(d),label:"SMTWTFS"[d.getDay()],on:!!S.studyLog[todayKey(d)]});}
+  for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);
+    if(S.studyLog[todayKey(d)])streak++;else if(i>0)break;}
+  const week=days.filter(d=>d.on).length;
+  return {days:days.reverse(),streak,week};
+}
+function chapterMastery(){
+  const acc={};
+  S.attempts.filter(a=>a.submittedAt).forEach(a=>{
+    const t=testById(a.testId);if(!t)return;
+    t.questions.forEach(q=>{
+      const key=q.chapter||q.subject;const o=acc[key]=acc[key]||{c:0,n:0,sub:q.subject,time:0};
+      const r=a.responses[q.id]||{};o.n++;o.time+=r.time||0;if(isRight(q,r.ans))o.c++;});});
+  return Object.entries(acc).map(([name,v])=>({name,sub:v.sub,n:v.n,acc:pct(v.c,v.n),
+    level:pct(v.c,v.n)>=85?"Mastered":pct(v.c,v.n)>=70?"Strong":pct(v.c,v.n)>=50?"Developing":"Needs work"}))
+    .sort((a,b)=>a.acc-b.acc);
+}
+function wrongQuestions(){
+  const out=[];const seen=new Set();
+  S.attempts.filter(a=>a.submittedAt).slice().reverse().forEach(a=>{
+    const t=testById(a.testId);if(!t)return;
+    t.questions.forEach(q=>{
+      const r=a.responses[q.id]||{};
+      if(r.ans==null||r.ans===""||isRight(q,r.ans))return;
+      if(seen.has(q.id))return;seen.add(q.id);
+      out.push({q,t,ans:r.ans,when:a.submittedAt,time:r.time||0});});});
+  return out;
+}
+function videoCard(title,subtitle,items){
+  const c=el("div","card");
+  c.innerHTML=`<div class="section-title"><span class="ico">▶</span><h3 style="margin:0">${esc(title)}</h3></div>
+    <div class="small muted">${esc(subtitle)}</div>`;
+  if(!items.length){c.innerHTML+=`<div class="empty"><div class="big">🎬</div>Complete a test to unlock targeted revision videos.</div>`;return c;}
+  const list=el("div","vidlist");
+  items.slice(0,8).forEach(it=>{
+    const a=el("a","vidlink",`<span>▶ ${esc(it.topic)}<br><small>${esc(it.reason)}</small></span><span class="pill n">${esc(it.subject)}</span>`);
+    a.href=revisionVideoLink(it.subject,it.topic);a.target="_blank";a.rel="noopener noreferrer";
+    list.appendChild(a);
+  });
+  c.appendChild(list);return c;
+}
+function weakVideoItems(){
+  return chapterMastery().filter(c=>c.acc<75).slice(0,8)
+    .map(c=>({topic:c.name.replace(/\s*—.*$/,""),subject:c.sub||"Physics",reason:`${c.acc}% accuracy across ${c.n} attempted questions`}));
+}
+function viewMastery(root){
+  const rows=chapterMastery();
+  root.appendChild(el("div","card",`<div class="section-title"><span class="ico">📈</span><h2 style="margin:0">Chapter Mastery Tracker</h2></div>
+    <div class="muted small">Accuracy per chapter across every attempt, updated automatically.</div>`));
+  if(!rows.length){root.appendChild(el("div","card",`<div class="empty"><div class="big">🧭</div>Attempt a test to start building your mastery map.</div>`));return;}
+  const counts={Mastered:0,Strong:0,Developing:0,"Needs work":0};rows.forEach(r=>counts[r.level]++);
+  root.appendChild(el("div","grid g4",
+    statCard("Mastered",counts.Mastered)+statCard("Strong",counts.Strong)+
+    statCard("Developing",counts.Developing)+statCard("Needs Work",counts["Needs work"])));
+  SUBJECTS.forEach(s=>{
+    const list=rows.filter(r=>r.sub===s);if(!list.length)return;
+    const c=el("div","card");
+    c.innerHTML=`<div class="section-title"><span class="ico" style="color:${SUBCOLOR[s]}">●</span><h3 style="margin:0">${s}</h3></div>`;
+    list.forEach(r=>{
+      const d=el("div","mastery-row");
+      d.innerHTML=`<div><b>${esc(r.name).slice(0,60)}</b><div class="small muted">${r.n} questions · ${r.level}</div></div>
+        <div style="text-align:right"><b>${r.acc}%</b></div>
+        <div class="bar"><i style="width:${r.acc}%;background:${r.acc<50?"var(--red)":r.acc<75?"var(--amber)":"var(--green)"}"></i></div>`;
+      c.appendChild(d);
+    });
+    root.appendChild(c);
+  });
+  root.appendChild(videoCard("Recommended revision videos","One-shot and short revision links matched to your weakest chapters.",weakVideoItems()));
+}
+function viewNotebook(root){
+  const list=wrongQuestions();
+  root.appendChild(el("div","card",`<div class="section-title"><span class="ico">📓</span><h2 style="margin:0">Mistake Notebook</h2></div>
+    <div class="muted small">Every question you got wrong, collected automatically with space for your own notes.</div>`));
+  if(!list.length){root.appendChild(el("div","card",`<div class="empty"><div class="big">🎯</div>No mistakes recorded yet — attempt a test to build your notebook.</div>`));return;}
+  const bar=el("div","card");
+  bar.innerHTML=`<div class="row" style="justify-content:space-between"><span class="pill r">${list.length} questions to revisit</span></div>`;
+  const practice=el("button","btn sm","Practise these now");
+  practice.onclick=()=>{
+    const t={id:uid(),name:"Mistake Notebook Drill · "+fmtDate(Date.now()),createdAt:Date.now(),date:new Date().toISOString(),
+      practice:true,duration:Math.max(600,list.length*90),chapter:{},
+      questions:list.map((x,i)=>({...x.q,index:i,no:i+1}))};
+    S.tests.push(t);save();startExam(t.id);
+  };
+  bar.firstElementChild.appendChild(practice);root.appendChild(bar);
+  const wrap=el("div","card");
+  list.forEach(x=>{
+    const d=el("div","qrev");
+    d.innerHTML=`<div class="row" style="justify-content:space-between">
+      <div><b>Q${x.q.no}</b> <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span>
+      <span class="pill n">${esc(x.q.chapter||"General")}</span></div>
+      <div class="small muted">${fmtDate(x.when)} · ⏱ ${fmtTime(x.time)}</div></div>`;
+    d.appendChild(imgTag(x.q.img));
+    d.appendChild(el("div","small",`<b>Your answer:</b> ${x.ans?esc(String(x.ans).toUpperCase()):"—"} · <b>Correct:</b> ${esc(String(x.q.answer||"").toUpperCase())}`));
+    const sb=el("button","btn sm ghost","Show solution");sb.style.margin="8px 0";
+    sb.onclick=()=>{sb.remove();d.appendChild(imgTag(x.q.solImg));};
+    d.appendChild(sb);
+    const note=el("textarea");note.placeholder="Why did I get this wrong? (saved on this device)";
+    note.value=S.notes[x.q.id]||"";note.rows=2;
+    note.style.cssText="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;background:var(--panel);margin-top:6px";
+    note.oninput=()=>{S.notes[x.q.id]=note.value;save();};
+    d.appendChild(note);
+    wrap.appendChild(d);
+  });
+  root.appendChild(wrap);
+}
+const FORMULAS={
+  Physics:[["Kinematics","v = u + at · s = ut + ½at² · v² = u² + 2as"],
+    ["Rotation","τ = Iα · L = Iω · KE_rot = ½Iω²"],
+    ["Work–Energy","W = F·d·cosθ · KE = ½mv² · P = F·v"],
+    ["Thermodynamics","ΔU = Q − W · PV = nRT · η = 1 − T₂/T₁"],
+    ["Electrostatics","F = kq₁q₂/r² · E = kq/r² · U = kq₁q₂/r"],
+    ["Current Electricity","V = IR · P = I²R · R_series = ΣR"],
+    ["Magnetism","F = qvBsinθ · B = μ₀I/2πr · φ = BAcosθ"],
+    ["Optics","1/v − 1/u = 1/f · m = v/u · n = c/v"],
+    ["Modern Physics","E = hν · λ = h/p · E_n = −13.6/n² eV"]],
+  Chemistry:[["Mole Concept","n = m/M · N = n·N_A · Molarity = n_solute/V(L)"],
+    ["Thermodynamics","ΔG = ΔH − TΔS · ΔH = ΔU + Δn_gRT"],
+    ["Equilibrium","K_p = K_c(RT)^Δn · pH = −log[H⁺] · pH = pKa + log([A⁻]/[HA])"],
+    ["Electrochemistry","E_cell = E° − (0.059/n)logQ · ΔG = −nFE"],
+    ["Kinetics","k = Ae^(−Ea/RT) · t½ = 0.693/k (first order)"],
+    ["Solutions","ΔTb = K_b·m · ΔTf = K_f·m · π = CRT"],
+    ["Atomic Structure","E = −13.6Z²/n² eV · λ = h/mv"]],
+  Mathematics:[["Quadratics","x = (−b ± √(b²−4ac))/2a · sum = −b/a · product = c/a"],
+    ["Sequences","Tn = a+(n−1)d · Sn = n/2[2a+(n−1)d] · S∞ = a/(1−r)"],
+    ["Trigonometry","sin²θ+cos²θ = 1 · sin2θ = 2sinθcosθ · a/sinA = b/sinB"],
+    ["Straight Lines","y − y₁ = m(x − x₁) · d = |ax₁+by₁+c|/√(a²+b²)"],
+    ["Conics","Ellipse x²/a²+y²/b² = 1 · Parabola y² = 4ax · e = c/a"],
+    ["Calculus","d(uv) = u'v+uv' · ∫xⁿdx = xⁿ⁺¹/(n+1) · L'Hôpital rule"],
+    ["Probability","P(A∪B) = P(A)+P(B)−P(A∩B) · Bayes: P(A|B) = P(B|A)P(A)/P(B)"],
+    ["Vectors & 3D","a·b = |a||b|cosθ · |a×b| = |a||b|sinθ"]]
+};
+function viewFormulas(root){
+  root.appendChild(el("div","card",`<div class="section-title"><span class="ico">🧮</span><h2 style="margin:0">Formula &amp; Concept Revision</h2></div>
+    <div class="muted small">Quick last-minute sheet for all three subjects. Search to jump to a chapter.</div>`));
+  const box=el("div","card");
+  const q=el("input");q.type="text";q.placeholder="Search formulas — e.g. rotation, pH, conics…";q.style.width="100%";
+  box.appendChild(q);
+  const out=el("div");out.style.marginTop="12px";box.appendChild(out);
+  function draw(){
+    const term=q.value.trim().toLowerCase();out.innerHTML="";
+    SUBJECTS.forEach(s=>{
+      const rows=(FORMULAS[s]||[]).filter(([k,v])=>!term||(k+" "+v).toLowerCase().includes(term));
+      if(!rows.length)return;
+      const sec=el("div");sec.style.marginBottom="16px";
+      sec.appendChild(el("h4",null,`<span style="color:${SUBCOLOR[s]}">●</span> ${s}`));
+      rows.forEach(([k,v])=>{
+        const d=el("div");d.style.cssText="border:1px solid var(--line);border-radius:11px;padding:10px;margin:7px 0;background:var(--panel)";
+        d.innerHTML=`<b>${esc(k)}</b><div class="small" style="margin-top:4px;font-variant-numeric:tabular-nums">${esc(v)}</div>`;
+        sec.appendChild(d);
+      });
+      out.appendChild(sec);
+    });
+    if(!out.children.length)out.innerHTML=`<div class="empty"><div class="big">🔍</div>No formula matches that search.</div>`;
+  }
+  q.oninput=draw;draw();
+  root.appendChild(box);
+}
+
+/* ==========================================================================
+   9. PREMIUM DASHBOARD + TEST LIBRARY (override the earlier basic versions)
+   ========================================================================== */
+function testMeta(t){return t.meta||{difficulty:"Moderate",type:"Practice",chapters:[],attempts:0,durationMin:Math.round((t.duration||10800)/60)};}
+function testCard(t){
+  const m=testMeta(t);
+  const at=attemptsOf(t.id).filter(a=>a.submittedAt);
+  const best=at.length?Math.max(...at.map(a=>a.result.all.marks)):null;
+  const c=el("div","tcard");
+  c.innerHTML=`<div>
+      <div class="row" style="justify-content:space-between;gap:8px">
+        <b style="font-size:15px">${esc(t.name)}</b>
+        ${at.length?`<span class="pill g">Attempted ×${at.length}</span>`:`<span class="pill a">New</span>`}
+      </div>
+      <div class="small muted" style="margin-top:3px">${esc(t.testId||"Local")} · ${fmtDate(t.createdAt)}</div>
+    </div>
+    <div class="meta">
+      <span class="pill">${t.questions.length} Q</span>
+      <span class="pill n">⏱ ${m.durationMin} min</span>
+      <span class="pill ${m.difficulty==="Easy"?"g":m.difficulty==="Hard"||m.difficulty==="Advanced"?"r":"a"}">${esc(m.difficulty)}</span>
+      <span class="pill n">${esc(m.type)}</span>
+      ${m.year?`<span class="pill n">${m.year}</span>`:""}
+      <span class="pill n">👥 ${m.attempts} attempts</span>
+    </div>
+    ${(m.chapters||[]).length?`<div class="small muted">${esc((m.chapters||[]).slice(0,6).join(" · "))}</div>`:""}
+    ${best!=null?`<div class="small"><b>Your best:</b> ${best} / ${t.questions.length*4}</div>`:""}`;
+  const foot=el("div","foot");
+  const start=el("button","btn sm",at.length?"Retake":"Start Test");start.onclick=()=>startExam(t.id);
+  const share=el("button","btn sm ghost","Share");share.onclick=()=>shareTest(t);
+  foot.append(start,share);
+  if(at.length){const r=el("button","btn sm ghost","Result");r.onclick=()=>go("result",at[at.length-1].id);foot.appendChild(r);}
+  c.appendChild(foot);return c;
+}
+const LIBF={q:"",subject:"All",chapter:"All",year:"All",difficulty:"All",type:"All",sort:"new"};
+function viewLibrary(root){
+  const head=el("div","card");
+  head.innerHTML=`<div class="row" style="justify-content:space-between;gap:10px">
+    <div><div class="section-title"><span class="ico">📚</span><h2 style="margin:0">Public Test Library</h2></div>
+    <div class="muted small">${cloudTests.length} test(s) published · available worldwide without login.</div></div></div>`;
+  const refresh=el("button","btn ghost sm","⟳ Refresh");refresh.onclick=()=>{loadPublicTests();toast("Refreshing library…",1200);};
+  head.firstElementChild.appendChild(refresh);
+  const filters=el("div","filters");
+  const search=el("input");search.type="text";search.placeholder="Search tests, chapters, IDs…";search.value=LIBF.q;
+  const mkSel=(key,label,vals)=>{const s=el("select");
+    vals.forEach(v=>{const o=el("option",null,v==="All"?label+": All":String(v));o.value=v;s.appendChild(o);});
+    s.value=LIBF[key];s.onchange=()=>{LIBF[key]=s.value;render();};return s;};
+  const allMeta=cloudTests.map(testMeta);
+  const chapters=[...new Set(allMeta.flatMap(m=>m.chapters||[]))].sort();
+  const years=[...new Set(allMeta.map(m=>m.year).filter(Boolean))].sort((a,b)=>b-a);
+  filters.append(search,
+    mkSel("subject","Subject",["All",...SUBJECTS]),
+    mkSel("chapter","Chapter",["All",...chapters]),
+    mkSel("year","Year",["All",...years]),
+    mkSel("difficulty","Difficulty",["All","Easy","Moderate","Hard","Advanced"]),
+    mkSel("type","Type",["All",...new Set(allMeta.map(m=>m.type).filter(Boolean))]),
+    mkSel("sort","Sort",["new","old","popular","short"]));
+  head.appendChild(filters);
+  root.appendChild(head);
+
+  let list=cloudTests.slice();
+  const f=LIBF;
+  if(f.subject!=="All")list=list.filter(t=>t.questions.some(q=>q.subject===f.subject));
+  if(f.chapter!=="All")list=list.filter(t=>(testMeta(t).chapters||[]).includes(f.chapter));
+  if(f.year!=="All")list=list.filter(t=>String(testMeta(t).year)===String(f.year));
+  if(f.difficulty!=="All")list=list.filter(t=>testMeta(t).difficulty===f.difficulty);
+  if(f.type!=="All")list=list.filter(t=>testMeta(t).type===f.type);
+  if(f.q.trim()){const term=f.q.trim().toLowerCase();
+    list=list.filter(t=>[t.name,t.testId,(testMeta(t).chapters||[]).join(" "),testMeta(t).type].join(" ").toLowerCase().includes(term));}
+  list.sort((a,b)=>f.sort==="old"?a.createdAt-b.createdAt:f.sort==="popular"?testMeta(b).attempts-testMeta(a).attempts:
+    f.sort==="short"?testMeta(a).durationMin-testMeta(b).durationMin:b.createdAt-a.createdAt);
+
+  const body=el("div");
+  if(!cloudTests.length){
+    body.appendChild(el("div","card",`<div class="empty"><div class="big">☁️</div>
+      <b>No public tests yet</b><div class="small">Upload Physics, Chemistry and Maths PDFs to publish the first paper for everyone.</div></div>`));
+  }else if(!list.length){
+    body.appendChild(el("div","card",`<div class="empty"><div class="big">🔍</div><b>No test matches these filters</b>
+      <div class="small">Try clearing the search or choosing a different chapter.</div></div>`));
+  }else{
+    const g=el("div","grid g3");list.forEach(t=>g.appendChild(testCard(t)));body.appendChild(g);
+  }
+  root.appendChild(body);
+  search.oninput=()=>{LIBF.q=search.value;
+    clearTimeout(window.__libT);window.__libT=setTimeout(()=>{render();
+      const s=document.querySelector(".filters input");if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}},250);};
+}
+function viewDash(root){
+  const g=globalStats(), st=streakInfo();
+  const resume=pendingResume();
+  const upcoming=cloudTests.filter(t=>!attemptsOf(t.id).some(a=>a.submittedAt));
+  const hero=el("div","card hero-card");
+  const insight=!g.total?"Upload your first paper and publish it to the public library.":
+    g.avgAcc>=80?"Outstanding accuracy — push your attempt count higher now.":
+    g.avgAcc>=60?"Solid base. Convert skipped questions into attempts to add 20+ marks.":
+    "Focus on accuracy first: attempt fewer questions but verify every step.";
+  hero.innerHTML=`<div style="position:relative">
+    <span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">🔥 ${st.streak}-day streak</span>
+    <h2 style="margin-top:10px">Hi ${esc(S.settings.candidate||"Candidate")} 👋</h2>
+    <div class="muted">${esc(insight)}</div>
+    <div class="streak">${st.days.map(d=>`<i class="${d.on?"on":""}">${d.label}</i>`).join("")}</div>
+    <div class="hero-stats">
+      <div><b>${cloudTests.length}</b><span>Public tests</span></div>
+      <div><b>${g.total}</b><span>Attempts</span></div>
+      <div><b>${g.avg}</b><span>Avg marks</span></div>
+      <div><b>${g.avgAcc}%</b><span>Avg accuracy</span></div>
+    </div></div>`;
+  const acts=el("div","row");acts.style.cssText="margin-top:16px;position:relative";
+  const qs=el("button","btn","▶ Quick Start Test");qs.onclick=()=>{const t=upcoming[0]||cloudTests[0];t?startExam(t.id):go("upload");};
+  const up=el("button","btn ghost","⬆ Upload PDFs");up.onclick=()=>go("upload");
+  const lb=el("button","btn ghost","📚 Test Library");lb.onclick=()=>go("library");
+  acts.append(qs,up,lb);hero.appendChild(acts);
+  root.appendChild(hero);
+
+  if(resume){
+    const r=el("div","card");
+    r.innerHTML=`<div class="row" style="justify-content:space-between;gap:10px">
+      <div><b>⏸ Unfinished attempt saved</b><div class="small muted">${esc((testById(resume.testId)||{}).name||"Test")} · ${fmtTime(resume.left)} left</div></div></div>`;
+    const go1=el("button","btn sm","Resume test");go1.onclick=()=>startExam(resume.testId,resume);
+    const dis=el("button","btn sm ghost","Discard");dis.onclick=()=>{clearAutosave();render();};
+    r.firstElementChild.appendChild(el("div","row"));r.firstElementChild.lastElementChild.append(go1,dis);
+    root.appendChild(r);
+  }
+
+  root.appendChild(el("div","grid g4",
+    statCard("Highest Marks",g.high)+statCard("This Week",st.week+" / 7 days")+
+    statCard("Strong Subject",g.strong?g.strong.s:"—",g.strong?`<div class="small muted">${g.strong.acc}% accuracy</div>`:"")+
+    statCard("Weak Subject",g.weak?g.weak.s:"—",g.weak?`<div class="small muted">${g.weak.acc}% accuracy</div>`:"")));
+
+  // latest public tests
+  const lib=el("div","card");
+  lib.innerHTML=`<div class="row" style="justify-content:space-between"><div class="section-title"><span class="ico">📚</span><h3 style="margin:0">Latest Public Tests</h3></div></div>`;
+  const all=el("button","btn sm ghost","View all");all.onclick=()=>go("library");
+  lib.firstElementChild.appendChild(all);
+  if(!cloudTests.length){
+    lib.appendChild(el("div","empty",`<div class="big">☁️</div><b>No public tests yet</b><div class="small">Publish your first paper from Upload PDFs.</div>`));
+  }else{
+    const g3=el("div","grid g3");g3.style.marginTop="12px";
+    cloudTests.slice(0,3).forEach(t=>g3.appendChild(testCard(t)));lib.appendChild(g3);
+  }
+  root.appendChild(lib);
+
+  // recent performance
+  const rec=el("div","card");
+  rec.innerHTML=`<div class="section-title"><span class="ico">📊</span><h3 style="margin:0">Recent Performance</h3></div>`;
+  if(!g.done.length){
+    rec.appendChild(el("div","empty",`<div class="big">📈</div><b>No attempts yet</b><div class="small">Your marks trend appears here after your first submitted test.</div>`));
+  }else{
+    const cv=el("canvas","chart");rec.appendChild(cv);
+    const list=g.done.slice(-8);
+    setTimeout(()=>lineChart(cv,list.map(a=>a.result.all.marks),list.map(a=>(testById(a.testId)||{}).name||"Test"),"Marks",
+      getComputedStyle(document.body).getPropertyValue("--blue").trim()||"#f26722"),0);
+    const tb=el("table");tb.innerHTML=`<tr><th>Date</th><th>Test</th><th>Marks</th><th>Accuracy</th><th></th></tr>`;
+    g.done.slice(-6).reverse().forEach(a=>{
+      const tr=el("tr");
+      tr.innerHTML=`<td>${fmtDate(a.submittedAt)}</td><td>${esc((testById(a.testId)||{}).name||"—")}</td>
+        <td><b>${a.result.all.marks}</b>/${a.result.all.max}</td><td>${a.result.all.accuracy}%</td><td></td>`;
+      const b=el("button","btn sm ghost","Analysis");b.onclick=()=>go("result",a.id);tr.lastElementChild.appendChild(b);
+      tb.appendChild(tr);
+    });
+    rec.appendChild(tb);
+  }
+  root.appendChild(rec);
+
+  // weak-chapter video recommendations
+  const vids=weakVideoItems();
+  if(vids.length)root.appendChild(videoCard("Revise before your next test","Short revision links picked from your weakest chapters and recent mistakes.",vids));
+}
 
 /* -------------------------------- BOOT ----------------------------------- */
 applyTheme();
