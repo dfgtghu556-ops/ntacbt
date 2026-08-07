@@ -285,7 +285,7 @@ async function cloudObjectURL(path){
 }
 async function uploadObject(path,body,contentType){
   await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path),{
-    method:"POST",headers:{"Content-Type":contentType,"x-upsert":"false"},body
+    method:"POST",headers:{"Content-Type":contentType,"x-upsert":"true"},body
   });
 }
 async function cloudifyTest(test,files,onProgress){
