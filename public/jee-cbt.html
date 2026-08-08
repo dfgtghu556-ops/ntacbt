@@ -2009,7 +2009,8 @@ function viewDash(root){
 applyTheme();
 render();
 loadPublicTests();
-cloudRefresh=setInterval(()=>loadPublicTests(true),15000);
+loadCloudPlanner();
+cloudRefresh=setInterval(()=>{loadPublicTests(true);loadCloudPlanner(true);},15000);
 </script>
 </body>
 </html>
