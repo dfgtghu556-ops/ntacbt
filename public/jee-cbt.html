@@ -1106,6 +1106,9 @@ function viewPlanner(root){
   rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
   root.appendChild(up);
   root.appendChild(revisionSection(rows));
+  root.appendChild(studyCalendarCard(rows));
+  root.appendChild(videoCard("Weak chapter priority revision",
+    "Chapters where your recent mistakes and low accuracy say you should revise first.",weakVideoItems()));
   const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
   const dl=rows.filter(r=>r.done);
   if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
@@ -1124,6 +1127,42 @@ function plannerRow(r){
   d.appendChild(b);return d;
 }
 
+/* Personal study calendar: revision reminders synced to every scheduled and
+   uploaded test's chapters. Reminders are derived, so they always stay fresh. */
+function studyReminders(rows){
+  const now=Date.now(),DAY=864e5,out=[];
+  const push=(date,title,detail,tag)=>out.push({date,title,detail,tag});
+  rows.filter(r=>!r.done&&new Date(r.date).getTime()>=now-DAY).slice(0,10).forEach(r=>{
+    const d=new Date(r.date).getTime(),topics=r.topics||r.subject;
+    push(d-3*DAY,"Start revision · "+r.name,`Cover ${topics} — theory + one-shot video.`,r.subject);
+    push(d-DAY,"Final revision · "+r.name,`Formulas and PYQs for ${topics}.`,r.subject);
+    push(d,"Test day · "+r.name,`${r.time||"Scheduled"} · ${topics}`,r.subject);
+  });
+  cloudTests.filter(t=>!attemptsOf(t.id).some(x=>x.submittedAt)).slice(0,6).forEach(t=>{
+    const chaps=(t.meta&&t.meta.chapters||[]).slice(0,4).join(", ")||"Full syllabus";
+    push(now+DAY,"Attempt · "+t.name,`${t.questions.length} questions · ${chaps}`,t.meta?.type||"Mock");
+  });
+  return out.filter(x=>x.date>=now-DAY).sort((a,b)=>a.date-b.date).slice(0,12);
+}
+function studyCalendarCard(rows){
+  const c=el("div","card");
+  const items=studyReminders(rows);
+  c.innerHTML=`<div class="section-title"><span class="ico">🗓</span><h3 style="margin:0">Study Calendar &amp; Reminders</h3></div>
+    <div class="small muted">Auto-synced with every scheduled test's chapters and any unattempted paper in the library.</div>`;
+  if(!items.length){c.innerHTML+=`<div class="empty"><div class="big">📅</div>No reminders yet — publish a planner or a test to fill your calendar.</div>`;return c;}
+  const list=el("div","revision-list");
+  items.forEach(it=>{
+    const days=Math.round((it.date-Date.now())/864e5);
+    const when=days<=0?"Today":days===1?"Tomorrow":`in ${days} days`;
+    const row=el("div","revision-item");
+    row.innerHTML=`<div><b>${esc(it.title)}</b><div class="small muted">${fmtDate(it.date)} · ${when}</div>
+      <div class="small" style="margin-top:4px">${esc(it.detail)}</div></div>`;
+    const links=el("div","revision-links");
+    links.appendChild(el("span","chip",esc(it.tag)));
+    row.appendChild(links);list.appendChild(row);
+  });
+  c.appendChild(list);return c;
+}
 function revisionTopics(r){
   const raw=(r.topics||r.subject||"").split(/;|•|\||,(?=\s*[A-Z])/).map(x=>x.trim()).filter(Boolean);
   return [...new Set(raw)].slice(0,3);
