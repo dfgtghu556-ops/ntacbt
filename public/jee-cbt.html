@@ -130,6 +130,42 @@ canvas.chart{width:100%;height:210px;display:block}
 .bar{height:8px;border-radius:6px;background:var(--blue-soft);overflow:hidden}
 .bar>i{display:block;height:100%}
 ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
+/* ---- premium score report (ScoreBooster style) ---- */
+.sb-hero{position:relative;overflow:hidden;border-radius:20px;padding:26px;color:#fff;
+  background:linear-gradient(135deg,#4c1d95,#5b21b6 45%,#6d28d9);box-shadow:0 18px 40px -22px rgba(76,29,149,.9)}
+.sb-hero:after{content:"";position:absolute;right:-70px;top:-70px;width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.08)}
+.sb-top{display:flex;gap:20px;justify-content:space-between;align-items:center;flex-wrap:wrap;position:relative;z-index:1}
+.sb-hello{font-size:19px;opacity:.9}
+.sb-title{font-size:34px;font-weight:900;margin:2px 0 12px;line-height:1.1}
+.sb-tag{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+  border-radius:999px;padding:6px 14px;font-weight:800;font-size:13px}
+.sb-ring{position:relative;width:150px;height:150px;flex:0 0 auto}
+.sb-ring svg{transform:rotate(-90deg)}
+.sb-ring .lbl{position:absolute;inset:0;display:grid;place-content:center;text-align:center;line-height:1.1}
+.sb-ring .lbl span{font-size:11px;letter-spacing:.14em;opacity:.85;font-weight:800}
+.sb-ring .lbl b{font-size:40px;font-weight:900;display:block}
+.sb-ring .lbl i{font-style:normal;font-size:12px;opacity:.85}
+.sb-oqa{margin-top:22px;position:relative;z-index:1;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);
+  border-radius:16px;padding:16px}
+.sb-oqa h4{margin:0 0 10px;font-size:15px;letter-spacing:.02em}
+.sb-oqa .r{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.sb-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.22);margin:12px 0 10px}
+.sb-bar i{display:block;height:100%}
+.sb-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
+.sb-legend span{display:flex;align-items:center;gap:6px;font-weight:700}
+.sb-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.sb-boost{margin-top:16px;border-radius:20px;overflow:hidden;color:#fff;
+  background:linear-gradient(120deg,#f26722,#e11d48 60%,#a21caf);box-shadow:0 18px 40px -24px rgba(225,29,72,.85)}
+.sb-boost .in{padding:22px}
+.sb-boost .brand{display:inline-flex;align-items:center;gap:0;font-weight:900;border-radius:8px;overflow:hidden;font-size:15px}
+.sb-boost .brand em{font-style:normal;background:#6d28d9;padding:4px 9px}
+.sb-boost .brand b{background:#fff;color:#1b1b4b;padding:4px 9px}
+.sb-boost .line{display:flex;gap:12px;align-items:flex-start;margin-top:14px;font-size:17px;line-height:1.45}
+.sb-boost .line .em{font-size:20px;opacity:.9}
+.sb-actions{background:var(--panel);color:var(--text);padding:18px;display:grid;gap:12px}
+.sb-action{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel)}
+.sb-action h5{margin:0 0 4px;font-size:15px}
+@media(max-width:650px){.sb-title{font-size:26px}.sb-ring{width:120px;height:120px}.sb-ring .lbl b{font-size:32px}}
 .revision-list{display:grid;gap:10px;margin-top:12px}
 .revision-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 92%,var(--blue-soft))}
 .revision-links{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
@@ -315,7 +351,7 @@ function imgTag(key,cls="qimg"){
   return i;
 }
 
-const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],notes:{},studyLog:{},
+const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],plannerDone:{},notes:{},studyLog:{},
   settings:{theme:"system",accent:"orange",density:"comfortable",fontSize:"md",cards:"elevated",anim:"on",candidate:"Candidate"}};
 let S = load();
 function load(){
@@ -419,6 +455,34 @@ async function registerAttempt(testId){
     await cloudFetch("/rest/v1/rpc/register_test_attempt",{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({_test_id:testId})});
   }catch(e){/* attempt counting is best-effort and never blocks the exam */}
+}
+/* ---------------- SHARED PLANNER (one planner for every device) ---------- */
+let cloudPlanner=null;
+async function loadCloudPlanner(silent=true){
+  try{
+    const r=await cloudFetch("/rest/v1/planner_imports?select=*&is_active=eq.true&order=created_at.desc&limit=1");
+    const rows=await r.json();
+    const next=rows[0]?{name:rows[0].name,rows:rows[0].rows||[]}:null;
+    const changed=JSON.stringify(next)!==JSON.stringify(cloudPlanner);
+    cloudPlanner=next;
+    if(!silent||(changed&&(route==="planner"||route==="dash")))render();
+  }catch(e){/* planner falls back to the locally imported copy */}
+}
+async function publishPlanner(name,rows){
+  await cloudFetch("/rest/v1/planner_imports",{method:"POST",
+    headers:{"Content-Type":"application/json","Prefer":"return=representation"},
+    body:JSON.stringify({name:name||"Eklavya Test Planner",rows,row_count:rows.length})});
+  await loadCloudPlanner(false);
+}
+/** The planner everyone sees. Cloud copy wins; "done" ticks stay on this device. */
+function PLAN(){
+  const base=(cloudPlanner&&cloudPlanner.rows&&cloudPlanner.rows.length)?cloudPlanner.rows:(S.planner||[]);
+  return base.map(r=>({...r,done:!!(S.plannerDone||{})[r.id]}));
+}
+function setPlannerDone(r,v){
+  S.plannerDone=S.plannerDone||{};
+  if(v)S.plannerDone[r.id]=true; else delete S.plannerDone[r.id];
+  save();
 }
 function shareTest(t){
   const url=location.origin+location.pathname+"?test="+encodeURIComponent(t.shareSlug);
@@ -915,7 +979,7 @@ function viewUpload(root){
     // chapters: manual entry wins, otherwise fall back to the next planner slot
     SUBJECTS.forEach(s=>{
       const manual=chapIn[s].value.trim();
-      const pl=S.planner.find(p=>p.subject===s&&!p.done);
+      const pl=PLAN().find(p=>p.subject===s&&!p.done);
       t.chapter[s]=manual||(pl&&pl.topics)||s;
     });
     t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
@@ -929,20 +993,69 @@ function viewUpload(root){
   };
   root.appendChild(c);
 
+  // ---- full syllabus mock: all three subjects inside ONE pdf ----
+  const fs=el("div","card");
+  fs.innerHTML=`<div class="section-title"><span class="ico">📘</span><h3 style="margin:0">Full Syllabus Mock (single PDF)</h3></div>
+    <p class="muted small">For January-style full syllabus papers where Physics, Chemistry and Mathematics are inside
+    one PDF. Questions 1–25 are treated as Physics, 26–50 as Chemistry and 51–75 as Mathematics.
+    The published test runs for 3 hours with 75 questions.</p>`;
+  const fsName=el("input");fsName.type="text";fsName.placeholder="Test name";fsName.value="Full Syllabus Mock Test";
+  const fsYear=el("input");fsYear.type="number";fsYear.min="2015";fsYear.max="2035";fsYear.value=new Date().getFullYear();
+  const fsDiff=el("select");["Easy","Moderate","Hard","Advanced"].forEach(x=>{const o=el("option",null,x);o.value=x;fsDiff.appendChild(o);});
+  fsDiff.value="Moderate";
+  const fsGrid=el("div","filters");
+  const fsField=(label,node)=>{const w=el("div");w.style.display="grid";w.style.gap="4px";
+    w.appendChild(el("label","small muted",label));node.style.width="100%";w.appendChild(node);return w;};
+  fsGrid.append(fsField("Test name",fsName),fsField("Year",fsYear),fsField("Difficulty",fsDiff));
+  fs.appendChild(fsGrid);
+  const fsSt=el("div","small muted");fsSt.style.marginTop="10px";fsSt.textContent="No file selected.";
+  const fsIn=el("input");fsIn.type="file";fsIn.accept="application/pdf";fsIn.className="hide";
+  const fsBtn=el("button","btn","Upload & Publish Full Syllabus PDF");
+  fsBtn.onclick=()=>fsIn.click();
+  fsIn.onchange=async()=>{
+    const f=fsIn.files[0];if(!f)return;
+    fsBtn.disabled=true;
+    try{
+      const qs=await parsePaper(f,"Physics",m=>fsSt.textContent=m);
+      if(!qs.length)throw new Error("No questions detected");
+      const per=Math.ceil(qs.length/3),packs={Physics:[],Chemistry:[],Mathematics:[]};
+      qs.forEach((q,i)=>{const sub=SUBJECTS[Math.min(2,Math.floor(i/per))];q.subject=sub;packs[sub].push(q);});
+      const t=buildTest(fsName.value.trim()||"Full Syllabus Mock Test",packs);
+      t.id=crypto.randomUUID();t.duration=180*60;
+      SUBJECTS.forEach(sub=>{t.chapter[sub]="Full Syllabus";});
+      t.questions.forEach(q=>q.chapter=q.chapter||"Full Syllabus — "+q.subject);
+      const meta={year:+fsYear.value||new Date().getFullYear(),difficulty:fsDiff.value,
+        type:"Full Syllabus",subjectChapters:t.chapter};
+      const published=await publishPublicTest(t,{Physics:f,Chemistry:f,Mathematics:f},m=>fsSt.textContent=m,meta);
+      cloudTests.unshift(published);S.tests.push(published);
+      toast("Full syllabus mock published · "+published.testId);go("library");
+    }catch(e){fsSt.textContent="Failed: "+e.message;toast("Publish failed: "+e.message,4500);}
+    fsBtn.disabled=false;fsIn.value="";
+  };
+  fs.append(fsIn,fsBtn,fsSt);root.appendChild(fs);
+
   // planner upload
   const p=el("div","card");
   p.innerHTML=`<h3>Planner PDF (optional)</h3><p class="muted small">Import the Eklavya Test Series planner to fill your calendar.</p>`;
   const pin=el("input");pin.type="file";pin.accept="application/pdf";pin.className="hide";
   const pb=el("button","btn ghost","Import Planner");pb.onclick=()=>pin.click();
   pin.onchange=async()=>{const f=pin.files[0];if(!f)return;pb.disabled=true;pb.textContent="Parsing…";
-    try{const rows=await parsePlanner(f);S.planner=rows;save();toast(rows.length+" scheduled tests imported");go("planner");}
+    try{
+      const rows=await parsePlanner(f);
+      if(!rows.length)throw new Error("No schedule rows found");
+      S.planner=rows;save();
+      pb.textContent="Publishing…";
+      try{await publishPlanner(f.name.replace(/\.pdf$/i,""),rows);toast(rows.length+" tests published — visible on every device");}
+      catch(err){toast("Saved on this device, cloud sync failed");}
+      go("planner");
+    }
     catch(e){toast("Planner parse failed");}pb.disabled=false;pb.textContent="Import Planner";};
   p.appendChild(pin);p.appendChild(pb);root.appendChild(p);
 }
 
 /* ------------------------------- PLANNER --------------------------------- */
 function viewPlanner(root){
-  const rows=S.planner.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const rows=PLAN().slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
   const now=Date.now();
   const done=rows.filter(r=>r.done).length;
   const today=rows.filter(r=>todayKey(r.date)===todayKey(now));
@@ -952,7 +1065,7 @@ function viewPlanner(root){
     <div style="margin-top:10px" class="progress"><i style="width:${pct(done,rows.length)}%"></i></div>
     <div class="small muted" style="margin-top:6px">Completion ${pct(done,rows.length)}% · ${done} of ${rows.length} tests done</div>`;
   root.appendChild(head);
-  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner imported yet. Go to <b>Upload PDFs → Import Planner</b>.</p>`));return;}
+  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner published yet. Go to <b>Upload PDFs → Import Planner</b> — once imported it is shared with every device automatically.</p>`));root.appendChild(studyCalendarCard(rows));return;}
 
   root.appendChild(el("div","grid g4",
     statCard("Upcoming",rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(now))).length)+
@@ -993,6 +1106,9 @@ function viewPlanner(root){
   rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
   root.appendChild(up);
   root.appendChild(revisionSection(rows));
+  root.appendChild(studyCalendarCard(rows));
+  root.appendChild(videoCard("Weak chapter priority revision",
+    "Chapters where your recent mistakes and low accuracy say you should revise first.",weakVideoItems()));
   const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
   const dl=rows.filter(r=>r.done);
   if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
@@ -1007,10 +1123,46 @@ function plannerRow(r){
     <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
     <div class="small">${esc(r.topics||"")}</div></div>`;
   const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
-  b.onclick=()=>{r.done=!r.done;save();render();};
+  b.onclick=()=>{setPlannerDone(r,!r.done);render();};
   d.appendChild(b);return d;
 }
 
+/* Personal study calendar: revision reminders synced to every scheduled and
+   uploaded test's chapters. Reminders are derived, so they always stay fresh. */
+function studyReminders(rows){
+  const now=Date.now(),DAY=864e5,out=[];
+  const push=(date,title,detail,tag)=>out.push({date,title,detail,tag});
+  rows.filter(r=>!r.done&&new Date(r.date).getTime()>=now-DAY).slice(0,10).forEach(r=>{
+    const d=new Date(r.date).getTime(),topics=r.topics||r.subject;
+    push(d-3*DAY,"Start revision · "+r.name,`Cover ${topics} — theory + one-shot video.`,r.subject);
+    push(d-DAY,"Final revision · "+r.name,`Formulas and PYQs for ${topics}.`,r.subject);
+    push(d,"Test day · "+r.name,`${r.time||"Scheduled"} · ${topics}`,r.subject);
+  });
+  cloudTests.filter(t=>!attemptsOf(t.id).some(x=>x.submittedAt)).slice(0,6).forEach(t=>{
+    const chaps=(t.meta&&t.meta.chapters||[]).slice(0,4).join(", ")||"Full syllabus";
+    push(now+DAY,"Attempt · "+t.name,`${t.questions.length} questions · ${chaps}`,t.meta?.type||"Mock");
+  });
+  return out.filter(x=>x.date>=now-DAY).sort((a,b)=>a.date-b.date).slice(0,12);
+}
+function studyCalendarCard(rows){
+  const c=el("div","card");
+  const items=studyReminders(rows);
+  c.innerHTML=`<div class="section-title"><span class="ico">🗓</span><h3 style="margin:0">Study Calendar &amp; Reminders</h3></div>
+    <div class="small muted">Auto-synced with every scheduled test's chapters and any unattempted paper in the library.</div>`;
+  if(!items.length){c.innerHTML+=`<div class="empty"><div class="big">📅</div>No reminders yet — publish a planner or a test to fill your calendar.</div>`;return c;}
+  const list=el("div","revision-list");
+  items.forEach(it=>{
+    const days=Math.round((it.date-Date.now())/864e5);
+    const when=days<=0?"Today":days===1?"Tomorrow":`in ${days} days`;
+    const row=el("div","revision-item");
+    row.innerHTML=`<div><b>${esc(it.title)}</b><div class="small muted">${fmtDate(it.date)} · ${when}</div>
+      <div class="small" style="margin-top:4px">${esc(it.detail)}</div></div>`;
+    const links=el("div","revision-links");
+    links.appendChild(el("span","chip",esc(it.tag)));
+    row.appendChild(links);list.appendChild(row);
+  });
+  c.appendChild(list);return c;
+}
 function revisionTopics(r){
   const raw=(r.topics||r.subject||"").split(/;|•|\||,(?=\s*[A-Z])/).map(x=>x.trim()).filter(Boolean);
   return [...new Set(raw)].slice(0,3);
@@ -1217,6 +1369,78 @@ function viewReview(root){
   root.appendChild(c);
 }
 
+/* Premium hero report card: marks ring, overall question analysis, score booster. */
+function scoreHero(t,a,r,ai){
+  const name=(S.settings.candidate||"Candidate").trim()||"Candidate";
+  const total=r.all.correct+r.all.wrong+r.all.skipped;
+  const attempted=r.all.correct+r.all.wrong;
+  const attAcc=pct(r.all.correct,attempted);
+  const p=clamp(r.all.marks/(r.all.max||1),0,1);
+  const C=2*Math.PI*66;
+  const mood=r.all.percentage>=75?"Outstanding!":r.all.percentage>=50?"Great Going!":r.all.percentage>=30?"Keep Improving!":"Let's Rebuild!";
+  const learner=attAcc>=75&&attempted>=total*0.7?"Sharp Shooter":attAcc>=60?"Balanced Learner":attempted>=total*0.8?"Aggressive Attempter":"Cautious Starter";
+  const advice=learner==="Sharp Shooter"?"keep your accuracy and push attempt count higher.":
+    learner==="Balanced Learner"?"so build coverage and refine your approach to lift accuracy.":
+    learner==="Aggressive Attempter"?"so cut risky guesses to stop losing marks to negatives.":
+    "so start with high-weight easy chapters to grow your attempt base.";
+  const easy=ai.easyMissed.length, easyMarks=easy*4+Math.min(easy,r.all.wrong);
+  const wrap=el("div");
+  const hero=el("div","sb-hero");
+  hero.innerHTML=`<div class="sb-top">
+      <div style="min-width:220px;flex:1">
+        <div class="sb-hello">Hello ${esc(name)},</div>
+        <div class="sb-title">${mood}</div>
+        <div class="sb-tag">${ai.percentile}%ile projected · Rank ~${ai.rank.toLocaleString("en-IN")}</div>
+      </div>
+      <div class="sb-ring">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle cx="75" cy="75" r="66" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="13"/>
+          <circle cx="75" cy="75" r="66" fill="none" stroke="#fbbf24" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p)}"/>
+        </svg>
+        <div class="lbl"><span>MARKS</span><b>${r.all.marks}</b><i>out of ${r.all.max}</i></div>
+      </div>
+    </div>
+    <div class="sb-oqa">
+      <h4>Overall Question Analysis</h4>
+      <div class="r">
+        <div><div style="opacity:.85;font-size:13px">Total Questions</div><div style="font-size:28px;font-weight:900">${total}</div></div>
+        <div style="text-align:right"><div style="opacity:.85;font-size:13px">Attempted</div>
+          <div style="font-size:24px;font-weight:900">${attempted} <span style="font-size:14px;opacity:.85">(${pct(attempted,total)}%)</span></div></div>
+      </div>
+      <div class="sb-bar">
+        <i style="width:${pct(r.all.correct,total)}%;background:#22c55e"></i>
+        <i style="width:${pct(r.all.wrong,total)}%;background:#ef4444"></i>
+        <i style="width:${pct(r.all.skipped,total)}%;background:rgba(255,255,255,.35)"></i>
+      </div>
+      <div class="sb-legend">
+        <span><i class="sb-dot" style="background:#22c55e"></i>Correct ${r.all.correct}</span>
+        <span><i class="sb-dot" style="background:#ef4444"></i>Incorrect ${r.all.wrong}</span>
+        <span><i class="sb-dot" style="background:rgba(255,255,255,.55)"></i>Unattempted ${r.all.skipped}</span>
+        <span><i class="sb-dot" style="background:#fbbf24"></i>Attempt Accuracy ${attAcc}%</span>
+      </div>
+    </div>`;
+  wrap.appendChild(hero);
+
+  const boost=el("div","sb-boost");
+  const acts=[
+    ["Easy Kill Topics",`This test had <b>${ai.easyMissed.length+ai.hardSolved.length}</b> high-weight questions. You attempted <b>${attempted}</b> and got <b>${r.all.correct}</b> right (${attAcc}% accuracy), but missed about <b>~${easyMarks}</b> potential marks by not converting these key questions.`],
+    ["Fix Your Negatives",`<b>${r.all.wrong}</b> wrong answers cost you <b>-${r.all.neg}</b> marks. ${ai.careless.length} of them were answered in under ${fmtTime(Math.round(ai.avgT*0.5))} — slow down on those.`],
+    ["Time Reallocation",`Your slowest questions ate ${fmtTime(ai.slow.reduce((x,y)=>x+y.time,0))}. Cap any single question at ${fmtTime(Math.round(ai.avgT*2))} and bank the rest for ${ai.strongSub[ai.strongSub.length-1]}.`]
+  ];
+  boost.innerHTML=`<div class="in">
+      <div class="brand"><em>Ved</em><b>ScoreBooster</b></div>
+      <div class="line"><span class="em">🎓</span><div>You scored <b>${r.all.marks}/${r.all.max}</b>. <b>Predicted JEE Main rank ~${ai.rank>=1000?(ai.rank/1000).toFixed(1)+"K":ai.rank}.</b></div></div>
+      <div class="line"><span class="em">🎯</span><div>You're a <b>${learner}</b>, ${advice}</div></div>
+    </div>
+    <div class="sb-actions">
+      <div style="font-weight:900;font-size:16px;color:var(--text)">🎯 3 quick actions to gain <span style="color:var(--blue-l)">${Math.max(8,easyMarks)} marks</span> &amp; stay on track</div>
+      ${acts.map(([h,b])=>`<div class="sb-action"><h5>${h}</h5><div class="small muted">${b}</div></div>`).join("")}
+    </div>`;
+  wrap.appendChild(boost);
+  return wrap;
+}
+
 /* ------------------------------- RESULT ---------------------------------- */
 function viewResult(root){
   const a=S.attempts.find(x=>x.id===routeArg)||S.attempts.filter(x=>x.submittedAt).slice(-1)[0];
@@ -1224,6 +1448,8 @@ function viewResult(root){
   const t=testById(a.testId);
   if(!t){root.appendChild(el("div","card","<p class='muted'>Test was deleted.</p>"));return;}
   const r=a.result, ai=analyse(t,a);
+
+  root.appendChild(scoreHero(t,a,r,ai));
 
   const head=el("div","card");
   head.innerHTML=`<div class="row" style="justify-content:space-between">
@@ -1532,8 +1758,8 @@ function submitExam(auto){
   Object.values(attempt.responses).forEach(r=>r.time=Math.round(r.time));
   S.attempts.push(attempt);
   S.studyLog[todayKey(Date.now())]=(S.studyLog[todayKey(Date.now())]||0)+1;
-  const pl=S.planner.find(p=>!p.done&&todayKey(p.date)===todayKey(Date.now()));
-  if(pl)pl.done=true;
+  const pl=PLAN().find(p=>!p.done&&todayKey(p.date)===todayKey(Date.now()));
+  if(pl)setPlannerDone(pl,true);
   save();clearAutosave();
   const id=attempt.id;
   endExamUI();
@@ -1973,7 +2199,8 @@ function viewDash(root){
 applyTheme();
 render();
 loadPublicTests();
-cloudRefresh=setInterval(()=>loadPublicTests(true),15000);
+loadCloudPlanner();
+cloudRefresh=setInterval(()=>{loadPublicTests(true);loadCloudPlanner(true);},15000);
 </script>
 </body>
 </html>
