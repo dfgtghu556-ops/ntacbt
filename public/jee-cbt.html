@@ -957,6 +957,47 @@ function viewUpload(root){
   };
   root.appendChild(c);
 
+  // ---- full syllabus mock: all three subjects inside ONE pdf ----
+  const fs=el("div","card");
+  fs.innerHTML=`<div class="section-title"><span class="ico">📘</span><h3 style="margin:0">Full Syllabus Mock (single PDF)</h3></div>
+    <p class="muted small">For January-style full syllabus papers where Physics, Chemistry and Mathematics are inside
+    one PDF. Questions 1–25 are treated as Physics, 26–50 as Chemistry and 51–75 as Mathematics.
+    The published test runs for 3 hours with 75 questions.</p>`;
+  const fsName=el("input");fsName.type="text";fsName.placeholder="Test name";fsName.value="Full Syllabus Mock Test";
+  const fsYear=el("input");fsYear.type="number";fsYear.min="2015";fsYear.max="2035";fsYear.value=new Date().getFullYear();
+  const fsDiff=el("select");["Easy","Moderate","Hard","Advanced"].forEach(x=>{const o=el("option",null,x);o.value=x;fsDiff.appendChild(o);});
+  fsDiff.value="Moderate";
+  const fsGrid=el("div","filters");
+  const fsField=(label,node)=>{const w=el("div");w.style.display="grid";w.style.gap="4px";
+    w.appendChild(el("label","small muted",label));node.style.width="100%";w.appendChild(node);return w;};
+  fsGrid.append(fsField("Test name",fsName),fsField("Year",fsYear),fsField("Difficulty",fsDiff));
+  fs.appendChild(fsGrid);
+  const fsSt=el("div","small muted");fsSt.style.marginTop="10px";fsSt.textContent="No file selected.";
+  const fsIn=el("input");fsIn.type="file";fsIn.accept="application/pdf";fsIn.className="hide";
+  const fsBtn=el("button","btn","Upload & Publish Full Syllabus PDF");
+  fsBtn.onclick=()=>fsIn.click();
+  fsIn.onchange=async()=>{
+    const f=fsIn.files[0];if(!f)return;
+    fsBtn.disabled=true;
+    try{
+      const qs=await parsePaper(f,"Physics",m=>fsSt.textContent=m);
+      if(!qs.length)throw new Error("No questions detected");
+      const per=Math.ceil(qs.length/3),packs={Physics:[],Chemistry:[],Mathematics:[]};
+      qs.forEach((q,i)=>{const sub=SUBJECTS[Math.min(2,Math.floor(i/per))];q.subject=sub;packs[sub].push(q);});
+      const t=buildTest(fsName.value.trim()||"Full Syllabus Mock Test",packs);
+      t.id=crypto.randomUUID();t.duration=180*60;
+      SUBJECTS.forEach(sub=>{t.chapter[sub]="Full Syllabus";});
+      t.questions.forEach(q=>q.chapter=q.chapter||"Full Syllabus — "+q.subject);
+      const meta={year:+fsYear.value||new Date().getFullYear(),difficulty:fsDiff.value,
+        type:"Full Syllabus",subjectChapters:t.chapter};
+      const published=await publishPublicTest(t,{Physics:f,Chemistry:f,Mathematics:f},m=>fsSt.textContent=m,meta);
+      cloudTests.unshift(published);S.tests.push(published);
+      toast("Full syllabus mock published · "+published.testId);go("library");
+    }catch(e){fsSt.textContent="Failed: "+e.message;toast("Publish failed: "+e.message,4500);}
+    fsBtn.disabled=false;fsIn.value="";
+  };
+  fs.append(fsIn,fsBtn,fsSt);root.appendChild(fs);
+
   // planner upload
   const p=el("div","card");
   p.innerHTML=`<h3>Planner PDF (optional)</h3><p class="muted small">Import the Eklavya Test Series planner to fill your calendar.</p>`;
