@@ -1065,7 +1065,7 @@ function viewPlanner(root){
     <div style="margin-top:10px" class="progress"><i style="width:${pct(done,rows.length)}%"></i></div>
     <div class="small muted" style="margin-top:6px">Completion ${pct(done,rows.length)}% · ${done} of ${rows.length} tests done</div>`;
   root.appendChild(head);
-  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner published yet. Go to <b>Upload PDFs → Import Planner</b> — once imported it is shared with every device automatically.</p>`));return;}
+  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner published yet. Go to <b>Upload PDFs → Import Planner</b> — once imported it is shared with every device automatically.</p>`));root.appendChild(studyCalendarCard(rows));return;}
 
   root.appendChild(el("div","grid g4",
     statCard("Upcoming",rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(now))).length)+
