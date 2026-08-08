@@ -315,7 +315,7 @@ function imgTag(key,cls="qimg"){
   return i;
 }
 
-const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],notes:{},studyLog:{},
+const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],plannerDone:{},notes:{},studyLog:{},
   settings:{theme:"system",accent:"orange",density:"comfortable",fontSize:"md",cards:"elevated",anim:"on",candidate:"Candidate"}};
 let S = load();
 function load(){
@@ -419,6 +419,34 @@ async function registerAttempt(testId){
     await cloudFetch("/rest/v1/rpc/register_test_attempt",{method:"POST",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({_test_id:testId})});
   }catch(e){/* attempt counting is best-effort and never blocks the exam */}
+}
+/* ---------------- SHARED PLANNER (one planner for every device) ---------- */
+let cloudPlanner=null;
+async function loadCloudPlanner(silent=true){
+  try{
+    const r=await cloudFetch("/rest/v1/planner_imports?select=*&is_active=eq.true&order=created_at.desc&limit=1");
+    const rows=await r.json();
+    const next=rows[0]?{name:rows[0].name,rows:rows[0].rows||[]}:null;
+    const changed=JSON.stringify(next)!==JSON.stringify(cloudPlanner);
+    cloudPlanner=next;
+    if(!silent||(changed&&(route==="planner"||route==="dash")))render();
+  }catch(e){/* planner falls back to the locally imported copy */}
+}
+async function publishPlanner(name,rows){
+  await cloudFetch("/rest/v1/planner_imports",{method:"POST",
+    headers:{"Content-Type":"application/json","Prefer":"return=representation"},
+    body:JSON.stringify({name:name||"Eklavya Test Planner",rows,row_count:rows.length})});
+  await loadCloudPlanner(false);
+}
+/** The planner everyone sees. Cloud copy wins; "done" ticks stay on this device. */
+function PLAN(){
+  const base=(cloudPlanner&&cloudPlanner.rows&&cloudPlanner.rows.length)?cloudPlanner.rows:(S.planner||[]);
+  return base.map(r=>({...r,done:!!(S.plannerDone||{})[r.id]}));
+}
+function setPlannerDone(r,v){
+  S.plannerDone=S.plannerDone||{};
+  if(v)S.plannerDone[r.id]=true; else delete S.plannerDone[r.id];
+  save();
 }
 function shareTest(t){
   const url=location.origin+location.pathname+"?test="+encodeURIComponent(t.shareSlug);
@@ -915,7 +943,7 @@ function viewUpload(root){
     // chapters: manual entry wins, otherwise fall back to the next planner slot
     SUBJECTS.forEach(s=>{
       const manual=chapIn[s].value.trim();
-      const pl=S.planner.find(p=>p.subject===s&&!p.done);
+      const pl=PLAN().find(p=>p.subject===s&&!p.done);
       t.chapter[s]=manual||(pl&&pl.topics)||s;
     });
     t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
@@ -935,14 +963,22 @@ function viewUpload(root){
   const pin=el("input");pin.type="file";pin.accept="application/pdf";pin.className="hide";
   const pb=el("button","btn ghost","Import Planner");pb.onclick=()=>pin.click();
   pin.onchange=async()=>{const f=pin.files[0];if(!f)return;pb.disabled=true;pb.textContent="Parsing…";
-    try{const rows=await parsePlanner(f);S.planner=rows;save();toast(rows.length+" scheduled tests imported");go("planner");}
+    try{
+      const rows=await parsePlanner(f);
+      if(!rows.length)throw new Error("No schedule rows found");
+      S.planner=rows;save();
+      pb.textContent="Publishing…";
+      try{await publishPlanner(f.name.replace(/\.pdf$/i,""),rows);toast(rows.length+" tests published — visible on every device");}
+      catch(err){toast("Saved on this device, cloud sync failed");}
+      go("planner");
+    }
     catch(e){toast("Planner parse failed");}pb.disabled=false;pb.textContent="Import Planner";};
   p.appendChild(pin);p.appendChild(pb);root.appendChild(p);
 }
 
 /* ------------------------------- PLANNER --------------------------------- */
 function viewPlanner(root){
-  const rows=S.planner.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const rows=PLAN().slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
   const now=Date.now();
   const done=rows.filter(r=>r.done).length;
   const today=rows.filter(r=>todayKey(r.date)===todayKey(now));
@@ -952,7 +988,7 @@ function viewPlanner(root){
     <div style="margin-top:10px" class="progress"><i style="width:${pct(done,rows.length)}%"></i></div>
     <div class="small muted" style="margin-top:6px">Completion ${pct(done,rows.length)}% · ${done} of ${rows.length} tests done</div>`;
   root.appendChild(head);
-  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner imported yet. Go to <b>Upload PDFs → Import Planner</b>.</p>`));return;}
+  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner published yet. Go to <b>Upload PDFs → Import Planner</b> — once imported it is shared with every device automatically.</p>`));return;}
 
   root.appendChild(el("div","grid g4",
     statCard("Upcoming",rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(now))).length)+
@@ -1007,7 +1043,7 @@ function plannerRow(r){
     <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
     <div class="small">${esc(r.topics||"")}</div></div>`;
   const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
-  b.onclick=()=>{r.done=!r.done;save();render();};
+  b.onclick=()=>{setPlannerDone(r,!r.done);render();};
   d.appendChild(b);return d;
 }
 
@@ -1532,8 +1568,8 @@ function submitExam(auto){
   Object.values(attempt.responses).forEach(r=>r.time=Math.round(r.time));
   S.attempts.push(attempt);
   S.studyLog[todayKey(Date.now())]=(S.studyLog[todayKey(Date.now())]||0)+1;
-  const pl=S.planner.find(p=>!p.done&&todayKey(p.date)===todayKey(Date.now()));
-  if(pl)pl.done=true;
+  const pl=PLAN().find(p=>!p.done&&todayKey(p.date)===todayKey(Date.now()));
+  if(pl)setPlannerDone(pl,true);
   save();clearAutosave();
   const id=attempt.id;
   endExamUI();
