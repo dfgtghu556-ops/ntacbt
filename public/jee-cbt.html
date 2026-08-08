@@ -1430,11 +1430,11 @@ function scoreHero(t,a,r,ai){
   ];
   boost.innerHTML=`<div class="in">
       <div class="brand"><em>Ved</em><b>ScoreBooster</b></div>
-      <div class="line"><span class="em">🎓</span><div>You scored <b>${r.all.marks}/${r.all.max}</b>. <b>Predicted JEE Main rank ~${(ai.rank/1000).toFixed(1)}K.</b></div></div>
+      <div class="line"><span class="em">🎓</span><div>You scored <b>${r.all.marks}/${r.all.max}</b>. <b>Predicted JEE Main rank ~${ai.rank>=1000?(ai.rank/1000).toFixed(1)+"K":ai.rank}.</b></div></div>
       <div class="line"><span class="em">🎯</span><div>You're a <b>${learner}</b>, ${advice}</div></div>
     </div>
     <div class="sb-actions">
-      <div style="font-weight:900;font-size:16px">🎯 3 quick actions to gain <span style="color:var(--blue-l)">${Math.max(8,easyMarks)} marks</span> &amp; stay on track</div>
+      <div style="font-weight:900;font-size:16px;color:var(--text)">🎯 3 quick actions to gain <span style="color:var(--blue-l)">${Math.max(8,easyMarks)} marks</span> &amp; stay on track</div>
       ${acts.map(([h,b])=>`<div class="sb-action"><h5>${h}</h5><div class="small muted">${b}</div></div>`).join("")}
     </div>`;
   wrap.appendChild(boost);
