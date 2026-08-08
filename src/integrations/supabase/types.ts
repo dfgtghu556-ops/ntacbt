@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      planner_imports: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          row_count: number
+          rows: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          row_count?: number
+          rows?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          row_count?: number
+          rows?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       public_tests: {
         Row: {
           attempts_count: number
