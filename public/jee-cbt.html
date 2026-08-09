@@ -2321,6 +2321,23 @@ function viewDash(root){
 }
 
 /* -------------------------------- BOOT ----------------------------------- */
+/* Offline mode: register the generated worker only in a real published tab.
+   Never in dev, never inside the Lovable preview iframe, and ?sw=off cleans up. */
+(function registerOfflineWorker(){
+  if(!("serviceWorker" in navigator))return;
+  const h=location.hostname, inFrame=window.top!==window.self;
+  const blocked=inFrame||location.search.includes("sw=off")||
+    /^(localhost|127\.0\.0\.1)$/.test(h)||h.startsWith("id-preview--")||h.startsWith("preview--")||
+    /(^|\.)lovableproject\.com$/.test(h)||/(^|\.)lovableproject-dev\.com$/.test(h)||
+    /(^|\.)beta\.lovable\.dev$/.test(h);
+  if(blocked){
+    navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{
+      if(r.active&&r.active.scriptURL.endsWith("/sw.js"))r.unregister();}));
+    return;
+  }
+  addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+})();
+
 applyTheme();
 render();
 (async()=>{ await hydrateFromCache(); render(); loadPublicTests(); })();
