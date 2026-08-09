@@ -130,6 +130,57 @@ canvas.chart{width:100%;height:210px;display:block}
 .bar{height:8px;border-radius:6px;background:var(--blue-soft);overflow:hidden}
 .bar>i{display:block;height:100%}
 ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
+/* ---- planner (clean, scannable) ---- */
+.plan-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin-top:14px}
+.plan-summary div{background:var(--blue-soft);border-radius:12px;padding:10px 12px}
+.plan-summary b{display:block;font-size:22px;font-weight:900;line-height:1.1}
+.plan-summary span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.next-test{background:linear-gradient(135deg,var(--blue-d),var(--blue));color:#fff}
+.next-test .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.next-test h3{color:#fff}
+.ptabs{display:flex;gap:6px;overflow-x:auto;padding:5px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;margin-bottom:14px}
+.ptabs button{flex:1;min-width:104px;border:0;background:transparent;padding:9px 12px;border-radius:10px;
+  font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;transition:.15s}
+.ptabs button.active{background:var(--blue);color:#fff}
+.plan-month{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+.prow{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;
+  border:1px solid var(--line);border-left:4px solid var(--sub,var(--line));border-radius:12px;
+  padding:12px 14px;margin:8px 0;background:var(--panel)}
+.prow.done{opacity:.68}
+.prow.done .prow-top b{text-decoration:line-through}
+.prow-main{min-width:210px;flex:1;display:grid;gap:4px}
+.prow-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.prow-acts{display:flex;gap:6px;flex-wrap:wrap}
+.cal .cell .dots{display:flex;gap:3px;margin-top:3px}
+.cal .cell .dots i{width:5px;height:5px;border-radius:50%}
+.cal-detail{margin-top:12px}
+.formgrid{display:grid;gap:10px}
+.formgrid label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.formgrid input,.formgrid textarea{width:100%;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:9px 12px;outline:0;font-weight:500;color:var(--ink)}
+/* ---- question review (calm, readable) ---- */
+.qrev{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;padding:14px;
+  margin-bottom:14px;background:var(--panel)}
+.qrev.is-correct{border-left-color:var(--green)}
+.qrev.is-wrong{border-left-color:var(--red)}
+.qrev.is-skipped{border-left-color:var(--amber)}
+.qrev-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between;
+  padding-bottom:10px;border-bottom:1px dashed var(--line);margin-bottom:10px}
+.qrev-no{font-weight:900;font-size:15px}
+.qrev-ans{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.qrev-ans span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:9px;background:var(--blue-soft)}
+.qrev-ans span.ok{background:rgba(30,158,87,.15);color:var(--green)}
+.qrev-ans span.no{background:rgba(211,59,59,.13);color:var(--red)}
+.qrev details{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.qrev details summary{cursor:pointer;padding:10px 12px;font-weight:700;font-size:13px;background:var(--blue-soft);list-style:none}
+.qrev details summary::-webkit-details-marker{display:none}
+.qrev details summary:before{content:"▸ ";}
+.qrev details[open] summary:before{content:"▾ ";}
+.qrev details .in{padding:12px}
+.qrev-foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.offline-bar{position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--amber);color:#1b1b1b;
+  font-size:13px;font-weight:700;text-align:center;padding:8px 12px}
 /* ---- premium score report (ScoreBooster style) ---- */
 .sb-hero{position:relative;overflow:hidden;border-radius:20px;padding:26px;color:#fff;
   background:linear-gradient(135deg,#4c1d95,#5b21b6 45%,#6d28d9);box-shadow:0 18px 40px -22px rgba(76,29,149,.9)}
