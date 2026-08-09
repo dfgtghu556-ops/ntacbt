@@ -118,7 +118,7 @@ html.dark .qimg{filter:invert(1) hue-rotate(180deg)}
 .modal{position:fixed;inset:0;background:rgba(5,15,30,.6);display:grid;place-items:center;z-index:150;padding:16px}
 .modal .box{background:var(--panel);border-radius:var(--radius);padding:20px;max-width:520px;width:100%;box-shadow:var(--shadow);animation:fade .25s}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
-.cal .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
+.cal .cell{min-height:52px;padding:4px;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
 .cal .cell.has{background:var(--blue-soft);font-weight:700;cursor:pointer}
 .cal .cell.done{background:rgba(30,158,87,.18)}
 .cal .cell.today{outline:2px solid var(--blue-l)}
@@ -130,6 +130,57 @@ canvas.chart{width:100%;height:210px;display:block}
 .bar{height:8px;border-radius:6px;background:var(--blue-soft);overflow:hidden}
 .bar>i{display:block;height:100%}
 ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
+/* ---- planner (clean, scannable) ---- */
+.plan-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin-top:14px}
+.plan-summary div{background:var(--blue-soft);border-radius:12px;padding:10px 12px}
+.plan-summary b{display:block;font-size:22px;font-weight:900;line-height:1.1}
+.plan-summary span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.next-test{background:linear-gradient(135deg,var(--blue-d),var(--blue));color:#fff}
+.next-test .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.next-test h3{color:#fff}
+.ptabs{display:flex;gap:6px;overflow-x:auto;padding:5px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;margin-bottom:14px}
+.ptabs button{flex:1;min-width:104px;border:0;background:transparent;padding:9px 12px;border-radius:10px;
+  font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;transition:.15s}
+.ptabs button.active{background:var(--blue);color:#fff}
+.plan-month{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+.prow{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;
+  border:1px solid var(--line);border-left:4px solid var(--sub,var(--line));border-radius:12px;
+  padding:12px 14px;margin:8px 0;background:var(--panel)}
+.prow.done{opacity:.68}
+.prow.done .prow-top b{text-decoration:line-through}
+.prow-main{min-width:210px;flex:1;display:grid;gap:4px}
+.prow-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.prow-acts{display:flex;gap:6px;flex-wrap:wrap}
+.cal .cell .dots{display:flex;gap:3px;margin-top:3px}
+.cal .cell .dots i{width:5px;height:5px;border-radius:50%}
+.cal-detail{margin-top:12px}
+.formgrid{display:grid;gap:10px}
+.formgrid label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.formgrid input,.formgrid textarea{width:100%;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:9px 12px;outline:0;font-weight:500;color:var(--ink)}
+/* ---- question review (calm, readable) ---- */
+.qrev{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;padding:14px;
+  margin-bottom:14px;background:var(--panel)}
+.qrev.is-correct{border-left-color:var(--green)}
+.qrev.is-wrong{border-left-color:var(--red)}
+.qrev.is-skipped{border-left-color:var(--amber)}
+.qrev-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between;
+  padding-bottom:10px;border-bottom:1px dashed var(--line);margin-bottom:10px}
+.qrev-no{font-weight:900;font-size:15px}
+.qrev-ans{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.qrev-ans span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:9px;background:var(--blue-soft)}
+.qrev-ans span.ok{background:rgba(30,158,87,.15);color:var(--green)}
+.qrev-ans span.no{background:rgba(211,59,59,.13);color:var(--red)}
+.qrev details{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.qrev details summary{cursor:pointer;padding:10px 12px;font-weight:700;font-size:13px;background:var(--blue-soft);list-style:none}
+.qrev details summary::-webkit-details-marker{display:none}
+.qrev details summary:before{content:"▸ ";}
+.qrev details[open] summary:before{content:"▾ ";}
+.qrev details .in{padding:12px}
+.qrev-foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.offline-bar{position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--amber);color:#1b1b1b;
+  font-size:13px;font-weight:700;text-align:center;padding:8px 12px}
 /* ---- premium score report (ScoreBooster style) ---- */
 .sb-hero{position:relative;overflow:hidden;border-radius:20px;padding:26px;color:#fff;
   background:linear-gradient(135deg,#4c1d95,#5b21b6 45%,#6d28d9);box-shadow:0 18px 40px -22px rgba(76,29,149,.9)}
@@ -274,6 +325,7 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 <div class="wrap" id="app"></div>
 
 <!-- ================= EXAM VIEW (full screen) ================= -->
+<div id="offlineBar" class="offline-bar hide">You are offline — showing your saved Test Library, results and analytics.</div>
 <div id="examView" class="hide">
   <div class="exam-head">
     <strong id="exTitle">Test</strong>
@@ -316,7 +368,7 @@ const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
 const fmtTime=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
   return (h?String(h).padStart(2,"0")+":":"")+String(m).padStart(2,"0")+":"+String(x).padStart(2,"0");};
 const fmtDate=d=>new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
-const todayKey=d=>new Date(d).toISOString().slice(0,10);
+const todayKey=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(msg,ms=2600){const t=el("div","toast",esc(msg));document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
 function confirmBox(title,body,onYes,yesLabel="Yes"){
@@ -387,8 +439,17 @@ async function cloudFetch(path,options={}){
 const objectPath=p=>p.split("/").map(encodeURIComponent).join("/");
 async function cloudObjectURL(path){
   if(imgCache.has("cloud:"+path))return imgCache.get("cloud:"+path);
-  const r=await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path));
-  const u=URL.createObjectURL(await r.blob());imgCache.set("cloud:"+path,u);return u;
+  const key="blob:"+path;
+  try{
+    const r=await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path));
+    const blob=await r.blob();
+    imgPut(key,blob).catch(()=>{});                 // keep it for offline review
+    const u=URL.createObjectURL(blob);imgCache.set("cloud:"+path,u);return u;
+  }catch(e){
+    const cached=await imgGet(key).catch(()=>null); // no network: serve the saved copy
+    if(!cached)throw e;
+    const u=URL.createObjectURL(cached);imgCache.set("cloud:"+path,u);return u;
+  }
 }
 async function uploadObject(path,body,contentType){
   await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path),{
@@ -424,17 +485,40 @@ function rowToTest(row){
       chapters:row.chapters||[],subjectChapters:row.subject_chapters||{},attempts:row.attempts_count||0,
       durationMin:row.duration_minutes||Math.round((t.duration||10800)/60)}};
 }
+let OFFLINE=false;
+const LIB_CACHE="cache:publicTests";
+function setOffline(v){
+  if(OFFLINE===v)return; OFFLINE=v;
+  const bar=$("#offlineBar");
+  if(bar)bar.classList.toggle("hide",!v);
+}
+async function hydrateFromCache(){
+  try{
+    const rows=await imgGet(LIB_CACHE);
+    if(!rows||!rows.length)return false;
+    cloudTests=rows.map(rowToTest);
+    S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
+    return true;
+  }catch(e){return false;}
+}
 async function loadPublicTests(silent=false){
   try{
     const r=await cloudFetch("/rest/v1/public_tests?select=*&is_published=eq.true&order=created_at.desc");
     const rows=await r.json(),before=cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
+    imgPut(LIB_CACHE,rows).catch(()=>{});          // library stays browsable offline
+    setOffline(false);
     cloudTests=rows.map(rowToTest);
     S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
     const changed=before!==cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
     if(!silent||(changed&&(route==="dash"||route==="library")))render();
     const slug=new URLSearchParams(location.search).get("test");
     if(slug&&!window.__sharedTestOpened){const t=cloudTests.find(x=>x.shareSlug===slug);if(t){window.__sharedTestOpened=true;startExam(t.id);}}
-  }catch(e){if(!silent)toast("Public Test Library could not load");}
+  }catch(e){
+    setOffline(true);
+    const ok=await hydrateFromCache();
+    if(ok)render();
+    if(!silent)toast(ok?"Offline — showing the saved Test Library":"Offline and nothing saved yet");
+  }
 }
 async function publishPublicTest(test,files,onProgress,meta={}){
   const publicTest=await cloudifyTest(test,files,onProgress);
@@ -456,33 +540,53 @@ async function registerAttempt(testId){
       headers:{"Content-Type":"application/json"},body:JSON.stringify({_test_id:testId})});
   }catch(e){/* attempt counting is best-effort and never blocks the exam */}
 }
-/* ---------------- SHARED PLANNER (one planner for every device) ---------- */
-let cloudPlanner=null;
-async function loadCloudPlanner(silent=true){
-  try{
-    const r=await cloudFetch("/rest/v1/planner_imports?select=*&is_active=eq.true&order=created_at.desc&limit=1");
-    const rows=await r.json();
-    const next=rows[0]?{name:rows[0].name,rows:rows[0].rows||[]}:null;
-    const changed=JSON.stringify(next)!==JSON.stringify(cloudPlanner);
-    cloudPlanner=next;
-    if(!silent||(changed&&(route==="planner"||route==="dash")))render();
-  }catch(e){/* planner falls back to the locally imported copy */}
-}
-async function publishPlanner(name,rows){
-  await cloudFetch("/rest/v1/planner_imports",{method:"POST",
-    headers:{"Content-Type":"application/json","Prefer":"return=representation"},
-    body:JSON.stringify({name:name||"Eklavya Test Planner",rows,row_count:rows.length})});
-  await loadCloudPlanner(false);
-}
-/** The planner everyone sees. Cloud copy wins; "done" ticks stay on this device. */
+/* --------- FIXED PLANNER (identical on every device, works offline) ------ */
+const BUILTIN_PLAN=[{"id":"ek001","no":1,"date":"2026-08-02T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-1-JEE-2027","subject":"Physics","type":"HWT","topics":["Dimensional analysis and its applications"]},{"id":"ek002","no":2,"date":"2026-08-02T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-2-JEE-2027","subject":"Chemistry","type":"HWT","topics":["stoichimetry of reactions"]},{"id":"ek003","no":3,"date":"2026-08-02T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-3-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Locus problems","Algebra of Complex Numbers"]},{"id":"ek004","no":4,"date":"2026-08-09T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-4-JEE-2027","subject":"Physics","type":"HWT","topics":["Errors in measurements","Dimensions of Physics quantities"]},{"id":"ek005","no":5,"date":"2026-08-09T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-5-JEE-2027","subject":"Chemistry","type":"HWT","topics":["formula of compounds"]},{"id":"ek006","no":6,"date":"2026-08-09T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-6-JEE-2027","subject":"Mathematics","type":"HWT","topics":["The Fundamental Principal of Counting"]},{"id":"ek007","no":7,"date":"2026-08-16T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-7-JEE-2027","subject":"Physics","type":"HWT","topics":["uniformly accelerated motion average speed and instantaneous velocity"]},{"id":"ek008","no":8,"date":"2026-08-16T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-8-JEE-2027","subject":"Chemistry","type":"HWT","topics":["properties of elements"]},{"id":"ek009","no":9,"date":"2026-08-16T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-9-JEE-2027","subject":"Mathematics","type":"HWT","topics":["General Term","Properties of Binomial Coefficients"]},{"id":"ek010","no":10,"date":"2026-08-23T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-10-JEE-2027","subject":"Physics","type":"HWT","topics":["Newton's second Law of motion","Equilibrium of concurrent forces and Vectors"]},{"id":"ek011","no":11,"date":"2026-08-23T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-11-JEE-2027","subject":"Chemistry","type":"HWT","topics":["properties of Compounds"]},{"id":"ek012","no":12,"date":"2026-08-23T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-12-JEE-2027","subject":"Mathematics","type":"HWT","topics":["nth Term of a GP"]},{"id":"ek013","no":13,"date":"2026-09-06T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-13-JEE-2027","subject":"Physics","type":"HWT","topics":["Torque and Statics of Rigid Bodies","The moment of inertia of Rigid Bodies"]},{"id":"ek014","no":14,"date":"2026-09-06T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-14-JEE-2027","subject":"Chemistry","type":"HWT","topics":["periodic properties"]},{"id":"ek015","no":15,"date":"2026-09-06T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-15-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Taking a point on a Straight Line"]},{"id":"ek016","no":16,"date":"2026-09-06T00:00:00","time":"1:30 PM – 2:30 PM","name":"Physics-HWT-Test-16-JEE-2027","subject":"Physics","type":"HWT","topics":["Rolling Motion","Angular Momentum and its conservation"]},{"id":"ek017","no":17,"date":"2026-09-13T00:00:00","time":"9:00 AM – 10:00 AM","name":"Chemistry-HWT-Test-17-JEE-2027","subject":"Chemistry","type":"HWT","topics":["MOT hybridisation/shape"]},{"id":"ek018","no":18,"date":"2026-09-13T00:00:00","time":"10:30 AM – 11:30 AM","name":"Maths-HWT-Test-18-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Equation of a Hyperbola in Standard Form","Equation of a Ellipse in Standard Form"]},{"id":"ek019","no":19,"date":"2026-09-13T00:00:00","time":"12:00 PM – 1:00 PM","name":"Physics-HWT-Test-19-JEE-2027","subject":"Physics","type":"HWT","topics":["Young's modulus","SHM Equation, x,v,a"]},{"id":"ek020","no":20,"date":"2026-09-13T00:00:00","time":"1:30 PM – 2:30 PM","name":"Chemistry-HWT-Test-20-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Spontaneity of reactions enthalpy of reactions"]},{"id":"ek021","no":21,"date":"2026-09-20T00:00:00","time":"9:00 AM – 10:00 AM","name":"Maths-HWT-Test-21-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Methods of finding Limits"]},{"id":"ek022","no":22,"date":"2026-09-20T00:00:00","time":"10:30 AM – 11:30 AM","name":"Physics-HWT-Test-22-JEE-2027","subject":"Physics","type":"HWT","topics":["Surface energy and surface tension","Bernoulli's principle and its applications"]},{"id":"ek023","no":23,"date":"2026-09-20T00:00:00","time":"12:00 PM – 1:00 PM","name":"Chemistry-HWT-Test-23-JEE-2027","subject":"Chemistry","type":"HWT","topics":["separation of organic compounds quantitative estimation"]},{"id":"ek024","no":24,"date":"2026-09-20T00:00:00","time":"1:30 PM – 2:30 PM","name":"Maths-HWT-Test-24-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Matrix Multiplication","Adjoint of a Matrix"]},{"id":"ek025","no":25,"date":"2026-09-27T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-25-JEE-2027","subject":"Physics","type":"HWT","topics":["Adiabatic and Polytropic Process"]},{"id":"ek026","no":26,"date":"2026-09-27T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-26-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Acidic strength","Electronic effects"]},{"id":"ek027","no":27,"date":"2026-09-27T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-27-JEE-2027","subject":"Mathematics","type":"HWT","topics":["System of Linear Equations"]},{"id":"ek028","no":28,"date":"2026-09-27T00:00:00","time":"1:30 PM – 2:30 PM","name":"Physics-HWT-Test-28-JEE-2027","subject":"Physics","type":"HWT","topics":["Isothermal,Isochoric, Isobaric Process","Average, Most Probable, RMS speed of gas molecules(Formula Based)","O C TO B E R 2 0 2 6"]},{"id":"ek029","no":29,"date":"2026-10-04T00:00:00","time":"9:00 AM – 10:00 AM","name":"Chemistry-HWT-Test-29-JEE-2027","subject":"Chemistry","type":"HWT","topics":["colligative properties"]},{"id":"ek030","no":30,"date":"2026-10-04T00:00:00","time":"10:30 AM – 11:30 AM","name":"Maths-HWT-Test-30-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Continuity at a point"]},{"id":"ek031","no":31,"date":"2026-10-04T00:00:00","time":"12:00 PM – 1:00 PM","name":"Physics-HWT-Test-31-JEE-2027","subject":"Physics","type":"HWT","topics":["Electric field due to extended objects","Electric field: Electric field due to a point charges"]},{"id":"ek032","no":32,"date":"2026-10-04T00:00:00","time":"1:30 PM – 2:30 PM","name":"Chemistry-HWT-Test-32-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Concentration terms"]},{"id":"ek033","no":33,"date":"2026-10-11T00:00:00","time":"9:00 AM – 10:00 AM","name":"Maths-HWT-Test-33-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Maxima and Minima"]},{"id":"ek034","no":34,"date":"2026-10-11T00:00:00","time":"10:30 AM – 11:30 AM","name":"Physics-HWT-Test-34-JEE-2027","subject":"Physics","type":"HWT","topics":["RC Circuits at steady state","Displacement current","Faraday’s and Lenz’s Law"]},{"id":"ek035","no":35,"date":"2026-10-11T00:00:00","time":"12:00 PM – 1:00 PM","name":"Chemistry-HWT-Test-35-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Conductance","Faraday's Law"]},{"id":"ek036","no":36,"date":"2026-10-11T00:00:00","time":"1:30 PM – 2:30 PM","name":"Maths-HWT-Test-36-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Properties of Definite Integration","Direct Calculation of Definite Integral"]},{"id":"ek037","no":37,"date":"2026-10-18T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-37-JEE-2027","subject":"Physics","type":"HWT","topics":["Capacitor with Dielectric"]},{"id":"ek038","no":38,"date":"2026-10-18T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-38-JEE-2027","subject":"Chemistry","type":"HWT","topics":["electrode potential"]},{"id":"ek039","no":39,"date":"2026-10-18T00:00:00","time":"12:00 PM – 1:00 PM","name":"Maths-HWT-Test-39-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Area Bounded between Simple Curves"]},{"id":"ek040","no":40,"date":"2026-10-18T00:00:00","time":"1:30 PM – 2:30 PM","name":"Physics-HWT-Test-40-JEE-2027","subject":"Physics","type":"HWT","topics":["Electric potential and its calculation for point charges"]},{"id":"ek041","no":41,"date":"2026-10-25T00:00:00","time":"9:00 AM – 10:00 AM","name":"Chemistry-HWT-Test-41-JEE-2027","subject":"Chemistry","type":"HWT","topics":["order determination","Bohr's model"]},{"id":"ek042","no":42,"date":"2026-10-25T00:00:00","time":"10:30 AM – 11:30 AM","name":"Maths-HWT-Test-42-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Linear Differential Equations"]},{"id":"ek043","no":43,"date":"2026-10-25T00:00:00","time":"12:00 PM – 1:00 PM","name":"Physics-HWT-Test-43-JEE-2027","subject":"Physics","type":"HWT","topics":["Combinations of resistors","Kirchhoff's laws and their applications"]},{"id":"ek044","no":44,"date":"2026-10-25T00:00:00","time":"1:30 PM – 2:30 PM","name":"Chemistry-HWT-Test-44-JEE-2027","subject":"Chemistry","type":"HWT","topics":["arhenius equation"]},{"id":"ek045","no":45,"date":"2026-11-01T00:00:00","time":"9:00 AM – 10:00 AM","name":"Maths-HWT-Test-45-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Products of Vectors - 1"]},{"id":"ek046","no":46,"date":"2026-11-01T00:00:00","time":"10:30 AM – 11:30 AM","name":"Physics-HWT-Test-46-JEE-2027","subject":"Physics","type":"HWT","topics":["Ammeter and Voltmeter","Wheatstone Bridge and Meter Bridge"]},{"id":"ek047","no":47,"date":"2026-11-01T00:00:00","time":"12:00 PM – 1:00 PM","name":"Chemistry-HWT-Test-47-JEE-2027","subject":"Chemistry","type":"HWT","topics":["isomerism","Magnetic properties"]},{"id":"ek048","no":48,"date":"2026-11-01T00:00:00","time":"1:30 PM – 2:30 PM","name":"Maths-HWT-Test-48-JEE-2027","subject":"Mathematics","type":"HWT","topics":["Baye's Theotem","Probability Distribution"]},{"id":"ek049","no":49,"date":"2026-11-08T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-49-JEE-2027","subject":"Physics","type":"HWT","topics":["Charge in uniform magnetic field (Circle and Helix)","Ampere's law and its applications"]},{"id":"ek050","no":50,"date":"2026-11-08T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-50-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Bonding in complexes"]},{"id":"ek051","no":51,"date":"2026-11-08T00:00:00","time":"12:00 PM – 1:00 PM","name":"Physics-HWT-Test-51-JEE-2027","subject":"Physics","type":"HWT","topics":["power in AC circuits and wattless current"]},{"id":"ek052","no":52,"date":"2026-11-08T00:00:00","time":"1:30 PM – 2:30 PM","name":"Chemistry-HWT-Test-52-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Reactions of Phenols properties"]},{"id":"ek053","no":53,"date":"2026-11-15T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-53-JEE-2027","subject":"Physics","type":"HWT","topics":["Image formation by a thin lens lens maker formula"]},{"id":"ek054","no":54,"date":"2026-11-15T00:00:00","time":"10:30 AM – 11:30 AM","name":"Chemistry-HWT-Test-54-JEE-2027","subject":"Chemistry","type":"HWT","topics":["chemical reactions of carbonyls"]},{"id":"ek055","no":55,"date":"2026-11-15T00:00:00","time":"12:00 PM – 1:00 PM","name":"Physics-HWT-Test-55-JEE-2027","subject":"Physics","type":"HWT","topics":["Photoelectric effect"]},{"id":"ek056","no":56,"date":"2026-11-15T00:00:00","time":"1:30 PM – 2:30 PM","name":"Chemistry-HWT-Test-56-JEE-2027","subject":"Chemistry","type":"HWT","topics":["Reactions of Amines carbohydrates"]},{"id":"ek057","no":57,"date":"2026-11-22T00:00:00","time":"9:00 AM – 10:00 AM","name":"Physics-HWT-Test-57-JEE-2027","subject":"Physics","type":"HWT","topics":["Bohr model (Radius, speed and Energy of electron)"]},{"id":"ek058","no":58,"date":"2026-11-22T00:00:00","time":"10:30 AM – 11:30 AM","name":"Physics-HWT-Test-58-JEE-2027","subject":"Physics","type":"HWT","topics":["Composition and size of nucleus nuclear fission, fusion and Reactor"]},{"id":"ek059","no":59,"date":"2026-11-22T00:00:00","time":"12:00 PM – 1:00 PM","name":"Physics-HWT-Test-59-JEE-2027","subject":"Physics","type":"HWT","topics":["Logic gates (OR, AND, NOT, NAND and NOR)"]},{"id":"ek060","no":60,"date":"2026-11-22T00:00:00","time":"1:30 PM – 2:30 PM","name":"Physics-HWT-Test-60-JEE-2027","subject":"Physics","type":"HWT","topics":["Zener diode as a voltage regulator"]},{"id":"ek061","no":61,"date":"2026-11-25T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 1","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek062","no":62,"date":"2026-11-29T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 2","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek063","no":63,"date":"2026-12-02T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 3","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek064","no":64,"date":"2026-12-06T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 4","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek065","no":65,"date":"2026-12-09T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 5","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek066","no":66,"date":"2026-12-13T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 6","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek067","no":67,"date":"2026-12-16T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 7","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek068","no":68,"date":"2026-12-20T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 8","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek069","no":69,"date":"2026-12-23T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 9","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek070","no":70,"date":"2026-12-27T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 10","subject":"Mixed","type":"Part Test","topics":[]},{"id":"ek071","no":71,"date":"2026-12-30T00:00:00","time":"9:00 AM – 12:00 PM","name":"Part Test 11","subject":"Mixed","type":"Part Test","topics":["J A N U A RY 2 0 2 7"]},{"id":"ek072","no":72,"date":"2027-01-01T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 1","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek073","no":73,"date":"2027-01-02T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 2","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek074","no":74,"date":"2027-01-03T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 3","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek075","no":75,"date":"2027-01-04T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 4","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek076","no":76,"date":"2027-01-05T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 5","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek077","no":77,"date":"2027-01-06T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 6","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek078","no":78,"date":"2027-01-07T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 7","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek079","no":79,"date":"2027-01-08T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 8","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek080","no":80,"date":"2027-01-09T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 9","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek081","no":81,"date":"2027-01-10T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 10","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek082","no":82,"date":"2027-01-11T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 11","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek083","no":83,"date":"2027-01-12T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 12","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek084","no":84,"date":"2027-01-13T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 13","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek085","no":85,"date":"2027-01-14T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 14","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek086","no":86,"date":"2027-01-15T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 15","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek087","no":87,"date":"2027-01-16T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 16","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek088","no":88,"date":"2027-01-17T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 17","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek089","no":89,"date":"2027-01-18T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 18","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek090","no":90,"date":"2027-01-19T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 19","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek091","no":91,"date":"2027-01-20T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 20","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek092","no":92,"date":"2027-01-21T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 21","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek093","no":93,"date":"2027-01-22T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 22","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek094","no":94,"date":"2027-01-23T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 23","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek095","no":95,"date":"2027-01-24T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 24","subject":"Mixed","type":"Mock","topics":[]},{"id":"ek096","no":96,"date":"2027-01-25T00:00:00","time":"9:00 AM – 12:00 PM","name":"JEE Main Mock Test 25","subject":"Mixed","type":"Mock","topics":["exam conditions. Keep this planner handy and mark your test dates on your personal calendar."]}];
+/** Only local tweaks (a shifted date, a renamed slot) and "done" ticks are per-device. */
+function plannerEdits(){return S.plannerEdits||(S.plannerEdits={});}
 function PLAN(){
-  const base=(cloudPlanner&&cloudPlanner.rows&&cloudPlanner.rows.length)?cloudPlanner.rows:(S.planner||[]);
-  return base.map(r=>({...r,done:!!(S.plannerDone||{})[r.id]}));
+  const e=plannerEdits();
+  return BUILTIN_PLAN.map(r=>{
+    const p=e[r.id]||{};
+    return {...r,date:p.date||r.date,time:p.time||r.time,name:p.name||r.name,
+      topics:(p.topics!=null?p.topics:(r.topics||[]).join("; ")),
+      edited:!!(p.date||p.time||p.name||p.topics!=null),
+      done:!!(S.plannerDone||{})[r.id]};
+  });
 }
 function setPlannerDone(r,v){
   S.plannerDone=S.plannerDone||{};
   if(v)S.plannerDone[r.id]=true; else delete S.plannerDone[r.id];
   save();
+}
+/** Dates and slots do move — this lets a student correct a row on their device. */
+function editPlannerRow(r,after){
+  const m=el("div","modal");
+  m.innerHTML=`<div class="box"><h3>Edit this test slot</h3>
+    <div class="small muted" style="margin-bottom:10px">Saved on this device only — the shared planner stays intact.</div>
+    <div class="formgrid">
+      <label>Test name<input type="text" data-k="name" value="${esc(r.name)}"></label>
+      <label>Date<input type="date" data-k="date" value="${esc(String(r.date).slice(0,10))}"></label>
+      <label>Time slot<input type="text" data-k="time" value="${esc(r.time||"")}"></label>
+      <label>Topics<textarea data-k="topics" rows="3">${esc(r.topics||"")}</textarea></label>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+      <button class="btn sm ghost" data-reset>Reset to original</button>
+      <button class="btn sm ghost" data-no>Cancel</button>
+      <button class="btn sm" data-yes>Save changes</button></div></div>`;
+  const val=k=>m.querySelector(`[data-k="${k}"]`).value.trim();
+  m.querySelector("[data-no]").onclick=()=>m.remove();
+  m.querySelector("[data-reset]").onclick=()=>{delete plannerEdits()[r.id];save();m.remove();toast("Slot restored");after&&after();};
+  m.querySelector("[data-yes]").onclick=()=>{
+    const base=BUILTIN_PLAN.find(x=>x.id===r.id)||{},patch={};
+    const d=val("date"); if(d&&d!==String(base.date).slice(0,10))patch.date=d+"T00:00:00";
+    if(val("time")&&val("time")!==base.time)patch.time=val("time");
+    if(val("name")&&val("name")!==base.name)patch.name=val("name");
+    if(val("topics")!==(base.topics||[]).join("; "))patch.topics=val("topics");
+    if(Object.keys(patch).length)plannerEdits()[r.id]=patch; else delete plannerEdits()[r.id];
+    save();m.remove();toast("Schedule updated on this device");after&&after();
+  };
+  document.body.appendChild(m);
 }
 function shareTest(t){
   const url=location.origin+location.pathname+"?test="+encodeURIComponent(t.shareSlug);
@@ -672,41 +776,6 @@ async function parsePaper(file,subject,onProgress){
   }
   pages.forEach(p=>p.canvas=null);
   return questions;
-}
-
-/** Planner PDF -> schedule rows. */
-async function parsePlanner(file){
-  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
-  const out=[]; const dateRe=/^(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})$/;
-  for(let p=1;p<=pdf.numPages;p++){
-    const pg=await pdf.getPage(p); const {items}=await pageItems(pg);
-    const rows=[];
-    items.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(i=>{
-      const last=rows[rows.length-1];
-      if(last&&Math.abs(last.y-i.y)<5){last.cells.push(i);}else rows.push({y:i.y,cells:[i]});
-    });
-    let cur=null;
-    for(const r of rows){
-      const cells=r.cells.sort((a,b)=>a.x-b.x);
-      const txt=cells.map(c=>c.s);
-      const di=txt.findIndex(t=>dateRe.test(t));
-      if(di>=0){
-        if(cur)out.push(cur);
-        const time=(txt.find(t=>/AM|PM/.test(t)&&/[-–]/.test(t))||"").trim();
-        const name=(txt.find(t=>/test/i.test(t)&&!/AM|PM/.test(t))||"").trim();
-        const topics=txt.slice(di+1).filter(t=>t!==time&&t!==name&&!/^\d+$/.test(t)&&!/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/.test(t));
-        cur={id:uid(),date:new Date(txt[di]+" 00:00").toISOString(),time,name,
-             subject:/physic/i.test(name)?"Physics":/chem/i.test(name)?"Chemistry":/math/i.test(name)?"Mathematics":"Mixed",
-             topics:topics.join(" ").replace(/\s*•\s*/g,"; ").trim(),done:false};
-      } else if(cur){
-        const extra=txt.filter(t=>!/^(PHYSICS|CHEMISTRY|MATHS|Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/i.test(t));
-        if(extra.length && /^[A-Za-z•]/.test(extra[0]) && cur.topics.length<160)
-          cur.topics=(cur.topics+" "+extra.join(" ")).replace(/\s*•\s*/g,"; ").trim();
-      }
-    }
-    if(cur)out.push(cur);
-  }
-  return out.filter(r=>r.name);
 }
 
 /* --------------------------- 4. TEST / SCORING --------------------------- */
@@ -1034,97 +1103,136 @@ function viewUpload(root){
   };
   fs.append(fsIn,fsBtn,fsSt);root.appendChild(fs);
 
-  // planner upload
-  const p=el("div","card");
-  p.innerHTML=`<h3>Planner PDF (optional)</h3><p class="muted small">Import the Eklavya Test Series planner to fill your calendar.</p>`;
-  const pin=el("input");pin.type="file";pin.accept="application/pdf";pin.className="hide";
-  const pb=el("button","btn ghost","Import Planner");pb.onclick=()=>pin.click();
-  pin.onchange=async()=>{const f=pin.files[0];if(!f)return;pb.disabled=true;pb.textContent="Parsing…";
-    try{
-      const rows=await parsePlanner(f);
-      if(!rows.length)throw new Error("No schedule rows found");
-      S.planner=rows;save();
-      pb.textContent="Publishing…";
-      try{await publishPlanner(f.name.replace(/\.pdf$/i,""),rows);toast(rows.length+" tests published — visible on every device");}
-      catch(err){toast("Saved on this device, cloud sync failed");}
-      go("planner");
-    }
-    catch(e){toast("Planner parse failed");}pb.disabled=false;pb.textContent="Import Planner";};
-  p.appendChild(pin);p.appendChild(pb);root.appendChild(p);
 }
 
 /* ------------------------------- PLANNER --------------------------------- */
+let plannerTab="schedule";
 function viewPlanner(root){
   const rows=PLAN().slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
-  const now=Date.now();
+  const now=Date.now(),tkey=todayKey(now);
   const done=rows.filter(r=>r.done).length;
-  const today=rows.filter(r=>todayKey(r.date)===todayKey(now));
+  const today=rows.filter(r=>todayKey(r.date)===tkey);
+  const upcoming=rows.filter(r=>!r.done&&todayKey(r.date)>=tkey);
+  const past=rows.filter(r=>todayKey(r.date)<tkey);
+  const next=upcoming[0];
+
   const head=el("div","card");
-  head.innerHTML=`<div class="row" style="justify-content:space-between"><h2 style="margin:0">Test Planner</h2>
-    <span class="badge">${rows.length} scheduled</span></div>
-    <div style="margin-top:10px" class="progress"><i style="width:${pct(done,rows.length)}%"></i></div>
-    <div class="small muted" style="margin-top:6px">Completion ${pct(done,rows.length)}% · ${done} of ${rows.length} tests done</div>`;
+  head.innerHTML=`<div class="section-title"><span class="ico">🗓</span>
+      <div><h2 style="margin:0">Eklavya Test Series 2027</h2>
+      <div class="small muted">Fixed schedule · 02 Aug 2026 – 25 Jan 2027 · same on every device</div></div></div>
+    <div class="plan-summary">
+      <div><b>${rows.length}</b><span>Total tests</span></div>
+      <div><b>${done}</b><span>Completed</span></div>
+      <div><b>${upcoming.length}</b><span>Remaining</span></div>
+      <div><b>${pct(done,rows.length)}%</b><span>Progress</span></div>
+    </div>
+    <div class="progress" style="margin-top:12px"><i style="width:${pct(done,rows.length)}%"></i></div>`;
   root.appendChild(head);
-  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner published yet. Go to <b>Upload PDFs → Import Planner</b> — once imported it is shared with every device automatically.</p>`));root.appendChild(studyCalendarCard(rows));return;}
 
-  root.appendChild(el("div","grid g4",
-    statCard("Upcoming",rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(now))).length)+
-    statCard("Completed",done)+statCard("Today's Tests",today.length)+
-    statCard("Progress",pct(done,rows.length)+"%")));
-
-  // today
-  const t=el("div","card");t.innerHTML=`<h3>Today's Test</h3>`;
-  if(!today.length)t.innerHTML+=`<p class="muted">Nothing scheduled today — great time for a practice test.</p>`;
-  today.forEach(r=>t.appendChild(plannerRow(r)));
-  root.appendChild(t);
-
-  // calendar (current + next month)
-  const cal=el("div","card");cal.innerHTML=`<h3>Calendar</h3>`;
-  const months=[...new Set(rows.map(r=>new Date(r.date).toISOString().slice(0,7)))].slice(0,12);
-  const sel=el("select");months.forEach(m=>{const o=el("option",null,new Date(m+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}));o.value=m;sel.appendChild(o);});
-  const cur=new Date().toISOString().slice(0,7); if(months.includes(cur))sel.value=cur;
-  const grid=el("div","cal");grid.style.marginTop="10px";
-  function drawCal(){
-    grid.innerHTML="";
-    ["S","M","T","W","T","F","S"].forEach(d=>{const c=el("div","small muted",d);c.style.textAlign="center";grid.appendChild(c);});
-    const [y,m]=sel.value.split("-").map(Number);
-    const first=new Date(y,m-1,1).getDay(), days=new Date(y,m,0).getDate();
-    for(let i=0;i<first;i++)grid.appendChild(el("div"));
-    for(let d=1;d<=days;d++){
-      const key=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-      const list=rows.filter(r=>todayKey(r.date)===key);
-      const c=el("div","cell"+(list.length?" has":"")+(list.length&&list.every(r=>r.done)?" done":"")+(key===todayKey(now)?" today":""));
-      c.innerHTML=`<div>${d}</div>`+(list.length?`<div class="small" style="color:var(--blue-l)">${list.length} test</div>`:"");
-      if(list.length)c.onclick=()=>toast(list.map(r=>r.name).join(" · "));
-      grid.appendChild(c);
-    }
+  if(next){
+    const nx=el("div","card next-test");
+    const days=Math.round((new Date(todayKey(next.date))-new Date(tkey))/864e5);
+    nx.innerHTML=`<div class="lbl">${days<=0?"Today":days===1?"Tomorrow":"In "+days+" days"} · Next up</div>
+      <h3 style="margin:6px 0 2px">${esc(next.name)}</h3>
+      <div class="small">${fmtDate(next.date)} · ${esc(next.time||"")} · ${esc(next.subject)}</div>
+      <div class="small" style="margin-top:6px;opacity:.9">${esc(next.topics||"Full syllabus")}</div>`;
+    root.appendChild(nx);
   }
-  sel.onchange=drawCal;drawCal();
-  cal.appendChild(sel);cal.appendChild(grid);root.appendChild(cal);
 
-  const up=el("div","card");up.innerHTML=`<h3>Upcoming Tests</h3>`;
-  rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
-  root.appendChild(up);
-  root.appendChild(revisionSection(rows));
-  root.appendChild(studyCalendarCard(rows));
-  root.appendChild(videoCard("Weak chapter priority revision",
-    "Chapters where your recent mistakes and low accuracy say you should revise first.",weakVideoItems()));
-  const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
-  const dl=rows.filter(r=>r.done);
-  if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
-  dl.slice(-12).reverse().forEach(r=>dn.appendChild(plannerRow(r)));
-  root.appendChild(dn);
+  const tabs=el("div","ptabs");
+  [["schedule","Schedule"],["calendar","Calendar"],["revision","Revision"],["done","Completed"]].forEach(([k,label])=>{
+    const b=el("button",plannerTab===k?"active":null,label+(k==="done"?` (${done})`:""));
+    b.onclick=()=>{plannerTab=k;render();};
+    tabs.appendChild(b);
+  });
+  root.appendChild(tabs);
+
+  if(plannerTab==="schedule"){
+    if(today.length){
+      const t=el("div","card");t.innerHTML=`<h3>Today's tests</h3>`;
+      today.forEach(r=>t.appendChild(plannerRow(r)));root.appendChild(t);
+    }
+    const up=el("div","card");
+    up.innerHTML=`<h3>Upcoming schedule</h3><div class="small muted">Tap Edit if a date or slot moves — the change stays on this device.</div>`;
+    const shown=upcoming.slice(0,20);
+    if(!shown.length)up.innerHTML+=`<div class="empty"><div class="big">🎉</div>Series complete — every scheduled test is behind you.</div>`;
+    let lastMonth="";
+    shown.forEach(r=>{
+      const m=new Date(r.date).toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+      if(m!==lastMonth){lastMonth=m;up.appendChild(el("div","plan-month",esc(m)));}
+      up.appendChild(plannerRow(r));
+    });
+    if(upcoming.length>shown.length)up.appendChild(el("div","small muted",`+ ${upcoming.length-shown.length} more later in the series`));
+    root.appendChild(up);
+  }
+
+  if(plannerTab==="calendar"){
+    const cal=el("div","card");cal.innerHTML=`<h3>Month view</h3>`;
+    const months=[...new Set(rows.map(r=>todayKey(r.date).slice(0,7)))];
+    const sel=el("select");months.forEach(m=>{const o=el("option",null,new Date(m+"-01T00:00:00").toLocaleDateString("en-IN",{month:"long",year:"numeric"}));o.value=m;sel.appendChild(o);});
+    const cur=tkey.slice(0,7);sel.value=months.includes(cur)?cur:months[0];
+    const grid=el("div","cal");grid.style.marginTop="10px";
+    const detail=el("div","cal-detail");
+    function drawCal(){
+      grid.innerHTML="";detail.innerHTML=`<div class="small muted">Pick a highlighted date to see its tests.</div>`;
+      ["S","M","T","W","T","F","S"].forEach(d=>{const c=el("div","small muted",d);c.style.textAlign="center";grid.appendChild(c);});
+      const [y,m]=sel.value.split("-").map(Number);
+      const first=new Date(y,m-1,1).getDay(),days=new Date(y,m,0).getDate();
+      for(let i=0;i<first;i++)grid.appendChild(el("div"));
+      for(let d=1;d<=days;d++){
+        const key=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const list=rows.filter(r=>todayKey(r.date)===key);
+        const c=el("div","cell"+(list.length?" has":"")+(list.length&&list.every(r=>r.done)?" done":"")+(key===tkey?" today":""));
+        c.innerHTML=`<div>${d}</div>`+(list.length?`<div class="dots">${list.map(r=>`<i style="background:${SUBCOLOR[r.subject]||"var(--muted)"}"></i>`).join("")}</div>`:"");
+        if(list.length)c.onclick=()=>{detail.innerHTML=`<div class="small muted" style="margin-bottom:6px">${fmtDate(list[0].date)}</div>`;list.forEach(r=>detail.appendChild(plannerRow(r)));};
+        grid.appendChild(c);
+      }
+    }
+    sel.onchange=drawCal;drawCal();
+    cal.appendChild(sel);cal.appendChild(grid);cal.appendChild(detail);root.appendChild(cal);
+  }
+
+  if(plannerTab==="revision"){
+    root.appendChild(revisionSection(rows));
+    root.appendChild(videoCard("Weak chapter priority revision",
+      "Chapters where your recent mistakes and low accuracy say you should revise first.",weakVideoItems()));
+    root.appendChild(pastTestVideoCard(past));
+    root.appendChild(studyCalendarCard(rows));
+  }
+
+  if(plannerTab==="done"){
+    const dn=el("div","card");dn.innerHTML=`<h3>Completed tests</h3>`;
+    const dl=rows.filter(r=>r.done);
+    if(!dl.length)dn.innerHTML+=`<div class="empty"><div class="big">✅</div>Mark a test done from the Schedule tab to build your streak.</div>`;
+    dl.slice().reverse().slice(0,30).forEach(r=>dn.appendChild(plannerRow(r)));
+    root.appendChild(dn);
+  }
+}
+/** Solution / discussion videos for tests whose date has already passed. */
+function pastTestVideoCard(past){
+  const items=past.slice(-8).reverse().map(r=>({
+    topic:(r.topics||r.subject).split(";")[0].trim()||r.name,
+    subject:r.subject==="Mixed"?"Physics":r.subject,
+    reason:`${r.name} · ${fmtDate(r.date)} — solutions & one-shot revision`}));
+  return videoCard("Past test revision videos","Catch up on any test that has already gone by, chapter by chapter.",items);
 }
 function plannerRow(r){
-  const d=el("div","row");
-  d.style.cssText="justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0";
-  d.innerHTML=`<div style="min-width:200px;flex:1">
-    <b>${esc(r.name)}</b> <span class="chip" style="color:${SUBCOLOR[r.subject]||"var(--muted)"}">${esc(r.subject)}</span>
-    <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
-    <div class="small">${esc(r.topics||"")}</div></div>`;
+  const d=el("div","prow"+(r.done?" done":""));
+  d.style.setProperty("--sub",SUBCOLOR[r.subject]||"var(--muted)");
+  d.innerHTML=`<div class="prow-main">
+      <div class="prow-top"><b>${esc(r.name)}</b>
+        <span class="chip" style="color:${SUBCOLOR[r.subject]||"var(--muted)"}">${esc(r.subject)}</span>
+        <span class="chip">${esc(r.type||"Test")}</span>
+        ${r.edited?`<span class="chip" style="color:var(--amber)">edited</span>`:""}</div>
+      <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
+      <div class="small prow-top">${esc(r.topics||"Full syllabus")}</div></div>`;
+  const acts=el("div","prow-acts");
   const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
   b.onclick=()=>{setPlannerDone(r,!r.done);render();};
-  d.appendChild(b);return d;
+  const e=el("button","btn sm ghost","Edit");
+  e.onclick=()=>editPlannerRow(r,render);
+  acts.appendChild(b);acts.appendChild(e);d.appendChild(acts);
+  return d;
 }
 
 /* Personal study calendar: revision reminders synced to every scheduled and
@@ -1572,27 +1680,44 @@ function viewResult(root){
     ai.rows.forEach(x=>{
       if(f==="bookmarked"&&!S.bookmarks.includes(x.q.id))return;
       if(f!=="all"&&f!=="bookmarked"&&x.status!==f)return;
-      const d=el("div","qrev");
+      const d=el("div","qrev is-"+x.status);
       const badge=x.status==="correct"?`<span class="badge g">Correct +4</span>`:
-        x.status==="wrong"?`<span class="badge r">Wrong -1</span>`:`<span class="badge a">Skipped</span>`;
-      d.innerHTML=`<div class="row" style="justify-content:space-between">
-        <div><b>Q${x.q.no}</b> <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span> ${badge}</div>
+        x.status==="wrong"?`<span class="badge r">Wrong −1</span>`:`<span class="badge a">Not attempted</span>`;
+      d.innerHTML=`<div class="qrev-head">
+        <div class="prow-top"><span class="qrev-no">Q${x.q.no}</span>
+          <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span>${badge}</div>
         <div class="small muted">⏱ ${fmtTime(x.time)}</div></div>`;
       d.appendChild(imgTag(x.q.img));
+      const opts=el("div");
       (x.q.options||[]).forEach(o=>{
         const isAns=String(o.label)===String(x.ans), isCor=String(o.label)===String(x.q.answer);
         const row=el("div","optrow"+(isCor?" correct":isAns?" wrong":""));
         row.appendChild(el("div","optlab",o.label.toUpperCase()));
         const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
-        d.appendChild(row);
+        if(isCor||isAns)row.appendChild(el("span","chip",isCor?"Correct answer":"Your answer"));
+        opts.appendChild(row);
       });
-      d.appendChild(el("div","small",`<b>Your answer:</b> ${x.ans?esc(String(x.ans).toUpperCase()):"—"} &nbsp;·&nbsp; <b>Correct:</b> ${esc(String(x.q.answer||"").toUpperCase())}`));
-      const sb=el("button","btn sm ghost","Show solution");sb.style.margin="8px 8px 0 0";
-      sb.onclick=()=>{sb.remove();d.appendChild(imgTag(x.q.solImg));};
+      const optWrap=el("details");
+      optWrap.innerHTML=`<summary>Options (${(x.q.options||[]).length})</summary>`;
+      const inW=el("div","in");inW.appendChild(opts);optWrap.appendChild(inW);
+      if(x.status!=="correct")optWrap.open=true;
+      d.appendChild(optWrap);
+      d.appendChild(el("div","qrev-ans",
+        `<span class="${x.status==="correct"?"ok":x.ans?"no":""}">Your answer: ${x.ans?esc(String(x.ans).toUpperCase()):"—"}</span>
+         <span class="ok">Correct: ${esc(String(x.q.answer||"").toUpperCase())}</span>
+         <span>Time: ${fmtTime(x.time)}</span>`));
+      const sol=el("details");
+      sol.innerHTML=`<summary>Step-by-step solution</summary>`;
+      const si=el("div","in");sol.appendChild(si);
+      let loaded=false;
+      sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;si.appendChild(imgTag(x.q.solImg));}});
+      d.appendChild(sol);
+      const foot=el("div","qrev-foot");
       const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark");
       bm.onclick=()=>{const i=S.bookmarks.indexOf(x.q.id);i<0?S.bookmarks.push(x.q.id):S.bookmarks.splice(i,1);
         save();bm.textContent=S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark";};
-      d.appendChild(sb);d.appendChild(bm);
+      foot.appendChild(bm);
+      d.appendChild(foot);
       list.appendChild(d);
     });
     if(!list.children.length)list.innerHTML=`<p class="muted">Nothing here.</p>`;
@@ -2196,11 +2321,30 @@ function viewDash(root){
 }
 
 /* -------------------------------- BOOT ----------------------------------- */
+/* Offline mode: register the generated worker only in a real published tab.
+   Never in dev, never inside the Lovable preview iframe, and ?sw=off cleans up. */
+(function registerOfflineWorker(){
+  if(!("serviceWorker" in navigator))return;
+  const h=location.hostname, inFrame=window.top!==window.self;
+  const blocked=inFrame||location.search.includes("sw=off")||
+    /^(localhost|127\.0\.0\.1)$/.test(h)||h.startsWith("id-preview--")||h.startsWith("preview--")||
+    /(^|\.)lovableproject\.com$/.test(h)||/(^|\.)lovableproject-dev\.com$/.test(h)||
+    /(^|\.)beta\.lovable\.dev$/.test(h);
+  if(blocked){
+    navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{
+      if(r.active&&r.active.scriptURL.endsWith("/sw.js"))r.unregister();}));
+    return;
+  }
+  addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+})();
+
 applyTheme();
 render();
-loadPublicTests();
-loadCloudPlanner();
-cloudRefresh=setInterval(()=>{loadPublicTests(true);loadCloudPlanner(true);},15000);
+(async()=>{ await hydrateFromCache(); render(); loadPublicTests(); })();
+addEventListener("online",()=>{setOffline(false);loadPublicTests(true);});
+addEventListener("offline",()=>setOffline(true));
+if(!navigator.onLine)setOffline(true);
+cloudRefresh=setInterval(()=>loadPublicTests(true),15000);
 </script>
 </body>
 </html>
