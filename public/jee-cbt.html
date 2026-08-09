@@ -694,41 +694,6 @@ async function parsePaper(file,subject,onProgress){
   return questions;
 }
 
-/** Planner PDF -> schedule rows. */
-async function parsePlanner(file){
-  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
-  const out=[]; const dateRe=/^(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})$/;
-  for(let p=1;p<=pdf.numPages;p++){
-    const pg=await pdf.getPage(p); const {items}=await pageItems(pg);
-    const rows=[];
-    items.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(i=>{
-      const last=rows[rows.length-1];
-      if(last&&Math.abs(last.y-i.y)<5){last.cells.push(i);}else rows.push({y:i.y,cells:[i]});
-    });
-    let cur=null;
-    for(const r of rows){
-      const cells=r.cells.sort((a,b)=>a.x-b.x);
-      const txt=cells.map(c=>c.s);
-      const di=txt.findIndex(t=>dateRe.test(t));
-      if(di>=0){
-        if(cur)out.push(cur);
-        const time=(txt.find(t=>/AM|PM/.test(t)&&/[-–]/.test(t))||"").trim();
-        const name=(txt.find(t=>/test/i.test(t)&&!/AM|PM/.test(t))||"").trim();
-        const topics=txt.slice(di+1).filter(t=>t!==time&&t!==name&&!/^\d+$/.test(t)&&!/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/.test(t));
-        cur={id:uid(),date:new Date(txt[di]+" 00:00").toISOString(),time,name,
-             subject:/physic/i.test(name)?"Physics":/chem/i.test(name)?"Chemistry":/math/i.test(name)?"Mathematics":"Mixed",
-             topics:topics.join(" ").replace(/\s*•\s*/g,"; ").trim(),done:false};
-      } else if(cur){
-        const extra=txt.filter(t=>!/^(PHYSICS|CHEMISTRY|MATHS|Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/i.test(t));
-        if(extra.length && /^[A-Za-z•]/.test(extra[0]) && cur.topics.length<160)
-          cur.topics=(cur.topics+" "+extra.join(" ")).replace(/\s*•\s*/g,"; ").trim();
-      }
-    }
-    if(cur)out.push(cur);
-  }
-  return out.filter(r=>r.name);
-}
-
 /* --------------------------- 4. TEST / SCORING --------------------------- */
 const MARK_C=4, MARK_W=-1, TEST_MINUTES=180;
 function buildTest(name,packs){
@@ -1054,97 +1019,136 @@ function viewUpload(root){
   };
   fs.append(fsIn,fsBtn,fsSt);root.appendChild(fs);
 
-  // planner upload
-  const p=el("div","card");
-  p.innerHTML=`<h3>Planner PDF (optional)</h3><p class="muted small">Import the Eklavya Test Series planner to fill your calendar.</p>`;
-  const pin=el("input");pin.type="file";pin.accept="application/pdf";pin.className="hide";
-  const pb=el("button","btn ghost","Import Planner");pb.onclick=()=>pin.click();
-  pin.onchange=async()=>{const f=pin.files[0];if(!f)return;pb.disabled=true;pb.textContent="Parsing…";
-    try{
-      const rows=await parsePlanner(f);
-      if(!rows.length)throw new Error("No schedule rows found");
-      S.planner=rows;save();
-      pb.textContent="Publishing…";
-      try{await publishPlanner(f.name.replace(/\.pdf$/i,""),rows);toast(rows.length+" tests published — visible on every device");}
-      catch(err){toast("Saved on this device, cloud sync failed");}
-      go("planner");
-    }
-    catch(e){toast("Planner parse failed");}pb.disabled=false;pb.textContent="Import Planner";};
-  p.appendChild(pin);p.appendChild(pb);root.appendChild(p);
 }
 
 /* ------------------------------- PLANNER --------------------------------- */
+let plannerTab="schedule";
 function viewPlanner(root){
   const rows=PLAN().slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
-  const now=Date.now();
+  const now=Date.now(),tkey=todayKey(now);
   const done=rows.filter(r=>r.done).length;
-  const today=rows.filter(r=>todayKey(r.date)===todayKey(now));
+  const today=rows.filter(r=>todayKey(r.date)===tkey);
+  const upcoming=rows.filter(r=>!r.done&&todayKey(r.date)>=tkey);
+  const past=rows.filter(r=>todayKey(r.date)<tkey);
+  const next=upcoming[0];
+
   const head=el("div","card");
-  head.innerHTML=`<div class="row" style="justify-content:space-between"><h2 style="margin:0">Test Planner</h2>
-    <span class="badge">${rows.length} scheduled</span></div>
-    <div style="margin-top:10px" class="progress"><i style="width:${pct(done,rows.length)}%"></i></div>
-    <div class="small muted" style="margin-top:6px">Completion ${pct(done,rows.length)}% · ${done} of ${rows.length} tests done</div>`;
+  head.innerHTML=`<div class="section-title"><span class="ico">🗓</span>
+      <div><h2 style="margin:0">Eklavya Test Series 2027</h2>
+      <div class="small muted">Fixed schedule · 02 Aug 2026 – 25 Jan 2027 · same on every device</div></div></div>
+    <div class="plan-summary">
+      <div><b>${rows.length}</b><span>Total tests</span></div>
+      <div><b>${done}</b><span>Completed</span></div>
+      <div><b>${upcoming.length}</b><span>Remaining</span></div>
+      <div><b>${pct(done,rows.length)}%</b><span>Progress</span></div>
+    </div>
+    <div class="progress" style="margin-top:12px"><i style="width:${pct(done,rows.length)}%"></i></div>`;
   root.appendChild(head);
-  if(!rows.length){root.appendChild(el("div","card",`<p class="muted">No planner published yet. Go to <b>Upload PDFs → Import Planner</b> — once imported it is shared with every device automatically.</p>`));root.appendChild(studyCalendarCard(rows));return;}
 
-  root.appendChild(el("div","grid g4",
-    statCard("Upcoming",rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(now))).length)+
-    statCard("Completed",done)+statCard("Today's Tests",today.length)+
-    statCard("Progress",pct(done,rows.length)+"%")));
-
-  // today
-  const t=el("div","card");t.innerHTML=`<h3>Today's Test</h3>`;
-  if(!today.length)t.innerHTML+=`<p class="muted">Nothing scheduled today — great time for a practice test.</p>`;
-  today.forEach(r=>t.appendChild(plannerRow(r)));
-  root.appendChild(t);
-
-  // calendar (current + next month)
-  const cal=el("div","card");cal.innerHTML=`<h3>Calendar</h3>`;
-  const months=[...new Set(rows.map(r=>new Date(r.date).toISOString().slice(0,7)))].slice(0,12);
-  const sel=el("select");months.forEach(m=>{const o=el("option",null,new Date(m+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}));o.value=m;sel.appendChild(o);});
-  const cur=new Date().toISOString().slice(0,7); if(months.includes(cur))sel.value=cur;
-  const grid=el("div","cal");grid.style.marginTop="10px";
-  function drawCal(){
-    grid.innerHTML="";
-    ["S","M","T","W","T","F","S"].forEach(d=>{const c=el("div","small muted",d);c.style.textAlign="center";grid.appendChild(c);});
-    const [y,m]=sel.value.split("-").map(Number);
-    const first=new Date(y,m-1,1).getDay(), days=new Date(y,m,0).getDate();
-    for(let i=0;i<first;i++)grid.appendChild(el("div"));
-    for(let d=1;d<=days;d++){
-      const key=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-      const list=rows.filter(r=>todayKey(r.date)===key);
-      const c=el("div","cell"+(list.length?" has":"")+(list.length&&list.every(r=>r.done)?" done":"")+(key===todayKey(now)?" today":""));
-      c.innerHTML=`<div>${d}</div>`+(list.length?`<div class="small" style="color:var(--blue-l)">${list.length} test</div>`:"");
-      if(list.length)c.onclick=()=>toast(list.map(r=>r.name).join(" · "));
-      grid.appendChild(c);
-    }
+  if(next){
+    const nx=el("div","card next-test");
+    const days=Math.round((new Date(todayKey(next.date))-new Date(tkey))/864e5);
+    nx.innerHTML=`<div class="lbl">${days<=0?"Today":days===1?"Tomorrow":"In "+days+" days"} · Next up</div>
+      <h3 style="margin:6px 0 2px">${esc(next.name)}</h3>
+      <div class="small">${fmtDate(next.date)} · ${esc(next.time||"")} · ${esc(next.subject)}</div>
+      <div class="small" style="margin-top:6px;opacity:.9">${esc(next.topics||"Full syllabus")}</div>`;
+    root.appendChild(nx);
   }
-  sel.onchange=drawCal;drawCal();
-  cal.appendChild(sel);cal.appendChild(grid);root.appendChild(cal);
 
-  const up=el("div","card");up.innerHTML=`<h3>Upcoming Tests</h3>`;
-  rows.filter(r=>!r.done).slice(0,12).forEach(r=>up.appendChild(plannerRow(r)));
-  root.appendChild(up);
-  root.appendChild(revisionSection(rows));
-  root.appendChild(studyCalendarCard(rows));
-  root.appendChild(videoCard("Weak chapter priority revision",
-    "Chapters where your recent mistakes and low accuracy say you should revise first.",weakVideoItems()));
-  const dn=el("div","card");dn.innerHTML=`<h3>Completed Tests</h3>`;
-  const dl=rows.filter(r=>r.done);
-  if(!dl.length)dn.innerHTML+=`<p class="muted">None marked complete yet.</p>`;
-  dl.slice(-12).reverse().forEach(r=>dn.appendChild(plannerRow(r)));
-  root.appendChild(dn);
+  const tabs=el("div","ptabs");
+  [["schedule","Schedule"],["calendar","Calendar"],["revision","Revision"],["done","Completed"]].forEach(([k,label])=>{
+    const b=el("button",plannerTab===k?"active":null,label+(k==="done"?` (${done})`:""));
+    b.onclick=()=>{plannerTab=k;render();};
+    tabs.appendChild(b);
+  });
+  root.appendChild(tabs);
+
+  if(plannerTab==="schedule"){
+    if(today.length){
+      const t=el("div","card");t.innerHTML=`<h3>Today's tests</h3>`;
+      today.forEach(r=>t.appendChild(plannerRow(r)));root.appendChild(t);
+    }
+    const up=el("div","card");
+    up.innerHTML=`<h3>Upcoming schedule</h3><div class="small muted">Tap Edit if a date or slot moves — the change stays on this device.</div>`;
+    const shown=upcoming.slice(0,20);
+    if(!shown.length)up.innerHTML+=`<div class="empty"><div class="big">🎉</div>Series complete — every scheduled test is behind you.</div>`;
+    let lastMonth="";
+    shown.forEach(r=>{
+      const m=new Date(r.date).toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+      if(m!==lastMonth){lastMonth=m;up.appendChild(el("div","plan-month",esc(m)));}
+      up.appendChild(plannerRow(r));
+    });
+    if(upcoming.length>shown.length)up.appendChild(el("div","small muted",`+ ${upcoming.length-shown.length} more later in the series`));
+    root.appendChild(up);
+  }
+
+  if(plannerTab==="calendar"){
+    const cal=el("div","card");cal.innerHTML=`<h3>Month view</h3>`;
+    const months=[...new Set(rows.map(r=>todayKey(r.date).slice(0,7)))];
+    const sel=el("select");months.forEach(m=>{const o=el("option",null,new Date(m+"-01T00:00:00").toLocaleDateString("en-IN",{month:"long",year:"numeric"}));o.value=m;sel.appendChild(o);});
+    const cur=tkey.slice(0,7);sel.value=months.includes(cur)?cur:months[0];
+    const grid=el("div","cal");grid.style.marginTop="10px";
+    const detail=el("div","cal-detail");
+    function drawCal(){
+      grid.innerHTML="";detail.innerHTML=`<div class="small muted">Pick a highlighted date to see its tests.</div>`;
+      ["S","M","T","W","T","F","S"].forEach(d=>{const c=el("div","small muted",d);c.style.textAlign="center";grid.appendChild(c);});
+      const [y,m]=sel.value.split("-").map(Number);
+      const first=new Date(y,m-1,1).getDay(),days=new Date(y,m,0).getDate();
+      for(let i=0;i<first;i++)grid.appendChild(el("div"));
+      for(let d=1;d<=days;d++){
+        const key=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const list=rows.filter(r=>todayKey(r.date)===key);
+        const c=el("div","cell"+(list.length?" has":"")+(list.length&&list.every(r=>r.done)?" done":"")+(key===tkey?" today":""));
+        c.innerHTML=`<div>${d}</div>`+(list.length?`<div class="dots">${list.map(r=>`<i style="background:${SUBCOLOR[r.subject]||"var(--muted)"}"></i>`).join("")}</div>`:"");
+        if(list.length)c.onclick=()=>{detail.innerHTML=`<div class="small muted" style="margin-bottom:6px">${fmtDate(list[0].date)}</div>`;list.forEach(r=>detail.appendChild(plannerRow(r)));};
+        grid.appendChild(c);
+      }
+    }
+    sel.onchange=drawCal;drawCal();
+    cal.appendChild(sel);cal.appendChild(grid);cal.appendChild(detail);root.appendChild(cal);
+  }
+
+  if(plannerTab==="revision"){
+    root.appendChild(revisionSection(rows));
+    root.appendChild(videoCard("Weak chapter priority revision",
+      "Chapters where your recent mistakes and low accuracy say you should revise first.",weakVideoItems()));
+    root.appendChild(pastTestVideoCard(past));
+    root.appendChild(studyCalendarCard(rows));
+  }
+
+  if(plannerTab==="done"){
+    const dn=el("div","card");dn.innerHTML=`<h3>Completed tests</h3>`;
+    const dl=rows.filter(r=>r.done);
+    if(!dl.length)dn.innerHTML+=`<div class="empty"><div class="big">✅</div>Mark a test done from the Schedule tab to build your streak.</div>`;
+    dl.slice().reverse().slice(0,30).forEach(r=>dn.appendChild(plannerRow(r)));
+    root.appendChild(dn);
+  }
+}
+/** Solution / discussion videos for tests whose date has already passed. */
+function pastTestVideoCard(past){
+  const items=past.slice(-8).reverse().map(r=>({
+    topic:(r.topics||r.subject).split(";")[0].trim()||r.name,
+    subject:r.subject==="Mixed"?"Physics":r.subject,
+    reason:`${r.name} · ${fmtDate(r.date)} — solutions & one-shot revision`}));
+  return videoCard("Past test revision videos","Catch up on any test that has already gone by, chapter by chapter.",items);
 }
 function plannerRow(r){
-  const d=el("div","row");
-  d.style.cssText="justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0";
-  d.innerHTML=`<div style="min-width:200px;flex:1">
-    <b>${esc(r.name)}</b> <span class="chip" style="color:${SUBCOLOR[r.subject]||"var(--muted)"}">${esc(r.subject)}</span>
-    <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
-    <div class="small">${esc(r.topics||"")}</div></div>`;
+  const d=el("div","prow"+(r.done?" done":""));
+  d.style.setProperty("--sub",SUBCOLOR[r.subject]||"var(--muted)");
+  d.innerHTML=`<div class="prow-main">
+      <div class="prow-top"><b>${esc(r.name)}</b>
+        <span class="chip" style="color:${SUBCOLOR[r.subject]||"var(--muted)"}">${esc(r.subject)}</span>
+        <span class="chip">${esc(r.type||"Test")}</span>
+        ${r.edited?`<span class="chip" style="color:var(--amber)">edited</span>`:""}</div>
+      <div class="small muted">${fmtDate(r.date)} · ${esc(r.time||"")}</div>
+      <div class="small prow-top">${esc(r.topics||"Full syllabus")}</div></div>`;
+  const acts=el("div","prow-acts");
   const b=el("button","btn sm "+(r.done?"ghost":"green"),r.done?"Undo":"Mark done");
   b.onclick=()=>{setPlannerDone(r,!r.done);render();};
-  d.appendChild(b);return d;
+  const e=el("button","btn sm ghost","Edit");
+  e.onclick=()=>editPlannerRow(r,render);
+  acts.appendChild(b);acts.appendChild(e);d.appendChild(acts);
+  return d;
 }
 
 /* Personal study calendar: revision reminders synced to every scheduled and
@@ -2219,8 +2223,7 @@ function viewDash(root){
 applyTheme();
 render();
 loadPublicTests();
-loadCloudPlanner();
-cloudRefresh=setInterval(()=>{loadPublicTests(true);loadCloudPlanner(true);},15000);
+cloudRefresh=setInterval(()=>loadPublicTests(true),15000);
 </script>
 </body>
 </html>
