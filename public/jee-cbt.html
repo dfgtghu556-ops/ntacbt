@@ -438,8 +438,17 @@ async function cloudFetch(path,options={}){
 const objectPath=p=>p.split("/").map(encodeURIComponent).join("/");
 async function cloudObjectURL(path){
   if(imgCache.has("cloud:"+path))return imgCache.get("cloud:"+path);
-  const r=await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path));
-  const u=URL.createObjectURL(await r.blob());imgCache.set("cloud:"+path,u);return u;
+  const key="blob:"+path;
+  try{
+    const r=await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path));
+    const blob=await r.blob();
+    imgPut(key,blob).catch(()=>{});                 // keep it for offline review
+    const u=URL.createObjectURL(blob);imgCache.set("cloud:"+path,u);return u;
+  }catch(e){
+    const cached=await imgGet(key).catch(()=>null); // no network: serve the saved copy
+    if(!cached)throw e;
+    const u=URL.createObjectURL(cached);imgCache.set("cloud:"+path,u);return u;
+  }
 }
 async function uploadObject(path,body,contentType){
   await cloudFetch("/storage/v1/object/public-tests/"+objectPath(path),{
@@ -475,17 +484,40 @@ function rowToTest(row){
       chapters:row.chapters||[],subjectChapters:row.subject_chapters||{},attempts:row.attempts_count||0,
       durationMin:row.duration_minutes||Math.round((t.duration||10800)/60)}};
 }
+let OFFLINE=false;
+const LIB_CACHE="cache:publicTests";
+function setOffline(v){
+  if(OFFLINE===v)return; OFFLINE=v;
+  const bar=$("#offlineBar");
+  if(bar)bar.classList.toggle("hide",!v);
+}
+async function hydrateFromCache(){
+  try{
+    const rows=await imgGet(LIB_CACHE);
+    if(!rows||!rows.length)return false;
+    cloudTests=rows.map(rowToTest);
+    S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
+    return true;
+  }catch(e){return false;}
+}
 async function loadPublicTests(silent=false){
   try{
     const r=await cloudFetch("/rest/v1/public_tests?select=*&is_published=eq.true&order=created_at.desc");
     const rows=await r.json(),before=cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
+    imgPut(LIB_CACHE,rows).catch(()=>{});          // library stays browsable offline
+    setOffline(false);
     cloudTests=rows.map(rowToTest);
     S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
     const changed=before!==cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
     if(!silent||(changed&&(route==="dash"||route==="library")))render();
     const slug=new URLSearchParams(location.search).get("test");
     if(slug&&!window.__sharedTestOpened){const t=cloudTests.find(x=>x.shareSlug===slug);if(t){window.__sharedTestOpened=true;startExam(t.id);}}
-  }catch(e){if(!silent)toast("Public Test Library could not load");}
+  }catch(e){
+    setOffline(true);
+    const ok=await hydrateFromCache();
+    if(ok&&!cloudTests.length===false)render();
+    if(!silent)toast(ok?"Offline — showing the saved Test Library":"Offline and nothing saved yet");
+  }
 }
 async function publishPublicTest(test,files,onProgress,meta={}){
   const publicTest=await cloudifyTest(test,files,onProgress);
@@ -2273,7 +2305,10 @@ function viewDash(root){
 /* -------------------------------- BOOT ----------------------------------- */
 applyTheme();
 render();
-loadPublicTests();
+(async()=>{ await hydrateFromCache(); render(); loadPublicTests(); })();
+addEventListener("online",()=>{setOffline(false);loadPublicTests(true);});
+addEventListener("offline",()=>setOffline(true));
+if(!navigator.onLine)setOffline(true);
 cloudRefresh=setInterval(()=>loadPublicTests(true),15000);
 </script>
 </body>
