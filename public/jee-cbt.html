@@ -118,7 +118,7 @@ html.dark .qimg{filter:invert(1) hue-rotate(180deg)}
 .modal{position:fixed;inset:0;background:rgba(5,15,30,.6);display:grid;place-items:center;z-index:150;padding:16px}
 .modal .box{background:var(--panel);border-radius:var(--radius);padding:20px;max-width:520px;width:100%;box-shadow:var(--shadow);animation:fade .25s}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
-.cal .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
+.cal .cell{min-height:52px;padding:4px;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
 .cal .cell.has{background:var(--blue-soft);font-weight:700;cursor:pointer}
 .cal .cell.done{background:rgba(30,158,87,.18)}
 .cal .cell.today{outline:2px solid var(--blue-l)}
