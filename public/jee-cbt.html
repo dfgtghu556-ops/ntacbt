@@ -325,6 +325,7 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 <div class="wrap" id="app"></div>
 
 <!-- ================= EXAM VIEW (full screen) ================= -->
+<div id="offlineBar" class="offline-bar hide">You are offline — showing your saved Test Library, results and analytics.</div>
 <div id="examView" class="hide">
   <div class="exam-head">
     <strong id="exTitle">Test</strong>
@@ -515,7 +516,7 @@ async function loadPublicTests(silent=false){
   }catch(e){
     setOffline(true);
     const ok=await hydrateFromCache();
-    if(ok&&!cloudTests.length===false)render();
+    if(ok)render();
     if(!silent)toast(ok?"Offline — showing the saved Test Library":"Offline and nothing saved yet");
   }
 }
