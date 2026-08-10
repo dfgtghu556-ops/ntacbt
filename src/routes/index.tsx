@@ -4,13 +4,13 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
+      { title: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
       {
         name: "description",
         content:
           "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
       },
-      { property: "og:title", content: "Eklavya JEE Main CBT Platform | Offline Mock Test Portal" },
+      { property: "og:title", content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
       {
         property: "og:description",
         content:
@@ -31,7 +31,7 @@ function Index() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
-        <h1 className="text-xl font-semibold text-foreground">Eklavya JEE Main CBT Platform</h1>
+        <h1 className="text-xl font-semibold text-foreground">Someshwar JEE Main CBT Platform</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Opening the exam portal… <a href="/jee-cbt.html">Click here</a> if it doesn't load.
         </p>
