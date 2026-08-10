@@ -357,16 +357,17 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#app">Skip to main content</a>
 
-<div class="topbar">
+<header class="topbar">
   <div class="logo">JEE</div>
   <div class="brand">Eklavya JEE Main&nbsp;<span style="opacity:.8;font-weight:500">CBT Platform</span></div>
   <div class="spacer"></div>
-  <button class="iconbtn" id="themeBtn" title="Toggle theme">🌙</button>
-</div>
+  <button class="iconbtn" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle light or dark theme">🌙</button>
+</header>
 
-<div class="nav" id="nav"></div>
-<div class="wrap" id="app"></div>
+<nav class="nav" id="nav" aria-label="Main navigation"></nav>
+<main class="wrap" id="app" tabindex="-1"></main>
 
 <!-- ================= EXAM VIEW (full screen) ================= -->
 <div id="offlineBar" class="offline-bar hide">You are offline — showing your saved Test Library, results and analytics.</div>
@@ -414,7 +415,7 @@ const fmtTime=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.
 const fmtDate=d=>new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
 const todayKey=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function toast(msg,ms=2600){const t=el("div","toast",esc(msg));document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
+function toast(msg,ms=2600){const t=el("div","toast",esc(msg));t.setAttribute("role","status");t.setAttribute("aria-live","polite");document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
 function confirmBox(title,body,onYes,yesLabel="Yes"){
   const m=el("div","modal");
   m.innerHTML=`<div class="box"><h3>${esc(title)}</h3><p class="muted">${body}</p>
@@ -911,11 +912,14 @@ let route="dash", routeArg=null;
 function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
-  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);b.onclick=()=>go(k);n.appendChild(b);});
+  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);
+    b.type="button";b.setAttribute("aria-current",route===k?"page":"false");
+    b.setAttribute("aria-label",l);b.onclick=()=>go(k);n.appendChild(b);});
 }
 function render(){
   renderNav();
   const a=$("#app"); a.innerHTML="";
+  a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
     practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
