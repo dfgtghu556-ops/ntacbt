@@ -239,7 +239,51 @@ ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
 .ai-signal .bar{grid-column:1/-1;height:6px}.ai-signal .bar i{background:var(--green)}
 .ai-panel.warn .ai-signal .bar i{background:var(--amber)}
 .ai-recs{margin-top:12px;border-left:4px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0}
-@media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}}
+/* mistake / timing tiles + study plan steps */
+.mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mini-grid.two{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px}
+.mini{background:var(--blue-soft);border:1px solid var(--line);border-radius:11px;padding:9px 10px;display:grid;gap:2px}
+.mini .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mini b{font-size:19px;font-weight:900;line-height:1.15}
+.mini .s{font-size:11px;color:var(--muted);font-weight:600}
+.time-rows{display:grid;gap:10px}
+.time-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline;font-size:13px;font-weight:700}
+.time-row .bar{grid-column:1/-1;height:6px}
+.time-row .s{font-weight:600;color:var(--muted);font-size:11px}
+.plan-steps{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.plan-steps li{display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;font-size:13.5px;line-height:1.45}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:800;
+  display:grid;place-items:center}
+/* review toolbar + subject sections */
+.qrev-bar{position:sticky;top:0;z-index:5;background:var(--card,var(--panel));padding:10px 0 12px;display:grid;gap:9px;
+  border-bottom:1px solid var(--line);margin-bottom:14px}
+.qtabs{display:flex;gap:6px;overflow-x:auto;background:var(--blue-soft);border-radius:12px;padding:4px}
+.qtab{flex:1;min-width:120px;border:0;background:transparent;padding:8px 12px;border-radius:9px;cursor:pointer;
+  font-weight:800;font-size:13.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
+.qtab.active{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.qtab-n{font-size:11px;font-weight:800;background:rgba(0,0,0,.08);border-radius:999px;padding:1px 7px}
+.qtab.active .qtab-n{background:rgba(255,255,255,.24)}
+.qtab-w{font-size:11px;font-weight:800;color:var(--red)}
+.qtab.active .qtab-w{color:#fff}
+.qfilters,.qtools{display:flex;gap:7px;flex-wrap:wrap}
+.qtools{justify-content:flex-end}
+.btn.warn{background:var(--amber);color:#1b1b1b;border-color:transparent}
+.qrev-group{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.qrev-gstats{display:flex;gap:7px;flex-wrap:wrap;font-size:11.5px;font-weight:800}
+.qrev-gstats span{padding:3px 9px;border-radius:999px;background:var(--blue-soft);color:var(--muted)}
+.qrev-gstats span.ok{background:rgba(30,158,87,.15);color:var(--green)}
+.qrev-gstats span.no{background:rgba(211,59,59,.13);color:var(--red)}
+/* ---- global accessibility: visible focus everywhere ---- */
+:focus-visible{outline:3px solid var(--blue-l,#3b82f6);outline-offset:2px;border-radius:8px}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--blue-l,#3b82f6);outline-offset:2px}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:999;background:var(--blue);color:#fff;padding:10px 16px;
+  border-radius:0 0 10px 0;font-weight:800}
+.skip-link:focus{left:0}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
+@media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}
+  .mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.qtab{min-width:96px;font-size:12.5px}.qtools{justify-content:stretch}.qtools .btn{flex:1}}
 
 /* ============================================================
    PERSONALIZATION LAYER — accents, density, font size, card style
@@ -313,16 +357,17 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#app">Skip to main content</a>
 
-<div class="topbar">
+<header class="topbar">
   <div class="logo">JEE</div>
   <div class="brand">Eklavya JEE Main&nbsp;<span style="opacity:.8;font-weight:500">CBT Platform</span></div>
   <div class="spacer"></div>
-  <button class="iconbtn" id="themeBtn" title="Toggle theme">🌙</button>
-</div>
+  <button class="iconbtn" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle light or dark theme">🌙</button>
+</header>
 
-<div class="nav" id="nav"></div>
-<div class="wrap" id="app"></div>
+<nav class="nav" id="nav" aria-label="Main navigation"></nav>
+<main class="wrap" id="app" tabindex="-1"></main>
 
 <!-- ================= EXAM VIEW (full screen) ================= -->
 <div id="offlineBar" class="offline-bar hide">You are offline — showing your saved Test Library, results and analytics.</div>
@@ -370,7 +415,7 @@ const fmtTime=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.
 const fmtDate=d=>new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
 const todayKey=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function toast(msg,ms=2600){const t=el("div","toast",esc(msg));document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
+function toast(msg,ms=2600){const t=el("div","toast",esc(msg));t.setAttribute("role","status");t.setAttribute("aria-live","polite");document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
 function confirmBox(title,body,onYes,yesLabel="Yes"){
   const m=el("div","modal");
   m.innerHTML=`<div class="box"><h3>${esc(title)}</h3><p class="muted">${body}</p>
@@ -867,11 +912,14 @@ let route="dash", routeArg=null;
 function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
-  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);b.onclick=()=>go(k);n.appendChild(b);});
+  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);
+    b.type="button";b.setAttribute("aria-current",route===k?"page":"false");
+    b.setAttribute("aria-label",l);b.onclick=()=>go(k);n.appendChild(b);});
 }
 function render(){
   renderNav();
   const a=$("#app"); a.innerHTML="";
+  a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
     practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
@@ -1593,23 +1641,31 @@ function viewResult(root){
      <div class="ai-metric"><div class="k">Expected Rank</div><div class="v">~${ai.rank.toLocaleString("en-IN")}</div></div>
    </div>
    <div class="ai-panels">
-     <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4><ul class="tight small">
-       <li>Conceptual mistakes: <b>${ai.conceptual.length}</b></li>
-       <li>Calculation mistakes: <b>${ai.calc.length}</b></li>
-       <li>Careless mistakes: <b>${ai.careless.length}</b></li>
-       <li>Guessed attempts: <b>${ai.guesses.length}</b> (accuracy ${ai.guessAcc}%)</li>
-       <li>Negative marking: <b>-${r.all.neg}</b> across ${r.all.wrong} wrong answers</li>
-       <li>Easy questions missed: <b>${ai.easyMissed.length}</b> · Hard solved: <b>${ai.hardSolved.length}</b></li>
-      </ul></div>
-      <div class="ai-panel"><h4>⏱ Timing Intelligence</h4><ul class="tight small">
-       <li>Average per question: <b>${fmtTime(ai.avgT)}</b></li>
-       ${SUBJECTS.filter(s=>r.per[s].total).map(s=>`<li>${s}: <b>${fmtTime(r.per[s].time/r.per[s].total)}</b> per question (${fmtTime(r.per[s].time)} total)</li>`).join("")}
-       <li>Improvement trend: <b>${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b> since first test</li>
-     </ul></div>
+     <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4>
+       <div class="mini-grid">
+         <div class="mini"><span class="k">Conceptual</span><b>${ai.conceptual.length}</b></div>
+         <div class="mini"><span class="k">Calculation</span><b>${ai.calc.length}</b></div>
+         <div class="mini"><span class="k">Careless</span><b>${ai.careless.length}</b></div>
+         <div class="mini"><span class="k">Guessed</span><b>${ai.guesses.length}</b><span class="s">${ai.guessAcc}% right</span></div>
+         <div class="mini"><span class="k">Negatives</span><b>-${r.all.neg}</b><span class="s">${r.all.wrong} wrong</span></div>
+         <div class="mini"><span class="k">Easy missed</span><b>${ai.easyMissed.length}</b><span class="s">hard solved ${ai.hardSolved.length}</span></div>
+       </div></div>
+      <div class="ai-panel"><h4>⏱ Timing Intelligence</h4>
+       <div class="mini-grid two">
+         <div class="mini"><span class="k">Avg / question</span><b>${fmtTime(ai.avgT)}</b></div>
+         <div class="mini"><span class="k">Trend vs first test</span><b style="color:${ai.improving>=0?"var(--green)":"var(--red)"}">${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b></div>
+       </div>
+       <div class="time-rows">
+       ${SUBJECTS.filter(s=>r.per[s].total).map(s=>{
+         const per=r.per[s].time/r.per[s].total, mx=Math.max(1,...SUBJECTS.filter(z=>r.per[z].total).map(z=>r.per[z].time/r.per[z].total));
+         return `<div class="time-row"><span>${s}</span><b>${fmtTime(per)}<span class="s"> / Q · ${fmtTime(r.per[s].time)} total</span></b>
+           <div class="bar"><i style="width:${Math.round(per/mx*100)}%;background:${SUBCOLOR[s]}"></i></div></div>`;}).join("")}
+       </div></div>
       <div class="ai-panel"><h4>✓ Strong Areas</h4><div class="ai-signal"><span>${ai.strongSub[0]}</span><b>${r.per[ai.strongSub[0]]?.accuracy||0}%</b><div class="bar"><i style="width:${r.per[ai.strongSub[0]]?.accuracy||0}%"></i></div></div>${ai.strongCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
       <div class="ai-panel warn"><h4>↗ Priority Chapters</h4><div class="ai-signal"><span>${ai.strongSub[ai.strongSub.length-1]}</span><b>Focus</b><div class="bar"><i style="width:${r.per[ai.strongSub[ai.strongSub.length-1]]?.accuracy||0}%"></i></div></div>${ai.weakCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
    </div>
-    <div class="ai-recs"><h4>Personalized Study Plan</h4><ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div class="ai-recs"><h4>Personalized Study Plan</h4>
+      <ol class="plan-steps">${ai.recs.map((x,i)=>`<li><span class="step-n" aria-hidden="true">${i+1}</span><span>${esc(x)}</span></li>`).join("")}</ol></div>
     <div style="margin-top:14px"><h4>Most Time Consuming Questions</h4><div class="small muted">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")||"No timing outliers detected."}</div></div></div>`;
   root.appendChild(ac);
 
@@ -1664,65 +1720,139 @@ function viewResult(root){
   });
   root.appendChild(videoCard("Revision videos for this test","One-shot and short revision links for the chapters that cost you marks.",recVids));
 
-  // question review
+  // question review — subject sections + status filters + jump to next incorrect
   const rc=el("div","card");
-  rc.innerHTML=`<h3>Question Review</h3>`;
-  const filt=el("div","row");
-  ["all","correct","wrong","skipped","bookmarked"].forEach(f=>{
-    const b=el("button","btn sm "+(f==="all"?"":"ghost"),f[0].toUpperCase()+f.slice(1));
-    b.onclick=()=>{[...filt.children].forEach(x=>x.className="btn sm ghost");b.className="btn sm";draw(f);};
+  rc.innerHTML=`<div class="section-title"><span class="ico">📝</span><h3 style="margin:0" id="qrevHead">Answers &amp; Solutions</h3></div>
+    <div class="small muted">Pick a subject, filter by status, and open only the solutions you need.</div>`;
+  const view={sub:"All",f:"all"};
+  const subsPresent=SUBJECTS.filter(s=>ai.rows.some(x=>x.q.subject===s));
+  const bar=el("div","qrev-bar");
+
+  const subBar=el("div","qtabs");
+  subBar.setAttribute("role","tablist");
+  subBar.setAttribute("aria-label","Filter answers by subject");
+  ["All",...subsPresent].forEach(s=>{
+    const n=s==="All"?ai.rows.length:ai.rows.filter(x=>x.q.subject===s).length;
+    const wrong=(s==="All"?ai.rows:ai.rows.filter(x=>x.q.subject===s)).filter(x=>x.status==="wrong").length;
+    const b=el("button","qtab"+(s==="All"?" active":""),
+      `${s} <span class="qtab-n">${n}</span>${wrong?`<span class="qtab-w" title="${wrong} incorrect">${wrong}✗</span>`:""}`);
+    b.type="button";b.setAttribute("role","tab");
+    b.setAttribute("aria-selected",s==="All"?"true":"false");
+    b.setAttribute("aria-label",`${s}: ${n} questions, ${wrong} incorrect`);
+    b.onclick=()=>{view.sub=s;[...subBar.children].forEach(x=>{x.classList.remove("active");x.setAttribute("aria-selected","false");});
+      b.classList.add("active");b.setAttribute("aria-selected","true");draw();};
+    subBar.appendChild(b);
+  });
+  bar.appendChild(subBar);
+
+  const filt=el("div","qfilters");
+  filt.setAttribute("role","group");filt.setAttribute("aria-label","Filter answers by status");
+  [["all","All"],["wrong","Wrong"],["correct","Correct"],["skipped","Skipped"],["bookmarked","Bookmarked"]].forEach(([f,label])=>{
+    const b=el("button","btn sm "+(f==="all"?"":"ghost"),label);
+    b.type="button";b.setAttribute("aria-pressed",f==="all"?"true":"false");
+    b.onclick=()=>{view.f=f;[...filt.children].forEach(x=>{x.className="btn sm ghost";x.setAttribute("aria-pressed","false");});
+      b.className="btn sm";b.setAttribute("aria-pressed","true");draw();};
     filt.appendChild(b);
   });
-  rc.appendChild(filt);
-  const list=el("div");list.style.marginTop="12px";rc.appendChild(list);
-  function draw(f){
-    list.innerHTML="";
-    ai.rows.forEach(x=>{
-      if(f==="bookmarked"&&!S.bookmarks.includes(x.q.id))return;
-      if(f!=="all"&&f!=="bookmarked"&&x.status!==f)return;
-      const d=el("div","qrev is-"+x.status);
-      const badge=x.status==="correct"?`<span class="badge g">Correct +4</span>`:
-        x.status==="wrong"?`<span class="badge r">Wrong −1</span>`:`<span class="badge a">Not attempted</span>`;
-      d.innerHTML=`<div class="qrev-head">
-        <div class="prow-top"><span class="qrev-no">Q${x.q.no}</span>
-          <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span>${badge}</div>
-        <div class="small muted">⏱ ${fmtTime(x.time)}</div></div>`;
-      d.appendChild(imgTag(x.q.img));
-      const opts=el("div");
-      (x.q.options||[]).forEach(o=>{
-        const isAns=String(o.label)===String(x.ans), isCor=String(o.label)===String(x.q.answer);
-        const row=el("div","optrow"+(isCor?" correct":isAns?" wrong":""));
-        row.appendChild(el("div","optlab",o.label.toUpperCase()));
-        const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
-        if(isCor||isAns)row.appendChild(el("span","chip",isCor?"Correct answer":"Your answer"));
-        opts.appendChild(row);
-      });
-      const optWrap=el("details");
-      optWrap.innerHTML=`<summary>Options (${(x.q.options||[]).length})</summary>`;
-      const inW=el("div","in");inW.appendChild(opts);optWrap.appendChild(inW);
-      if(x.status!=="correct")optWrap.open=true;
-      d.appendChild(optWrap);
-      d.appendChild(el("div","qrev-ans",
-        `<span class="${x.status==="correct"?"ok":x.ans?"no":""}">Your answer: ${x.ans?esc(String(x.ans).toUpperCase()):"—"}</span>
-         <span class="ok">Correct: ${esc(String(x.q.answer||"").toUpperCase())}</span>
-         <span>Time: ${fmtTime(x.time)}</span>`));
-      const sol=el("details");
-      sol.innerHTML=`<summary>Step-by-step solution</summary>`;
-      const si=el("div","in");sol.appendChild(si);
-      let loaded=false;
-      sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;si.appendChild(imgTag(x.q.solImg));}});
-      d.appendChild(sol);
-      const foot=el("div","qrev-foot");
-      const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark");
-      bm.onclick=()=>{const i=S.bookmarks.indexOf(x.q.id);i<0?S.bookmarks.push(x.q.id):S.bookmarks.splice(i,1);
-        save();bm.textContent=S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark";};
-      foot.appendChild(bm);
-      d.appendChild(foot);
-      list.appendChild(d);
+  bar.appendChild(filt);
+
+  const tools=el("div","qtools");
+  const jump=el("button","btn sm warn","↧ Next incorrect");
+  jump.type="button";jump.setAttribute("aria-label","Jump to the next incorrect question");
+  const toggleAll=el("button","btn sm ghost","Expand all solutions");
+  toggleAll.type="button";toggleAll.setAttribute("aria-pressed","false");
+  tools.appendChild(jump);tools.appendChild(toggleAll);
+  bar.appendChild(tools);
+  rc.appendChild(bar);
+
+  const list=el("div","qrev-list");list.setAttribute("aria-live","polite");rc.appendChild(list);
+
+  jump.onclick=()=>{
+    const wrongs=[...list.querySelectorAll(".qrev.is-wrong")];
+    if(!wrongs.length){toast("No incorrect questions in this view.");return;}
+    const top=window.scrollY+90;
+    const next=wrongs.find(e=>e.getBoundingClientRect().top+window.scrollY>top+10)||wrongs[0];
+    next.querySelectorAll("details").forEach(dd=>dd.open=true);
+    next.scrollIntoView({behavior:"smooth",block:"start"});
+    next.setAttribute("tabindex","-1");next.focus({preventScroll:true});
+  };
+  toggleAll.onclick=()=>{
+    const open=toggleAll.getAttribute("aria-pressed")!=="true";
+    list.querySelectorAll("details").forEach(d=>{d.open=open;});
+    toggleAll.setAttribute("aria-pressed",open?"true":"false");
+    toggleAll.textContent=open?"Collapse all solutions":"Expand all solutions";
+  };
+
+  function reviewCard(x){
+    const d=el("article","qrev is-"+x.status);
+    d.setAttribute("aria-label",`Question ${x.q.no}, ${x.q.subject}, ${x.status}`);
+    const badge=x.status==="correct"?`<span class="badge g">Correct +4</span>`:
+      x.status==="wrong"?`<span class="badge r">Wrong −1</span>`:`<span class="badge a">Not attempted</span>`;
+    d.innerHTML=`<div class="qrev-head">
+      <div class="prow-top"><span class="qrev-no">Q${x.q.no}</span>
+        <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span>${badge}</div>
+      <div class="small muted">⏱ ${fmtTime(x.time)}</div></div>`;
+    d.appendChild(imgTag(x.q.img));
+    d.appendChild(el("div","qrev-ans",
+      `<span class="${x.status==="correct"?"ok":x.ans?"no":""}">Your answer: ${x.ans?esc(String(x.ans).toUpperCase()):"—"}</span>
+       <span class="ok">Correct: ${esc(String(x.q.answer||"").toUpperCase())}</span>`));
+    const opts=el("div");
+    (x.q.options||[]).forEach(o=>{
+      const isAns=String(o.label)===String(x.ans), isCor=String(o.label)===String(x.q.answer);
+      const row=el("div","optrow"+(isCor?" correct":isAns?" wrong":""));
+      row.appendChild(el("div","optlab",o.label.toUpperCase()));
+      const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
+      if(isCor||isAns)row.appendChild(el("span","chip",isCor?"Correct answer":"Your answer"));
+      opts.appendChild(row);
     });
-    if(!list.children.length)list.innerHTML=`<p class="muted">Nothing here.</p>`;
+    const optWrap=el("details");
+    optWrap.innerHTML=`<summary>Options (${(x.q.options||[]).length})</summary>`;
+    const inW=el("div","in");inW.appendChild(opts);optWrap.appendChild(inW);
+    d.appendChild(optWrap);
+    const sol=el("details");
+    sol.innerHTML=`<summary>Step-by-step solution</summary>`;
+    const si=el("div","in");sol.appendChild(si);
+    let loaded=false;
+    sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;si.appendChild(imgTag(x.q.solImg));}});
+    d.appendChild(sol);
+    const foot=el("div","qrev-foot");
+    const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark");
+    bm.type="button";bm.setAttribute("aria-label",`Bookmark question ${x.q.no}`);
+    bm.onclick=()=>{const i=S.bookmarks.indexOf(x.q.id);i<0?S.bookmarks.push(x.q.id):S.bookmarks.splice(i,1);
+      save();bm.textContent=S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark";
+      bm.setAttribute("aria-pressed",S.bookmarks.includes(x.q.id)?"true":"false");};
+    bm.setAttribute("aria-pressed",S.bookmarks.includes(x.q.id)?"true":"false");
+    foot.appendChild(bm);
+    d.appendChild(foot);
+    return d;
   }
-  draw("all");
+
+  function draw(){
+    list.innerHTML="";
+    const pick=ai.rows.filter(x=>{
+      if(view.sub!=="All"&&x.q.subject!==view.sub)return false;
+      if(view.f==="bookmarked")return S.bookmarks.includes(x.q.id);
+      if(view.f!=="all")return x.status===view.f;
+      return true;
+    });
+    if(!pick.length){list.innerHTML=`<p class="muted">Nothing matches this filter.</p>`;return;}
+    const groups=view.sub==="All"?subsPresent:[view.sub];
+    groups.forEach(s=>{
+      const rows=pick.filter(x=>x.q.subject===s);
+      if(!rows.length)return;
+      const c=rows.filter(x=>x.status==="correct").length,
+            w=rows.filter(x=>x.status==="wrong").length,
+            sk=rows.filter(x=>x.status==="skipped").length;
+      const h=el("div","qrev-group");
+      h.innerHTML=`<h4 style="margin:0;color:${SUBCOLOR[s]}">${esc(s)}</h4>
+        <div class="qrev-gstats"><span class="ok">${c} correct</span><span class="no">${w} wrong</span><span>${sk} skipped</span></div>`;
+      list.appendChild(h);
+      rows.forEach(x=>list.appendChild(reviewCard(x)));
+    });
+    toggleAll.setAttribute("aria-pressed","false");
+    toggleAll.textContent="Expand all solutions";
+  }
+  draw();
   root.appendChild(rc);
 }
 
