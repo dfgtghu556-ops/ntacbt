@@ -1593,23 +1593,31 @@ function viewResult(root){
      <div class="ai-metric"><div class="k">Expected Rank</div><div class="v">~${ai.rank.toLocaleString("en-IN")}</div></div>
    </div>
    <div class="ai-panels">
-     <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4><ul class="tight small">
-       <li>Conceptual mistakes: <b>${ai.conceptual.length}</b></li>
-       <li>Calculation mistakes: <b>${ai.calc.length}</b></li>
-       <li>Careless mistakes: <b>${ai.careless.length}</b></li>
-       <li>Guessed attempts: <b>${ai.guesses.length}</b> (accuracy ${ai.guessAcc}%)</li>
-       <li>Negative marking: <b>-${r.all.neg}</b> across ${r.all.wrong} wrong answers</li>
-       <li>Easy questions missed: <b>${ai.easyMissed.length}</b> · Hard solved: <b>${ai.hardSolved.length}</b></li>
-      </ul></div>
-      <div class="ai-panel"><h4>⏱ Timing Intelligence</h4><ul class="tight small">
-       <li>Average per question: <b>${fmtTime(ai.avgT)}</b></li>
-       ${SUBJECTS.filter(s=>r.per[s].total).map(s=>`<li>${s}: <b>${fmtTime(r.per[s].time/r.per[s].total)}</b> per question (${fmtTime(r.per[s].time)} total)</li>`).join("")}
-       <li>Improvement trend: <b>${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b> since first test</li>
-     </ul></div>
+     <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4>
+       <div class="mini-grid">
+         <div class="mini"><span class="k">Conceptual</span><b>${ai.conceptual.length}</b></div>
+         <div class="mini"><span class="k">Calculation</span><b>${ai.calc.length}</b></div>
+         <div class="mini"><span class="k">Careless</span><b>${ai.careless.length}</b></div>
+         <div class="mini"><span class="k">Guessed</span><b>${ai.guesses.length}</b><span class="s">${ai.guessAcc}% right</span></div>
+         <div class="mini"><span class="k">Negatives</span><b>-${r.all.neg}</b><span class="s">${r.all.wrong} wrong</span></div>
+         <div class="mini"><span class="k">Easy missed</span><b>${ai.easyMissed.length}</b><span class="s">hard solved ${ai.hardSolved.length}</span></div>
+       </div></div>
+      <div class="ai-panel"><h4>⏱ Timing Intelligence</h4>
+       <div class="mini-grid two">
+         <div class="mini"><span class="k">Avg / question</span><b>${fmtTime(ai.avgT)}</b></div>
+         <div class="mini"><span class="k">Trend vs first test</span><b style="color:${ai.improving>=0?"var(--green)":"var(--red)"}">${ai.improving>0?"+":""}${Math.round(ai.improving)}%</b></div>
+       </div>
+       <div class="time-rows">
+       ${SUBJECTS.filter(s=>r.per[s].total).map(s=>{
+         const per=r.per[s].time/r.per[s].total, mx=Math.max(1,...SUBJECTS.filter(z=>r.per[z].total).map(z=>r.per[z].time/r.per[z].total));
+         return `<div class="time-row"><span>${s}</span><b>${fmtTime(per)}<span class="s"> / Q · ${fmtTime(r.per[s].time)} total</span></b>
+           <div class="bar"><i style="width:${Math.round(per/mx*100)}%;background:${SUBCOLOR[s]}"></i></div></div>`;}).join("")}
+       </div></div>
       <div class="ai-panel"><h4>✓ Strong Areas</h4><div class="ai-signal"><span>${ai.strongSub[0]}</span><b>${r.per[ai.strongSub[0]]?.accuracy||0}%</b><div class="bar"><i style="width:${r.per[ai.strongSub[0]]?.accuracy||0}%"></i></div></div>${ai.strongCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
       <div class="ai-panel warn"><h4>↗ Priority Chapters</h4><div class="ai-signal"><span>${ai.strongSub[ai.strongSub.length-1]}</span><b>Focus</b><div class="bar"><i style="width:${r.per[ai.strongSub[ai.strongSub.length-1]]?.accuracy||0}%"></i></div></div>${ai.weakCh.map(c=>`<div class="ai-signal"><span>${esc(c.name).slice(0,48)}</span><b>${c.acc}%</b><div class="bar"><i style="width:${c.acc}%"></i></div></div>`).join("")}</div>
    </div>
-    <div class="ai-recs"><h4>Personalized Study Plan</h4><ul class="tight small">${ai.recs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div class="ai-recs"><h4>Personalized Study Plan</h4>
+      <ol class="plan-steps">${ai.recs.map((x,i)=>`<li><span class="step-n" aria-hidden="true">${i+1}</span><span>${esc(x)}</span></li>`).join("")}</ol></div>
     <div style="margin-top:14px"><h4>Most Time Consuming Questions</h4><div class="small muted">${ai.slow.map(x=>`Q${x.q.no} ${x.q.subject} (${fmtTime(x.time)}, ${x.status})`).join(" · ")||"No timing outliers detected."}</div></div></div>`;
   root.appendChild(ac);
 
