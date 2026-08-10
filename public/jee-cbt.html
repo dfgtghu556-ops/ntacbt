@@ -1664,65 +1664,139 @@ function viewResult(root){
   });
   root.appendChild(videoCard("Revision videos for this test","One-shot and short revision links for the chapters that cost you marks.",recVids));
 
-  // question review
+  // question review — subject sections + status filters + jump to next incorrect
   const rc=el("div","card");
-  rc.innerHTML=`<h3>Question Review</h3>`;
-  const filt=el("div","row");
-  ["all","correct","wrong","skipped","bookmarked"].forEach(f=>{
-    const b=el("button","btn sm "+(f==="all"?"":"ghost"),f[0].toUpperCase()+f.slice(1));
-    b.onclick=()=>{[...filt.children].forEach(x=>x.className="btn sm ghost");b.className="btn sm";draw(f);};
+  rc.innerHTML=`<div class="section-title"><span class="ico">📝</span><h3 style="margin:0" id="qrevHead">Answers &amp; Solutions</h3></div>
+    <div class="small muted">Pick a subject, filter by status, and open only the solutions you need.</div>`;
+  const view={sub:"All",f:"all"};
+  const subsPresent=SUBJECTS.filter(s=>ai.rows.some(x=>x.q.subject===s));
+  const bar=el("div","qrev-bar");
+
+  const subBar=el("div","qtabs");
+  subBar.setAttribute("role","tablist");
+  subBar.setAttribute("aria-label","Filter answers by subject");
+  ["All",...subsPresent].forEach(s=>{
+    const n=s==="All"?ai.rows.length:ai.rows.filter(x=>x.q.subject===s).length;
+    const wrong=(s==="All"?ai.rows:ai.rows.filter(x=>x.q.subject===s)).filter(x=>x.status==="wrong").length;
+    const b=el("button","qtab"+(s==="All"?" active":""),
+      `${s} <span class="qtab-n">${n}</span>${wrong?`<span class="qtab-w" title="${wrong} incorrect">${wrong}✗</span>`:""}`);
+    b.type="button";b.setAttribute("role","tab");
+    b.setAttribute("aria-selected",s==="All"?"true":"false");
+    b.setAttribute("aria-label",`${s}: ${n} questions, ${wrong} incorrect`);
+    b.onclick=()=>{view.sub=s;[...subBar.children].forEach(x=>{x.classList.remove("active");x.setAttribute("aria-selected","false");});
+      b.classList.add("active");b.setAttribute("aria-selected","true");draw();};
+    subBar.appendChild(b);
+  });
+  bar.appendChild(subBar);
+
+  const filt=el("div","qfilters");
+  filt.setAttribute("role","group");filt.setAttribute("aria-label","Filter answers by status");
+  [["all","All"],["wrong","Wrong"],["correct","Correct"],["skipped","Skipped"],["bookmarked","Bookmarked"]].forEach(([f,label])=>{
+    const b=el("button","btn sm "+(f==="all"?"":"ghost"),label);
+    b.type="button";b.setAttribute("aria-pressed",f==="all"?"true":"false");
+    b.onclick=()=>{view.f=f;[...filt.children].forEach(x=>{x.className="btn sm ghost";x.setAttribute("aria-pressed","false");});
+      b.className="btn sm";b.setAttribute("aria-pressed","true");draw();};
     filt.appendChild(b);
   });
-  rc.appendChild(filt);
-  const list=el("div");list.style.marginTop="12px";rc.appendChild(list);
-  function draw(f){
-    list.innerHTML="";
-    ai.rows.forEach(x=>{
-      if(f==="bookmarked"&&!S.bookmarks.includes(x.q.id))return;
-      if(f!=="all"&&f!=="bookmarked"&&x.status!==f)return;
-      const d=el("div","qrev is-"+x.status);
-      const badge=x.status==="correct"?`<span class="badge g">Correct +4</span>`:
-        x.status==="wrong"?`<span class="badge r">Wrong −1</span>`:`<span class="badge a">Not attempted</span>`;
-      d.innerHTML=`<div class="qrev-head">
-        <div class="prow-top"><span class="qrev-no">Q${x.q.no}</span>
-          <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span>${badge}</div>
-        <div class="small muted">⏱ ${fmtTime(x.time)}</div></div>`;
-      d.appendChild(imgTag(x.q.img));
-      const opts=el("div");
-      (x.q.options||[]).forEach(o=>{
-        const isAns=String(o.label)===String(x.ans), isCor=String(o.label)===String(x.q.answer);
-        const row=el("div","optrow"+(isCor?" correct":isAns?" wrong":""));
-        row.appendChild(el("div","optlab",o.label.toUpperCase()));
-        const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
-        if(isCor||isAns)row.appendChild(el("span","chip",isCor?"Correct answer":"Your answer"));
-        opts.appendChild(row);
-      });
-      const optWrap=el("details");
-      optWrap.innerHTML=`<summary>Options (${(x.q.options||[]).length})</summary>`;
-      const inW=el("div","in");inW.appendChild(opts);optWrap.appendChild(inW);
-      if(x.status!=="correct")optWrap.open=true;
-      d.appendChild(optWrap);
-      d.appendChild(el("div","qrev-ans",
-        `<span class="${x.status==="correct"?"ok":x.ans?"no":""}">Your answer: ${x.ans?esc(String(x.ans).toUpperCase()):"—"}</span>
-         <span class="ok">Correct: ${esc(String(x.q.answer||"").toUpperCase())}</span>
-         <span>Time: ${fmtTime(x.time)}</span>`));
-      const sol=el("details");
-      sol.innerHTML=`<summary>Step-by-step solution</summary>`;
-      const si=el("div","in");sol.appendChild(si);
-      let loaded=false;
-      sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;si.appendChild(imgTag(x.q.solImg));}});
-      d.appendChild(sol);
-      const foot=el("div","qrev-foot");
-      const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark");
-      bm.onclick=()=>{const i=S.bookmarks.indexOf(x.q.id);i<0?S.bookmarks.push(x.q.id):S.bookmarks.splice(i,1);
-        save();bm.textContent=S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark";};
-      foot.appendChild(bm);
-      d.appendChild(foot);
-      list.appendChild(d);
+  bar.appendChild(filt);
+
+  const tools=el("div","qtools");
+  const jump=el("button","btn sm warn","↧ Next incorrect");
+  jump.type="button";jump.setAttribute("aria-label","Jump to the next incorrect question");
+  const toggleAll=el("button","btn sm ghost","Expand all solutions");
+  toggleAll.type="button";toggleAll.setAttribute("aria-pressed","false");
+  tools.appendChild(jump);tools.appendChild(toggleAll);
+  bar.appendChild(tools);
+  rc.appendChild(bar);
+
+  const list=el("div","qrev-list");list.setAttribute("aria-live","polite");rc.appendChild(list);
+
+  jump.onclick=()=>{
+    const wrongs=[...list.querySelectorAll(".qrev.is-wrong")];
+    if(!wrongs.length){toast("No incorrect questions in this view.");return;}
+    const top=window.scrollY+90;
+    const next=wrongs.find(e=>e.getBoundingClientRect().top+window.scrollY>top+10)||wrongs[0];
+    next.querySelectorAll("details").forEach(dd=>dd.open=true);
+    next.scrollIntoView({behavior:"smooth",block:"start"});
+    next.setAttribute("tabindex","-1");next.focus({preventScroll:true});
+  };
+  toggleAll.onclick=()=>{
+    const open=toggleAll.getAttribute("aria-pressed")!=="true";
+    list.querySelectorAll("details").forEach(d=>{d.open=open;});
+    toggleAll.setAttribute("aria-pressed",open?"true":"false");
+    toggleAll.textContent=open?"Collapse all solutions":"Expand all solutions";
+  };
+
+  function reviewCard(x){
+    const d=el("article","qrev is-"+x.status);
+    d.setAttribute("aria-label",`Question ${x.q.no}, ${x.q.subject}, ${x.status}`);
+    const badge=x.status==="correct"?`<span class="badge g">Correct +4</span>`:
+      x.status==="wrong"?`<span class="badge r">Wrong −1</span>`:`<span class="badge a">Not attempted</span>`;
+    d.innerHTML=`<div class="qrev-head">
+      <div class="prow-top"><span class="qrev-no">Q${x.q.no}</span>
+        <span class="chip" style="color:${SUBCOLOR[x.q.subject]}">${esc(x.q.subject)}</span>${badge}</div>
+      <div class="small muted">⏱ ${fmtTime(x.time)}</div></div>`;
+    d.appendChild(imgTag(x.q.img));
+    d.appendChild(el("div","qrev-ans",
+      `<span class="${x.status==="correct"?"ok":x.ans?"no":""}">Your answer: ${x.ans?esc(String(x.ans).toUpperCase()):"—"}</span>
+       <span class="ok">Correct: ${esc(String(x.q.answer||"").toUpperCase())}</span>`));
+    const opts=el("div");
+    (x.q.options||[]).forEach(o=>{
+      const isAns=String(o.label)===String(x.ans), isCor=String(o.label)===String(x.q.answer);
+      const row=el("div","optrow"+(isCor?" correct":isAns?" wrong":""));
+      row.appendChild(el("div","optlab",o.label.toUpperCase()));
+      const w=el("div");w.style.flex="1";w.appendChild(imgTag(o.img));row.appendChild(w);
+      if(isCor||isAns)row.appendChild(el("span","chip",isCor?"Correct answer":"Your answer"));
+      opts.appendChild(row);
     });
-    if(!list.children.length)list.innerHTML=`<p class="muted">Nothing here.</p>`;
+    const optWrap=el("details");
+    optWrap.innerHTML=`<summary>Options (${(x.q.options||[]).length})</summary>`;
+    const inW=el("div","in");inW.appendChild(opts);optWrap.appendChild(inW);
+    d.appendChild(optWrap);
+    const sol=el("details");
+    sol.innerHTML=`<summary>Step-by-step solution</summary>`;
+    const si=el("div","in");sol.appendChild(si);
+    let loaded=false;
+    sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;si.appendChild(imgTag(x.q.solImg));}});
+    d.appendChild(sol);
+    const foot=el("div","qrev-foot");
+    const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark");
+    bm.type="button";bm.setAttribute("aria-label",`Bookmark question ${x.q.no}`);
+    bm.onclick=()=>{const i=S.bookmarks.indexOf(x.q.id);i<0?S.bookmarks.push(x.q.id):S.bookmarks.splice(i,1);
+      save();bm.textContent=S.bookmarks.includes(x.q.id)?"★ Bookmarked":"☆ Bookmark";
+      bm.setAttribute("aria-pressed",S.bookmarks.includes(x.q.id)?"true":"false");};
+    bm.setAttribute("aria-pressed",S.bookmarks.includes(x.q.id)?"true":"false");
+    foot.appendChild(bm);
+    d.appendChild(foot);
+    return d;
   }
-  draw("all");
+
+  function draw(){
+    list.innerHTML="";
+    const pick=ai.rows.filter(x=>{
+      if(view.sub!=="All"&&x.q.subject!==view.sub)return false;
+      if(view.f==="bookmarked")return S.bookmarks.includes(x.q.id);
+      if(view.f!=="all")return x.status===view.f;
+      return true;
+    });
+    if(!pick.length){list.innerHTML=`<p class="muted">Nothing matches this filter.</p>`;return;}
+    const groups=view.sub==="All"?subsPresent:[view.sub];
+    groups.forEach(s=>{
+      const rows=pick.filter(x=>x.q.subject===s);
+      if(!rows.length)return;
+      const c=rows.filter(x=>x.status==="correct").length,
+            w=rows.filter(x=>x.status==="wrong").length,
+            sk=rows.filter(x=>x.status==="skipped").length;
+      const h=el("div","qrev-group");
+      h.innerHTML=`<h4 style="margin:0;color:${SUBCOLOR[s]}">${esc(s)}</h4>
+        <div class="qrev-gstats"><span class="ok">${c} correct</span><span class="no">${w} wrong</span><span>${sk} skipped</span></div>`;
+      list.appendChild(h);
+      rows.forEach(x=>list.appendChild(reviewCard(x)));
+    });
+    toggleAll.setAttribute("aria-pressed","false");
+    toggleAll.textContent="Expand all solutions";
+  }
+  draw();
   root.appendChild(rc);
 }
 
