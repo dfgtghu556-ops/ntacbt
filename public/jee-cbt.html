@@ -239,7 +239,51 @@ ul.tight{margin:.3rem 0;padding-left:1.1rem} ul.tight li{margin:.2rem 0}
 .ai-signal .bar{grid-column:1/-1;height:6px}.ai-signal .bar i{background:var(--green)}
 .ai-panel.warn .ai-signal .bar i{background:var(--amber)}
 .ai-recs{margin-top:12px;border-left:4px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0}
-@media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}}
+/* mistake / timing tiles + study plan steps */
+.mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mini-grid.two{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px}
+.mini{background:var(--blue-soft);border:1px solid var(--line);border-radius:11px;padding:9px 10px;display:grid;gap:2px}
+.mini .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mini b{font-size:19px;font-weight:900;line-height:1.15}
+.mini .s{font-size:11px;color:var(--muted);font-weight:600}
+.time-rows{display:grid;gap:10px}
+.time-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline;font-size:13px;font-weight:700}
+.time-row .bar{grid-column:1/-1;height:6px}
+.time-row .s{font-weight:600;color:var(--muted);font-size:11px}
+.plan-steps{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.plan-steps li{display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;font-size:13.5px;line-height:1.45}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:800;
+  display:grid;place-items:center}
+/* review toolbar + subject sections */
+.qrev-bar{position:sticky;top:0;z-index:5;background:var(--card,var(--panel));padding:10px 0 12px;display:grid;gap:9px;
+  border-bottom:1px solid var(--line);margin-bottom:14px}
+.qtabs{display:flex;gap:6px;overflow-x:auto;background:var(--blue-soft);border-radius:12px;padding:4px}
+.qtab{flex:1;min-width:120px;border:0;background:transparent;padding:8px 12px;border-radius:9px;cursor:pointer;
+  font-weight:800;font-size:13.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
+.qtab.active{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.qtab-n{font-size:11px;font-weight:800;background:rgba(0,0,0,.08);border-radius:999px;padding:1px 7px}
+.qtab.active .qtab-n{background:rgba(255,255,255,.24)}
+.qtab-w{font-size:11px;font-weight:800;color:var(--red)}
+.qtab.active .qtab-w{color:#fff}
+.qfilters,.qtools{display:flex;gap:7px;flex-wrap:wrap}
+.qtools{justify-content:flex-end}
+.btn.warn{background:var(--amber);color:#1b1b1b;border-color:transparent}
+.qrev-group{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.qrev-gstats{display:flex;gap:7px;flex-wrap:wrap;font-size:11.5px;font-weight:800}
+.qrev-gstats span{padding:3px 9px;border-radius:999px;background:var(--blue-soft);color:var(--muted)}
+.qrev-gstats span.ok{background:rgba(30,158,87,.15);color:var(--green)}
+.qrev-gstats span.no{background:rgba(211,59,59,.13);color:var(--red)}
+/* ---- global accessibility: visible focus everywhere ---- */
+:focus-visible{outline:3px solid var(--blue-l,#3b82f6);outline-offset:2px;border-radius:8px}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--blue-l,#3b82f6);outline-offset:2px}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:999;background:var(--blue);color:#fff;padding:10px 16px;
+  border-radius:0 0 10px 0;font-weight:800}
+.skip-link:focus{left:0}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
+@media(max-width:650px){.revision-item{grid-template-columns:1fr}.revision-links{justify-content:flex-start}.ai-hero{align-items:flex-start}.ai-metrics,.ai-panels{grid-template-columns:1fr}.ai-score{min-width:96px}
+  .mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.qtab{min-width:96px;font-size:12.5px}.qtools{justify-content:stretch}.qtools .btn{flex:1}}
 
 /* ============================================================
    PERSONALIZATION LAYER — accents, density, font size, card style
