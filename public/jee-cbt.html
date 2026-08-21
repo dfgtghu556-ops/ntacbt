@@ -723,8 +723,8 @@ html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,
   </div></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
 
 <script>
@@ -738,8 +738,23 @@ html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,
      5. Views: Dashboard, Upload, Planner, Analytics, Practice, Search, Result
      6. Exam runtime (NTA-style)
    ========================================================================== */
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+/* pdf.js/jspdf load with `defer`, so pdfjsLib may not exist yet on first
+   run — set the worker as soon as it does. */
+if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}else{
+  window.addEventListener("load",()=>{
+    if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  });
+}
+function ensurePdfJs(){
+  return window.pdfjsLib?Promise.resolve():new Promise(res=>{
+    const t=setInterval(()=>{if(window.pdfjsLib){clearInterval(t);res();}},100);
+    setTimeout(()=>{clearInterval(t);res();},10000);
+  });
+}
 
 /* ------------------------------- 1. UTILS -------------------------------- */
 const $ = (s,r=document)=>r.querySelector(s);
@@ -1123,6 +1138,7 @@ function editPlannerRow(r,after){
   document.body.appendChild(m);
 }
 function shareTest(t){
+  if(!t.shareSlug){toast("Only published (cloud) tests have a shareable link");return;}
   const url=location.origin+location.pathname+"?test="+encodeURIComponent(t.shareSlug);
   navigator.clipboard.writeText(url).then(()=>toast("Public test link copied"),()=>prompt("Copy this public test link",url));
 }
@@ -1245,6 +1261,7 @@ async function aiFallbackParse(pages, akPos, solPos, subject){
  *  AI" button so the person can force this anytime they suspect a result
  *  is incomplete, without needing to reformat the PDF first. */
 async function forceAIParsePDF(file,subject,onProgress){
+  await ensurePdfJs();
   const buf=await file.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:buf}).promise;
   const pages=[];
@@ -1264,6 +1281,7 @@ async function forceAIParsePDF(file,subject,onProgress){
   return qs;
 }
 async function parsePaper(file,subject,onProgress){
+  await ensurePdfJs();
   const buf=await file.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:buf}).promise;
   const pages=[];
@@ -1616,8 +1634,10 @@ function attemptsOf(id){return S.attempts.filter(a=>a.testId===id);}
 function isRight(q,ans){
   if(ans==null||ans==="")return false;
   if(q.type==="mcq")return String(ans).toLowerCase()===String(q.answer||"").toLowerCase();
-  const a=parseFloat(ans),b=parseFloat(q.answer);
-  return isFinite(a)&&isFinite(b)&&Math.abs(a-b)<0.01;
+  const a=parseFloat(String(ans).replace(/,/g,"")),b=parseFloat(String(q.answer).replace(/,/g,""));
+  if(!isFinite(a)||!isFinite(b))return false;
+  if(Number.isInteger(b))return a===b;
+  return Math.abs(a-b)<=Math.max(0.01,Math.abs(b)*0.001);
 }
 function evaluate(test,resp){
   const markW=S.settings.negMarking===false?0:MARK_W;
@@ -1634,11 +1654,37 @@ function evaluate(test,resp){
   all.accuracy=pct(all.correct,attempted);
   all.percentage=pct(all.marks,all.total*MARK_C);
   all.max=all.total*MARK_C;
+  SUBJECTS.forEach(s=>{const p=per[s];p.accuracy=pct(p.correct,p.correct+p.wrong);p.max=p.total*MARK_C;});
   return {per,all};
 }
 
 /* --------------------------- 5. AI ANALYSIS ------------------------------ */
 /* Deterministic, on-device analysis engine (no network). */
+const NTA_TOTAL_CANDIDATES=1475103; // JEE Main 2025 actual appeared count
+const NTA_MARKS_PERCENTILE=[
+  [0,0.84],[5,4.5],[10,9.7],[15,20.6],[20,37.69],[25,47.4],[30,56.57],
+  [35,64.2],[40,71.30],[45,77.2],[50,80.98],[55,84.6],[60,86.91],
+  [65,88.8],[70,90.41],[75,91.7],[80,93.0],[85,94.1],[90,95.0],
+  [95,95.8],[100,96.0],[110,96.9],[120,97.50],[130,98.32],[140,98.67],
+  [150,98.99],[160,99.03],[165,99.15],[170,99.27],[180,99.46],[190,99.60],
+  [200,99.71],[210,99.795],[220,99.852],[230,99.901],[240,99.935],
+  [250,99.950],[260,99.977],[270,99.990],[280,99.994],[290,99.9991],
+  [300,99.99999]
+];
+function ntaPercentile(marks300){
+  const T=NTA_MARKS_PERCENTILE, m=clamp(marks300,0,300);
+  for(let i=1;i<T.length;i++){
+    if(m<=T[i][0]){
+      const [m0,p0]=T[i-1],[m1,p1]=T[i];
+      const p=p0+(p1-p0)*((m-m0)/(m1-m0||1));
+      return +p.toFixed(m>=240?4:2);
+    }
+  }
+  return 99.99999;
+}
+function ntaRank(percentile){
+  return Math.max(1,Math.round((100-percentile)/100*NTA_TOTAL_CANDIDATES));
+}
 function analyse(test,attempt){
   const r=attempt.result, resp=attempt.responses, qs=test.questions;
   const times=qs.map(q=>(resp[q.id]||{}).time||0);
@@ -1664,9 +1710,9 @@ function analyse(test,attempt){
   const guesses=rows.filter(x=>x.guess&&x.status!=="skipped");
   const guessAcc=pct(guesses.filter(g=>g.status==="correct").length,guesses.length);
   // expected JEE metrics (300-mark scale)
-  const score300=Math.round(r.all.percentage/100*300);
-  const percentile=+(clamp(100*(1-Math.exp(-Math.pow(score300/300,1.6)*3.6)),0.5,99.99)).toFixed(3);
-  const rank=Math.max(1,Math.round((100-percentile)/100*1200000));
+  const score300=clamp(Math.round(r.all.percentage/100*300),0,300);
+  const percentile=ntaPercentile(score300);
+  const rank=ntaRank(percentile);
   const trend=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt).map(a=>a.result.all.percentage);
   const improving=trend.length>1?trend[trend.length-1]-trend[0]:0;
   const weakCh=chapters.slice().sort((a,b)=>a.acc-b.acc).slice(0,5);
@@ -1682,6 +1728,14 @@ function analyse(test,attempt){
   if(!recs.length)recs.push("Excellent balanced performance — maintain the current routine and increase difficulty.");
   return {rows,avgT,chapters,weakCh,strongCh,slow,easyMissed,hardSolved,careless,calc,conceptual,
     guesses,guessAcc,score300,percentile,rank,improving,strongSub,recs};
+}
+const _analyseCache=new Map();
+function analyseCached(test,attempt){
+  if(!attempt.submittedAt)return analyse(test,attempt);
+  const hit=_analyseCache.get(attempt.id); if(hit)return hit;
+  const v=analyse(test,attempt);
+  if(_analyseCache.size>200)_analyseCache.clear();
+  _analyseCache.set(attempt.id,v); return v;
 }
 
 /* ------------------------------- 6. ROUTER ------------------------------- */
@@ -2594,7 +2648,9 @@ function viewSearch(root){
     const term=q.value.trim().toLowerCase();res.innerHTML="";
     if(!term){res.innerHTML=`<p class="muted">Type to search across every uploaded paper.</p>`;return;}
     let n=0;
+    const seenQ=new Set();
     S.tests.forEach(t=>t.questions.forEach(qq=>{
+      if(seenQ.has(qq.id))return;seenQ.add(qq.id);
       if(sub.value!=="All"&&qq.subject!==sub.value)return;
       const hay=[qq.no,qq.text,qq.chapter,qq.subject,qq.solText,...(qq.options||[]).map(o=>o.text)].join(" ").toLowerCase();
       if(!(hay.includes(term)||String(qq.no)===term))return;
@@ -2707,7 +2763,7 @@ function viewResult(root){
   if(!a){root.appendChild(el("div","card","<p class='muted'>No result.</p>"));return;}
   const t=testById(a.testId);
   if(!t){root.appendChild(el("div","card","<p class='muted'>Test was deleted.</p>"));return;}
-  const r=a.result, ai=analyse(t,a);
+  const r=a.result, ai=analyseCached(t,a);
 
   root.appendChild(scoreHero(t,a,r,ai));
 
@@ -2782,11 +2838,11 @@ function viewResult(root){
 
   // AI analysis
   const ac=el("div","card ai-shell");
-  ac.innerHTML=`<div class="ai-hero"><div><span class="badge a">AI PERFORMANCE REPORT</span><h3 style="margin-top:8px">Your Test Intelligence</h3><div class="muted small">A focused diagnosis of score potential, accuracy, speed and revision priorities.</div></div><div class="ai-score"><span class="small">Readiness</span><b>${Math.min(100,Math.round((r.all.accuracy+Number(ai.percentile))/2))}%</b><span class="small">JEE Main</span></div></div>
+  ac.innerHTML=`<div class="ai-hero"><div><span class="badge a">AI PERFORMANCE REPORT</span><h3 style="margin-top:8px">Your Test Intelligence</h3><div class="muted small">A focused diagnosis of score potential, accuracy, speed and revision priorities.</div></div><div class="ai-score"><span class="small">Percentile</span><b>${Math.round(ai.percentile*10)/10}</b><span class="small">NTA-data based</span></div></div>
    <div class="ai-body"><div class="ai-metrics">
      <div class="ai-metric"><div class="k">Expected JEE Score</div><div class="v">${ai.score300}<span class="muted small"> /300</span></div></div>
-     <div class="ai-metric"><div class="k">Expected Percentile</div><div class="v">${ai.percentile}</div></div>
-     <div class="ai-metric"><div class="k">Expected Rank</div><div class="v">~${ai.rank.toLocaleString("en-IN")}</div></div>
+     <div class="ai-metric"><div class="k">Expected Percentile</div><div class="v">${ai.percentile}</div><div class="muted small">NTA 2025 data · 14.75L candidates</div></div>
+     <div class="ai-metric"><div class="k">Expected AIR</div><div class="v">~${ai.rank.toLocaleString("en-IN")}</div><div class="muted small">AIR = (100−P)×N÷100</div></div>
    </div>
    <div class="ai-panels">
      <div class="ai-panel warn"><h4>⚠ Mistake Pattern</h4>
@@ -3071,7 +3127,8 @@ function shuffledCopy(arr){
   return a;
 }
 function startExam(testId,resume){
-  const base=testById(testId);if(!base)return;
+  const base=testById(testId);
+  if(!base){ if(resume)clearAutosave(); toast("This test is no longer available on this device"); go("library"); return; }
   let t=base;
   if(resume&&resume.order&&resume.order.length===base.questions.length){
     const byId={};base.questions.forEach(q=>byId[q.id]=q);
@@ -3179,7 +3236,10 @@ function drawQuestion(){
   } else {
     const inp=el("input");inp.type="text";inp.inputMode="decimal";inp.placeholder="Enter numerical answer";
     inp.value=r.ans==null?"":r.ans;inp.style.marginTop="10px";inp.style.width="240px";
-    inp.oninput=()=>{r.changes++;r.ans=inp.value.trim()||null;paintPalette();};
+    inp.onfocus=()=>{inp._had=inp.value;};
+    inp.onblur=()=>{if(inp.value!==inp._had)r.changes++;};
+    inp.oninput=()=>{r.ans=inp.value.trim()||null;
+      clearTimeout(inp._t);inp._t=setTimeout(paintPalette,250);};
     box.appendChild(inp);
   }
   p.appendChild(box);
@@ -3225,17 +3285,23 @@ function summaryHTML(){
 }
 function startTimer(){
   const t=$("#exTimer");
+  EX.deadline=Date.now()+EX.left*1000; // wall-clock anchor — background-tab interval throttling can't freeze the clock
   const upd=()=>{
-    EX.left--;
+    if(!EX)return;
+    EX.left=Math.max(0,Math.round((EX.deadline-Date.now())/1000));
     t.textContent=fmtTime(EX.left);
     t.className="timer"+(EX.left<=300?" crit":EX.left<=1800?" warn":"");
     [[1800,"30 minutes remaining"],[600,"10 minutes remaining"],[300,"5 minutes remaining"],[60,"1 minute remaining"]]
-      .forEach(([s,m])=>{if(EX.left===s&&!EX.warned[s]){EX.warned[s]=1;toast("⚠ "+m,4000);}});
+      .forEach(([s,m])=>{if(EX.left<=s&&!EX.warned[s]){EX.warned[s]=1;toast("⚠ "+m,4000);}});
     if(EX.left%5===0){commitTime();examAutosave();}
     if(EX.left<=0)submitExam(true);
   };
   t.textContent=fmtTime(EX.left);
   EX.timerId=setInterval(upd,1000);
+  document.addEventListener("visibilitychange",function sync(){
+    if(!EX||EX.timerId==null){document.removeEventListener("visibilitychange",sync);return;}
+    if(!document.hidden)upd();
+  });
 }
 /** Lightweight spaced-repetition scheduler for the Mistake Notebook: right
  *  answer pushes the next review further out (1→3→7→16→35 days), a wrong
@@ -3255,6 +3321,8 @@ function updateReviewSchedule(test,responses){
   });
 }
 function submitExam(auto){
+  if(!EX||EX.submitting)return;
+  EX.submitting=true;
   commitTime();
   const {test,attempt}=EX;
   attempt.submittedAt=Date.now();
@@ -3332,7 +3400,7 @@ document.addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(e.key==="ArrowRight")move(1);
   else if(e.key==="ArrowLeft")move(-1);
-  else if(/^[1-4]$/.test(e.key)){const q=cq();if(q.type==="mcq"){const o=q.options[+e.key-1];if(o){res(q).ans=o.label;res(q).status="answered";drawQuestion();}}}
+  else if(/^[1-4]$/.test(e.key)){const q=cq();if(q.type==="mcq"){const o=q.options[+e.key-1];if(o){const r=res(q);if(r.ans!==o.label)r.changes++;r.ans=o.label;r.status=(r.status==="marked"||r.status==="markedans")?"markedans":"answered";drawQuestion();}}}
   else if(k==="m"){const r=res(cq());r.status=r.ans?"markedans":"marked";paintPalette();}
   else if(k==="c"){const r=res(cq());r.ans=null;r.status="notanswered";drawQuestion();}
   else if(k==="s"){const r=res(cq());r.status=r.ans?"answered":"notanswered";move(1,true);}
@@ -3516,7 +3584,7 @@ function computeBadges(){
   const questionsSolved=S.attempts.reduce((n,a)=>n+(a.result?a.result.all.correct+a.result.all.wrong+a.result.all.skipped:0),0);
   const bestAcc=S.attempts.reduce((m,a)=>Math.max(m,a.result?a.result.all.accuracy:0),0);
   let bestPercentile=0;
-  S.attempts.forEach(a=>{const t=testById(a.testId);if(t){try{bestPercentile=Math.max(bestPercentile,+analyse(t,a).percentile);}catch(e){}}});
+  S.attempts.forEach(a=>{const t=testById(a.testId);if(t){try{bestPercentile=Math.max(bestPercentile,+analyseCached(t,a).percentile);}catch(e){}}});
   const g={streak:st.streak,total:S.attempts.length,questionsSolved,bestAcc,notesCount:Object.keys(S.notes).length,bestPercentile};
   return BADGES.map(([icon,name,desc,test])=>({icon,name,desc,earned:test(g)}));
 }
@@ -3599,8 +3667,17 @@ function dueReviewQuestions(){
   return wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=now;});
 }
 /** Builds & starts an ad-hoc practice test from a list of {q} items. */
+function prunePracticeTests(){
+  const used=new Set(S.attempts.filter(a=>a.submittedAt).map(a=>a.testId));
+  const resume=pendingResume(); if(resume)used.add(resume.testId);
+  const practice=S.tests.filter(t=>t.practice);
+  const keep=new Set(practice.filter(t=>used.has(t.id))
+    .sort((a,b)=>b.createdAt-a.createdAt).slice(0,15).map(t=>t.id));
+  S.tests=S.tests.filter(t=>!t.practice||keep.has(t.id));
+}
 function startDrill(name,items,secsPerQ=90){
   if(!items.length){toast("Nothing to practise right now");return;}
+  prunePracticeTests();
   const t={id:uid(),name,createdAt:Date.now(),date:new Date().toISOString(),
     practice:true,duration:Math.max(600,items.length*secsPerQ),chapter:{},
     questions:items.map((x,i)=>({...(x.q||x),index:i,no:i+1}))};
@@ -3611,7 +3688,7 @@ function startDrill(name,items,secsPerQ=90){
 function percentileTrend(){
   const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
   const pts=done.map(a=>{const t=testById(a.testId);if(!t)return null;
-    try{return {when:a.submittedAt,p:+analyse(t,a).percentile};}catch(e){return null;}}).filter(Boolean);
+    try{return {when:a.submittedAt,p:+analyseCached(t,a).percentile};}catch(e){return null;}}).filter(Boolean);
   if(pts.length<2)return {pts,projected:null,slope:0};
   // least-squares fit over (attempt index → percentile), then project forward
   const n=pts.length,xs=pts.map((_,i)=>i),ys=pts.map(p=>p.p);
@@ -3682,20 +3759,10 @@ function viewNotebook(root){
     <span class="pill r">${list.length} questions to revisit</span>
     <span class="pill ${due.length?"r":""}">⏰ ${due.length} due for review today</span></div>`;
   const practice=el("button","btn sm","Practise these now");
-  practice.onclick=()=>{
-    const t={id:uid(),name:"Mistake Notebook Drill · "+fmtDate(Date.now()),createdAt:Date.now(),date:new Date().toISOString(),
-      practice:true,duration:Math.max(600,list.length*90),chapter:{},
-      questions:list.map((x,i)=>({...x.q,index:i,no:i+1}))};
-    S.tests.push(t);save();startExam(t.id);
-  };
+  practice.onclick=()=>startDrill("Mistake Notebook Drill · "+fmtDate(Date.now()),list);
   const practiceDue=el("button","btn sm ghost","Review due only ("+due.length+")");
   practiceDue.disabled=!due.length;
-  practiceDue.onclick=()=>{
-    const t={id:uid(),name:"Spaced Review · "+fmtDate(Date.now()),createdAt:Date.now(),date:new Date().toISOString(),
-      practice:true,duration:Math.max(600,due.length*90),chapter:{},
-      questions:due.map((x,i)=>({...x.q,index:i,no:i+1}))};
-    S.tests.push(t);save();startExam(t.id);
-  };
+  practiceDue.onclick=()=>startDrill("Spaced Review · "+fmtDate(Date.now()),due);
   bar.firstElementChild.appendChild(el("div","row"));
   bar.firstElementChild.lastElementChild.append(practice,practiceDue);root.appendChild(bar);
   const wrap=el("div","card");
@@ -3996,6 +4063,7 @@ function viewLibrary(root){
   const search=el("input");search.type="text";search.placeholder="Search tests, chapters, IDs…";search.value=LIBF.q;
   const mkSel=(key,label,vals)=>{const s=el("select");
     vals.forEach(v=>{const o=el("option",null,v==="All"?label+": All":String(v));o.value=v;s.appendChild(o);});
+    if(!vals.map(String).includes(String(LIBF[key])))LIBF[key]="All";
     s.value=LIBF[key];s.onchange=()=>{LIBF[key]=s.value;render();};return s;};
   const allMeta=cloudTests.map(testMeta);
   const chapters=[...new Set(allMeta.flatMap(m=>m.chapters||[]))].sort();
@@ -4254,7 +4322,8 @@ function load_aiChatHistory(){
   catch(e){return [];}
 }
 function save_aiChatHistory(){
-  try{localStorage.setItem(AICHAT_LS,JSON.stringify(aiChatHistory.filter(m=>!m.pending).slice(-40)));}catch(e){}
+  try{localStorage.setItem(AICHAT_LS,JSON.stringify(aiChatHistory.filter(m=>!m.pending).slice(-40).map(m=>
+    m.image?{...m,image:{fileName:m.image.fileName||"photo",isImage:m.image.isImage,previewUrl:null}}:m)));}catch(e){}
 }
 /** Minimal, dependency-free markdown → safe HTML: **bold**, `code`,
  *  "- "/"1. " lists, and paragraph breaks. Text is HTML-escaped first, so
@@ -4300,7 +4369,7 @@ function aiChatRenderMsgs(){
     const b=el("div","ai-msg "+m.role+(m.error?" error":""));
     if(m.image){
       if(m.image.isImage&&m.image.previewUrl){const im=el("img","ai-thumb");im.src=m.image.previewUrl;im.alt="Attached question photo";b.appendChild(im);}
-      else if(!m.image.isImage){const chip=el("div","ai-file-chip");chip.innerHTML=AI_FILE_SVG+`<span>${esc(m.image.fileName||"attached file")}</span>`;b.appendChild(chip);}
+      else {const chip=el("div","ai-file-chip");chip.innerHTML=AI_FILE_SVG+`<span>${esc(m.image.fileName||"attached file")}</span>`;b.appendChild(chip);}
     }
     if(m.pending&&!m.text) b.appendChild(el("span","ai-typing","<i></i><i></i><i></i>"));
     else if(m.pending&&m.text) b.innerHTML+=mdLite(m.text)+'<span class="ai-caret"></span>';
