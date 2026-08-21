@@ -445,10 +445,28 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 .hero-stats b{display:block;font-size:23px;font-family:var(--font-display);letter-spacing:-.02em}
 .hero-stats span{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.72)}
 @media(max-width:700px){.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.tcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:15px;display:flex;flex-direction:column;gap:10px;transition:.2s;box-shadow:var(--shadow)}
+.tcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:15px;display:flex;flex-direction:column;gap:10px;transition:.2s;box-shadow:var(--shadow);position:relative}
 .tcard:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
 .tcard .meta{display:flex;flex-wrap:wrap;gap:6px}
 .tcard .foot{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+/* card kebab (⋮) — anchored top-right like every standard card UI */
+.kebab{position:absolute;top:9px;right:9px;width:32px;height:32px;border-radius:9px;border:1px solid transparent;
+  background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:.15s;z-index:2}
+.kebab:hover{background:var(--blue-soft);color:var(--blue-d);border-color:var(--line)}
+.kebab svg{width:17px;height:17px}
+.kmenu{position:absolute;top:44px;right:9px;z-index:31;min-width:180px;background:var(--panel);
+  border:1px solid var(--line);border-radius:13px;box-shadow:0 18px 44px -14px rgba(10,6,40,.35);
+  padding:5px;display:none;animation:ckPop .14s cubic-bezier(.2,.9,.3,1.15)}
+html.dark .kmenu{box-shadow:0 18px 44px -12px rgba(0,0,0,.7)}
+.kmenu.open{display:block}
+.tcard.menu-open{z-index:30}
+.kmenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:0;
+  border-radius:9px;padding:9px 11px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;transition:.12s}
+.kmenu button:hover{background:var(--blue-soft)}
+.kmenu button.danger{color:var(--red)}
+.kmenu button.danger:hover{background:rgba(211,59,59,.09)}
+.kmenu .sep{height:1px;background:var(--line);margin:4px 6px}
+.tcard-title{padding-right:30px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--blue-soft);color:var(--blue-d);border:1px solid color-mix(in srgb,var(--blue) 22%,transparent)}
 .pill.g{background:rgba(30,158,87,.14);color:var(--green);border-color:rgba(30,158,87,.3)}
 .pill.r{background:rgba(211,59,59,.14);color:var(--red);border-color:rgba(211,59,59,.3)}
@@ -1208,8 +1226,12 @@ async function parsePaper(file,subject,onProgress){
   const canvasOf=async pi=>pi.canvas||(pi.canvas=await renderPage(pi.pg));
 
   // ---- locate section markers (tolerant of common header wording) ----
-  const AK_RE=/^(answer\s*keys?|answers?)$/i;
-  const SOL_RE=/^(solutions?|explanations?|explanatory\s*notes?)$/i;
+  // Accepts trailing ":"/"-", surrounding decoration, and combined headers
+  // like "HINTS & SOLUTIONS" or "ANSWER KEY :" that real papers use —
+  // a missed header used to push the whole answer key into question-space
+  // and break both question cropping and key extraction.
+  const AK_RE=/^[\s._\-–—]*(answer\s*keys?|answers?\s*key|answers?)[\s._\-–—:]*$/i;
+  const SOL_RE=/^[\s._\-–—]*((?:hints?\s*(?:&|and)\s*)?solutions?|explanations?|explanatory\s*notes?|detailed\s*solutions?)[\s._\-–—:]*$/i;
   let akPos=null, solPos=null;
   pages.forEach(p=>p.items.forEach(i=>{
     if(!akPos && AK_RE.test(i.s)) akPos={p:p.n,y:i.y};
@@ -1455,6 +1477,27 @@ async function parsePaper(file,subject,onProgress){
       pending.forEach((n,i2)=>answers[n]=cells[i2]);
       pending=null;
     } else if(allIdx){pending=cells.map(Number);}
+  }
+  /* Fallback answer-key layouts. The grid walk above only understands the
+     strict "row of indices, then row of answers" table. If it captured
+     less than half of the questions, ALSO try, without overwriting
+     anything it did find:
+     1) inline pairs — "1. (a)", "2) 45", "Q3 : c" printed as one item or
+        as adjacent items on the same visual row;
+     2) glued pairs — "1.a  2.b  3.c" style runs inside a single item. */
+  if(Object.keys(answers).length<qMarks.length/2 && keyItems.length){
+    const put=(n,v)=>{if(n>=1&&n<=qMarks.length&&answers[n]==null)answers[n]=v;};
+    const inlinePair=/(?:^|\s)q?\.?\s*(\d{1,3})\s*[.):\-]\s*\(?([a-dA-D]|\d{1,4}(?:\.\d+)?)\)?(?=\s|$)/g;
+    keyItems.forEach(i=>{let m2;while((m2=inlinePair.exec(i.s)))put(+m2[1],m2[2]);});
+    // adjacent items on the same visual row: "12." followed by "(b)" / "45"
+    for(const r of rows){
+      const cells=r.cells.sort((a,b)=>a.x-b.x);
+      for(let i2=0;i2+1<cells.length;i2++){
+        const idxM=/^\(?q?\.?\s*(\d{1,3})[.):]\)?$/i.exec(cells[i2].s); // needs punctuation, so a bare answer "12" is never mistaken for an index
+        const ansM=/^\(?([a-dA-D]|\d{1,4}(?:\.\d+)?)\)?$/.exec(cells[i2+1].s);
+        if(idxM&&ansM){put(+idxM[1],ansM[1]);i2++;}
+      }
+    }
   }
   // The answer key is the source of truth for question type:
   // a letter => single-correct MCQ, a number => numerical (integer) question.
@@ -3399,13 +3442,19 @@ function viewFormulas(root){
    9. PREMIUM DASHBOARD + TEST LIBRARY (override the earlier basic versions)
    ========================================================================== */
 function testMeta(t){return t.meta||{difficulty:"Moderate",type:"Practice",chapters:[],attempts:0,durationMin:Math.round((t.duration||10800)/60)};}
+/** Closes any open card menu (one at a time keeps the UI calm). */
+function closeKebabs(){
+  document.querySelectorAll(".kmenu.open").forEach(k=>k.classList.remove("open"));
+  document.querySelectorAll(".tcard.menu-open").forEach(k=>k.classList.remove("menu-open"));
+}
+document.addEventListener("click",e=>{if(!e.target.closest(".kebab,.kmenu"))closeKebabs();});
 function testCard(t){
   const m=testMeta(t);
   const at=attemptsOf(t.id).filter(a=>a.submittedAt);
   const best=at.length?Math.max(...at.map(a=>a.result.all.marks)):null;
   const c=el("div","tcard");
   c.innerHTML=`<div>
-      <div class="row" style="justify-content:space-between;gap:8px">
+      <div class="tcard-title">
         <b style="font-size:15px">${esc(t.name)}</b>
         ${at.length?`<span class="pill g">Attempted ×${at.length}</span>`:`<span class="pill a">New</span>`}
       </div>
@@ -3421,27 +3470,48 @@ function testCard(t){
     </div>
     ${(m.chapters||[]).length?`<div class="small muted">${esc((m.chapters||[]).slice(0,6).join(" · "))}</div>`:""}
     ${best!=null?`<div class="small"><b>Your best:</b> ${best} / ${t.questions.length*4}</div>`:""}`;
+  // ---- ⋮ menu — anchored to the card's top-right corner (standard spot),
+  // holding the secondary actions so the footer stays clean.
+  const kebab=el("button","kebab",
+    '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>');
+  kebab.type="button";kebab.title="More options";kebab.setAttribute("aria-label","More options for "+t.name);
+  kebab.setAttribute("aria-haspopup","menu");
+  const menu=el("div","kmenu");menu.setAttribute("role","menu");
+  const mkItem=(icon,label,fn,cls)=>{const b=el("button",cls||"",`<span>${icon}</span>${label}`);
+    b.type="button";b.setAttribute("role","menuitem");
+    b.onclick=e=>{e.stopPropagation();closeKebabs();fn();};menu.appendChild(b);return b;};
+  mkItem("✏️","Edit details",()=>requireAdmin(()=>openTestEditor(t)));
+  mkItem("🔗","Share test",()=>shareTest(t));
+  if(at.length)mkItem("📊","Last result",()=>go("result",at[at.length-1].id));
+  if(t.cloud){menu.appendChild(el("div","sep"));
+    mkItem("🗑","Delete test",()=>requireAdmin(()=>deletePublicTest(t)),"danger");}
+  kebab.onclick=e=>{e.stopPropagation();const was=menu.classList.contains("open");closeKebabs();
+    if(!was){menu.classList.add("open");c.classList.add("menu-open");kebab.setAttribute("aria-expanded","true");}
+    else kebab.setAttribute("aria-expanded","false");};
+  c.append(kebab,menu);
+  // ---- footer: only the primary actions
   const foot=el("div","foot");
   const start=el("button","btn sm",at.length?"Retake":"Start Test");start.onclick=()=>startExam(t.id);
-  const share=el("button","btn sm ghost","Share");share.onclick=()=>shareTest(t);
-  foot.append(start,share);
+  foot.appendChild(start);
   if(at.length){const r=el("button","btn sm ghost","Result");r.onclick=()=>go("result",at[at.length-1].id);foot.appendChild(r);}
-  const moreBtn=el("button","btn sm ghost","⋮");moreBtn.title="Edit test details";moreBtn.onclick=()=>requireAdmin(()=>openTestEditor(t));foot.appendChild(moreBtn);
-  if(t.cloud){const del=el("button","btn sm red","🗑 Delete");del.onclick=()=>requireAdmin(()=>deletePublicTest(t));foot.appendChild(del);}
   c.appendChild(foot);return c;
 }
 /** ⋮ menu — lets the admin edit a test's name, type, difficulty, year and
  *  per-subject chapter labels after the fact, without re-uploading. For
  *  cloud tests, saves the change back to Supabase too. */
+const TEST_TYPES=["Full Syllabus","Part Test","HWT","Chapter Test","PYQ Paper","Revision Test","Mock Test","Practice"];
 function openTestEditor(t){
   const m=testMeta(t);
+  // include the test's current type even if it's an older/custom label,
+  // so opening the editor never silently changes it
+  const typeOpts=[...new Set([...TEST_TYPES,...(m.type?[m.type]:[])])];
   const m2=el("div","modal");
   m2.innerHTML=`<div class="box"><h3>Edit test details</h3>
     <label class="small muted">Name</label>
     <input data-name value="${esc(t.name)}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:inherit;margin:4px 0 10px">
     <label class="small muted">Test type</label>
     <select data-type style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:inherit;margin:4px 0 10px">
-      ${["Practice","Full Syllabus Mock","Sectional","Previous Year","Mock Test"].map(o=>`<option ${m.type===o?"selected":""}>${o}</option>`).join("")}
+      ${typeOpts.map(o=>`<option ${m.type===o?"selected":""}>${o}</option>`).join("")}
     </select>
     <label class="small muted">Difficulty</label>
     <select data-diff style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:inherit;margin:4px 0 10px">
@@ -3455,24 +3525,38 @@ function openTestEditor(t){
   document.body.appendChild(m2);
   m2.querySelector("[data-no]").onclick=()=>m2.remove();
   m2.querySelector("[data-yes]").onclick=async()=>{
-    t.name=m2.querySelector("[data-name]").value.trim()||t.name;
-    t.meta=Object.assign({},m,{
+    const saveBtn=m2.querySelector("[data-yes]");saveBtn.disabled=true;saveBtn.textContent="Saving…";
+    const newName=m2.querySelector("[data-name]").value.trim()||t.name;
+    const newMeta=Object.assign({},m,{
       type:m2.querySelector("[data-type]").value,
       difficulty:m2.querySelector("[data-diff]").value,
       year:+m2.querySelector("[data-year]").value||null,
       durationMin:+m2.querySelector("[data-dur]").value||m.durationMin
     });
-    t.duration=t.meta.durationMin*60;
+    const newDuration=newMeta.durationMin*60;
     if(t.cloud){
+      // Cloud tests: the DB row uses its own column names (title/test_type/
+      // difficulty/exam_year/duration_minutes) — patch those, and only keep
+      // the change if the server confirms a row was actually updated
+      // (Prefer:return=representation), so RLS silently rejecting the
+      // update can't masquerade as success.
       try{
-        await cloudFetch("/rest/v1/public_tests?id=eq."+encodeURIComponent(t.id),{
-          method:"PATCH",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({name:t.name,meta:t.meta,duration:t.duration})
+        const r=await cloudFetch("/rest/v1/public_tests?id=eq."+encodeURIComponent(t.id),{
+          method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=representation"},
+          body:JSON.stringify({title:newName,test_type:newMeta.type,difficulty:newMeta.difficulty,
+            exam_year:newMeta.year,duration_minutes:newMeta.durationMin})
         });
-        const idx=cloudTests.findIndex(x=>x.id===t.id);if(idx>-1)cloudTests[idx]=t;
-        imgPut(LIB_CACHE,cloudTests).catch(()=>{});
-      }catch(e){toast("Saved locally, but cloud sync failed: "+e.message,5000);}
+        const rows=await r.json().catch(()=>null);
+        if(!rows||!rows.length)throw new Error("The database rejected the update (0 rows changed) — the UPDATE policy migration hasn't been applied yet.");
+      }catch(e){
+        saveBtn.disabled=false;saveBtn.textContent="Save";
+        toast("Couldn't save: "+e.message,6000);
+        return; // keep the dialog open so nothing is silently lost
+      }
     }
+    t.name=newName;t.meta=newMeta;t.duration=newDuration;
+    const idx=cloudTests.findIndex(x=>x.id===t.id);if(idx>-1)cloudTests[idx]=t;
+    imgPut(LIB_CACHE,cloudTests).catch(()=>{});
     save();m2.remove();toast("Test updated");render();
   };
 }
