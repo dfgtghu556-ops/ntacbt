@@ -6,7 +6,9 @@
 <title>Someshwar JEE Main CBT Platform</title>
 <meta name="description" content="Offline NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs and get a full 75-question CBT with analytics." />
 <link rel="icon" href="/favicon.ico" />
+<meta name="theme-color" content="#1b1b4b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <style>
 :root{ --font-display:"Manrope","Nunito Sans",sans-serif; }
@@ -477,6 +479,131 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 .vidlink{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);font-size:13px;font-weight:700;color:var(--ink)}
 .vidlink:hover{border-color:var(--blue);background:var(--blue-soft)}
 .vidlink small{font-weight:600;color:var(--muted)}
+
+/* ============================================================
+   LUXURY POLISH LAYER — refined chrome, motion & interactions
+   ============================================================ */
+::selection{background:color-mix(in srgb,var(--blue) 28%,transparent)}
+html{scroll-behavior:smooth}
+body{font-feature-settings:"cv02","cv03","cv04";text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+/* slim, elegant scrollbars everywhere */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 38%,transparent) transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 32%,transparent);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--muted) 55%,transparent);background-clip:content-box}
+/* glassy top chrome */
+.topbar{background:linear-gradient(90deg,color-mix(in srgb,var(--ink-nav-a) 92%,transparent),color-mix(in srgb,var(--ink-nav-b) 92%,transparent));
+  backdrop-filter:saturate(1.5) blur(14px);-webkit-backdrop-filter:saturate(1.5) blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{position:relative;overflow:hidden}
+.logo:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.45) 48%,transparent 62%);
+  transform:translateX(-110%);animation:logoSheen 5.5s ease-in-out infinite}
+@keyframes logoSheen{0%,72%{transform:translateX(-110%)}88%,100%{transform:translateX(110%)}}
+.nav{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  background:color-mix(in srgb,var(--panel) 86%,transparent);scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button{display:inline-flex;align-items:center;gap:6px;position:relative}
+.nav button .nico{font-size:14px;line-height:1;filter:grayscale(.25)}
+.nav button.active .nico{filter:none}
+.nav button.active{background:linear-gradient(135deg,var(--blue-l),var(--blue-d));
+  box-shadow:0 6px 16px -6px color-mix(in srgb,var(--blue) 70%,transparent)}
+.nav button:active{transform:scale(.96)}
+/* focus rings — professional keyboard UX */
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--blue-l);outline-offset:2px;border-radius:8px}
+/* cards — deeper, softer luxury elevation */
+.card{box-shadow:0 1px 2px rgba(15,10,40,.05),0 10px 30px -18px rgba(15,10,40,.18);
+  transition:box-shadow .25s ease,border-color .25s ease}
+html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,0,.55)}
+.btn{position:relative;overflow:hidden}
+.btn:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.25) 50%,transparent 65%);
+  transform:translateX(-120%);transition:transform .6s ease}
+.btn:hover:after{transform:translateX(120%)}
+.btn:active{transform:translateY(0) scale(.98)}
+/* toast — refined glass pill */
+.toast{background:color-mix(in srgb,var(--ink) 92%,transparent);color:var(--bg);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid color-mix(in srgb,var(--bg) 14%,transparent);
+  box-shadow:0 12px 34px -12px rgba(0,0,0,.45);font-weight:600;letter-spacing:.01em}
+/* ---------- swipe page transitions ---------- */
+.wrap{touch-action:pan-y}
+#app.slide-in-right{animation:slideInR .32s cubic-bezier(.22,.9,.28,1)}
+#app.slide-in-left{animation:slideInL .32s cubic-bezier(.22,.9,.28,1)}
+@keyframes slideInR{from{opacity:0;transform:translateX(46px)}to{opacity:1;transform:none}}
+@keyframes slideInL{from{opacity:0;transform:translateX(-46px)}to{opacity:1;transform:none}}
+/* live drag feedback while a swipe is in progress */
+#app.dragging{transition:none !important}
+#app.settling{transition:transform .22s cubic-bezier(.22,.9,.28,1),opacity .22s ease}
+/* swipe hint pill (mobile, first visits) */
+.swipe-hint{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:120;
+  display:flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;color:#fff;font-size:13px;font-weight:700;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--ink-nav-a) 94%,transparent),color-mix(in srgb,var(--ink-nav-b) 94%,transparent));
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 34px -12px rgba(0,0,0,.5);
+  backdrop-filter:blur(10px);animation:hintIn .4s ease}
+.swipe-hint .arr{display:inline-block;animation:hintNudge 1.4s ease-in-out infinite}
+.swipe-hint .arr.l{animation-name:hintNudgeL}
+@keyframes hintIn{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes hintNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+@keyframes hintNudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+.swipe-hint.bye{opacity:0;transition:opacity .5s}
+/* ---------- command palette (⌘K) ---------- */
+.ck-overlay{position:fixed;inset:0;z-index:180;background:rgba(8,6,24,.52);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:flex-start;justify-content:center;padding:12vh 16px 16px;animation:ckFade .16s ease}
+@keyframes ckFade{from{opacity:0}to{opacity:1}}
+.ck-box{width:100%;max-width:560px;background:color-mix(in srgb,var(--panel) 96%,transparent);
+  border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:18px;overflow:hidden;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.55);animation:ckPop .2s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes ckPop{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+.ck-inputrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ck-inputrow svg{width:18px;height:18px;color:var(--muted);flex-shrink:0}
+.ck-inputrow input{flex:1;border:0;background:transparent;font-size:15.5px;outline:none;color:var(--ink);padding:0}
+.ck-esc{font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.ck-list{max-height:min(430px,52vh);overflow-y:auto;padding:7px}
+.ck-group{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:9px 11px 4px}
+.ck-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;
+  border-radius:11px;padding:10px 11px;cursor:pointer;color:var(--ink);font-size:14px;font-weight:600}
+.ck-item .ci{width:30px;height:30px;border-radius:9px;background:var(--blue-soft);display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.ck-item small{margin-left:auto;color:var(--muted);font-weight:600;font-size:11.5px;flex-shrink:0}
+.ck-item.sel,.ck-item:hover{background:var(--blue-soft)}
+.ck-item.sel{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--blue) 35%,transparent)}
+.ck-empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:13.5px}
+.ck-foot{display:flex;gap:14px;padding:9px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);font-weight:600}
+.ck-foot .kbd{font-size:10px;padding:0 5px}
+.ckbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);
+  color:#fff;border-radius:10px;padding:6px 11px;cursor:pointer;font-size:12.5px;font-weight:600;transition:.18s}
+.ckbtn:hover{background:rgba(255,255,255,.22)}
+.ckbtn svg{width:14px;height:14px}
+.ckbtn .khint{font-size:10px;font-weight:800;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:1px 5px;opacity:.85}
+@media(max-width:640px){.ckbtn .kh-label,.ckbtn .khint{display:none}.ckbtn{padding:7px 9px}}
+/* ---------- AI chat — premium refresh ---------- */
+.ai-chat-fab{background:linear-gradient(145deg,var(--blue-l) 0%,var(--blue-d) 55%,#8b2fc9 130%)}
+.ai-chat-head{backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+.ai-avatar{background:linear-gradient(140deg,var(--blue-l),var(--blue-d) 60%,#8b2fc9 130%)}
+.ai-msg{box-shadow:0 1px 2px rgba(10,6,30,.05),0 6px 18px -12px rgba(10,6,30,.16)}
+.ai-msg.model{border-color:color-mix(in srgb,var(--line) 80%,var(--blue))}
+.ai-msg-wrap{display:flex;flex-direction:column;gap:4px;max-width:80%;min-width:0}
+.ai-msg-wrap .ai-msg{max-width:100%}
+.ai-msg-tools{display:flex;gap:6px;padding-left:4px;opacity:0;transform:translateY(-2px);transition:.18s}
+.ai-msg-row:hover .ai-msg-tools,.ai-msg-tools:focus-within{opacity:1;transform:none}
+.ai-tool-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--panel);
+  color:var(--muted);border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}
+.ai-tool-btn:hover{color:var(--blue-d);border-color:var(--blue-l);background:var(--blue-soft)}
+.ai-tool-btn svg{width:12px;height:12px}
+.ai-msg.error{border-color:color-mix(in srgb,var(--red) 45%,var(--line));background:color-mix(in srgb,var(--red) 6%,var(--panel))}
+.ai-caret{display:inline-block;width:7px;height:15px;margin-left:2px;border-radius:2px;vertical-align:-2px;
+  background:var(--blue-l);animation:aiCaret .9s steps(2) infinite}
+@keyframes aiCaret{50%{opacity:0}}
+.ai-empty .ai-cap{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+.ai-empty .ai-cap div{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 6px;font-size:11px;font-weight:700;color:var(--muted)}
+.ai-empty .ai-cap b{display:block;font-size:19px;margin-bottom:3px}
+@media(max-width:420px){.ai-empty .ai-cap{grid-template-columns:repeat(3,1fr)}}
+/* respect users who prefer less motion */
+@media (prefers-reduced-motion:reduce){
+  #app.slide-in-right,#app.slide-in-left,.logo:after,.btn:after,.swipe-hint .arr{animation:none !important}
+  html{scroll-behavior:auto}
+}
 </style>
 </head>
 <body>
@@ -486,6 +613,10 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
   <div class="logo">JEE</div>
   <div class="brand">Someshwar JEE Main&nbsp;<span style="opacity:.8;font-weight:500">CBT Platform</span></div>
   <div class="spacer"></div>
+  <button class="ckbtn" id="cmdkBtn" type="button" title="Quick actions — jump anywhere" aria-label="Open quick actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="kh-label">Quick actions</span><span class="khint">Ctrl K</span>
+  </button>
   <button class="iconbtn offline-btn" id="offlineDlBtn" type="button" title="Download the full test library so it works with no internet">📥 <span id="offlineDlLabel">Make offline</span></button>
   <button class="iconbtn" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle light or dark theme">🌙</button>
 </header>
@@ -635,6 +766,7 @@ async function imgURL(k){if(!k)return null;if(imgCache.has(k))return imgCache.ge
 function imgTag(key,cls="qimg",fallbackText){
   if(!key && fallbackText) return el("div",cls+" qtext",esc(fallbackText));
   const i=el("img",cls); i.alt="";
+  i.loading="lazy"; i.decoding="async"; // don't block scroll/paint on question images
   if(key) (key.startsWith("cloud:")?cloudObjectURL(key.slice(6)):imgURL(key)).then(u=>{if(u)i.src=u;});
   return i;
 }
@@ -1460,25 +1592,180 @@ function analyse(test,attempt){
 }
 
 /* ------------------------------- 6. ROUTER ------------------------------- */
-const ROUTES=[["dash","Dashboard"],["library","Test Library"],["upload","Upload PDFs"],["planner","Planner"],
-  ["analytics","Analytics"],["mastery","Mastery"],["notebook","Mistake Notebook"],["formulas","Formulas"],
-  ["practice","Practice"],["review","Review"],["search","Search"],["settings","Settings"]];
+const ROUTES=[["dash","Dashboard","🏠"],["library","Test Library","📚"],["upload","Upload PDFs","⬆️"],["planner","Planner","🗓️"],
+  ["analytics","Analytics","📊"],["mastery","Mastery","🎯"],["notebook","Mistake Notebook","📓"],["formulas","Formulas","🧮"],
+  ["practice","Practice","✍️"],["review","Review","🔁"],["search","Search","🔍"],["settings","Settings","⚙️"]];
 let route="dash", routeArg=null;
-function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
+/** Navigate. dir: 1 = slide in from right, -1 = from left, 0 = plain fade. */
+function go(r,arg,dir){
+  const from=ROUTES.findIndex(x=>x[0]===route), to=ROUTES.findIndex(x=>x[0]===r);
+  if(dir===undefined) dir=(from>-1&&to>-1&&from!==to)?(to>from?1:-1):0;
+  // Keep the browser/phone back button useful: each section change becomes a
+  // history entry, so "back" returns to the previous section instead of
+  // leaving the site.
+  if(route!==r||routeArg!==(arg||null)){try{history.pushState({route:r,arg:arg||null},"","#"+r);}catch(e){}}
+  route=r;routeArg=arg||null;render(dir);window.scrollTo({top:0,behavior:"smooth"});
+}
+window.addEventListener("popstate",e=>{
+  if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
+  const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
+  route=({dash:1,library:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,search:1,settings:1,result:1}[r])?r:"dash";
+  routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
+});
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
-  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);
+  ROUTES.forEach(([k,l,ico])=>{const b=el("button",route===k?"active":"",`<span class="nico" aria-hidden="true">${ico}</span>${l}`);
     b.type="button";b.setAttribute("aria-current",route===k?"page":"false");
     b.setAttribute("aria-label",l);b.onclick=()=>go(k);n.appendChild(b);});
+  // keep the active tab visible in the scrollable pill row
+  const act=n.querySelector("button.active");
+  if(act&&act.scrollIntoView)act.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"});
 }
-function render(){
+function render(dir=0){
   renderNav();
   const a=$("#app"); a.innerHTML="";
+  a.classList.remove("slide-in-right","slide-in-left");
+  void a.offsetWidth; // restart the animation even on rapid swipes
+  if(dir===1)a.classList.add("slide-in-right");
+  else if(dir===-1)a.classList.add("slide-in-left");
+  if(dir)a.addEventListener("animationend",()=>a.classList.remove("slide-in-right","slide-in-left"),{once:true});
   a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
     practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
 }
+
+/* --------------------- SWIPE NAVIGATION (touch devices) -------------------
+   Swipe left/right anywhere on the page body to move between the main
+   sections (Dashboard ⇄ Test Library ⇄ Upload PDFs ⇄ …) — the same order
+   as the tab bar. Deliberately conservative so it never fights with:
+   • vertical scrolling (must be clearly horizontal),
+   • the live exam view, the AI chat, or any open modal,
+   • interactive elements (inputs, canvases, tables that scroll sideways). */
+(function initSwipeNav(){
+  let x0=0,y0=0,t0=0,tracking=false,horiz=null,dx=0;
+  const appEl=()=>$("#app");
+  const swipeBlocked=t=>{
+    if(EX&&!$("#examView").classList.contains("hide"))return true;      // during a test
+    if(aiChatIsOpen)return true;                                        // chat open
+    if(document.querySelector(".modal,.ck-overlay"))return true;        // modal open
+    if(route==="result")return true;                                    // deep page, avoid surprises
+    return !!(t&&t.closest&&t.closest("input,textarea,select,canvas,table,.heatgrid,.nav,.ptabs,.qtabs,.subtabs,[data-noswipe]"));
+  };
+  const routeIdx=()=>ROUTES.findIndex(x=>x[0]===route);
+  document.addEventListener("touchstart",e=>{
+    if(e.touches.length!==1||swipeBlocked(e.target))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();tracking=true;horiz=null;dx=0;
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(!tracking)return;
+    const t=e.touches[0];dx=t.clientX-x0;const dy=t.clientY-y0;
+    if(horiz===null&&(Math.abs(dx)>12||Math.abs(dy)>12))horiz=Math.abs(dx)>Math.abs(dy)*1.4;
+    if(horiz){
+      const a=appEl(),i=routeIdx();
+      // rubber-band at the ends of the tab strip
+      const capped=((dx>0&&i<=0)||(dx<0&&i>=ROUTES.length-1))?dx*0.25:dx*0.6;
+      a.classList.add("dragging");
+      a.style.transform=`translateX(${capped}px)`;
+      a.style.opacity=String(Math.max(.55,1-Math.abs(capped)/560));
+    }
+  },{passive:true});
+  const settleBack=()=>{
+    const a=appEl();
+    a.classList.remove("dragging");a.classList.add("settling");
+    a.style.transform="";a.style.opacity="";
+    setTimeout(()=>a.classList.remove("settling"),240);
+  };
+  document.addEventListener("touchend",e=>{
+    if(!tracking)return;tracking=false;
+    const a=appEl();
+    if(!horiz){a.classList.remove("dragging");a.style.transform="";a.style.opacity="";return;}
+    const dt=Date.now()-t0, fast=dt<280&&Math.abs(dx)>48, far=Math.abs(dx)>Math.min(140,innerWidth*0.28);
+    const i=routeIdx();
+    if((fast||far)&&i>-1){
+      if(dx<0&&i<ROUTES.length-1){a.classList.remove("dragging");a.style.transform="";a.style.opacity="";go(ROUTES[i+1][0],null,1);return;}
+      if(dx>0&&i>0){a.classList.remove("dragging");a.style.transform="";a.style.opacity="";go(ROUTES[i-1][0],null,-1);return;}
+    }
+    settleBack();
+  },{passive:true});
+  document.addEventListener("touchcancel",()=>{if(tracking){tracking=false;settleBack();}},{passive:true});
+  // First-visit hint (touch devices only, shown once)
+  try{
+    if(("ontouchstart" in window)&&!localStorage.getItem("jeecbt.swipeHintSeen")){
+      setTimeout(()=>{
+        const h=el("div","swipe-hint",`<span class="arr l">←</span> Swipe to move between sections <span class="arr">→</span>`);
+        document.body.appendChild(h);
+        setTimeout(()=>{h.classList.add("bye");setTimeout(()=>h.remove(),600);},4800);
+        localStorage.setItem("jeecbt.swipeHintSeen","1");
+      },1600);
+    }
+  }catch(e){}
+})();
+
+/* ----------------------- COMMAND PALETTE (Ctrl/⌘ K) -----------------------
+   One keystroke to jump to any section, start the next test, resume an
+   unfinished attempt, toggle the theme, or open the AI tutor — the kind of
+   power-user speed layer serious products ship. */
+function openCmdk(){
+  if(document.querySelector(".ck-overlay"))return;
+  if(EX&&!$("#examView").classList.contains("hide"))return; // never during a live exam
+  const overlay=el("div","ck-overlay");
+  overlay.innerHTML=`<div class="ck-box" role="dialog" aria-label="Quick actions">
+    <div class="ck-inputrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" placeholder="Jump to a section, start a test, toggle theme…" aria-label="Search actions" autocomplete="off" spellcheck="false">
+      <span class="ck-esc">esc</span>
+    </div>
+    <div class="ck-list" role="listbox"></div>
+    <div class="ck-foot"><span><span class="kbd">↑↓</span> navigate</span><span><span class="kbd">↵</span> select</span><span><span class="kbd">esc</span> close</span></div>
+  </div>`;
+  const input=overlay.querySelector("input"), list=overlay.querySelector(".ck-list");
+  const close=()=>{overlay.remove();document.removeEventListener("keydown",onKey,true);};
+  const resume=pendingResume();
+  const upNext=cloudTests.filter(t=>!attemptsOf(t.id).some(a=>a.submittedAt))[0]||cloudTests[0];
+  const actions=[];
+  if(resume)actions.push({g:"Continue",ico:"⏸",label:"Resume unfinished attempt",hint:fmtTime(resume.left)+" left",run:()=>startExam(resume.testId,resume)});
+  if(upNext)actions.push({g:"Continue",ico:"▶️",label:"Start next test — "+upNext.name,hint:"75 Q · 3 hr",run:()=>startExam(upNext.id)});
+  ROUTES.forEach(([k,l,ico])=>actions.push({g:"Go to",ico,label:l,hint:"page",run:()=>go(k)}));
+  actions.push({g:"Actions",ico:"🤖",label:"Ask Saarthi (AI tutor)",hint:"chat",run:()=>aiChatOpen()});
+  actions.push({g:"Actions",ico:"🌓",label:"Toggle theme",hint:"light / dark / system",run:()=>$("#themeBtn").click()});
+  actions.push({g:"Actions",ico:"📥",label:"Make available offline",hint:"download library",run:()=>$("#offlineDlBtn").click()});
+  cloudTests.slice(0,8).forEach(t=>actions.push({g:"Tests",ico:"📄",label:t.name,hint:"start test",run:()=>startExam(t.id)}));
+  let sel=0, shown=[];
+  const draw=()=>{
+    const q=input.value.trim().toLowerCase();
+    shown=q?actions.filter(a=>(a.label+" "+a.g).toLowerCase().includes(q)):actions;
+    sel=Math.min(sel,Math.max(0,shown.length-1));
+    list.innerHTML="";
+    if(!shown.length){list.appendChild(el("div","ck-empty","Nothing matches — try a section name like “analytics”."));return;}
+    let lastG=null;
+    shown.forEach((a,i)=>{
+      if(a.g!==lastG){lastG=a.g;list.appendChild(el("div","ck-group",a.g));}
+      const b=el("button","ck-item"+(i===sel?" sel":""),`<span class="ci">${a.ico}</span><span>${esc(a.label)}</span><small>${esc(a.hint||"")}</small>`);
+      b.type="button";b.setAttribute("role","option");
+      b.onclick=()=>{close();a.run();};
+      b.onmousemove=()=>{if(sel!==i){sel=i;[...list.querySelectorAll(".ck-item")].forEach((x,j)=>x.classList.toggle("sel",shown[j]===shown[sel]));}};
+      list.appendChild(b);
+    });
+  };
+  const onKey=e=>{
+    if(e.key==="Escape"){e.preventDefault();e.stopPropagation();close();}
+    else if(e.key==="ArrowDown"){e.preventDefault();sel=Math.min(sel+1,shown.length-1);draw();scrollSel();}
+    else if(e.key==="ArrowUp"){e.preventDefault();sel=Math.max(sel-1,0);draw();scrollSel();}
+    else if(e.key==="Enter"){e.preventDefault();const a=shown[sel];if(a){close();a.run();}}
+  };
+  const scrollSel=()=>{const b=list.querySelectorAll(".ck-item")[sel];if(b&&b.scrollIntoView)b.scrollIntoView({block:"nearest"});};
+  document.addEventListener("keydown",onKey,true);
+  overlay.onclick=e=>{if(e.target===overlay)close();};
+  input.oninput=()=>{sel=0;draw();};
+  document.body.appendChild(overlay);
+  draw();
+  input.focus();
+}
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openCmdk();}
+});
+const _cmdkBtn=$("#cmdkBtn"); if(_cmdkBtn)_cmdkBtn.onclick=openCmdk;
 
 /* ------------------------------ DASHBOARD -------------------------------- */
 function globalStats(){
@@ -1493,6 +1780,25 @@ function globalStats(){
     strong:ranked[0],weak:ranked[ranked.length-1],ranked};
 }
 function statCard(k,v,extra=""){return `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div>${extra}</div>`;}
+/** Animates plain-number stats (e.g. "87" or "92.5%") counting up from 0 —
+ *  the little "alive" touch premium dashboards have. Non-numeric values and
+ *  reduced-motion users are left untouched. */
+function countUpStats(scope){
+  if(matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  (scope||document).querySelectorAll(".hero-stats b,.stat .v").forEach(n=>{
+    const raw=n.textContent.trim(), m=raw.match(/^(\d+(?:\.\d+)?)(%?)$/);
+    if(!m)return;
+    const target=parseFloat(m[1]), suffix=m[2], dec=(m[1].split(".")[1]||"").length;
+    if(!target)return;
+    const t0=performance.now(), dur=700;
+    const step=now=>{
+      const p=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-p,3); // ease-out cubic
+      n.textContent=(target*e).toFixed(dec)+suffix;
+      if(p<1)requestAnimationFrame(step);else n.textContent=raw;
+    };
+    requestAnimationFrame(step);
+  });
+}
 /* ------------------------------- UPLOAD ---------------------------------- */
 const pending={Physics:null,Chemistry:null,Mathematics:null};
 function viewUpload(root){
@@ -2670,6 +2976,25 @@ function submitExam(auto){
 }
 /* exam controls */
 $("#fsBtn").onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});};
+/* Swipe left/right on the question pane to move between questions during a
+   test — mirrors the NTA next/previous buttons for one-handed phone use.
+   Requires a clearly horizontal, decisive gesture so option taps and
+   vertical scrolling are never hijacked. */
+(function initExamSwipe(){
+  const pane=$("#exQ"); if(!pane)return;
+  let x0=0,y0=0,t0=0,on=false;
+  pane.addEventListener("touchstart",e=>{
+    if(e.touches.length!==1)return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();on=true;
+  },{passive:true});
+  pane.addEventListener("touchend",e=>{
+    if(!on)return;on=false;
+    if(!EX)return;
+    const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0,dt=Date.now()-t0;
+    if(Math.abs(dx)<64||Math.abs(dx)<Math.abs(dy)*1.6||dt>420)return;
+    move(dx<0?1:-1);
+  },{passive:true});
+})();
 $("#palBtn").onclick=()=>$("#exPal").classList.toggle("collapsed");
 function shortcutHelp(){
   const m=el("div","modal");
@@ -3354,6 +3679,8 @@ function viewDash(root){
   // weak-chapter video recommendations
   const vids=weakVideoItems();
   if(vids.length)root.appendChild(videoCard("Revise before your next test","Short revision links picked from your weakest chapters and recent mistakes.",vids));
+
+  countUpStats(root); // animate the headline numbers in
 }
 
 /* -------------------------------- BOOT ----------------------------------- */
@@ -3386,6 +3713,12 @@ applyTheme();
     new Notification("Time to practice! 📘",{body:"You haven't attempted any questions today — keep the streak alive."});
     localStorage.setItem(key,today);
   }catch(e){}
+})();
+// Restore the section from the URL hash (deep-link / refresh keeps your place)
+(function initialRoute(){
+  const h=(location.hash||"").replace("#","");
+  if(h&&h!=="result"&&ROUTES.some(x=>x[0]===h))route=h;
+  try{history.replaceState({route,arg:null},"","#"+route);}catch(e){}
 })();
 render();
 (async()=>{ await hydrateFromCache(); render(); loadPublicTests(); })();
@@ -3438,12 +3771,15 @@ function mdLite(raw){
 const AI_AVATAR_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>';
 const AI_FILE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6"/></svg>';
 const AI_STARTERS=["Explain Newton's third law with an example","Solve: \u222B x\u00b7e^x dx step by step","How should I revise for JEE in the last month?"];
+const AI_COPY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+const AI_RETRY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
 function aiChatRenderMsgs(){
   const box=$("#aiChatMsgs"); if(!box)return; box.innerHTML="";
   if(!aiChatHistory.length){
     const empty=el("div","ai-empty");
     empty.innerHTML=`<span class="ai-avatar">${AI_AVATAR_SVG}</span><h4>Hi! I'm Saarthi 👋</h4>
-      <p>Your AI study buddy — ask any Physics, Chemistry or Maths doubt, or attach a 📎 photo or PDF of a question.</p>`;
+      <p>Your AI study buddy — ask any Physics, Chemistry or Maths doubt, or attach a 📎 photo or PDF of a question.</p>
+      <div class="ai-cap"><div><b>⚡</b>Instant doubts</div><div><b>📷</b>Photo &amp; PDF</div><div><b>🧠</b>Step-by-step</div></div>`;
     const starters=el("div","ai-starters");
     AI_STARTERS.forEach(s=>{
       const b=el("button",null,"💬&nbsp; "+esc(s));b.type="button";b.onclick=()=>{$("#aiChatInput").value=s;aiChatSend();};
@@ -3452,21 +3788,70 @@ function aiChatRenderMsgs(){
     empty.appendChild(starters);
     box.appendChild(empty);
   }
-  aiChatHistory.forEach(m=>{
+  aiChatHistory.forEach((m,idx)=>{
     const row=el("div","ai-msg-row "+m.role);
     if(m.role==="model") row.appendChild(el("span","ai-avatar",AI_AVATAR_SVG));
-    const b=el("div","ai-msg "+m.role);
+    const b=el("div","ai-msg "+m.role+(m.error?" error":""));
     if(m.image){
       if(m.image.isImage&&m.image.previewUrl){const im=el("img","ai-thumb");im.src=m.image.previewUrl;im.alt="Attached question photo";b.appendChild(im);}
       else if(!m.image.isImage){const chip=el("div","ai-file-chip");chip.innerHTML=AI_FILE_SVG+`<span>${esc(m.image.fileName||"attached file")}</span>`;b.appendChild(chip);}
     }
     if(m.pending&&!m.text) b.appendChild(el("span","ai-typing","<i></i><i></i><i></i>"));
+    else if(m.pending&&m.text) b.innerHTML+=mdLite(m.text)+'<span class="ai-caret"></span>';
     else if(m.role==="model") b.innerHTML+=mdLite(m.text||"");
     else b.appendChild(document.createTextNode(m.text||""));
-    row.appendChild(b);
+    // finished model replies get lightweight tools: copy + (on errors) retry
+    if(m.role==="model"&&!m.pending&&m.text){
+      const wrap=el("div","ai-msg-wrap");
+      wrap.appendChild(b);
+      const tools=el("div","ai-msg-tools");
+      const cp=el("button","ai-tool-btn",AI_COPY_SVG+"Copy");cp.type="button";cp.setAttribute("aria-label","Copy reply");
+      cp.onclick=()=>{try{navigator.clipboard.writeText(m.text);cp.innerHTML=AI_COPY_SVG+"Copied!";setTimeout(()=>cp.innerHTML=AI_COPY_SVG+"Copy",1400);}catch(e){toast("Couldn't copy");}};
+      tools.appendChild(cp);
+      if(m.error&&idx===aiChatHistory.length-1){
+        const rt=el("button","ai-tool-btn",AI_RETRY_SVG+"Retry");rt.type="button";rt.setAttribute("aria-label","Retry");
+        rt.onclick=()=>aiChatRetry();
+        tools.appendChild(rt);
+      }
+      wrap.appendChild(tools);
+      row.appendChild(wrap);
+    }else{
+      row.appendChild(b);
+    }
     box.appendChild(row);
   });
   box.scrollTop=box.scrollHeight;
+}
+/** Re-asks the last user message after a failed reply. */
+function aiChatRetry(){
+  const lastErr=aiChatHistory[aiChatHistory.length-1];
+  if(!lastErr||lastErr.role!=="model"||!lastErr.error)return;
+  aiChatHistory.pop();                     // drop the error bubble
+  const lastUser=aiChatHistory[aiChatHistory.length-1];
+  if(!lastUser||lastUser.role!=="user"){aiChatRenderMsgs();return;}
+  aiChatHistory.pop();                     // re-send it through the normal path
+  $("#aiChatInput").value=lastUser.text||"";
+  aiChatRenderMsgs();
+  aiChatSend();
+}
+/** Smoothly types a finished reply into the last bubble (~40 chars per
+ *  frame) — gives the response the alive, streaming feel of premium AI
+ *  chats without needing SSE plumbing. Skipped for reduced-motion users. */
+function aiChatTypeOut(modelMsg,fullText){
+  if(matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches){
+    modelMsg.text=fullText;modelMsg.pending=false;
+    aiChatRenderMsgs();aiChatRenderChips();save_aiChatHistory();return;
+  }
+  let i=0;const step=Math.max(8,Math.round(fullText.length/45));
+  const tick=()=>{
+    if(!aiChatIsOpen){modelMsg.text=fullText;modelMsg.pending=false;aiChatRenderMsgs();aiChatRenderChips();save_aiChatHistory();return;}
+    i=Math.min(fullText.length,i+step);
+    modelMsg.text=fullText.slice(0,i);
+    if(i>=fullText.length){modelMsg.pending=false;aiChatRenderMsgs();aiChatRenderChips();save_aiChatHistory();return;}
+    aiChatRenderMsgs();
+    setTimeout(tick,24);
+  };
+  tick();
 }
 function aiChatRenderChips(){
   const box=$("#aiChatChips"); if(!box)return; box.innerHTML="";
@@ -3551,9 +3936,15 @@ async function aiChatSend(){
     const r=await fetch("/api/public/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({messages:payloadMsgs})});
     const data=await r.json().catch(()=>null);
-    modelMsg.text=(r.ok&&data&&data.reply)?data.reply:((data&&data.error)||"Sorry, I couldn't get a reply just now — please try again.");
+    if(r.ok&&data&&data.reply){
+      aiChatTypeOut(modelMsg,data.reply);   // smooth streaming-style reveal
+      return;
+    }
+    modelMsg.text=(data&&data.error)||"Sorry, I couldn't get a reply just now — please try again.";
+    modelMsg.error=true;
   }catch(e){
     modelMsg.text="Network error — please check your connection and try again.";
+    modelMsg.error=true;
   }
   modelMsg.pending=false;
   aiChatRenderMsgs(); aiChatRenderChips(); save_aiChatHistory();

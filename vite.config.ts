@@ -14,6 +14,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    server: { allowedHosts: true },
     plugins: [
       // Offline mode: the exam portal keeps working with no network.
       VitePWA({
