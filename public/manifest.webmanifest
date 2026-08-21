@@ -1,0 +1,21 @@
+{
+  "name": "Someshwar JEE Main CBT Platform",
+  "short_name": "JEE CBT",
+  "description": "NTA-style JEE Main computer based test platform with AI doubt solving, analytics and spaced revision.",
+  "start_url": "/jee-cbt.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1b1b4b",
+  "theme_color": "#1b1b4b",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Start next test", "url": "/jee-cbt.html#library", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Mistake Notebook", "url": "/jee-cbt.html#notebook", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Analytics", "url": "/jee-cbt.html#analytics", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

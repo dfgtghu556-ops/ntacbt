@@ -6,7 +6,13 @@
 <title>Someshwar JEE Main CBT Platform</title>
 <meta name="description" content="Offline NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs and get a full 75-question CBT with analytics." />
 <link rel="icon" href="/favicon.ico" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#1b1b4b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <style>
 :root{ --font-display:"Manrope","Nunito Sans",sans-serif; }
@@ -443,10 +449,28 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 .hero-stats b{display:block;font-size:23px;font-family:var(--font-display);letter-spacing:-.02em}
 .hero-stats span{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.72)}
 @media(max-width:700px){.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.tcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:15px;display:flex;flex-direction:column;gap:10px;transition:.2s;box-shadow:var(--shadow)}
+.tcard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:15px;display:flex;flex-direction:column;gap:10px;transition:.2s;box-shadow:var(--shadow);position:relative}
 .tcard:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
 .tcard .meta{display:flex;flex-wrap:wrap;gap:6px}
 .tcard .foot{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+/* card kebab (⋮) — anchored top-right like every standard card UI */
+.kebab{position:absolute;top:9px;right:9px;width:32px;height:32px;border-radius:9px;border:1px solid transparent;
+  background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:.15s;z-index:2}
+.kebab:hover{background:var(--blue-soft);color:var(--blue-d);border-color:var(--line)}
+.kebab svg{width:17px;height:17px}
+.kmenu{position:absolute;top:44px;right:9px;z-index:31;min-width:180px;background:var(--panel);
+  border:1px solid var(--line);border-radius:13px;box-shadow:0 18px 44px -14px rgba(10,6,40,.35);
+  padding:5px;display:none;animation:ckPop .14s cubic-bezier(.2,.9,.3,1.15)}
+html.dark .kmenu{box-shadow:0 18px 44px -12px rgba(0,0,0,.7)}
+.kmenu.open{display:block}
+.tcard.menu-open{z-index:30}
+.kmenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:0;
+  border-radius:9px;padding:9px 11px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;transition:.12s}
+.kmenu button:hover{background:var(--blue-soft)}
+.kmenu button.danger{color:var(--red)}
+.kmenu button.danger:hover{background:rgba(211,59,59,.09)}
+.kmenu .sep{height:1px;background:var(--line);margin:4px 6px}
+.tcard-title{padding-right:30px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--blue-soft);color:var(--blue-d);border:1px solid color-mix(in srgb,var(--blue) 22%,transparent)}
 .pill.g{background:rgba(30,158,87,.14);color:var(--green);border-color:rgba(30,158,87,.3)}
 .pill.r{background:rgba(211,59,59,.14);color:var(--red);border-color:rgba(211,59,59,.3)}
@@ -477,6 +501,163 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
 .vidlink{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);font-size:13px;font-weight:700;color:var(--ink)}
 .vidlink:hover{border-color:var(--blue);background:var(--blue-soft)}
 .vidlink small{font-weight:600;color:var(--muted)}
+
+/* ============================================================
+   LUXURY POLISH LAYER — refined chrome, motion & interactions
+   ============================================================ */
+::selection{background:color-mix(in srgb,var(--blue) 28%,transparent)}
+html{scroll-behavior:smooth}
+body{font-feature-settings:"cv02","cv03","cv04";text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+/* slim, elegant scrollbars everywhere */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 38%,transparent) transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 32%,transparent);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--muted) 55%,transparent);background-clip:content-box}
+/* glassy top chrome */
+.topbar{background:linear-gradient(90deg,color-mix(in srgb,var(--ink-nav-a) 92%,transparent),color-mix(in srgb,var(--ink-nav-b) 92%,transparent));
+  backdrop-filter:saturate(1.5) blur(14px);-webkit-backdrop-filter:saturate(1.5) blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{position:relative;overflow:hidden}
+.logo:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.45) 48%,transparent 62%);
+  transform:translateX(-110%);animation:logoSheen 5.5s ease-in-out infinite}
+@keyframes logoSheen{0%,72%{transform:translateX(-110%)}88%,100%{transform:translateX(110%)}}
+.nav{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  background:color-mix(in srgb,var(--panel) 86%,transparent);scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button{display:inline-flex;align-items:center;gap:6px;position:relative}
+.nav button .nico{font-size:14px;line-height:1;filter:grayscale(.25)}
+.nav button.active .nico{filter:none}
+.nav button.active{background:linear-gradient(135deg,var(--blue-l),var(--blue-d));
+  box-shadow:0 6px 16px -6px color-mix(in srgb,var(--blue) 70%,transparent)}
+.nav button:active{transform:scale(.96)}
+/* focus rings — professional keyboard UX */
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--blue-l);outline-offset:2px;border-radius:8px}
+/* cards — deeper, softer luxury elevation */
+.card{box-shadow:0 1px 2px rgba(15,10,40,.05),0 10px 30px -18px rgba(15,10,40,.18);
+  transition:box-shadow .25s ease,border-color .25s ease}
+html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,0,.55)}
+.btn{position:relative;overflow:hidden}
+.btn:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.25) 50%,transparent 65%);
+  transform:translateX(-120%);transition:transform .6s ease}
+.btn:hover:after{transform:translateX(120%)}
+.btn:active{transform:translateY(0) scale(.98)}
+/* toast — refined glass pill */
+.toast{background:color-mix(in srgb,var(--ink) 92%,transparent);color:var(--bg);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid color-mix(in srgb,var(--bg) 14%,transparent);
+  box-shadow:0 12px 34px -12px rgba(0,0,0,.45);font-weight:600;letter-spacing:.01em}
+/* ---------- swipe page transitions ---------- */
+.wrap{touch-action:pan-y}
+#app.slide-in-right{animation:slideInR .32s cubic-bezier(.22,.9,.28,1)}
+#app.slide-in-left{animation:slideInL .32s cubic-bezier(.22,.9,.28,1)}
+@keyframes slideInR{from{opacity:0;transform:translateX(46px)}to{opacity:1;transform:none}}
+@keyframes slideInL{from{opacity:0;transform:translateX(-46px)}to{opacity:1;transform:none}}
+/* live drag feedback while a swipe is in progress */
+#app.dragging{transition:none !important}
+#app.settling{transition:transform .22s cubic-bezier(.22,.9,.28,1),opacity .22s ease}
+/* swipe hint pill (mobile, first visits) */
+.swipe-hint{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:120;
+  display:flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;color:#fff;font-size:13px;font-weight:700;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--ink-nav-a) 94%,transparent),color-mix(in srgb,var(--ink-nav-b) 94%,transparent));
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 34px -12px rgba(0,0,0,.5);
+  backdrop-filter:blur(10px);animation:hintIn .4s ease}
+.swipe-hint .arr{display:inline-block;animation:hintNudge 1.4s ease-in-out infinite}
+.swipe-hint .arr.l{animation-name:hintNudgeL}
+@keyframes hintIn{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes hintNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+@keyframes hintNudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+.swipe-hint.bye{opacity:0;transition:opacity .5s}
+/* ---------- command palette (⌘K) ---------- */
+.ck-overlay{position:fixed;inset:0;z-index:180;background:rgba(8,6,24,.52);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:flex-start;justify-content:center;padding:12vh 16px 16px;animation:ckFade .16s ease}
+@keyframes ckFade{from{opacity:0}to{opacity:1}}
+.ck-box{width:100%;max-width:560px;background:color-mix(in srgb,var(--panel) 96%,transparent);
+  border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:18px;overflow:hidden;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.55);animation:ckPop .2s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes ckPop{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+.ck-inputrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ck-inputrow svg{width:18px;height:18px;color:var(--muted);flex-shrink:0}
+.ck-inputrow input{flex:1;border:0;background:transparent;font-size:15.5px;outline:none;color:var(--ink);padding:0}
+.ck-esc{font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.ck-list{max-height:min(430px,52vh);overflow-y:auto;padding:7px}
+.ck-group{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:9px 11px 4px}
+.ck-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;
+  border-radius:11px;padding:10px 11px;cursor:pointer;color:var(--ink);font-size:14px;font-weight:600}
+.ck-item .ci{width:30px;height:30px;border-radius:9px;background:var(--blue-soft);display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.ck-item small{margin-left:auto;color:var(--muted);font-weight:600;font-size:11.5px;flex-shrink:0}
+.ck-item.sel,.ck-item:hover{background:var(--blue-soft)}
+.ck-item.sel{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--blue) 35%,transparent)}
+.ck-empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:13.5px}
+.ck-foot{display:flex;gap:14px;padding:9px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);font-weight:600}
+.ck-foot .kbd{font-size:10px;padding:0 5px}
+.ckbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);
+  color:#fff;border-radius:10px;padding:6px 11px;cursor:pointer;font-size:12.5px;font-weight:600;transition:.18s}
+.ckbtn:hover{background:rgba(255,255,255,.22)}
+.ckbtn svg{width:14px;height:14px}
+.ckbtn .khint{font-size:10px;font-weight:800;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:1px 5px;opacity:.85}
+@media(max-width:640px){.ckbtn .kh-label,.ckbtn .khint{display:none}.ckbtn{padding:7px 9px}}
+/* ---------- AI chat — premium refresh ---------- */
+.ai-chat-fab{background:linear-gradient(145deg,var(--blue-l) 0%,var(--blue-d) 55%,#8b2fc9 130%)}
+.ai-chat-head{backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+.ai-avatar{background:linear-gradient(140deg,var(--blue-l),var(--blue-d) 60%,#8b2fc9 130%)}
+.ai-msg{box-shadow:0 1px 2px rgba(10,6,30,.05),0 6px 18px -12px rgba(10,6,30,.16)}
+.ai-msg.model{border-color:color-mix(in srgb,var(--line) 80%,var(--blue))}
+.ai-msg-wrap{display:flex;flex-direction:column;gap:4px;max-width:80%;min-width:0}
+.ai-msg-wrap .ai-msg{max-width:100%}
+.ai-msg-tools{display:flex;gap:6px;padding-left:4px;opacity:0;transform:translateY(-2px);transition:.18s}
+.ai-msg-row:hover .ai-msg-tools,.ai-msg-tools:focus-within{opacity:1;transform:none}
+.ai-tool-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--panel);
+  color:var(--muted);border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}
+.ai-tool-btn:hover{color:var(--blue-d);border-color:var(--blue-l);background:var(--blue-soft)}
+.ai-tool-btn svg{width:12px;height:12px}
+.ai-msg.error{border-color:color-mix(in srgb,var(--red) 45%,var(--line));background:color-mix(in srgb,var(--red) 6%,var(--panel))}
+.ai-caret{display:inline-block;width:7px;height:15px;margin-left:2px;border-radius:2px;vertical-align:-2px;
+  background:var(--blue-l);animation:aiCaret .9s steps(2) infinite}
+@keyframes aiCaret{50%{opacity:0}}
+.ai-empty .ai-cap{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+.ai-empty .ai-cap div{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 6px;font-size:11px;font-weight:700;color:var(--muted)}
+.ai-empty .ai-cap b{display:block;font-size:19px;margin-bottom:3px}
+@media(max-width:420px){.ai-empty .ai-cap{grid-template-columns:repeat(3,1fr)}}
+/* ---------- mistake tags + spaced review + trajectory ---------- */
+.tag-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.tagchip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;
+  padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.tagchip:hover{border-color:var(--blue-l);color:var(--blue-d)}
+.tagchip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.due-card{border-left:4px solid var(--red)}
+.traj-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.btn.warn{background:var(--amber);color:#3d2c00}
+/* ---------- takeaways card ---------- */
+.takeaway-card{border-left:4px solid var(--purple)}
+.takeaway-card ol{margin:8px 0 0;padding-left:1.3rem}
+.takeaway-card li{margin:6px 0;line-height:1.5}
+.takeaway-load{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13.5px}
+/* ---------- formula flashcards ---------- */
+.fc-stage{perspective:1200px;margin:14px auto;max-width:560px}
+.fc-card{position:relative;width:100%;min-height:210px;cursor:pointer;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.3,.9,.35,1)}
+.fc-card.flip{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:26px;text-align:center;
+  border:1px solid var(--line);box-shadow:0 14px 34px -18px rgba(15,10,40,.3)}
+.fc-face.front{background:linear-gradient(135deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--blue-soft)))}
+.fc-face.back{background:linear-gradient(135deg,var(--blue-d),var(--blue));color:#fff;transform:rotateY(180deg)}
+.fc-face .fc-sub{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.fc-face .fc-topic{font-family:var(--font-display);font-size:22px;font-weight:800}
+.fc-face .fc-formula{font-size:16px;line-height:1.6;font-variant-numeric:tabular-nums}
+.fc-controls{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.fc-progress{text-align:center;font-size:12.5px;color:var(--muted);font-weight:700;margin-top:10px}
+/* ---------- strict mode banner + exam font control ---------- */
+.strict-pill{background:rgba(211,59,59,.2);border:1px solid rgba(255,255,255,.25);color:#ffd9d9;border-radius:999px;
+  padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:.04em}
+.qpane{font-size:calc(1em * var(--exam-fs,1))}
+/* respect users who prefer less motion */
+@media (prefers-reduced-motion:reduce){
+  #app.slide-in-right,#app.slide-in-left,.logo:after,.btn:after,.swipe-hint .arr,.fc-card{animation:none !important;transition:none !important}
+  html{scroll-behavior:auto}
+}
 </style>
 </head>
 <body>
@@ -486,6 +667,10 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
   <div class="logo">JEE</div>
   <div class="brand">Someshwar JEE Main&nbsp;<span style="opacity:.8;font-weight:500">CBT Platform</span></div>
   <div class="spacer"></div>
+  <button class="ckbtn" id="cmdkBtn" type="button" title="Quick actions — jump anywhere" aria-label="Open quick actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="kh-label">Quick actions</span><span class="khint">Ctrl K</span>
+  </button>
   <button class="iconbtn offline-btn" id="offlineDlBtn" type="button" title="Download the full test library so it works with no internet">📥 <span id="offlineDlLabel">Make offline</span></button>
   <button class="iconbtn" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle light or dark theme">🌙</button>
 </header>
@@ -499,7 +684,10 @@ html[data-anim="off"] *{animation:none !important;transition:none !important}
   <div class="exam-head">
     <strong id="exTitle">Test</strong>
     <span class="badge" id="exCand">Candidate</span>
+    <span class="strict-pill hide" id="exStrict" title="Strict simulation: fullscreen enforced, tab switches recorded">🔒 STRICT</span>
     <div class="spacer" style="flex:1"></div>
+    <button class="iconbtn" id="fsSmall" type="button" title="Smaller question text" aria-label="Decrease question text size">A−</button>
+    <button class="iconbtn" id="fsBig" type="button" title="Larger question text" aria-label="Increase question text size">A+</button>
     <span class="small">Time Left</span>
     <span class="timer" id="exTimer">03:00:00</span>
     <button class="iconbtn" id="fsBtn">⛶</button>
@@ -635,13 +823,16 @@ async function imgURL(k){if(!k)return null;if(imgCache.has(k))return imgCache.ge
 function imgTag(key,cls="qimg",fallbackText){
   if(!key && fallbackText) return el("div",cls+" qtext",esc(fallbackText));
   const i=el("img",cls); i.alt="";
+  i.loading="lazy"; i.decoding="async"; // don't block scroll/paint on question images
   if(key) (key.startsWith("cloud:")?cloudObjectURL(key.slice(6)):imgURL(key)).then(u=>{if(u)i.src=u;});
   return i;
 }
 
 const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],plannerDone:{},notes:{},studyLog:{},dailyQuestions:{},reviewSchedule:{},
+  qtags:{},   // per-question mistake tags: {qid:"guessed"|"silly"|"concept"}
   settings:{theme:"system",accent:"orange",density:"comfortable",fontSize:"md",cards:"elevated",anim:"on",candidate:"Candidate",
-    negMarking:true,randomizeOrder:false,dailyGoal:20,examDate:"",dailyReminder:false}};
+    negMarking:true,randomizeOrder:false,dailyGoal:20,examDate:"",dailyReminder:false,
+    strictMode:false,targetPercentile:null,examFontScale:1}};
 let S = load();
 function load(){
   try{
@@ -649,6 +840,7 @@ function load(){
     saved.settings=Object.assign({},DEFAULT.settings,saved.settings||{});
     saved.dailyQuestions=saved.dailyQuestions||{};
     saved.reviewSchedule=saved.reviewSchedule||{};
+    saved.qtags=saved.qtags||{};
     saved.tests=(saved.tests||[]).filter(t=>t.practice);
     return saved;
   }catch(e){return JSON.parse(JSON.stringify(DEFAULT));}
@@ -867,6 +1059,25 @@ async function publishPublicTest(test,files,onProgress,meta={}){
   const r=await cloudFetch("/rest/v1/public_tests",{method:"POST",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(payload)});
   return rowToTest((await r.json())[0]);
 }
+/** Anonymous leaderboard: posts just the marks/accuracy of a submitted
+ *  attempt on a published test (no identity attached), then lets the
+ *  result page show "you vs everyone" via the test_score_stats RPC. */
+async function postScore(test,result){
+  if(!test.cloud)return;
+  try{
+    await cloudFetch("/rest/v1/test_scores",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({test_id:test.id,marks:result.all.marks,max_marks:result.all.max,accuracy:result.all.accuracy})});
+  }catch(e){/* leaderboard is optional — never block a submission on it */}
+}
+async function fetchScoreStats(testId,myMarks){
+  try{
+    const r=await cloudFetch("/rest/v1/rpc/test_score_stats",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({_test_id:testId,_marks:myMarks})});
+    return await r.json();
+  }catch(e){return null;}
+}
 /** Public counter — increments only the attempt tally of a published test. */
 async function registerAttempt(testId){
   try{
@@ -1076,8 +1287,12 @@ async function parsePaper(file,subject,onProgress){
   const canvasOf=async pi=>pi.canvas||(pi.canvas=await renderPage(pi.pg));
 
   // ---- locate section markers (tolerant of common header wording) ----
-  const AK_RE=/^(answer\s*keys?|answers?)$/i;
-  const SOL_RE=/^(solutions?|explanations?|explanatory\s*notes?)$/i;
+  // Accepts trailing ":"/"-", surrounding decoration, and combined headers
+  // like "HINTS & SOLUTIONS" or "ANSWER KEY :" that real papers use —
+  // a missed header used to push the whole answer key into question-space
+  // and break both question cropping and key extraction.
+  const AK_RE=/^[\s._\-–—]*(answer\s*keys?|answers?\s*key|answers?)[\s._\-–—:]*$/i;
+  const SOL_RE=/^[\s._\-–—]*((?:hints?\s*(?:&|and)\s*)?solutions?|explanations?|explanatory\s*notes?|detailed\s*solutions?)[\s._\-–—:]*$/i;
   let akPos=null, solPos=null;
   pages.forEach(p=>p.items.forEach(i=>{
     if(!akPos && AK_RE.test(i.s)) akPos={p:p.n,y:i.y};
@@ -1324,6 +1539,27 @@ async function parsePaper(file,subject,onProgress){
       pending=null;
     } else if(allIdx){pending=cells.map(Number);}
   }
+  /* Fallback answer-key layouts. The grid walk above only understands the
+     strict "row of indices, then row of answers" table. If it captured
+     less than half of the questions, ALSO try, without overwriting
+     anything it did find:
+     1) inline pairs — "1. (a)", "2) 45", "Q3 : c" printed as one item or
+        as adjacent items on the same visual row;
+     2) glued pairs — "1.a  2.b  3.c" style runs inside a single item. */
+  if(Object.keys(answers).length<qMarks.length/2 && keyItems.length){
+    const put=(n,v)=>{if(n>=1&&n<=qMarks.length&&answers[n]==null)answers[n]=v;};
+    const inlinePair=/(?:^|\s)q?\.?\s*(\d{1,3})\s*[.):\-]\s*\(?([a-dA-D]|\d{1,4}(?:\.\d+)?)\)?(?=\s|$)/g;
+    keyItems.forEach(i=>{let m2;while((m2=inlinePair.exec(i.s)))put(+m2[1],m2[2]);});
+    // adjacent items on the same visual row: "12." followed by "(b)" / "45"
+    for(const r of rows){
+      const cells=r.cells.sort((a,b)=>a.x-b.x);
+      for(let i2=0;i2+1<cells.length;i2++){
+        const idxM=/^\(?q?\.?\s*(\d{1,3})[.):]\)?$/i.exec(cells[i2].s); // needs punctuation, so a bare answer "12" is never mistaken for an index
+        const ansM=/^\(?([a-dA-D]|\d{1,4}(?:\.\d+)?)\)?$/.exec(cells[i2+1].s);
+        if(idxM&&ansM){put(+idxM[1],ansM[1]);i2++;}
+      }
+    }
+  }
   // The answer key is the source of truth for question type:
   // a letter => single-correct MCQ, a number => numerical (integer) question.
   // If no separate answer-key section was found (or a question's row is
@@ -1460,25 +1696,182 @@ function analyse(test,attempt){
 }
 
 /* ------------------------------- 6. ROUTER ------------------------------- */
-const ROUTES=[["dash","Dashboard"],["library","Test Library"],["upload","Upload PDFs"],["planner","Planner"],
-  ["analytics","Analytics"],["mastery","Mastery"],["notebook","Mistake Notebook"],["formulas","Formulas"],
-  ["practice","Practice"],["review","Review"],["search","Search"],["settings","Settings"]];
+const ROUTES=[["dash","Dashboard","🏠"],["library","Test Library","📚"],["upload","Upload PDFs","⬆️"],["planner","Planner","🗓️"],
+  ["analytics","Analytics","📊"],["mastery","Mastery","🎯"],["notebook","Mistake Notebook","📓"],["formulas","Formulas","🧮"],
+  ["practice","Practice","✍️"],["review","Review","🔁"],["search","Search","🔍"],["settings","Settings","⚙️"]];
 let route="dash", routeArg=null;
-function go(r,arg){route=r;routeArg=arg||null;render();window.scrollTo({top:0,behavior:"smooth"});}
+/** Navigate. dir: 1 = slide in from right, -1 = from left, 0 = plain fade. */
+function go(r,arg,dir){
+  const from=ROUTES.findIndex(x=>x[0]===route), to=ROUTES.findIndex(x=>x[0]===r);
+  if(dir===undefined) dir=(from>-1&&to>-1&&from!==to)?(to>from?1:-1):0;
+  // Keep the browser/phone back button useful: each section change becomes a
+  // history entry, so "back" returns to the previous section instead of
+  // leaving the site.
+  if(route!==r||routeArg!==(arg||null)){try{history.pushState({route:r,arg:arg||null},"","#"+r);}catch(e){}}
+  route=r;routeArg=arg||null;render(dir);window.scrollTo({top:0,behavior:"smooth"});
+}
+window.addEventListener("popstate",e=>{
+  if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
+  const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
+  route=({dash:1,library:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,search:1,settings:1,result:1}[r])?r:"dash";
+  routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
+});
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
-  ROUTES.forEach(([k,l])=>{const b=el("button",route===k?"active":"",l);
+  ROUTES.forEach(([k,l,ico])=>{const b=el("button",route===k?"active":"",`<span class="nico" aria-hidden="true">${ico}</span>${l}`);
     b.type="button";b.setAttribute("aria-current",route===k?"page":"false");
     b.setAttribute("aria-label",l);b.onclick=()=>go(k);n.appendChild(b);});
+  // keep the active tab visible in the scrollable pill row
+  const act=n.querySelector("button.active");
+  if(act&&act.scrollIntoView)act.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"});
 }
-function render(){
+function render(dir=0){
   renderNav();
   const a=$("#app"); a.innerHTML="";
+  a.classList.remove("slide-in-right","slide-in-left");
+  void a.offsetWidth; // restart the animation even on rapid swipes
+  if(dir===1)a.classList.add("slide-in-right");
+  else if(dir===-1)a.classList.add("slide-in-left");
+  if(dir)a.addEventListener("animationend",()=>a.classList.remove("slide-in-right","slide-in-left"),{once:true});
   a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
     practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
 }
+
+/* --------------------- SWIPE NAVIGATION (touch devices) -------------------
+   Swipe left/right anywhere on the page body to move between the main
+   sections (Dashboard ⇄ Test Library ⇄ Upload PDFs ⇄ …) — the same order
+   as the tab bar. Deliberately conservative so it never fights with:
+   • vertical scrolling (must be clearly horizontal),
+   • the live exam view, the AI chat, or any open modal,
+   • interactive elements (inputs, canvases, tables that scroll sideways). */
+(function initSwipeNav(){
+  let x0=0,y0=0,t0=0,tracking=false,horiz=null,dx=0;
+  const appEl=()=>$("#app");
+  const swipeBlocked=t=>{
+    if(EX&&!$("#examView").classList.contains("hide"))return true;      // during a test
+    if(aiChatIsOpen)return true;                                        // chat open
+    if(document.querySelector(".modal,.ck-overlay"))return true;        // modal open
+    if(route==="result")return true;                                    // deep page, avoid surprises
+    return !!(t&&t.closest&&t.closest("input,textarea,select,canvas,table,.heatgrid,.nav,.ptabs,.qtabs,.subtabs,[data-noswipe]"));
+  };
+  const routeIdx=()=>ROUTES.findIndex(x=>x[0]===route);
+  document.addEventListener("touchstart",e=>{
+    if(e.touches.length!==1||swipeBlocked(e.target))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();tracking=true;horiz=null;dx=0;
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(!tracking)return;
+    const t=e.touches[0];dx=t.clientX-x0;const dy=t.clientY-y0;
+    if(horiz===null&&(Math.abs(dx)>12||Math.abs(dy)>12))horiz=Math.abs(dx)>Math.abs(dy)*1.4;
+    if(horiz){
+      const a=appEl(),i=routeIdx();
+      // rubber-band at the ends of the tab strip
+      const capped=((dx>0&&i<=0)||(dx<0&&i>=ROUTES.length-1))?dx*0.25:dx*0.6;
+      a.classList.add("dragging");
+      a.style.transform=`translateX(${capped}px)`;
+      a.style.opacity=String(Math.max(.55,1-Math.abs(capped)/560));
+    }
+  },{passive:true});
+  const settleBack=()=>{
+    const a=appEl();
+    a.classList.remove("dragging");a.classList.add("settling");
+    a.style.transform="";a.style.opacity="";
+    setTimeout(()=>a.classList.remove("settling"),240);
+  };
+  document.addEventListener("touchend",e=>{
+    if(!tracking)return;tracking=false;
+    const a=appEl();
+    if(!horiz){a.classList.remove("dragging");a.style.transform="";a.style.opacity="";return;}
+    const dt=Date.now()-t0, fast=dt<280&&Math.abs(dx)>48, far=Math.abs(dx)>Math.min(140,innerWidth*0.28);
+    const i=routeIdx();
+    if((fast||far)&&i>-1){
+      if(dx<0&&i<ROUTES.length-1){a.classList.remove("dragging");a.style.transform="";a.style.opacity="";go(ROUTES[i+1][0],null,1);return;}
+      if(dx>0&&i>0){a.classList.remove("dragging");a.style.transform="";a.style.opacity="";go(ROUTES[i-1][0],null,-1);return;}
+    }
+    settleBack();
+  },{passive:true});
+  document.addEventListener("touchcancel",()=>{if(tracking){tracking=false;settleBack();}},{passive:true});
+  // First-visit hint (touch devices only, shown once)
+  try{
+    if(("ontouchstart" in window)&&!localStorage.getItem("jeecbt.swipeHintSeen")){
+      setTimeout(()=>{
+        const h=el("div","swipe-hint",`<span class="arr l">←</span> Swipe to move between sections <span class="arr">→</span>`);
+        document.body.appendChild(h);
+        setTimeout(()=>{h.classList.add("bye");setTimeout(()=>h.remove(),600);},4800);
+        localStorage.setItem("jeecbt.swipeHintSeen","1");
+      },1600);
+    }
+  }catch(e){}
+})();
+
+/* ----------------------- COMMAND PALETTE (Ctrl/⌘ K) -----------------------
+   One keystroke to jump to any section, start the next test, resume an
+   unfinished attempt, toggle the theme, or open the AI tutor — the kind of
+   power-user speed layer serious products ship. */
+function openCmdk(){
+  if(document.querySelector(".ck-overlay"))return;
+  if(EX&&!$("#examView").classList.contains("hide"))return; // never during a live exam
+  const overlay=el("div","ck-overlay");
+  overlay.innerHTML=`<div class="ck-box" role="dialog" aria-label="Quick actions">
+    <div class="ck-inputrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" placeholder="Jump to a section, start a test, toggle theme…" aria-label="Search actions" autocomplete="off" spellcheck="false">
+      <span class="ck-esc">esc</span>
+    </div>
+    <div class="ck-list" role="listbox"></div>
+    <div class="ck-foot"><span><span class="kbd">↑↓</span> navigate</span><span><span class="kbd">↵</span> select</span><span><span class="kbd">esc</span> close</span></div>
+  </div>`;
+  const input=overlay.querySelector("input"), list=overlay.querySelector(".ck-list");
+  const close=()=>{overlay.remove();document.removeEventListener("keydown",onKey,true);};
+  const resume=pendingResume();
+  const upNext=cloudTests.filter(t=>!attemptsOf(t.id).some(a=>a.submittedAt))[0]||cloudTests[0];
+  const actions=[];
+  if(resume)actions.push({g:"Continue",ico:"⏸",label:"Resume unfinished attempt",hint:fmtTime(resume.left)+" left",run:()=>startExam(resume.testId,resume)});
+  if(upNext)actions.push({g:"Continue",ico:"▶️",label:"Start next test — "+upNext.name,hint:"75 Q · 3 hr",run:()=>startExam(upNext.id)});
+  const dueNow=dueReviewQuestions();
+  if(dueNow.length)actions.push({g:"Continue",ico:"🔁",label:`Spaced review — ${dueNow.length} due`,hint:"drill",run:()=>startDrill("Spaced Review · "+fmtDate(Date.now()),dueNow.slice(0,25))});
+  ROUTES.forEach(([k,l,ico])=>actions.push({g:"Go to",ico,label:l,hint:"page",run:()=>go(k)}));
+  actions.push({g:"Actions",ico:"🤖",label:"Ask Saarthi (AI tutor)",hint:"chat",run:()=>aiChatOpen()});
+  actions.push({g:"Actions",ico:"🌓",label:"Toggle theme",hint:"light / dark / system",run:()=>$("#themeBtn").click()});
+  actions.push({g:"Actions",ico:"📥",label:"Make available offline",hint:"download library",run:()=>$("#offlineDlBtn").click()});
+  cloudTests.slice(0,8).forEach(t=>actions.push({g:"Tests",ico:"📄",label:t.name,hint:"start test",run:()=>startExam(t.id)}));
+  let sel=0, shown=[];
+  const draw=()=>{
+    const q=input.value.trim().toLowerCase();
+    shown=q?actions.filter(a=>(a.label+" "+a.g).toLowerCase().includes(q)):actions;
+    sel=Math.min(sel,Math.max(0,shown.length-1));
+    list.innerHTML="";
+    if(!shown.length){list.appendChild(el("div","ck-empty","Nothing matches — try a section name like “analytics”."));return;}
+    let lastG=null;
+    shown.forEach((a,i)=>{
+      if(a.g!==lastG){lastG=a.g;list.appendChild(el("div","ck-group",a.g));}
+      const b=el("button","ck-item"+(i===sel?" sel":""),`<span class="ci">${a.ico}</span><span>${esc(a.label)}</span><small>${esc(a.hint||"")}</small>`);
+      b.type="button";b.setAttribute("role","option");
+      b.onclick=()=>{close();a.run();};
+      b.onmousemove=()=>{if(sel!==i){sel=i;[...list.querySelectorAll(".ck-item")].forEach((x,j)=>x.classList.toggle("sel",shown[j]===shown[sel]));}};
+      list.appendChild(b);
+    });
+  };
+  const onKey=e=>{
+    if(e.key==="Escape"){e.preventDefault();e.stopPropagation();close();}
+    else if(e.key==="ArrowDown"){e.preventDefault();sel=Math.min(sel+1,shown.length-1);draw();scrollSel();}
+    else if(e.key==="ArrowUp"){e.preventDefault();sel=Math.max(sel-1,0);draw();scrollSel();}
+    else if(e.key==="Enter"){e.preventDefault();const a=shown[sel];if(a){close();a.run();}}
+  };
+  const scrollSel=()=>{const b=list.querySelectorAll(".ck-item")[sel];if(b&&b.scrollIntoView)b.scrollIntoView({block:"nearest"});};
+  document.addEventListener("keydown",onKey,true);
+  overlay.onclick=e=>{if(e.target===overlay)close();};
+  input.oninput=()=>{sel=0;draw();};
+  document.body.appendChild(overlay);
+  draw();
+  input.focus();
+}
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openCmdk();}
+});
+const _cmdkBtn=$("#cmdkBtn"); if(_cmdkBtn)_cmdkBtn.onclick=openCmdk;
 
 /* ------------------------------ DASHBOARD -------------------------------- */
 function globalStats(){
@@ -1493,8 +1886,70 @@ function globalStats(){
     strong:ranked[0],weak:ranked[ranked.length-1],ranked};
 }
 function statCard(k,v,extra=""){return `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div>${extra}</div>`;}
+/** Animates plain-number stats (e.g. "87" or "92.5%") counting up from 0 —
+ *  the little "alive" touch premium dashboards have. Non-numeric values and
+ *  reduced-motion users are left untouched. */
+function countUpStats(scope){
+  if(matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  (scope||document).querySelectorAll(".hero-stats b,.stat .v").forEach(n=>{
+    const raw=n.textContent.trim(), m=raw.match(/^(\d+(?:\.\d+)?)(%?)$/);
+    if(!m)return;
+    const target=parseFloat(m[1]), suffix=m[2], dec=(m[1].split(".")[1]||"").length;
+    if(!target)return;
+    const t0=performance.now(), dur=700;
+    const step=now=>{
+      const p=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-p,3); // ease-out cubic
+      n.textContent=(target*e).toFixed(dec)+suffix;
+      if(p<1)requestAnimationFrame(step);else n.textContent=raw;
+    };
+    requestAnimationFrame(step);
+  });
+}
 /* ------------------------------- UPLOAD ---------------------------------- */
 const pending={Physics:null,Chemistry:null,Mathematics:null};
+/** Pre-publish inspector: every parsed question with its detected answer,
+ *  editable inline — so a mis-read key gets fixed BEFORE the paper goes
+ *  public instead of after someone loses marks to it. */
+function openParsePreview(sub,questions,onDone){
+  const m=el("div","modal");
+  const noKey=questions.filter(q=>!q.answer).length;
+  m.innerHTML=`<div class="box" style="max-width:760px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h3 style="margin:0">👁 ${esc(sub)} — ${questions.length} question(s)</h3>
+      <span class="pill ${noKey?"a":"g"}">${noKey?noKey+" missing answers":"answer key complete ✓"}</span></div>
+    <div class="small muted" style="margin:6px 0 10px">Check each detected answer below. Fix any that are wrong — your corrections are what gets published.</div>
+    <div data-list style="overflow-y:auto;flex:1;min-height:0;padding-right:4px"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-x>Done</button></div></div>`;
+  const list=m.querySelector("[data-list]");
+  questions.forEach(q=>{
+    const row=el("div","qrev");row.style.padding="10px";
+    const keyBadge=q.answer?`<span class="pill g">key: ${esc(String(q.answer).toUpperCase())}</span>`:`<span class="pill r">no answer detected</span>`;
+    row.innerHTML=`<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap">
+      <div><b>Q${q.no}</b> <span class="pill n">${q.type==="mcq"?"MCQ":"Integer"}</span> ${keyBadge}</div></div>`;
+    row.appendChild(imgTag(q.img,"qimg",q.text));
+    const fixRow=el("div","row");fixRow.style.marginTop="8px";
+    fixRow.appendChild(el("span","small muted","Answer:"));
+    if(q.type==="mcq"){
+      ["a","b","c","d"].forEach(L=>{
+        const b=el("button","tagchip"+(String(q.answer)===L?" on":""),L.toUpperCase());
+        b.type="button";
+        b.onclick=()=>{q.answer=L;
+          [...fixRow.querySelectorAll(".tagchip")].forEach(x=>x.classList.remove("on"));b.classList.add("on");
+          row.querySelector(".pill.r, .pill.g").outerHTML=`<span class="pill g">key: ${L.toUpperCase()}</span>`;};
+        fixRow.appendChild(b);
+      });
+    }else{
+      const inp=el("input");inp.type="text";inp.placeholder="numeric answer";inp.value=q.answer||"";
+      inp.style.cssText="max-width:140px;padding:6px 10px";
+      inp.oninput=()=>{q.answer=inp.value.replace(/[^0-9.\-]/g,"")||null;};
+      fixRow.appendChild(inp);
+    }
+    row.appendChild(fixRow);
+    list.appendChild(row);
+  });
+  m.querySelector("[data-x]").onclick=()=>{m.remove();onDone&&onDone();};
+  document.body.appendChild(m);
+}
 function viewUpload(root){
   const c=el("div","card");
   c.innerHTML=`<h2>Upload Question Papers</h2>
@@ -1563,6 +2018,17 @@ function viewUpload(root){
       aiBtn.disabled=false;b.disabled=false;update();
     };
     d.lastElementChild.appendChild(aiBtn);
+    const pvBtn=el("button","btn sm ghost","👁 Preview & fix");pvBtn.style.marginTop="8px";pvBtn.type="button";
+    pvBtn.onclick=()=>{
+      if(!pending[sub]){toast("Parse a PDF first");return;}
+      openParsePreview(sub,pending[sub],()=>{
+        // refresh the count line after edits
+        const all=pending[sub];
+        d.querySelector("[data-st]").innerHTML=`<b>${all.length}</b> questions · ${all.filter(q=>q.type==="integer").length} integer · key ${all.filter(q=>q.answer).length}/${all.length}`
+          +(all.warning?`<div class="small" style="color:var(--amber);margin-top:4px">⚠ ${all.warning}</div>`:"");
+      });
+    };
+    d.appendChild(pvBtn);
     grid.appendChild(d);
   });
   c.appendChild(grid);
@@ -1942,7 +2408,7 @@ async function shareResultCard(t,a,r,ai,btn){
 }
 function lineChart(cv,data,labels,title,color="#0b57a4"){
   const dpr=devicePixelRatio||1,w=cv.clientWidth,h=210;
-  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);
+  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");if(!c)return;c.scale(dpr,dpr);
   c.clearRect(0,0,w,h);
   const pad={l:36,r:12,t:18,b:26};
   const max=Math.max(1,...data),min=Math.min(0,...data);
@@ -1961,7 +2427,7 @@ function lineChart(cv,data,labels,title,color="#0b57a4"){
 }
 function donutChart(cv,slices,centerText){
   const c=cv.getContext("2d"),w=cv.width,h=cv.height,R=Math.min(w,h)/2-6,cx=w/2,cy=h/2;
-  c.clearRect(0,0,w,h);
+  if(!c)return;c.clearRect(0,0,w,h);
   const total=slices.reduce((s,[v])=>s+v,0)||1;
   let a0=-Math.PI/2;
   slices.forEach(([v,col])=>{
@@ -1976,7 +2442,7 @@ function donutChart(cv,slices,centerText){
 }
 function barChart(cv,vals,labels,colors){
   const dpr=devicePixelRatio||1,w=cv.clientWidth,h=210;
-  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");if(!c)return;c.scale(dpr,dpr);c.clearRect(0,0,w,h);
   const pad={l:34,r:10,t:12,b:28},max=Math.max(1,...vals);
   const bw=(w-pad.l-pad.r)/vals.length;
   vals.forEach((v,i)=>{
@@ -1997,9 +2463,35 @@ function viewAnalytics(root){
   if(!done.length){root.appendChild(el("div","card",`<p class="muted">No attempts yet.</p>`));return;}
   const labels=done.map((a,i)=>"T"+(i+1));
   const mk=(title,fn)=>{const c=el("div","card");c.innerHTML=`<h3>${title}</h3>`;const cv=el("canvas","chart");c.appendChild(cv);root.appendChild(c);setTimeout(()=>fn(cv),0);};
+  // ---- percentile trajectory with projection ----
+  const trend=percentileTrend();
+  if(trend.pts.length>=2){
+    const tc=el("div","card");
+    tc.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
+      <h3 style="margin:0">Percentile Trajectory</h3>
+      ${trend.projected!=null?`<span class="pill ${trend.slope>=0?"g":"r"}">projected ${trend.projected} by exam day</span>`:""}</div>
+      ${S.settings.targetPercentile?`<div class="small muted" style="margin-top:4px">Target: ${S.settings.targetPercentile} percentile${trend.projected!=null?` — ${trend.projected>=S.settings.targetPercentile?"on track at this pace ✓":"needs +"+((S.settings.targetPercentile-trend.projected).toFixed(1))+" more"}`:""}</div>`:""}`;
+    const cv2=el("canvas","chart");tc.appendChild(cv2);root.appendChild(tc);
+    setTimeout(()=>lineChart(cv2,trend.pts.map(p=>p.p),trend.pts.map((_,i)=>"T"+(i+1)),"Percentile","#e0396b"),0);
+  }
   mk("Marks Trend",cv=>lineChart(cv,done.map(a=>a.result.all.marks),labels,"Marks"));
   mk("Accuracy Trend",cv=>lineChart(cv,done.map(a=>a.result.all.accuracy),labels,"Accuracy %","#1e9e57"));
   mk("Time Trend (minutes used)",cv=>lineChart(cv,done.map(a=>Math.round(a.result.all.time/60)),labels,"Minutes","#7a3ec8"));
+  // ---- confirmed mistake-type breakdown (from your own tags) ----
+  const tagCounts={concept:0,silly:0,guessed:0};
+  Object.values(S.qtags||{}).forEach(v=>{if(tagCounts[v]!=null)tagCounts[v]++;});
+  const tagTotal=tagCounts.concept+tagCounts.silly+tagCounts.guessed;
+  if(tagTotal){
+    const tg=el("div","card");
+    tg.innerHTML=`<h3>Why you lose marks (your own tags)</h3>
+      <div class="small muted">Based on the ${tagTotal} mistake(s) you've classified in post-test review — more reliable than any guess.</div>
+      <div class="grid g3" style="margin-top:12px">
+        ${statCard("🧠 Concept gaps",tagCounts.concept,tagCounts.concept>=tagCounts.silly&&tagCounts.concept>=tagCounts.guessed&&tagCounts.concept?`<div class="small" style="color:var(--red)">Your #1 leak — revise theory first</div>`:"")}
+        ${statCard("🤦 Silly mistakes",tagCounts.silly,tagCounts.silly>tagCounts.concept&&tagCounts.silly>=tagCounts.guessed?`<div class="small" style="color:var(--red)">Your #1 leak — slow down & re-read stems</div>`:"")}
+        ${statCard("🎲 Guesses",tagCounts.guessed,tagCounts.guessed>tagCounts.concept&&tagCounts.guessed>tagCounts.silly?`<div class="small" style="color:var(--red)">Your #1 leak — skip when unsure</div>`:"")}
+      </div>`;
+    root.appendChild(tg);
+  }
   const subAvg=SUBJECTS.map(s=>{const v=done.map(a=>(a.result.per[s]||{}).marks||0);return Math.round(v.reduce((x,y)=>x+y,0)/v.length);});
   mk("Subject Wise Average Marks",cv=>barChart(cv,subAvg,SUBJECTS.map(s=>s.slice(0,4)),SUBJECTS.map(s=>SUBCOLOR[s])));
   // chapter graph + heatmap
@@ -2050,6 +2542,36 @@ function collectQuestions(kind){
 function viewPractice(root){
   root.appendChild(el("div","card",`<h2>Practice Mode</h2>
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`));
+
+  // ---- Sectional tests: one subject, exam-ratio timing (36 min per 25 Q) ----
+  const sec=el("div","card");
+  sec.innerHTML=`<div class="section-title"><span class="ico">⏱</span><h3 style="margin:0">Sectional Tests</h3></div>
+    <div class="small muted">A timed single-subject paper at real exam pace — 25 questions, 36 minutes (or fewer if less are available).</div>`;
+  const secRow=el("div","grid g3");secRow.style.marginTop="12px";
+  SUBJECTS.forEach(s=>{
+    const pool=[];const seen=new Set();
+    S.tests.forEach(t=>t.questions.forEach(q=>{if(q.subject===s&&!seen.has(q.id)){seen.add(q.id);pool.push({q});}}));
+    const d=el("div","card");d.style.margin="0";
+    d.innerHTML=`<h4 style="color:${SUBCOLOR[s]}">${s}</h4><div class="small muted">${pool.length} questions in your bank</div>`;
+    const b=el("button","btn sm",pool.length?"Start sectional":"No questions yet");b.disabled=!pool.length;b.style.marginTop="10px";
+    b.onclick=()=>{
+      const pick=pool.slice().sort(()=>Math.random()-0.5).slice(0,25);
+      startDrill(s+" Sectional · "+fmtDate(Date.now()),pick,Math.round(36*60/25));
+    };
+    d.appendChild(b);secRow.appendChild(d);
+  });
+  sec.appendChild(secRow);root.appendChild(sec);
+
+  // ---- Speed drill: 10 questions from weakest chapters, 60 s per question ----
+  const weakPool=collectQuestions("weak");
+  const sd=el("div","card");
+  sd.innerHTML=`<div class="section-title"><span class="ico">⚡</span><h3 style="margin:0">Speed Drill</h3></div>
+    <div class="small muted">10 rapid-fire questions from your weakest chapters — 60 seconds each. Builds exam-speed instinct.</div>`;
+  const sdb=el("button","btn sm"+(weakPool.length?"":" ghost"),weakPool.length?"⚡ Start 10-minute drill":"Complete a test to unlock");
+  sdb.disabled=!weakPool.length;sdb.style.marginTop="10px";
+  sdb.onclick=()=>startDrill("Speed Drill · "+fmtDate(Date.now()),weakPool.slice().sort(()=>Math.random()-0.5).slice(0,10),60);
+  sd.appendChild(sdb);root.appendChild(sd);
+
   const kinds=[["wrong","Wrong Questions Test","Every question you answered incorrectly"],
     ["skipped","Skipped Questions Test","Questions you left unattempted"],
     ["weak","Weak Chapter Test","Chapters below 60% accuracy"],
@@ -2062,12 +2584,7 @@ function viewPractice(root){
     c.innerHTML=`<h3>${title}</h3><div class="small muted">${desc}</div>
       <div style="margin:10px 0"><span class="badge">${pool.length} questions</span></div>`;
     const b=el("button","btn sm",pool.length?"Start":"Nothing available");b.disabled=!pool.length;
-    b.onclick=()=>{
-      const t={id:uid(),name:title+" · "+fmtDate(Date.now()),createdAt:Date.now(),date:new Date().toISOString(),
-        practice:true,duration:Math.max(600,pool.length*90),chapter:{},
-        questions:pool.map((x,i)=>({...x.q,id:x.q.id,index:i,no:i+1}))};
-      S.tests.push(t);save();startExam(t.id);
-    };
+    b.onclick=()=>startDrill(title+" · "+fmtDate(Date.now()),pool);
     c.appendChild(b);g.appendChild(c);
   });
   root.appendChild(g);
@@ -2202,6 +2719,43 @@ function viewResult(root){
   const r=a.result, ai=analyse(t,a);
 
   root.appendChild(scoreHero(t,a,r,ai));
+
+  // ---- AI "3 takeaways" — one-tap, cached per attempt so it never re-bills ----
+  const tk=el("div","card takeaway-card");
+  tk.innerHTML=`<div class="section-title"><span class="ico">🎯</span><h3 style="margin:0">3 takeaways from this test</h3></div>`;
+  const tkBody=el("div");tk.appendChild(tkBody);
+  const cachedTk=(a.takeaways||"").trim();
+  const renderTk=text=>{tkBody.innerHTML=`<div style="margin-top:6px">${mdLite(text)}</div>`;};
+  if(cachedTk)renderTk(cachedTk);
+  else{
+    const genBtn=el("button","btn sm","✨ Generate my takeaways");
+    genBtn.onclick=async()=>{
+      tkBody.innerHTML=`<div class="takeaway-load"><span class="ai-typing"><i></i><i></i><i></i></span> Reading your attempt…</div>`;
+      const wrongs=ai.rows.filter(x=>x.status==="wrong").slice(0,10)
+        .map(x=>`Q${x.q.no} (${x.q.subject}${x.q.chapter?", "+x.q.chapter:""}): answered ${String(x.ans).toUpperCase()}, correct ${String(x.q.answer||"?").toUpperCase()}, took ${Math.round(x.time)}s`);
+      const prompt=`Here is my JEE mock test summary. Marks ${r.all.marks}/${r.all.max} (${r.all.accuracy}% accuracy), ${r.all.correct} correct, ${r.all.wrong} wrong, ${r.all.skipped} skipped. `+
+        `Subject accuracy: ${SUBJECTS.filter(s=>r.per[s]&&r.per[s].total).map(s=>`${s} ${pct(r.per[s].correct,r.per[s].correct+r.per[s].wrong)}%`).join(", ")}. `+
+        `Careless errors: ${ai.careless.length}, likely calculation errors: ${ai.calc.length}, guesses: ${ai.guesses.length} (${ai.guessAcc}% right). `+
+        (wrongs.length?`Wrong answers: ${wrongs.join("; ")}. `:"")+
+        `Give me EXACTLY 3 sharp, specific, actionable takeaways as a numbered list (1., 2., 3.) — each one line, no preamble, no closing text.`;
+      try{
+        const resp=await fetch("/api/public/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({messages:[{role:"user",text:prompt}]})});
+        const data=await resp.json().catch(()=>null);
+        if(resp.ok&&data&&data.reply){
+          a.takeaways=data.reply;save();       // cache on the attempt
+          renderTk(data.reply);
+        }else tkBody.innerHTML=`<div class="small" style="color:var(--red)">${esc((data&&data.error)||"Couldn't generate takeaways — try again.")}</div><div style="margin-top:8px"></div>`,tkBody.lastElementChild.appendChild(genBtn);
+      }catch(e){
+        tkBody.innerHTML=`<div class="small" style="color:var(--red)">Network error — try again.</div><div style="margin-top:8px"></div>`;
+        tkBody.lastElementChild.appendChild(genBtn);
+      }
+    };
+    tkBody.appendChild(el("div","small muted","One tap and the AI reads this exact attempt — your errors, timing and subjects — and gives you the 3 things that matter most."));
+    const w=el("div");w.style.marginTop="10px";w.appendChild(genBtn);tkBody.appendChild(w);
+  }
+  root.appendChild(tk);
+
   const printRow=el("div","row",""); printRow.style.cssText="justify-content:flex-end;margin-bottom:12px;gap:10px";
   const shareBtn=el("button","btn ghost sm","📤 Share Result Card");
   shareBtn.onclick=()=>shareResultCard(t,a,r,ai,shareBtn);
@@ -2212,7 +2766,8 @@ function viewResult(root){
   const head=el("div","card");
   head.innerHTML=`<div class="row" style="justify-content:space-between">
     <div><h2 style="margin:0">${esc(t.name)}</h2>
-      <div class="muted small">Submitted ${fmtDate(a.submittedAt)} · Time taken ${fmtTime(a.timeTaken||r.all.time)}</div></div>
+      <div class="muted small">Submitted ${fmtDate(a.submittedAt)} · Time taken ${fmtTime(a.timeTaken||r.all.time)}</div>
+      ${a.tabSwitches?`<div class="small" style="color:var(--red);margin-top:4px">🔒 Strict mode: focus left the exam ${a.tabSwitches} time(s)</div>`:""}</div>
     <div style="text-align:right"><div style="font-size:34px;font-weight:800;color:var(--blue-l)">${r.all.marks}<span class="muted" style="font-size:16px">/${r.all.max}</span></div>
     <div class="small muted">${r.all.percentage}% · ${r.all.accuracy}% accuracy</div></div></div>`;
   root.appendChild(head);
@@ -2312,6 +2867,24 @@ function viewResult(root){
         <div class="stat"><div class="v">${delta(r.all.correct,prev.result.all.correct)}</div><div class="k">Correct</div></div>
         <div class="stat"><div class="v">${delta(prev.result.all.skipped,r.all.skipped)}</div><div class="k">Fewer Skipped</div></div>
       </div>`));
+  }
+
+  // ---- anonymous community comparison (published tests only) ----
+  if(t.cloud){
+    const cmpCard=el("div","card");
+    cmpCard.innerHTML=`<div class="section-title"><span class="ico">🏆</span><h3 style="margin:0">You vs everyone on this test</h3></div>
+      <div class="small muted" data-cmp-body>Loading community scores…</div>`;
+    root.appendChild(cmpCard);
+    fetchScoreStats(t.id,r.all.marks).then(st2=>{
+      const body=cmpCard.querySelector("[data-cmp-body]");
+      if(!st2||!st2.count){body.textContent="No community scores yet — yours is the first!";return;}
+      body.outerHTML=`<div class="grid g4" style="margin-top:10px">
+        ${statCard("Your marks",r.all.marks)}
+        ${statCard("Average",st2.avg)}
+        ${statCard("Top score",st2.best)}
+        ${statCard("You beat",st2.beaten!=null?st2.beaten+"%":"—",`<div class="small muted">of ${st2.count} attempt(s)</div>`)}
+      </div>`;
+    });
   }
 
   // ---- revision videos for this attempt's weak chapters ----
@@ -2429,7 +3002,31 @@ function viewResult(root){
     askAi.type="button";askAi.setAttribute("aria-label",`Ask the AI about question ${x.q.no}`);
     askAi.onclick=()=>askAIAbout(x.q);
     foot.appendChild(askAi);
+    if(x.status==="wrong"){
+      const why=el("button","btn sm warn","💡 Explain my mistake");
+      why.type="button";why.setAttribute("aria-label",`Ask the AI why answer ${x.ans} was wrong for question ${x.q.no}`);
+      why.onclick=()=>explainMyMistake(x.q,x.ans);
+      foot.appendChild(why);
+    }
     d.appendChild(foot);
+    // ---- mistake tag row (wrong answers only): confirm WHY it went wrong,
+    // making the analytics' heuristic guesses ground-truth over time.
+    if(x.status==="wrong"){
+      const tagRow=el("div","tag-row");
+      tagRow.appendChild(el("span","small muted","Why was it wrong?"));
+      [["concept","🧠 Concept gap"],["silly","🤦 Silly mistake"],["guessed","🎲 Guessed"]].forEach(([k,label])=>{
+        const b=el("button","tagchip"+(S.qtags[x.q.id]===k?" on":""),label);
+        b.type="button";b.setAttribute("aria-pressed",S.qtags[x.q.id]===k?"true":"false");
+        b.onclick=()=>{
+          if(S.qtags[x.q.id]===k)delete S.qtags[x.q.id];else S.qtags[x.q.id]=k;
+          save();
+          [...tagRow.querySelectorAll(".tagchip")].forEach(c2=>{c2.classList.remove("on");c2.setAttribute("aria-pressed","false");});
+          if(S.qtags[x.q.id]===k){b.classList.add("on");b.setAttribute("aria-pressed","true");}
+        };
+        tagRow.appendChild(b);
+      });
+      d.appendChild(tagRow);
+    }
     return d;
   }
 
@@ -2492,17 +3089,38 @@ function startExam(testId,resume){
   } else if(!resume && S.settings.randomizeOrder && !base.practice){
     t={...base,questions:shuffledCopy(base.questions)};
   }
-  const attempt=resume?resume.attempt:{id:uid(),testId,startedAt:Date.now(),responses:{},submittedAt:null};
+  const attempt=resume?resume.attempt:{id:uid(),testId,startedAt:Date.now(),responses:{},submittedAt:null,tabSwitches:0};
   t.questions.forEach(q=>attempt.responses[q.id]=attempt.responses[q.id]||{ans:null,status:"notvisited",time:0,changes:0});
-  EX={test:t,attempt,cur:resume?resume.cur:0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{}};
+  EX={test:t,attempt,cur:resume?resume.cur:0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{},
+    strict:!!S.settings.strictMode&&!t.practice};
   if(!resume&&t.cloud)registerAttempt(t.id);
   examAutosave();
   $("#examView").classList.remove("hide");
   $("#exTitle").textContent=t.name;
   $("#exCand").textContent=S.settings.candidate;
+  // exam font scale (persisted preference, adjustable from the exam header)
+  document.documentElement.style.setProperty("--exam-fs",S.settings.examFontScale||1);
+  const strictBadge=$("#exStrict");
+  if(strictBadge)strictBadge.classList.toggle("hide",!EX.strict);
+  if(EX.strict&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});
   buildSubTabs();buildFoot();drawQuestion();startTimer();
   document.body.style.overflow="hidden";
 }
+/* Strict-mode proctoring: count every tab/window switch during a live test.
+   Shown on the result afterwards — the honest mirror of real exam discipline. */
+document.addEventListener("visibilitychange",()=>{
+  if(!EX||!EX.strict||!document.hidden)return;
+  EX.attempt.tabSwitches=(EX.attempt.tabSwitches||0)+1;
+  examAutosave();
+});
+addEventListener("blur",()=>{
+  if(!EX||!EX.strict||document.hidden)return; // visibilitychange already counted it
+  EX.attempt.tabSwitches=(EX.attempt.tabSwitches||0)+1;
+});
+document.addEventListener("visibilitychange",()=>{
+  if(EX&&EX.strict&&!document.hidden&&(EX.attempt.tabSwitches||0)>0)
+    toast(`⚠ Focus lost ${EX.attempt.tabSwitches} time(s) — this is recorded on your result`,3200);
+});
 function endExamUI(){$("#examView").classList.add("hide");document.body.style.overflow="";clearInterval(EX&&EX.timerId);EX=null;}
 function subjectsInTest(){return [...new Set(EX.test.questions.map(q=>q.subject))];}
 function buildSubTabs(){
@@ -2653,6 +3271,7 @@ function submitExam(auto){
   attempt.autoSubmitted=!!auto;
   attempt.result=evaluate(test,attempt.responses);
   updateReviewSchedule(test,attempt.responses);
+  postScore(test,attempt.result); // anonymous community comparison (fire & forget)
   Object.values(attempt.responses).forEach(r=>r.time=Math.round(r.time));
   S.attempts.push(attempt);
   S.studyLog[todayKey(Date.now())]=(S.studyLog[todayKey(Date.now())]||0)+1;
@@ -2670,6 +3289,34 @@ function submitExam(auto){
 }
 /* exam controls */
 $("#fsBtn").onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});};
+/* Question text size — persisted, applies instantly via the --exam-fs var */
+function bumpExamFont(d){
+  const v=clamp(Math.round(((S.settings.examFontScale||1)+d)*20)/20,0.8,1.5);
+  S.settings.examFontScale=v;save();
+  document.documentElement.style.setProperty("--exam-fs",v);
+  toast("Question text: "+Math.round(v*100)+"%",900);
+}
+$("#fsSmall").onclick=()=>bumpExamFont(-0.1);
+$("#fsBig").onclick=()=>bumpExamFont(0.1);
+/* Swipe left/right on the question pane to move between questions during a
+   test — mirrors the NTA next/previous buttons for one-handed phone use.
+   Requires a clearly horizontal, decisive gesture so option taps and
+   vertical scrolling are never hijacked. */
+(function initExamSwipe(){
+  const pane=$("#exQ"); if(!pane)return;
+  let x0=0,y0=0,t0=0,on=false;
+  pane.addEventListener("touchstart",e=>{
+    if(e.touches.length!==1)return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();on=true;
+  },{passive:true});
+  pane.addEventListener("touchend",e=>{
+    if(!on)return;on=false;
+    if(!EX)return;
+    const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0,dt=Date.now()-t0;
+    if(Math.abs(dx)<64||Math.abs(dx)<Math.abs(dy)*1.6||dt>420)return;
+    move(dx<0?1:-1);
+  },{passive:true});
+})();
 $("#palBtn").onclick=()=>$("#exPal").classList.toggle("collapsed");
 function shortcutHelp(){
   const m=el("div","modal");
@@ -2787,6 +3434,13 @@ function viewSettings(root){
     seg([["fixed","Fixed (paper order)"],["random","Shuffled each attempt"]],st.randomizeOrder?"random":"fixed",
       v=>st.randomizeOrder=(v==="random")),
     "Practice-mode tests (wrong/weak/bookmarked) always stay in a random mix regardless of this."));
+  eb.appendChild(block("Strict exam simulation",
+    seg([["off","Off"],["on","On — real exam discipline"]],st.strictMode?"on":"off",v=>st.strictMode=(v==="on")),
+    "Full tests auto-enter fullscreen, and switching tabs/windows is detected, counted and shown on your result — just like the real NTA hall."));
+  const tpIn=el("input");tpIn.type="number";tpIn.min="1";tpIn.max="100";tpIn.step="0.1";tpIn.style.maxWidth="140px";
+  tpIn.placeholder="e.g. 97.5";tpIn.value=st.targetPercentile||"";
+  tpIn.oninput=()=>{st.targetPercentile=+tpIn.value||null;save();};
+  eb.appendChild(block("Target percentile",tpIn,"Your goal for JEE Main. The dashboard trajectory card shows whether you're on track."));
   const goalIn=el("input");goalIn.type="number";goalIn.min="5";goalIn.max="500";goalIn.style.maxWidth="140px";
   goalIn.value=st.dailyGoal||20;
   goalIn.oninput=()=>{st.dailyGoal=Math.max(1,+goalIn.value||20);save();};
@@ -2878,13 +3532,37 @@ function computeBadges(){
 function streakInfo(){
   const days=[];let streak=0;
   for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);days.push({key:todayKey(d),label:"SMTWTFS"[d.getDay()],on:!!S.studyLog[todayKey(d)]});}
-  for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);
-    if(S.studyLog[todayKey(d)])streak++;else if(i>0)break;}
+  // Streak walk with one automatic "freeze" per calendar week: a single
+  // missed day doesn't break the chain (it's consumed silently), matching
+  // how Duolingo-style streaks keep motivation alive.
+  let freezes=0, lastFreezeWeek=null;
+  for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);const k=todayKey(d);
+    if(S.studyLog[k]){streak++;continue;}
+    if(i===0)continue; // today isn't over yet — don't break or spend a freeze
+    const wk=`${d.getFullYear()}-${Math.floor((d.getDate()-1)/7)}-${d.getMonth()}`;
+    if(lastFreezeWeek!==wk){lastFreezeWeek=wk;freezes++;continue;} // freeze absorbs this miss
+    break;
+  }
   const week=days.filter(d=>d.on).length;
   const heat=[];
   for(let i=89;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=todayKey(d);
     heat.push({key:k,count:S.dailyQuestions[k]||0,attempts:S.studyLog[k]||0});}
-  return {days:days.reverse(),streak,week,heat};
+  return {days:days.reverse(),streak,week,heat,freezes};
+}
+/** Aggregates the last 7 days (and the 7 before, for deltas) into a
+ *  shareable weekly recap. */
+function weeklyRecap(){
+  const now=Date.now(), DAY=86400000;
+  const inRange=(t,from,to)=>t>=from&&t<to;
+  const wk=S.attempts.filter(a=>a.submittedAt&&inRange(a.submittedAt,now-7*DAY,now+1));
+  const prev=S.attempts.filter(a=>a.submittedAt&&inRange(a.submittedAt,now-14*DAY,now-7*DAY));
+  const qs=range=>{let n=0;for(let i=0;i<7;i++){const d=new Date(now-(i+range)*DAY);n+=S.dailyQuestions[todayKey(d)]||0;}return n;};
+  const acc=list=>{const a=list.map(x=>x.result.all.accuracy);return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:0;};
+  let activeDays=0;
+  for(let i=0;i<7;i++){const d=new Date(now-i*DAY);if(S.studyLog[todayKey(d)]||S.dailyQuestions[todayKey(d)])activeDays++;}
+  const thisAcc=acc(wk), prevAcc=acc(prev);
+  return {questions:qs(0),attempts:wk.length,acc:thisAcc,
+    accDelta:prev.length?Math.round((thisAcc-prevAcc)*10)/10:null,activeDays};
 }
 /* Per-question difficulty, derived from real attempt history across every
    test (not a manual tag) — a question only gets a level once at least 4
@@ -2921,6 +3599,44 @@ function wrongQuestions(){
       if(seen.has(q.id))return;seen.add(q.id);
       out.push({q,t,ans:r.ans,when:a.submittedAt,time:r.time||0});});});
   return out;
+}
+/** Spaced-repetition queue: every previously-wrong question whose review is
+ *  due now (or that has never been scheduled). Powers the dashboard card
+ *  and the one-tap review drill. */
+function dueReviewQuestions(){
+  const now=Date.now();
+  return wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=now;});
+}
+/** Builds & starts an ad-hoc practice test from a list of {q} items. */
+function startDrill(name,items,secsPerQ=90){
+  if(!items.length){toast("Nothing to practise right now");return;}
+  const t={id:uid(),name,createdAt:Date.now(),date:new Date().toISOString(),
+    practice:true,duration:Math.max(600,items.length*secsPerQ),chapter:{},
+    questions:items.map((x,i)=>({...(x.q||x),index:i,no:i+1}))};
+  S.tests.push(t);save();startExam(t.id);
+}
+/** Percentile trajectory across all completed attempts + a simple linear
+ *  projection of where the score lands by exam day. */
+function percentileTrend(){
+  const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
+  const pts=done.map(a=>{const t=testById(a.testId);if(!t)return null;
+    try{return {when:a.submittedAt,p:+analyse(t,a).percentile};}catch(e){return null;}}).filter(Boolean);
+  if(pts.length<2)return {pts,projected:null,slope:0};
+  // least-squares fit over (attempt index → percentile), then project forward
+  const n=pts.length,xs=pts.map((_,i)=>i),ys=pts.map(p=>p.p);
+  const sx=xs.reduce((a,b)=>a+b,0),sy=ys.reduce((a,b)=>a+b,0);
+  const sxx=xs.reduce((a,b)=>a+b*b,0),sxy=xs.reduce((a,x,i)=>a+x*ys[i],0);
+  const denom=n*sxx-sx*sx;
+  const slope=denom?(n*sxy-sx*sy)/denom:0;
+  const intercept=(sy-slope*sx)/n;
+  let projected=null;
+  if(S.settings.examDate){
+    const daysLeft=Math.max(0,Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000));
+    const testsPerWeek=Math.max(1,Math.round(n/Math.max(1,(pts[n-1].when-pts[0].when)/604800000)));
+    const futureTests=Math.round(daysLeft/7*testsPerWeek);
+    projected=clamp(intercept+slope*(n-1+futureTests),1,99.99);
+  }
+  return {pts,projected:projected!=null?+projected.toFixed(2):null,slope:+(slope).toFixed(2)};
 }
 function videoCard(title,subtitle,items){
   const c=el("div","card");
@@ -3008,6 +3724,9 @@ function viewNotebook(root){
     const askAi=el("button","btn sm ghost","🤖 Ask AI");askAi.type="button";askAi.style.margin="8px 0 8px 8px";
     askAi.onclick=()=>askAIAbout(x.q);
     d.appendChild(askAi);
+    const why=el("button","btn sm warn","💡 Explain my mistake");why.type="button";why.style.margin="8px 0 8px 8px";
+    why.onclick=()=>explainMyMistake(x.q,x.ans);
+    d.appendChild(why);
     const note=el("textarea");note.placeholder="Why did I get this wrong? (saved on this device)";
     note.value=S.notes[x.q.id]||"";note.rows=2;
     note.style.cssText="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;background:var(--panel);margin-top:6px";
@@ -3045,7 +3764,50 @@ const FORMULAS={
 };
 function viewFormulas(root){
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">🧮</span><h2 style="margin:0">Formula &amp; Concept Revision</h2></div>
-    <div class="muted small">Quick last-minute sheet for all three subjects. Search to jump to a chapter.</div>`));
+    <div class="muted small">Quick last-minute sheet for all three subjects. Search to jump to a chapter — or flip through them as flashcards.</div>`));
+
+  // ---- Flashcard quiz mode: shuffled deck, tap to flip topic → formula ----
+  const fcCard=el("div","card");
+  fcCard.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
+    <div><b>🃏 Flashcard mode</b><div class="small muted">See the chapter, recall the formulas, tap to check yourself.</div></div></div>`;
+  const fcStart=el("button","btn sm","Quiz me");
+  fcCard.firstElementChild.appendChild(fcStart);
+  const fcZone=el("div");fcCard.appendChild(fcZone);
+  fcStart.onclick=()=>{
+    const deck=[];
+    SUBJECTS.forEach(s=>(FORMULAS[s]||[]).forEach(([k,v])=>deck.push({sub:s,topic:k,formula:v})));
+    deck.sort(()=>Math.random()-0.5);
+    let i=0,flipped=false;
+    fcStart.classList.add("hide");
+    fcZone.innerHTML=`<div class="fc-stage"><div class="fc-card" role="button" tabindex="0" aria-label="Flashcard — tap to flip">
+        <div class="fc-face front"><span class="fc-sub"></span><span class="fc-topic"></span><span class="small muted">tap to reveal</span></div>
+        <div class="fc-face back"><span class="fc-sub" style="opacity:.8"></span><div class="fc-formula"></div></div>
+      </div></div>
+      <div class="fc-controls">
+        <button class="btn sm ghost" data-fc-no>✗ Still learning</button>
+        <button class="btn sm green" data-fc-yes>✓ Knew it</button>
+        <button class="btn sm ghost" data-fc-exit>Exit</button>
+      </div><div class="fc-progress"></div>`;
+    const card=fcZone.querySelector(".fc-card"),prog=fcZone.querySelector(".fc-progress");
+    let known=0,seen=0;
+    const drawFC=()=>{
+      const c2=deck[i%deck.length];flipped=false;card.classList.remove("flip");
+      fcZone.querySelector(".front .fc-sub").textContent=c2.sub;
+      fcZone.querySelector(".front .fc-topic").textContent=c2.topic;
+      fcZone.querySelector(".back .fc-sub").textContent=c2.sub+" · "+c2.topic;
+      fcZone.querySelector(".back .fc-formula").textContent=c2.formula;
+      prog.textContent=`Card ${(i%deck.length)+1} / ${deck.length}${seen?` · ${known}/${seen} recalled (${pct(known,seen)}%)`:""}`;
+    };
+    const flip=()=>{flipped=!flipped;card.classList.toggle("flip",flipped);};
+    card.onclick=flip;
+    card.onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();flip();}};
+    fcZone.querySelector("[data-fc-yes]").onclick=()=>{known++;seen++;i++;drawFC();};
+    fcZone.querySelector("[data-fc-no]").onclick=()=>{seen++;deck.push(deck[i%deck.length]);i++;drawFC();}; // re-queue missed cards
+    fcZone.querySelector("[data-fc-exit]").onclick=()=>{fcZone.innerHTML="";fcStart.classList.remove("hide");};
+    drawFC();
+  };
+  root.appendChild(fcCard);
+
   const box=el("div","card");
   const q=el("input");q.type="text";q.placeholder="Search formulas — e.g. rotation, pH, conics…";q.style.width="100%";
   box.appendChild(q);
@@ -3074,13 +3836,19 @@ function viewFormulas(root){
    9. PREMIUM DASHBOARD + TEST LIBRARY (override the earlier basic versions)
    ========================================================================== */
 function testMeta(t){return t.meta||{difficulty:"Moderate",type:"Practice",chapters:[],attempts:0,durationMin:Math.round((t.duration||10800)/60)};}
+/** Closes any open card menu (one at a time keeps the UI calm). */
+function closeKebabs(){
+  document.querySelectorAll(".kmenu.open").forEach(k=>k.classList.remove("open"));
+  document.querySelectorAll(".tcard.menu-open").forEach(k=>k.classList.remove("menu-open"));
+}
+document.addEventListener("click",e=>{if(!e.target.closest(".kebab,.kmenu"))closeKebabs();});
 function testCard(t){
   const m=testMeta(t);
   const at=attemptsOf(t.id).filter(a=>a.submittedAt);
   const best=at.length?Math.max(...at.map(a=>a.result.all.marks)):null;
   const c=el("div","tcard");
   c.innerHTML=`<div>
-      <div class="row" style="justify-content:space-between;gap:8px">
+      <div class="tcard-title">
         <b style="font-size:15px">${esc(t.name)}</b>
         ${at.length?`<span class="pill g">Attempted ×${at.length}</span>`:`<span class="pill a">New</span>`}
       </div>
@@ -3096,27 +3864,48 @@ function testCard(t){
     </div>
     ${(m.chapters||[]).length?`<div class="small muted">${esc((m.chapters||[]).slice(0,6).join(" · "))}</div>`:""}
     ${best!=null?`<div class="small"><b>Your best:</b> ${best} / ${t.questions.length*4}</div>`:""}`;
+  // ---- ⋮ menu — anchored to the card's top-right corner (standard spot),
+  // holding the secondary actions so the footer stays clean.
+  const kebab=el("button","kebab",
+    '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>');
+  kebab.type="button";kebab.title="More options";kebab.setAttribute("aria-label","More options for "+t.name);
+  kebab.setAttribute("aria-haspopup","menu");
+  const menu=el("div","kmenu");menu.setAttribute("role","menu");
+  const mkItem=(icon,label,fn,cls)=>{const b=el("button",cls||"",`<span>${icon}</span>${label}`);
+    b.type="button";b.setAttribute("role","menuitem");
+    b.onclick=e=>{e.stopPropagation();closeKebabs();fn();};menu.appendChild(b);return b;};
+  mkItem("✏️","Edit details",()=>requireAdmin(()=>openTestEditor(t)));
+  mkItem("🔗","Share test",()=>shareTest(t));
+  if(at.length)mkItem("📊","Last result",()=>go("result",at[at.length-1].id));
+  if(t.cloud){menu.appendChild(el("div","sep"));
+    mkItem("🗑","Delete test",()=>requireAdmin(()=>deletePublicTest(t)),"danger");}
+  kebab.onclick=e=>{e.stopPropagation();const was=menu.classList.contains("open");closeKebabs();
+    if(!was){menu.classList.add("open");c.classList.add("menu-open");kebab.setAttribute("aria-expanded","true");}
+    else kebab.setAttribute("aria-expanded","false");};
+  c.append(kebab,menu);
+  // ---- footer: only the primary actions
   const foot=el("div","foot");
   const start=el("button","btn sm",at.length?"Retake":"Start Test");start.onclick=()=>startExam(t.id);
-  const share=el("button","btn sm ghost","Share");share.onclick=()=>shareTest(t);
-  foot.append(start,share);
+  foot.appendChild(start);
   if(at.length){const r=el("button","btn sm ghost","Result");r.onclick=()=>go("result",at[at.length-1].id);foot.appendChild(r);}
-  const moreBtn=el("button","btn sm ghost","⋮");moreBtn.title="Edit test details";moreBtn.onclick=()=>requireAdmin(()=>openTestEditor(t));foot.appendChild(moreBtn);
-  if(t.cloud){const del=el("button","btn sm red","🗑 Delete");del.onclick=()=>requireAdmin(()=>deletePublicTest(t));foot.appendChild(del);}
   c.appendChild(foot);return c;
 }
 /** ⋮ menu — lets the admin edit a test's name, type, difficulty, year and
  *  per-subject chapter labels after the fact, without re-uploading. For
  *  cloud tests, saves the change back to Supabase too. */
+const TEST_TYPES=["Full Syllabus","Part Test","HWT","Chapter Test","PYQ Paper","Revision Test","Mock Test","Practice"];
 function openTestEditor(t){
   const m=testMeta(t);
+  // include the test's current type even if it's an older/custom label,
+  // so opening the editor never silently changes it
+  const typeOpts=[...new Set([...TEST_TYPES,...(m.type?[m.type]:[])])];
   const m2=el("div","modal");
   m2.innerHTML=`<div class="box"><h3>Edit test details</h3>
     <label class="small muted">Name</label>
     <input data-name value="${esc(t.name)}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:inherit;margin:4px 0 10px">
     <label class="small muted">Test type</label>
     <select data-type style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:inherit;margin:4px 0 10px">
-      ${["Practice","Full Syllabus Mock","Sectional","Previous Year","Mock Test"].map(o=>`<option ${m.type===o?"selected":""}>${o}</option>`).join("")}
+      ${typeOpts.map(o=>`<option ${m.type===o?"selected":""}>${o}</option>`).join("")}
     </select>
     <label class="small muted">Difficulty</label>
     <select data-diff style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:inherit;margin:4px 0 10px">
@@ -3130,24 +3919,38 @@ function openTestEditor(t){
   document.body.appendChild(m2);
   m2.querySelector("[data-no]").onclick=()=>m2.remove();
   m2.querySelector("[data-yes]").onclick=async()=>{
-    t.name=m2.querySelector("[data-name]").value.trim()||t.name;
-    t.meta=Object.assign({},m,{
+    const saveBtn=m2.querySelector("[data-yes]");saveBtn.disabled=true;saveBtn.textContent="Saving…";
+    const newName=m2.querySelector("[data-name]").value.trim()||t.name;
+    const newMeta=Object.assign({},m,{
       type:m2.querySelector("[data-type]").value,
       difficulty:m2.querySelector("[data-diff]").value,
       year:+m2.querySelector("[data-year]").value||null,
       durationMin:+m2.querySelector("[data-dur]").value||m.durationMin
     });
-    t.duration=t.meta.durationMin*60;
+    const newDuration=newMeta.durationMin*60;
     if(t.cloud){
+      // Cloud tests: the DB row uses its own column names (title/test_type/
+      // difficulty/exam_year/duration_minutes) — patch those, and only keep
+      // the change if the server confirms a row was actually updated
+      // (Prefer:return=representation), so RLS silently rejecting the
+      // update can't masquerade as success.
       try{
-        await cloudFetch("/rest/v1/public_tests?id=eq."+encodeURIComponent(t.id),{
-          method:"PATCH",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({name:t.name,meta:t.meta,duration:t.duration})
+        const r=await cloudFetch("/rest/v1/public_tests?id=eq."+encodeURIComponent(t.id),{
+          method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=representation"},
+          body:JSON.stringify({title:newName,test_type:newMeta.type,difficulty:newMeta.difficulty,
+            exam_year:newMeta.year,duration_minutes:newMeta.durationMin})
         });
-        const idx=cloudTests.findIndex(x=>x.id===t.id);if(idx>-1)cloudTests[idx]=t;
-        imgPut(LIB_CACHE,cloudTests).catch(()=>{});
-      }catch(e){toast("Saved locally, but cloud sync failed: "+e.message,5000);}
+        const rows=await r.json().catch(()=>null);
+        if(!rows||!rows.length)throw new Error("The database rejected the update (0 rows changed) — the UPDATE policy migration hasn't been applied yet.");
+      }catch(e){
+        saveBtn.disabled=false;saveBtn.textContent="Save";
+        toast("Couldn't save: "+e.message,6000);
+        return; // keep the dialog open so nothing is silently lost
+      }
     }
+    t.name=newName;t.meta=newMeta;t.duration=newDuration;
+    const idx=cloudTests.findIndex(x=>x.id===t.id);if(idx>-1)cloudTests[idx]=t;
+    imgPut(LIB_CACHE,cloudTests).catch(()=>{});
     save();m2.remove();toast("Test updated");render();
   };
 }
@@ -3253,7 +4056,7 @@ function viewDash(root){
     g.avgAcc>=60?"Solid base. Convert skipped questions into attempts to add 20+ marks.":
     "Focus on accuracy first: attempt fewer questions but verify every step.";
   hero.innerHTML=`<div style="position:relative">
-    <span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">🔥 ${st.streak}-day streak</span>
+    <span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">🔥 ${st.streak}-day streak${st.freezes?` · 🧊 ${st.freezes} freeze${st.freezes>1?"s":""} used`:""}</span>
     <h2 style="margin-top:10px">Hi ${esc(S.settings.candidate||"Candidate")} 👋</h2>
     <div class="muted">${esc(insight)}</div>
     <div class="streak">${st.days.map(d=>`<i class="${d.on?"on":""}">${d.label}</i>`).join("")}</div>
@@ -3295,14 +4098,51 @@ function viewDash(root){
       <i style="display:block;height:100%;width:${goalPct}%;background:var(--blue);border-radius:4px"></i></div>`;
   root.appendChild(dg);
 
-  // ---- Exam countdown ----
+  // ---- Spaced repetition: mistakes due for review today ----
+  const dueQ=dueReviewQuestions();
+  if(dueQ.length){
+    const sr=el("div","card due-card");
+    sr.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:10px">
+      <div><b>🔁 Spaced review — due today</b>
+      <div class="small muted">${dueQ.length} previously-wrong question(s) are scheduled to come back today. Clearing them locks the concepts in long-term memory.</div></div>
+      <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:26px;color:var(--red)">${dueQ.length}</div></div>`;
+    const row=el("div","row");row.style.marginTop="10px";
+    const goBtn=el("button","btn sm","▶ Review now ("+Math.min(dueQ.length,25)+" Q)");
+    goBtn.onclick=()=>startDrill("Spaced Review · "+fmtDate(Date.now()),dueQ.slice(0,25));
+    const nb=el("button","btn sm ghost","Open Mistake Notebook");nb.onclick=()=>go("notebook");
+    row.append(goBtn,nb);sr.appendChild(row);
+    root.appendChild(sr);
+  }
+
+  // ---- Exam countdown + percentile trajectory ----
   if(S.settings.examDate){
     const days=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);
+    const trend=percentileTrend();
+    const target=S.settings.targetPercentile;
+    const latest=trend.pts.length?trend.pts[trend.pts.length-1].p:null;
     const cd=el("div","card");
     cd.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
       <div><b>📅 JEE Main Countdown</b><div class="small muted">Exam date: ${esc(S.settings.examDate)}</div></div>
-      <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:26px;color:${days<=0?"var(--muted)":days<=14?"var(--red)":"var(--blue-l)"}">${days>0?days+"d":days===0?"Today!":"Passed"}</div></div>`;
+      <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:26px;color:${days<=0?"var(--muted)":days<=14?"var(--red)":"var(--blue-l)"}">${days>0?days+"d":days===0?"Today!":"Passed"}</div></div>`
+      +(trend.projected!=null?`<div class="traj-row">
+        <span class="pill ${trend.slope>=0?"g":"r"}">${trend.slope>=0?"↗":"↘"} ${trend.slope>=0?"+":""}${trend.slope}/test</span>
+        <span class="small">Current percentile <b>${latest}</b> → projected <b>${trend.projected}</b> by exam day${target?` · target <b>${target}</b> <span style="color:${trend.projected>=target?"var(--green)":"var(--red)"}">(${trend.projected>=target?"on track ✓":"gap "+(target-trend.projected).toFixed(1)})</span>`:""}</span>
+      </div>`:target&&latest!=null?`<div class="traj-row"><span class="small">Latest percentile <b>${latest}</b> · target <b>${target}</b> — take more tests to unlock your projection.</span></div>`:"");
     root.appendChild(cd);
+  }
+
+  // ---- Weekly recap ----
+  const recap=weeklyRecap();
+  if(recap.attempts||recap.questions){
+    const wr=el("div","card");
+    wr.innerHTML=`<div class="section-title"><span class="ico">🗞️</span><h3 style="margin:0">Your week in review</h3></div>
+      <div class="grid g4" style="margin-top:10px">
+        ${statCard("Questions solved",recap.questions)}
+        ${statCard("Tests taken",recap.attempts)}
+        ${statCard("Accuracy",recap.acc+"%",recap.accDelta!=null?`<div class="small" style="color:${recap.accDelta>=0?"var(--green)":"var(--red)"}">${recap.accDelta>=0?"▲":"▼"} ${Math.abs(recap.accDelta)}% vs last week</div>`:"")}
+        ${statCard("Study days",recap.activeDays+" / 7")}
+      </div>`;
+    root.appendChild(wr);
   }
 
   // ---- Badges ----
@@ -3354,6 +4194,8 @@ function viewDash(root){
   // weak-chapter video recommendations
   const vids=weakVideoItems();
   if(vids.length)root.appendChild(videoCard("Revise before your next test","Short revision links picked from your weakest chapters and recent mistakes.",vids));
+
+  countUpStats(root); // animate the headline numbers in
 }
 
 /* -------------------------------- BOOT ----------------------------------- */
@@ -3386,6 +4228,12 @@ applyTheme();
     new Notification("Time to practice! 📘",{body:"You haven't attempted any questions today — keep the streak alive."});
     localStorage.setItem(key,today);
   }catch(e){}
+})();
+// Restore the section from the URL hash (deep-link / refresh keeps your place)
+(function initialRoute(){
+  const h=(location.hash||"").replace("#","");
+  if(h&&h!=="result"&&ROUTES.some(x=>x[0]===h))route=h;
+  try{history.replaceState({route,arg:null},"","#"+route);}catch(e){}
 })();
 render();
 (async()=>{ await hydrateFromCache(); render(); loadPublicTests(); })();
@@ -3438,12 +4286,15 @@ function mdLite(raw){
 const AI_AVATAR_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>';
 const AI_FILE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6"/></svg>';
 const AI_STARTERS=["Explain Newton's third law with an example","Solve: \u222B x\u00b7e^x dx step by step","How should I revise for JEE in the last month?"];
+const AI_COPY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+const AI_RETRY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
 function aiChatRenderMsgs(){
   const box=$("#aiChatMsgs"); if(!box)return; box.innerHTML="";
   if(!aiChatHistory.length){
     const empty=el("div","ai-empty");
     empty.innerHTML=`<span class="ai-avatar">${AI_AVATAR_SVG}</span><h4>Hi! I'm Saarthi 👋</h4>
-      <p>Your AI study buddy — ask any Physics, Chemistry or Maths doubt, or attach a 📎 photo or PDF of a question.</p>`;
+      <p>Your AI study buddy — ask any Physics, Chemistry or Maths doubt, or attach a 📎 photo or PDF of a question.</p>
+      <div class="ai-cap"><div><b>⚡</b>Instant doubts</div><div><b>📷</b>Photo &amp; PDF</div><div><b>🧠</b>Step-by-step</div></div>`;
     const starters=el("div","ai-starters");
     AI_STARTERS.forEach(s=>{
       const b=el("button",null,"💬&nbsp; "+esc(s));b.type="button";b.onclick=()=>{$("#aiChatInput").value=s;aiChatSend();};
@@ -3452,21 +4303,70 @@ function aiChatRenderMsgs(){
     empty.appendChild(starters);
     box.appendChild(empty);
   }
-  aiChatHistory.forEach(m=>{
+  aiChatHistory.forEach((m,idx)=>{
     const row=el("div","ai-msg-row "+m.role);
     if(m.role==="model") row.appendChild(el("span","ai-avatar",AI_AVATAR_SVG));
-    const b=el("div","ai-msg "+m.role);
+    const b=el("div","ai-msg "+m.role+(m.error?" error":""));
     if(m.image){
       if(m.image.isImage&&m.image.previewUrl){const im=el("img","ai-thumb");im.src=m.image.previewUrl;im.alt="Attached question photo";b.appendChild(im);}
       else if(!m.image.isImage){const chip=el("div","ai-file-chip");chip.innerHTML=AI_FILE_SVG+`<span>${esc(m.image.fileName||"attached file")}</span>`;b.appendChild(chip);}
     }
     if(m.pending&&!m.text) b.appendChild(el("span","ai-typing","<i></i><i></i><i></i>"));
+    else if(m.pending&&m.text) b.innerHTML+=mdLite(m.text)+'<span class="ai-caret"></span>';
     else if(m.role==="model") b.innerHTML+=mdLite(m.text||"");
     else b.appendChild(document.createTextNode(m.text||""));
-    row.appendChild(b);
+    // finished model replies get lightweight tools: copy + (on errors) retry
+    if(m.role==="model"&&!m.pending&&m.text){
+      const wrap=el("div","ai-msg-wrap");
+      wrap.appendChild(b);
+      const tools=el("div","ai-msg-tools");
+      const cp=el("button","ai-tool-btn",AI_COPY_SVG+"Copy");cp.type="button";cp.setAttribute("aria-label","Copy reply");
+      cp.onclick=()=>{try{navigator.clipboard.writeText(m.text);cp.innerHTML=AI_COPY_SVG+"Copied!";setTimeout(()=>cp.innerHTML=AI_COPY_SVG+"Copy",1400);}catch(e){toast("Couldn't copy");}};
+      tools.appendChild(cp);
+      if(m.error&&idx===aiChatHistory.length-1){
+        const rt=el("button","ai-tool-btn",AI_RETRY_SVG+"Retry");rt.type="button";rt.setAttribute("aria-label","Retry");
+        rt.onclick=()=>aiChatRetry();
+        tools.appendChild(rt);
+      }
+      wrap.appendChild(tools);
+      row.appendChild(wrap);
+    }else{
+      row.appendChild(b);
+    }
     box.appendChild(row);
   });
   box.scrollTop=box.scrollHeight;
+}
+/** Re-asks the last user message after a failed reply. */
+function aiChatRetry(){
+  const lastErr=aiChatHistory[aiChatHistory.length-1];
+  if(!lastErr||lastErr.role!=="model"||!lastErr.error)return;
+  aiChatHistory.pop();                     // drop the error bubble
+  const lastUser=aiChatHistory[aiChatHistory.length-1];
+  if(!lastUser||lastUser.role!=="user"){aiChatRenderMsgs();return;}
+  aiChatHistory.pop();                     // re-send it through the normal path
+  $("#aiChatInput").value=lastUser.text||"";
+  aiChatRenderMsgs();
+  aiChatSend();
+}
+/** Smoothly types a finished reply into the last bubble (~40 chars per
+ *  frame) — gives the response the alive, streaming feel of premium AI
+ *  chats without needing SSE plumbing. Skipped for reduced-motion users. */
+function aiChatTypeOut(modelMsg,fullText){
+  if(matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches){
+    modelMsg.text=fullText;modelMsg.pending=false;
+    aiChatRenderMsgs();aiChatRenderChips();save_aiChatHistory();return;
+  }
+  let i=0;const step=Math.max(8,Math.round(fullText.length/45));
+  const tick=()=>{
+    if(!aiChatIsOpen){modelMsg.text=fullText;modelMsg.pending=false;aiChatRenderMsgs();aiChatRenderChips();save_aiChatHistory();return;}
+    i=Math.min(fullText.length,i+step);
+    modelMsg.text=fullText.slice(0,i);
+    if(i>=fullText.length){modelMsg.pending=false;aiChatRenderMsgs();aiChatRenderChips();save_aiChatHistory();return;}
+    aiChatRenderMsgs();
+    setTimeout(tick,24);
+  };
+  tick();
 }
 function aiChatRenderChips(){
   const box=$("#aiChatChips"); if(!box)return; box.innerHTML="";
@@ -3502,6 +4402,17 @@ function askAIAbout(q){
   if((q.options||[]).length) parts.push("Options: "+q.options.map(o=>`${o.label.toUpperCase()}) ${o.text}`).join("   "));
   if(q.answer) parts.push("Correct answer: "+String(q.answer).toUpperCase());
   parts.push("Please explain the underlying concept and walk through the solution step by step, simply.");
+  $("#aiChatInput").value=parts.join("\n");
+  aiChatOpen();
+  aiChatSyncSend();
+}
+/** The premium mistake loop: sends the question + the student's OWN wrong
+ *  choice, and asks specifically why that choice was tempting but wrong —
+ *  far more useful than a generic solution. */
+function explainMyMistake(q,myAns){
+  const parts=[`I got this JEE ${q.subject} question WRONG. My answer was ${String(myAns).toUpperCase()}, the correct answer is ${String(q.answer||"?").toUpperCase()}.`, q.text];
+  if((q.options||[]).length) parts.push("Options: "+q.options.map(o=>`${o.label.toUpperCase()}) ${o.text}`).join("   "));
+  parts.push(`Explain: 1) why option ${String(myAns).toUpperCase()} looks tempting but is wrong (the exact trap or misconception), 2) the correct reasoning step by step, 3) one tip so I never repeat this mistake.`);
   $("#aiChatInput").value=parts.join("\n");
   aiChatOpen();
   aiChatSyncSend();
@@ -3551,9 +4462,15 @@ async function aiChatSend(){
     const r=await fetch("/api/public/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({messages:payloadMsgs})});
     const data=await r.json().catch(()=>null);
-    modelMsg.text=(r.ok&&data&&data.reply)?data.reply:((data&&data.error)||"Sorry, I couldn't get a reply just now — please try again.");
+    if(r.ok&&data&&data.reply){
+      aiChatTypeOut(modelMsg,data.reply);   // smooth streaming-style reveal
+      return;
+    }
+    modelMsg.text=(data&&data.error)||"Sorry, I couldn't get a reply just now — please try again.";
+    modelMsg.error=true;
   }catch(e){
     modelMsg.text="Network error — please check your connection and try again.";
+    modelMsg.error=true;
   }
   modelMsg.pending=false;
   aiChatRenderMsgs(); aiChatRenderChips(); save_aiChatHistory();

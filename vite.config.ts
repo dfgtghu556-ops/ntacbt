@@ -14,6 +14,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    server: { allowedHosts: true },
     plugins: [
       // Offline mode: the exam portal keeps working with no network.
       VitePWA({
@@ -23,7 +24,7 @@ export default defineConfig({
         filename: "sw.js",
         manifest: false,
         workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
           navigateFallback: null,
           runtimeCaching: [
             {
