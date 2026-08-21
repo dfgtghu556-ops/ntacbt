@@ -58,7 +58,7 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .nav button.active{background:var(--blue);color:#fff;box-shadow:0 4px 12px -4px color-mix(in srgb,var(--blue) 60%,transparent)}
 .nav button:hover:not(.active){background:var(--blue-soft);color:var(--blue-l)}
 .wrap{max-width:1180px;margin:0 auto;padding:18px 14px 60px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px;animation:fade .35s ease}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .grid{display:grid;gap:14px}
 .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
@@ -543,16 +543,9 @@ html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,
   box-shadow:0 12px 34px -12px rgba(0,0,0,.45);font-weight:600;letter-spacing:.01em}
 /* ---------- swipe page transitions ---------- */
 .wrap{touch-action:pan-y}
-#app.slide-in-right{animation:slideInR .26s cubic-bezier(.22,.9,.28,1)}
-#app.slide-in-left{animation:slideInL .26s cubic-bezier(.22,.9,.28,1)}
-@keyframes slideInR{from{opacity:0;transform:translate3d(46px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
-@keyframes slideInL{from{opacity:0;transform:translate3d(-46px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 /* live drag feedback while a swipe is in progress */
 #app.dragging{transition:none !important;will-change:transform}
 #app.settling{transition:transform .22s cubic-bezier(.22,.9,.28,1),opacity .22s ease}
-/* cards keep their own entrance animation, but must NOT re-animate while the
-   page is sliding or being dragged — the whole viewport is already moving */
-#app.slide-in-right .card,#app.slide-in-left .card,#app.dragging .card,#app.settling .card{animation:none}
 /* swipe hint pill (mobile, first visits) */
 .swipe-hint{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:120;
   display:flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;color:#fff;font-size:13px;font-weight:700;
@@ -651,7 +644,7 @@ html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,
 .qpane{font-size:calc(1em * var(--exam-fs,1))}
 /* respect users who prefer less motion */
 @media (prefers-reduced-motion:reduce){
-  #app.slide-in-right,#app.slide-in-left,.btn:after,.swipe-hint .arr,.fc-card{animation:none !important;transition:none !important}
+  .btn:after,.swipe-hint .arr,.fc-card{animation:none !important;transition:none !important}
   html{scroll-behavior:auto}
 }
 </style>
@@ -1696,21 +1689,20 @@ const ROUTES=[["dash","Dashboard","🏠"],["library","Test Library","📚"],["up
   ["analytics","Analytics","📊"],["mastery","Mastery","🎯"],["notebook","Mistake Notebook","📓"],["formulas","Formulas","🧮"],
   ["practice","Practice","✍️"],["review","Review","🔁"],["search","Search","🔍"],["settings","Settings","⚙️"]];
 let route="dash", routeArg=null;
-/** Navigate. dir: 1 = slide in from right, -1 = from left, 0 = plain fade. */
-function go(r,arg,dir){
-  const from=ROUTES.findIndex(x=>x[0]===route), to=ROUTES.findIndex(x=>x[0]===r);
-  if(dir===undefined) dir=(from>-1&&to>-1&&from!==to)?(to>from?1:-1):0;
+/** Navigate. Extra args (e.g. swipe direction) are ignored — page-slide
+ *  animations were removed because they caused swipe lag. */
+function go(r,arg){
   // Keep the browser/phone back button useful: each section change becomes a
   // history entry, so "back" returns to the previous section instead of
   // leaving the site.
   if(route!==r||routeArg!==(arg||null)){try{history.pushState({route:r,arg:arg||null},"","#"+r);}catch(e){}}
-  route=r;routeArg=arg||null;render(dir);window.scrollTo(0,0);
+  route=r;routeArg=arg||null;render();window.scrollTo(0,0);
 }
 window.addEventListener("popstate",e=>{
   if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
   const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
   route=({dash:1,library:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,search:1,settings:1,result:1}[r])?r:"dash";
-  routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
+  routeArg=st.arg||null;render();window.scrollTo({top:0});
 });
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
@@ -1721,14 +1713,9 @@ function renderNav(){
   const act=n.querySelector("button.active");
   if(act&&act.scrollIntoView)act.scrollIntoView({block:"nearest",inline:"center",behavior:"instant"});
 }
-function render(dir=0){
+function render(){
   renderNav();
   const a=$("#app"); a.innerHTML="";
-  a.classList.remove("slide-in-right","slide-in-left");
-  void a.offsetWidth; // restart the animation even on rapid swipes
-  if(dir===1)a.classList.add("slide-in-right");
-  else if(dir===-1)a.classList.add("slide-in-left");
-  if(dir)a.addEventListener("animationend",()=>a.classList.remove("slide-in-right","slide-in-left"),{once:true});
   a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
@@ -4517,4 +4504,3 @@ async function aiChatSend(){
 </script>
 </body>
 </html>
-
