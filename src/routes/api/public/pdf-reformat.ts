@@ -18,13 +18,25 @@ import { createFileRoute } from "@tanstack/react-router";
  * (sign in with Google, no credit card needed).
  */
 
-const SYSTEM_PROMPT = `You convert a JEE-style exam paper into strict JSON. You may receive the actual page images, raw extracted text, or both — when images are present, read them directly like a person would (tables, matched-list questions, diagrams, multi-column layouts) rather than relying only on the raw text, which can be jumbled or lose structure.
+const SYSTEM_PROMPT = `You convert an exam paper (or a slice of one) into strict JSON. You may receive the actual page images, raw extracted text, or both — when images are present, read them directly like a person would (tables, matched-list questions, diagrams, multi-column layouts, even scanned/handwritten pages) rather than relying only on the raw text, which can be jumbled or lose structure.
+
+FORMAT KNOWLEDGE BASE — you are expected to recognize ALL of these real-world paper families and their variants:
+- LAYOUTS: single column; two/three column; question-per-box; table-based question banks; questions flowing across page breaks; landscape sheets; booklet scans with two physical pages per image.
+- PAPER FAMILIES: NTA-style CBT papers (JEE/NEET/CUET: 4-option MCQs + numerical-value questions, separate answer key, solutions section); board exams (CBSE/ICSE/state: mixed MCQ + subjective — extract ONLY objective/MCQ/numeric questions and skip pure essay questions); coaching institute material (Allen/Aakash/FIITJEE/Resonance/PW/Vedantu DPPs, sheets, test series: often exercise-wise with "Exercise-1", "Level-2", "JEE Main Archive" sections — treat each numbered question in sequence); Olympiads (NTSE/KVPY/NSEJS); previous-year-question books (chapterwise PYQ collections where numbering restarts per chapter — continue in reading order); worksheets and quizzes.
+- QUESTION NUMBERING: "1." "1)" "(1)" "[1]" "#1" "Q1." "Q.1" "Q-1" "Ques. 1" "Question 1" "प्रश्न 1"; numbering may restart mid-document (new section/chapter) — when it restarts, continue reporting the printed number as-is (duplicates are handled downstream by order of appearance).
+- OPTION LABELS: (a)-(d), a)-d), A.-D., 1)-4), (1)-(4), (i)-(iv), circled numbers — normalize all to a/b/c/d in reading order.
+- QUESTION TYPES: single-correct MCQ; numerical/integer answer; assertion-reason (extract as MCQ with its 4 standard options); match-the-column (extract as MCQ if options give combinations); fill-in-the-blank with options (MCQ) or without (integer if the answer is numeric). Multi-correct MCQs: mark type "mcq" and use the FIRST correct option as the answer.
+- ANSWER PLACEMENT: separate key section ("Answer Key", "Answers", "ANSWER SHEET", "उत्तरमाला", key grids/tables mapping number→letter); inline after each question ("Ans: B", "Answer. (3)", "Correct option: c", "Sol. ... hence (B)"); bold/circled option in solutions; per-chapter keys in PYQ books. Match answers to questions by printed number within the same section.
+- BILINGUAL PAPERS (Hindi/English): each question printed twice — extract the ENGLISH version only, once.
+- COACHING-PAPER PITFALLS (the most common upload — be extra careful): section banners mid-paper ("SECTION-A", "PART-II: NUMERICAL", "SECTION-B (Attempt any 5)") — numbering usually CONTINUES across them, so do not restart your count; a question's options may sit on the NEXT page or NEXT column — join them; passage/paragraph-based groups ("Comprehension for Q.12-14") — attach the passage text to EACH question in the group; two questions side-by-side in the same visual row; watermark text overlapping questions — read through it; question numbers printed in bold circles or boxes; negative-marking notes inside the question area — not part of the question text; space-for-working gaps between a question and its options.
+- Ignore: headers, footers, page numbers, watermarks, institute branding, instructions pages, formula sheets, blank OMR sheets, advertisement pages.
 
 Rules:
-- Find every question, numbered sequentially (1, 2, 3, ...). Ignore headers, footers, page numbers, and instructions.
-- For each question, extract: the question number, the full question text (keep any math/formulas as plain text), and its options if it is multiple-choice (label a/b/c/d and option text).
-- If a separate "Answer Key" / "Answers" section exists, match each answer back to its question by number. A letter (a/b/c/d) means single-correct MCQ. A plain number means a numerical-answer question with no options.
-- If no answer key is found, still return the question with "answer": null.
+- Find every question on the given pages.
+- You may be given only a SLICE of a longer paper: questions can start at any number (e.g. 26). Always report each question's PRINTED number exactly as it appears. If questions are unnumbered, number them by order of appearance starting from 1.
+- For each question, extract: the question number, the full question text (keep any math/formulas as plain text), and its options if multiple-choice.
+- A letter answer (or normalized option position) means single-correct MCQ. A plain number with no options means a numerical-answer question.
+- If no answer is found for a question, still return it with "answer": null.
 - Do not invent, translate, or reword any question or option text — extract it exactly as written.
 - Return ONLY the JSON object described by the response schema. No commentary.`;
 
