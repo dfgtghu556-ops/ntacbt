@@ -721,6 +721,24 @@ img.qimg{cursor:zoom-in}
 .nb-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .nb-filters select,.nb-filters input{flex:1;min-width:130px}
 .college-tb td:first-child{font-weight:700}
+/* ---------- AI chat: professional message formatting ---------- */
+.ai-h{font-weight:800;font-size:14.5px;margin:10px 0 4px;color:var(--ink);letter-spacing:-.01em}
+.ai-hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+.ai-msg.model{font-size:14.5px;line-height:1.65}
+.ai-msg.model ul,.ai-msg.model ol{margin:6px 0;padding-left:22px}
+.ai-msg.model li{margin:4px 0}
+.ai-msg.model code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+/* answer line highlight: the "Answer:" line models are told to end with */
+.ai-answer-line{display:block;margin-top:8px;padding:8px 12px;border-radius:10px;
+  background:color-mix(in srgb,var(--green) 10%,var(--panel));border-left:3px solid var(--green);font-weight:700}
+/* polished video-solution picker */
+.vid-modal .vidlink{padding:13px 14px;border-radius:14px;transition:.15s;line-height:1.45}
+.vid-modal .vidlink:hover{transform:translateY(-1px);box-shadow:0 8px 20px -12px rgba(15,10,40,.25)}
+.vid-modal .vidlink .vic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;font-size:16px}
+.vid-modal .vidlink{display:flex;align-items:center;gap:12px;justify-content:flex-start}
+.vid-modal .vidlink b{display:block;font-size:13.5px}
+.vid-modal .vidlink small{color:var(--muted);font-weight:600}
+.vid-modal .vidlink .go{margin-left:auto;color:var(--muted);flex:0 0 auto}
 /* ---------- inline SVG icon system (replaces emojis) ---------- */
 svg.ic{vertical-align:-0.15em;flex-shrink:0;display:inline-block}
 .btn svg.ic,.iconbtn svg.ic{margin-right:2px}
@@ -860,7 +878,7 @@ svg.ic{vertical-align:-0.15em;flex-shrink:0;display:inline-block}
       <span class="ai-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span>
       <div>
         <b>Saarthi</b>
-        <div class="ai-chat-sub"><span class="ai-dot"></span>Your AI study buddy — Physics · Chemistry · Maths</div>
+        <div class="ai-chat-sub"><span class="ai-dot"></span>Your personal AI mentor — knows your scores, weak chapters &amp; schedule</div>
       </div>
     </div>
     <button id="aiChatReset" class="iconbtn" type="button" title="Start a new conversation" aria-label="Clear chat"><span data-ic="trash"></span></button>
@@ -3177,6 +3195,52 @@ function revisionVideoLink(subject,topic){
   const source=subject==="Physics"?"Eduniti":subject==="Chemistry"?"DexterChem":"MathonGo";
   return "https://www.youtube.com/results?search_query="+encodeURIComponent(`${topic} JEE Main one shot short revision ${source}`);
 }
+/* ---------------------- VIDEO SOLUTION FINDER -----------------------------
+   One tap on any question → a smart search query built from the question's
+   REAL data (chapter + cleaned question text + exam context) opens video
+   results the student can watch immediately. Zero API keys, zero cost,
+   works for every question on every device. Sources offered:
+   • YouTube (all channels)   • PW / Vedantu / eSaral channel-scoped
+   • Google Videos (catches Doubtnut/Toppr indexed solutions) */
+function videoSolutionQuery(q){
+  // distinctive middle chunk of the stem works best: skip generic openers,
+  // keep numbers/symbols (they make the search unique to THIS question)
+  const raw=String(q.text||"").replace(/\s+/g," ").trim();
+  const cleaned=raw.replace(/^(q(uestion)?\s*\.?\s*\d+[.):]?\s*)/i,"");
+  const snippet=cleaned.slice(0,110);
+  const parts=[];
+  if(snippet.length>=25)parts.push('"'+snippet.replace(/"/g,"")+'"');
+  else{parts.push(snippet);parts.push(q.chapter||"");}
+  parts.push(q.subject||"","JEE solution");
+  return parts.filter(Boolean).join(" ");
+}
+function openVideoSolutions(q){
+  const query=videoSolutionQuery(q);
+  const fallback=[q.chapter||q.subject,q.subject,"JEE",q.type==="integer"?"numerical":"MCQ","solution"].filter(Boolean).join(" ");
+  const enc=encodeURIComponent(query), encFb=encodeURIComponent(fallback);
+  const m=el("div","modal vid-modal");
+  const row=(href,icoName,icoBg,icoColor,title,sub)=>`
+    <a class="vidlink" target="_blank" rel="noopener noreferrer" href="${href}">
+      <span class="vic" style="background:${icoBg};color:${icoColor}">${ic(icoName,18)}</span>
+      <span><b>${title}</b><small>${sub}</small></span>
+      <span class="go">${ic("play",14)}</span></a>`;
+  m.innerHTML=`<div class="box" style="max-width:520px">
+    <div class="section-title"><span class="ico">${ic("play")}</span><h3 style="margin:0">Video solutions · Q${q.no}</h3></div>
+    <div class="small muted" style="margin:6px 0 12px">Each search is built from this question's own text — the exact video is usually in the first few results.</div>
+    <div class="vidlist">
+      ${row("https://www.youtube.com/results?search_query="+enc,
+        "play","rgba(255,0,0,.12)","#e02424","YouTube — this exact question","All channels · best first stop")}
+      ${row("https://www.google.com/search?tbm=vid&q="+enc,
+        "search","rgba(66,133,244,.12)","#3b6fd4","Google Videos — this question","Also finds Doubtnut · Toppr · Filo solutions")}
+      ${row("https://www.youtube.com/results?search_query="+encodeURIComponent(query+" Physics Wallah OR Vedantu OR eSaral"),
+        "gradcap","rgba(122,62,200,.12)","#7a3ec8","Top coaching channels","PW · Vedantu · eSaral preferred")}
+      ${row("https://www.youtube.com/results?search_query="+encFb,
+        "library","rgba(30,158,87,.12)","#1e9e57","Chapter concept videos",esc(q.chapter||q.subject||"topic")+" — if the exact question isn't found")}
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost sm" data-x>Close</button></div></div>`;
+  m.querySelector("[data-x]").onclick=()=>m.remove();
+  document.body.appendChild(m);
+}
 function revisionSection(rows){
   const upcoming=rows.filter(r=>!r.done&&new Date(r.date)>=new Date(todayKey(Date.now()))).slice(0,6);
   const c=el("div","card");
@@ -3781,7 +3845,12 @@ function viewSearch(root){
       d.appendChild(imgTag(qq.img,"qimg",qq.text));
       const b=el("button","btn sm ghost","Show solution");b.style.marginTop="8px";
       b.onclick=()=>{b.remove();d.appendChild(imgTag(qq.solImg,"qimg",qq.solText));};
-      d.appendChild(b);res.appendChild(d);
+      d.appendChild(b);
+      const vb2=el("button","btn sm ghost",ic("play")+" Video solution");
+      vb2.type="button";vb2.style.cssText="margin-top:8px;margin-left:8px";
+      vb2.onclick=()=>openVideoSolutions(qq);
+      d.appendChild(vb2);
+      res.appendChild(d);
     });
     shown+=slice.length;
     const more=res.querySelector("[data-more]");if(more)more.remove();
@@ -4371,7 +4440,13 @@ function viewResult(root){
     sol.innerHTML=`<summary>Step-by-step solution</summary>`;
     const si=el("div","in");sol.appendChild(si);
     let loaded=false;
-    sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;si.appendChild(imgTag(x.q.solImg,"qimg",x.q.solText));}});
+    sol.addEventListener("toggle",()=>{if(sol.open&&!loaded){loaded=true;
+      si.appendChild(imgTag(x.q.solImg,"qimg",x.q.solText));
+      const vb=el("button","btn sm ghost",ic("play")+" Watch video solution");
+      vb.type="button";vb.style.marginTop="10px";
+      vb.onclick=()=>openVideoSolutions(x.q);
+      si.appendChild(vb);
+    }});
     d.appendChild(sol);
     const foot=el("div","qrev-foot");
     const bm=el("button","btn sm ghost",S.bookmarks.includes(x.q.id)?ic("bookmarkFill")+" Bookmarked":ic("bookmark")+" Bookmark");
@@ -4385,6 +4460,10 @@ function viewResult(root){
     askAi.type="button";askAi.setAttribute("aria-label",`Ask the AI about question ${x.q.no}`);
     askAi.onclick=()=>askAIAbout(x.q);
     foot.appendChild(askAi);
+    const vidBtn=el("button","btn sm ghost",ic("play")+" Video solution");
+    vidBtn.type="button";vidBtn.setAttribute("aria-label",`Find a video solution for question ${x.q.no}`);
+    vidBtn.onclick=()=>openVideoSolutions(x.q);
+    foot.appendChild(vidBtn);
     if(x.status==="wrong"){
       const why=el("button","btn sm warn",ic("bulb")+" Explain my mistake");
       why.type="button";why.setAttribute("aria-label",`Ask the AI why answer ${x.ans} was wrong for question ${x.q.no}`);
@@ -5358,6 +5437,9 @@ function viewNotebook(root){
     const sb=el("button","btn sm ghost","Show solution");sb.style.margin="8px 0";
     sb.onclick=()=>{sb.remove();d.appendChild(imgTag(x.q.solImg,"qimg",x.q.solText));};
     d.appendChild(sb);
+    const vb=el("button","btn sm ghost",ic("play")+" Video solution");vb.type="button";vb.style.margin="8px 0 8px 8px";
+    vb.onclick=()=>openVideoSolutions(x.q);
+    d.appendChild(vb);
     const askAi=el("button","btn sm ghost",ic("robot")+" Ask AI");askAi.type="button";askAi.style.margin="8px 0 8px 8px";
     askAi.onclick=()=>askAIAbout(x.q);
     d.appendChild(askAi);
@@ -5972,6 +6054,9 @@ function mdLite(raw){
     const t=line.trim();
     if(/^[-*]\s+/.test(t)){if(!inUl){closeLists();html+="<ul>";inUl=true;}html+="<li>"+inline(t.replace(/^[-*]\s+/,""))+"</li>";}
     else if(/^\d+[.)]\s+/.test(t)){if(!inOl){closeLists();html+="<ol>";inOl=true;}html+="<li>"+inline(t.replace(/^\d+[.)]\s+/,""))+"</li>";}
+    else if(/^#{1,4}\s+/.test(t)){closeLists();html+="<div class='ai-h'>"+inline(t.replace(/^#{1,4}\s+/,""))+"</div>";} // OpenRouter models emit ### headers
+    else if(/^(-{3,}|_{3,}|\*{3,})$/.test(t)){closeLists();html+="<hr class='ai-hr'>";}
+    else if(/^(\*\*)?answer\s*[:]/i.test(t)){closeLists();html+="<span class='ai-answer-line'>"+inline(t)+"</span>";} // highlight the final answer
     else if(!t){closeLists();html+="<br>";}
     else{closeLists();html+=inline(line)+"<br>";}
   });
@@ -5980,7 +6065,7 @@ function mdLite(raw){
 }
 const AI_AVATAR_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>';
 const AI_FILE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6"/></svg>';
-const AI_STARTERS=["Explain Newton's third law with an example","Solve: \u222B x\u00b7e^x dx step by step","How should I revise for JEE in the last month?"];
+const AI_STARTERS=["How am I performing? Review my recent tests","What should I revise first this week?","Am I ready for my next mock test?","Solve: \u222B x\u00b7e^x dx step by step"];
 const AI_COPY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
 const AI_RETRY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
 function aiChatRenderMsgs(){
@@ -5988,7 +6073,7 @@ function aiChatRenderMsgs(){
   if(!aiChatHistory.length){
     const empty=el("div","ai-empty");
     empty.innerHTML=`<span class="ai-avatar">${AI_AVATAR_SVG}</span><h4>Hi! I'm Saarthi</h4>
-      <p>Your AI study buddy — ask any Physics, Chemistry or Maths doubt, or attach a photo or PDF of a question.</p>
+      <p>Your personal AI mentor — I can see your real scores, weak chapters, streak and schedule. Ask me to review your performance, plan your revision, or solve any doubt. Attach a photo or PDF of a question anytime.</p>
       <div class="ai-cap"><div><b>${ic("zap")}</b>Instant doubts</div><div><b>${ic("camera")}</b>Photo &amp; PDF</div><div><b>${ic("brain")}</b>Step-by-step</div></div>`;
     const starters=el("div","ai-starters");
     AI_STARTERS.forEach(s=>{
@@ -6094,7 +6179,7 @@ function aiChatRenderChips(){
   const box=$("#aiChatChips"); if(!box)return; box.innerHTML="";
   const last=aiChatHistory[aiChatHistory.length-1];
   if(!last||last.role!=="model"||last.pending) return;
-  ["Explain more simply","Give me a similar question","Show the key formula"].forEach(c=>{
+  ["Explain more simply","Give me a similar question","Show the key formula","What should I study next?"].forEach(c=>{
     const b=el("button",null,c);b.type="button";b.onclick=()=>{$("#aiChatInput").value=c;aiChatSend();};
     box.appendChild(b);
   });
@@ -6167,6 +6252,53 @@ function aiChatSetFile(file){
   };
   reader.readAsDataURL(file);
 }
+/** Vedantu-AI-style personalization: a compact, real snapshot of THIS
+ * student's data sent with every chat message, so Saarthi can answer
+ * "how am I doing?", "what should I revise?", "am I ready for the next
+ * test?" with their actual numbers instead of generic advice.
+ * Everything is computed from local data already on the device;
+ * bounded to ~2KB so it never bloats requests. */
+function buildStudentContext(){
+  try{
+    const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
+    if(!done.length)return "New student — no tests attempted yet. Encourage them to take their first mock from the Test Library.";
+    const parts=[];
+    const st=streakInfo();
+    // last up-to-3 results
+    const recent=done.slice(-3).map(a=>{
+      const t=testById(a.testId);
+      const r=a.result.all;
+      let pctl="";
+      try{if(t){const ai=analyseCached(t,a);pctl=` , percentile ${ai.percentile}`;}}catch(e){}
+      return `${t?t.name:"Test"} (${fmtDate(a.submittedAt)}): ${r.marks}/${r.max} marks, ${r.accuracy}% accuracy, ${r.correct}C/${r.wrong}W/${r.skipped}S${pctl}`;
+    });
+    parts.push("Recent tests: "+recent.join(" | "));
+    // subject accuracies (lifetime)
+    const g=globalStats();
+    if(g.ranked&&g.ranked.length)parts.push("Subject accuracy: "+g.ranked.map(x=>`${x.s} ${x.acc}%`).join(", "));
+    // weakest chapters by priority
+    const prios=chapterPriorities().slice(0,5);
+    if(prios.length)parts.push("Weakest chapters (fix-first order): "+prios.map(p=>`${p.name} ${p.acc}% over ${p.n}Q`).join("; "));
+    // mistake profile from their own tags
+    const tags={concept:0,silly:0,guessed:0};
+    Object.values(S.qtags||{}).forEach(v=>{if(tags[v]!=null)tags[v]++;});
+    if(tags.concept+tags.silly+tags.guessed>0)parts.push(`Self-tagged mistakes: ${tags.concept} concept gaps, ${tags.silly} silly, ${tags.guessed} guesses`);
+    // spaced review + streak + goal
+    const due=dueReviewQuestions().length;
+    parts.push(`Streak: ${st.streak} day(s). Due spaced-review questions today: ${due}. Daily goal: ${S.settings.dailyGoal||20} questions.`);
+    // trajectory + target
+    const trend=percentileTrend();
+    if(trend.projected!=null)parts.push(`Projected exam-day percentile: ${trend.projected}${S.settings.targetPercentile?` (target ${S.settings.targetPercentile})`:""}.`);
+    if(S.settings.examDate){
+      const days=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);
+      if(days>0)parts.push(`JEE Main exam in ${days} day(s) (${S.settings.examDate}).`);
+    }
+    // next scheduled mock
+    const sched=(S.schedules||[]).filter(s2=>s2.when>Date.now()).sort((a,b)=>a.when-b.when)[0];
+    if(sched){const t2=testById(sched.testId);if(t2)parts.push(`Next scheduled mock: ${t2.name} at ${new Date(sched.when).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}.`);}
+    return parts.join("\n").slice(0,2400);
+  }catch(e){return "";}
+}
 async function aiChatSend(){
   const inp=$("#aiChatInput"); const text=(inp.value||"").trim();
   const file=aiChatPendingFile;
@@ -6182,7 +6314,7 @@ async function aiChatSend(){
     const payloadMsgs=aiChatHistory.filter(m=>!m.pending).slice(-16).map(m=>({role:m.role,text:m.text}));
     if(file) payloadMsgs[payloadMsgs.length-1].image={mimeType:file.mimeType,data:file.data};
     const r=await fetch("/api/public/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({messages:payloadMsgs})});
+      body:JSON.stringify({messages:payloadMsgs,studentContext:buildStudentContext()})});
     const data=await r.json().catch(()=>null);
     if(r.ok&&data&&data.reply){
       aiChatTypeOut(modelMsg,data.reply);   // smooth streaming-style reveal
