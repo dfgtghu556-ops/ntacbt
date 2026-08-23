@@ -586,13 +586,15 @@ html.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px -18px rgba(0,0,
   box-shadow:0 12px 34px -12px rgba(0,0,0,.45);font-weight:600;letter-spacing:.01em}
 /* ---------- swipe page transitions ---------- */
 .wrap{touch-action:pan-y}
-#app.slide-in-right{animation:slideInR .26s cubic-bezier(.22,.9,.28,1)}
-#app.slide-in-left{animation:slideInL .26s cubic-bezier(.22,.9,.28,1)}
-@keyframes slideInR{from{opacity:0;transform:translate3d(46px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
-@keyframes slideInL{from{opacity:0;transform:translate3d(-46px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+/* Subtle by design: a short 14px nudge, not a big page fling — big slides
+   felt heavy and slow on phones. Fast + barely-there = professional. */
+#app.slide-in-right{animation:slideInR .16s ease-out}
+#app.slide-in-left{animation:slideInL .16s ease-out}
+@keyframes slideInR{from{opacity:.55;transform:translate3d(14px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes slideInL{from{opacity:.55;transform:translate3d(-14px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 /* live drag feedback while a swipe is in progress */
 #app.dragging{transition:none !important;will-change:transform} /* PERF: promotes to its own GPU layer only while dragging */
-#app.settling{transition:transform .22s cubic-bezier(.22,.9,.28,1)}
+#app.settling{transition:transform .15s ease-out}
 /* swipe hint pill (mobile, first visits) */
 .swipe-hint{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:120;
   display:flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;color:#fff;font-size:13px;font-weight:700;
@@ -817,6 +819,109 @@ svg.ic{vertical-align:-0.15em;flex-shrink:0;display:inline-block}
    group-level fade is the only animation on tab switches now. */
 .viewtab-group .card,.viewtab-group .stat{animation:none}
 @media(max-width:640px){.viewtabs button{min-width:96px;font-size:12px;padding:9px 8px}}
+/* ---------- Live Classes (free YouTube live finder) ---------- */
+.live-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.live-toolbar select{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-weight:600}
+.live-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(211,59,59,.1);color:#d33b3b;
+  border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800;letter-spacing:.4px}
+.live-pill .dot{width:8px;height:8px;border-radius:50%;background:#d33b3b;animation:liveBlink 1.4s ease-in-out infinite}
+@keyframes liveBlink{0%,100%{opacity:1}50%{opacity:.35}}
+.live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.live-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.live-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px -14px rgba(20,10,40,.3)}
+.live-thumb{position:relative;aspect-ratio:16/9;background:#0d0d18;display:block}
+.live-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.live-thumb .lbadge{position:absolute;left:8px;top:8px;background:#d33b3b;color:#fff;font-size:11px;font-weight:800;
+  letter-spacing:.6px;border-radius:6px;padding:3px 8px;display:flex;align-items:center;gap:5px}
+.live-thumb .lbadge .dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:liveBlink 1.4s infinite}
+.live-thumb .viewers{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.72);color:#fff;font-size:11.5px;
+  font-weight:700;border-radius:6px;padding:3px 8px}
+.live-body{padding:12px 13px 13px;display:flex;flex-direction:column;gap:7px;flex:1}
+.live-title{font-weight:700;font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.live-ch{font-size:12.5px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+.live-ch .vbadge{color:var(--accent-text)}
+.live-why{font-size:12.5px;color:var(--muted);line-height:1.5;background:var(--blue-soft);border-radius:9px;padding:7px 10px}
+.live-why b{color:var(--accent-text)}
+.live-match{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:var(--green);
+  background:rgba(30,158,87,.1);border-radius:999px;padding:3px 10px;width:fit-content}
+.live-foot{margin-top:auto;display:flex;gap:8px;align-items:center}
+.live-foot .btn{flex:1;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.live-empty{text-align:center;padding:34px 16px;color:var(--muted)}
+.live-chrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.live-chlink{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+  background:var(--panel);font-weight:700;font-size:13.5px;transition:.15s;color:var(--ink)}
+.live-chlink:hover{border-color:var(--blue);transform:translateY(-1px)}
+.live-chlink .lgo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;color:#fff;font-size:13px}
+.live-meta{font-size:12px;color:var(--muted);font-weight:600}
+@media(max-width:640px){.live-grid{grid-template-columns:1fr}}
+/* ==================== RESPONSIVE / DEVICE OPTIMIZATION PASS ====================
+   Professional adaptive layout: every screen size gets a deliberate layout,
+   nothing overflows sideways, tap targets stay comfortable, and phone
+   browsers (iOS Safari dynamic bars, Android keyboards) are handled. */
+/* 1. Stray wide content must NEVER cause sideways page wobble.
+   overflow-x:clip (not hidden) keeps position:sticky working. */
+html,body{overflow-x:clip}
+/* 2. Media can never blow the layout open */
+img,video{max-width:100%;height:auto}
+/* 3. Long unbroken strings (formulas, URLs, pasted text) wrap instead of
+   stretching cards past the viewport */
+.card,.qtext,.ai-msg,.modal .box{overflow-wrap:break-word;word-break:break-word}
+/* 4. Tall modals scroll inside themselves instead of spilling off-screen */
+.modal .box{max-height:min(88vh,880px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* 5. Phones & small tablets */
+@media(max-width:640px){
+  .wrap{padding:12px 10px 72px}
+  .card{padding:13px;margin-bottom:12px}
+  .grid{gap:10px}
+  h2{font-size:21px}
+  .stat{padding:12px 13px}
+  .stat .v{font-size:23px}
+  .topbar{gap:8px}
+  .topbar .brand{font-size:14px}
+  .topbar .brand span{display:none} /* drop the "CBT Platform" tail — brand stays readable */
+  #offlineDlLabel{display:none}     /* icon-only offline button on phones */
+  .modal{padding:10px}
+  /* iOS Safari auto-zooms into inputs under 16px — set 16px so focusing
+     an input never zooms the whole page sideways */
+  input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=search],input[type=email],select,textarea{font-size:16px}
+  table{font-size:12.5px}
+  /* wide tables scroll inside themselves instead of squeezing the page
+     (block table = its own scroll container; cards keep overflow visible
+     so nothing else gets clipped) */
+  .card table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ai-chat-fab{width:52px;height:52px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+}
+/* 6. Exam screen on phones: compact header, full-width foot buttons */
+@media(max-width:560px){
+  .exam-head{padding:6px 8px;gap:6px}
+  .exam-head .small{display:none} /* "Time Left" label — the timer explains itself */
+  .exam-head .iconbtn{padding:7px 8px}
+  .exam-foot{gap:6px;padding:8px}
+  .exam-foot .btn{padding:11px 10px;font-size:13px;flex:1 1 auto}
+  .qpane{padding:11px}
+}
+/* 7. Very small phones (<380px): scale the type ramp down one notch */
+@media(max-width:380px){
+  body{font-size:14px}
+  .wrap{padding:10px 8px 68px}
+  .stat .v{font-size:20px}
+  h2{font-size:19px}
+  .btn{padding:9px 13px}
+}
+/* 8. Landscape phones: shorter palette sheet so the question stays visible */
+@media(max-height:480px) and (orientation:landscape){
+  .palette{max-height:82vh}
+  .modal .box{max-height:94vh}
+}
+/* 9. Notched phones (PWA/fullscreen): respect safe areas */
+@supports(padding:max(0px)){
+  .topbar{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+  .exam-foot{padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .ai-chat-inputrow{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+}
+/* 10. Large desktop screens: use the room — wider content column */
+@media(min-width:1600px){.wrap{max-width:1320px}}
 /* respect users who prefer less motion */
 @media (prefers-reduced-motion:reduce){
   #app.slide-in-right,#app.slide-in-left,.logo:after,.btn:after,.swipe-hint .arr,.fc-card{animation:none !important;transition:none !important}
@@ -2419,7 +2524,7 @@ function analyse(test,attempt){
 /* ------------------------------- 6. ROUTER ------------------------------- */
 const ROUTES=[["dash","Dashboard","home"],["library","Test Library","library"],["upload","Upload PDFs","upload"],["planner","Planner","calendar"],
   ["analytics","Analytics","chart"],["mastery","Mastery","target"],["notebook","Mistake Notebook","notebook"],["formulas","Formulas","formula"],
-  ["practice","Practice","pencil"],["review","Review","repeat"],["search","Search","search"],["settings","Settings","settings"]];
+  ["practice","Practice","pencil"],["review","Review","repeat"],["live","Live Classes","wave"],["search","Search","search"],["settings","Settings","settings"]];
 let route="dash", routeArg=null;
 /** Navigate. dir: 1 = slide in from right, -1 = from left, 0 = plain fade. */
 function go(r,arg,dir){
@@ -2437,7 +2542,7 @@ function go(r,arg,dir){
 window.addEventListener("popstate",e=>{
   if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
   const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
-  route=({dash:1,library:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,search:1,settings:1,result:1}[r])?r:"dash";
+  route=({dash:1,library:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,live:1,search:1,settings:1,result:1}[r])?r:"dash";
   routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
 });
 function renderNav(){
@@ -2464,7 +2569,7 @@ function render(dir=0){
   a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
-    practice:viewPractice,review:viewReview,search:viewSearch,result:viewResult}[route]||viewDash)(a);
+    practice:viewPractice,review:viewReview,live:viewLive,search:viewSearch,result:viewResult}[route]||viewDash)(a);
 
 }
 
@@ -2495,7 +2600,11 @@ function render(dir=0){
     rafId=0;
     if(!tracking||!horiz)return;
     const a=appEl(),i=routeIdx();
-    const capped=((dx>0&&i<=0)||(dx<0&&i>=ROUTES.length-1))?dx*0.25:dx*0.6;
+    // Gentle drag feedback: the page follows the finger only a little
+    // (30%, capped at 56px) instead of dragging half the screen along —
+    // less motion, less GPU work, feels tighter on both directions.
+    const k=((dx>0&&i<=0)||(dx<0&&i>=ROUTES.length-1))?0.12:0.3;
+    const capped=Math.max(-56,Math.min(56,dx*k));
     a.style.transform=`translate3d(${capped}px,0,0)`;
   };
   document.addEventListener("touchstart",e=>{
@@ -2518,7 +2627,7 @@ function render(dir=0){
     if(rafId){cancelAnimationFrame(rafId);rafId=0;}
     a.classList.remove("dragging");a.classList.add("settling");
     a.style.transform="";
-    setTimeout(()=>a.classList.remove("settling"),240);
+    setTimeout(()=>a.classList.remove("settling"),170);
   };
   document.addEventListener("touchend",e=>{
     if(!tracking)return;tracking=false;
@@ -3778,6 +3887,200 @@ function allUniqueQuestions(){
     if(seen.has(q.id))return;seen.add(q.id);out.push({t,q});
   }));
   return out;
+}
+/* ======================= LIVE CLASSES (free, YouTube) =======================
+   The server (/api/public/live-classes) scans YouTube's public live-filtered
+   search results and returns everything streaming RIGHT NOW for JEE /
+   Class 11 / Class 12 (optionally one subject). The client then RANKS and
+   EXPLAINS each stream: trusted-channel boost, viewer-count boost,
+   title-keyword matching against THIS student's weakest chapters — so the
+   list isn't just "what's live" but "what's live that YOU should watch,
+   and why". Zero API keys, zero cost. */
+const LIVE_TRUSTED=[ // [match-in-channel-name, display, why it's good]
+  ["physics wallah","Physics Wallah","India's most-followed free JEE teacher — concept-first, Hinglish"],
+  ["pw ","PW","Physics Wallah family channel — free structured JEE teaching"],
+  ["jee wallah","JEE Wallah","PW's dedicated JEE channel — targeted JEE Main/Advanced prep"],
+  ["vedantu","Vedantu","Top-rated live master-classes with in-class quizzes"],
+  ["unacademy","Unacademy","Big-name educators, JEE-specific live sessions"],
+  ["esaral","eSaral","Kota faculty (ex-Allen/Bansal) teaching free"],
+  ["mathongo","MathonGo","JEE Maths specialists — great problem-solving sessions"],
+  ["physics galaxy","Physics Galaxy","Ashish Arora sir — deep physics concept builder"],
+  ["motion","Motion","Kota coaching institute NV Sir team"],
+  ["aakash","Aakash","Established national coaching brand"],
+  ["allen","ALLEN","Kota's biggest institute — exam-pattern aligned"],
+  ["infinity learn","Infinity Learn","Sri Chaitanya's online arm — strong for JEE"],
+  ["doubtnut","Doubtnut","Doubt-solving specialists — good for quick concepts"],
+  ["next toppers","Next Toppers","Very popular for class 11-12 boards + foundation"],
+  ["magnet brains","Magnet Brains","Full free syllabus coverage, chapter by chapter"],
+  ["dear sir","Dear Sir","Simple Hindi explanations — good for basics"],
+  ["competishun","Competishun","Kota faculty, JEE-focused live problem sessions"]
+];
+function liveTrustInfo(channel){
+  const c=(channel||"").toLowerCase();
+  for(const [m,name,why] of LIVE_TRUSTED){if(c.includes(m))return {name,why};}
+  return null;
+}
+/* Rank: trusted channel (+30) > weak-chapter title match (+22 each, cap 44)
+   > viewers (log-ish) > subject keyword. Explanations are built from the
+   same signals so the "why watch this" text is always truthful. */
+function rankLiveItems(items){
+  let weak=[];
+  try{weak=chapterPriorities().slice(0,6).map(p=>p.name.toLowerCase());}catch(e){}
+  const parseViewers=v=>{
+    const m=String(v||"").replace(/,/g,"").match(/([\d.]+)\s*([kKmM]?)/);
+    if(!m)return 0;let n=parseFloat(m[1])||0;
+    if(/k/i.test(m[2]))n*=1000;if(/m/i.test(m[2]))n*=1000000;return n;
+  };
+  return items.map(it=>{
+    let score=0;const reasons=[];const title=(it.title||"").toLowerCase();
+    const trust=liveTrustInfo(it.channel);
+    if(trust){score+=30;reasons.push(trust.why);}
+    const matched=[];
+    weak.forEach(w=>{
+      // match on the significant words of the chapter name (>=5 chars)
+      const words=w.split(/[^a-z]+/).filter(x=>x.length>=5);
+      if(words.some(x=>title.includes(x))){matched.push(w);}
+    });
+    if(matched.length){score+=Math.min(44,22*matched.length);
+      reasons.unshift("Covers your weak chapter: "+matched.map(m=>m.replace(/\b\w/g,c=>c.toUpperCase())).join(", "));}
+    const v=parseViewers(it.viewers);
+    if(v>0)score+=Math.min(18,Math.log10(v+1)*6);
+    if(v>=1000)reasons.push(Math.round(v/100)/10+"K students are watching right now");
+    else if(v>0)reasons.push("Live class in progress");
+    if(/one shot|oneshot/.test(title))reasons.push("One-shot: full chapter in one sitting — great for revision");
+    if(/marathon/.test(title))reasons.push("Marathon session — long deep-dive, join anytime");
+    if(/pyq|previous year/.test(title))reasons.push("PYQ practice — directly exam-relevant");
+    if(/mock|test series/.test(title))reasons.push("Live test practice — match it with your CBT mocks");
+    return {...it,score,reasons:reasons.slice(0,2),matched:matched.length>0,trusted:!!trust};
+  }).sort((a,b)=>b.score-a.score);
+}
+/* Curated always-works fallback: channel /live pages (open the channel's
+   current stream if any) + live-filtered searches. Shown when the finder
+   can't reach YouTube (rare) — the section still helps instead of erroring. */
+const LIVE_FALLBACK_CHANNELS=[
+  ["Physics Wallah","https://www.youtube.com/@PhysicsWallah/streams","#5a2d82"],
+  ["JEE Wallah","https://www.youtube.com/@JEEWallah/streams","#7a3ec8"],
+  ["Vedantu JEE","https://www.youtube.com/@VedantuJEE/streams","#f26722"],
+  ["Unacademy JEE","https://www.youtube.com/@UnacademyJEE/streams","#08bd80"],
+  ["eSaral","https://www.youtube.com/@eSaral/streams","#1e6ed9"],
+  ["MathonGo","https://www.youtube.com/@MathonGo/streams","#d33b3b"]
+];
+let liveState={level:localStorage.getItem("jeecbt.liveLevel")||"jee",subject:localStorage.getItem("jeecbt.liveSubject")||"all",
+  loading:false,items:null,fallback:false,fetchedAt:0};
+async function liveFetch(force){
+  if(liveState.loading)return;
+  if(!force&&liveState.items&&Date.now()-liveState.fetchedAt<3*60*1000)return; // reuse 3-min-fresh data
+  liveState.loading=true;liveState.error=false;
+  liveRenderList(); // show skeletons
+  try{
+    const r=await fetch("/api/public/live-classes",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({level:liveState.level,subject:liveState.subject})});
+    const data=await r.json().catch(()=>null);
+    if(r.ok&&data&&Array.isArray(data.items)){
+      liveState.items=rankLiveItems(data.items);
+      liveState.fallback=!!data.fallback;
+      liveState.fetchedAt=Date.now();
+    }else{liveState.items=[];liveState.fallback=true;}
+  }catch(e){liveState.items=[];liveState.fallback=true;}
+  liveState.loading=false;
+  liveRenderList();
+}
+function liveRenderList(){
+  const box=$("#liveList");if(!box)return;
+  box.innerHTML="";
+  if(liveState.loading){
+    const g=el("div","live-grid");
+    for(let i=0;i<6;i++){const c=el("div","live-card");
+      c.innerHTML=`<div class="live-thumb"><div class="skel" style="position:absolute;inset:0;height:auto;border-radius:0"></div></div>
+        <div class="live-body"><div class="skel" style="width:90%"></div><div class="skel" style="width:55%"></div><div class="skel" style="width:70%;height:34px"></div></div>`;
+      g.appendChild(c);}
+    box.appendChild(g);return;
+  }
+  const items=liveState.items||[];
+  if(items.length){
+    const when=new Date(liveState.fetchedAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+    box.appendChild(el("div","live-meta",`${items.length} live class${items.length>1?"es":""} found · checked at ${when} · auto-picked for ${liveState.level==="jee"?"JEE":liveState.level==="class11"?"Class 11":liveState.level==="class12"?"Class 12":"all levels"}`));
+    const g=el("div","live-grid");
+    items.forEach(it=>{
+      const c=el("div","live-card");
+      const safeTitle=esc(it.title), safeCh=esc(it.channel);
+      const why=it.reasons&&it.reasons.length?`<div class="live-why">${it.reasons.map(r=>esc(r)).join(" · ")}</div>`:"";
+      c.innerHTML=`
+        <a class="live-thumb" href="https://www.youtube.com/watch?v=${encodeURIComponent(it.id)}" target="_blank" rel="noopener noreferrer" aria-label="Watch live: ${safeTitle}">
+          <img loading="lazy" src="https://i.ytimg.com/vi/${encodeURIComponent(it.id)}/mqdefault.jpg" alt="">
+          <span class="lbadge"><span class="dot"></span>LIVE</span>
+          ${it.viewers?`<span class="viewers">${esc(it.viewers)}</span>`:""}
+        </a>
+        <div class="live-body">
+          ${it.matched?`<span class="live-match">${ic("target",13)} Matches your weak chapters</span>`:""}
+          <div class="live-title">${safeTitle}</div>
+          <div class="live-ch">${it.trusted?`<span class="vbadge">${ic("check",13)}</span>`:""}${safeCh}</div>
+          ${why}
+          <div class="live-foot">
+            <a class="btn sm" href="https://www.youtube.com/watch?v=${encodeURIComponent(it.id)}" target="_blank" rel="noopener noreferrer">${ic("play",14)} Watch now</a>
+          </div>
+        </div>`;
+      g.appendChild(c);
+    });
+    box.appendChild(g);
+  }else{
+    const emp=el("div","live-empty");
+    emp.innerHTML=`${ic("wave",34)}<h3 style="margin:12px 0 6px">No live classes found right now</h3>
+      <div class="small muted" style="max-width:440px;margin:0 auto">${liveState.fallback
+        ?"YouTube couldn't be checked from the server just now — use the trusted channels below; each opens that channel's live streams page."
+        :"Most free live classes run roughly 5 PM–10 PM IST on school days. Check back then, or browse the trusted channels below."}</div>`;
+    box.appendChild(emp);
+  }
+  // trusted channels strip — always useful, doubly so when the finder is empty
+  const chCard=el("div","card");
+  chCard.innerHTML=`<div class="section-title"><span class="ico">${ic("gradcap")}</span><h3 style="margin:0">Trusted free channels</h3></div>
+    <div class="small muted" style="margin-top:4px">Every link opens that channel's live-streams page on YouTube — bookmark your favourites.</div>`;
+  const rowEl=el("div","live-chrow");
+  LIVE_FALLBACK_CHANNELS.forEach(([name,url,color])=>{
+    const a=el("a","live-chlink");a.href=url;a.target="_blank";a.rel="noopener noreferrer";
+    a.innerHTML=`<span class="lgo" style="background:${color}">${esc(name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase())}</span>${esc(name)}`;
+    rowEl.appendChild(a);
+  });
+  chCard.appendChild(rowEl);
+  box.appendChild(chCard);
+}
+function viewLive(root){
+  const head=el("div","card");
+  head.innerHTML=`
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <span class="live-pill"><span class="dot"></span>LIVE NOW</span>
+        <h2 style="margin:8px 0 4px">Free Live Classes</h2>
+        <div class="small muted" style="max-width:560px">The finder scans YouTube for classes streaming <b>right now</b> for JEE, Class 11 and Class 12 — ranked for you: trusted teachers first, and classes covering <b>your weak chapters</b> get flagged. All 100% free.</div>
+      </div>
+    </div>
+    <div class="live-toolbar" style="margin-top:14px">
+      <select id="liveLevel" aria-label="Level filter">
+        <option value="jee">JEE (Main + Advanced)</option>
+        <option value="class11">Class 11</option>
+        <option value="class12">Class 12</option>
+        <option value="all">All levels</option>
+      </select>
+      <select id="liveSubject" aria-label="Subject filter">
+        <option value="all">All subjects</option>
+        <option value="physics">Physics</option>
+        <option value="chemistry">Chemistry</option>
+        <option value="maths">Maths</option>
+      </select>
+      <button class="btn sm ghost" id="liveRefresh" type="button">${ic("refresh",14)} Refresh</button>
+    </div>`;
+  root.appendChild(head);
+  const list=el("div");list.id="liveList";root.appendChild(list);
+  const lv=head.querySelector("#liveLevel"),sb=head.querySelector("#liveSubject");
+  lv.value=liveState.level;sb.value=liveState.subject;
+  const onFilter=()=>{
+    liveState.level=lv.value;liveState.subject=sb.value;liveState.items=null;
+    try{localStorage.setItem("jeecbt.liveLevel",lv.value);localStorage.setItem("jeecbt.liveSubject",sb.value);}catch(e){}
+    liveFetch(true);
+  };
+  lv.onchange=onFilter;sb.onchange=onFilter;
+  head.querySelector("#liveRefresh").onclick=()=>liveFetch(true);
+  liveFetch(false);
 }
 function viewSearch(root){
   const c=el("div","card");
