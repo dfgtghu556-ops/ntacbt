@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat'
 import { Route as ApiPublicCloudConfigRouteImport } from './routes/api/public/cloud-config'
+import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/live-classes'
 import { Route as ApiPublicPdfReformatRouteImport } from './routes/api/public/pdf-reformat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const ApiPublicCloudConfigRoute = ApiPublicCloudConfigRouteImport.update({
   path: '/api/public/cloud-config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLiveClassesRoute = ApiPublicLiveClassesRouteImport.update({
+  id: '/api/public/live-classes',
+  path: '/api/public/live-classes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPdfReformatRoute = ApiPublicPdfReformatRouteImport.update({
   id: '/api/public/pdf-reformat',
   path: '/api/public/pdf-reformat',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
+  '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
+  '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
 }
 export interface FileRoutesById {
@@ -52,6 +60,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
+  '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
 }
 export interface FileRouteTypes {
@@ -60,18 +69,21 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
+    | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
+    | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
   id:
     | '__root__'
     | '/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
+    | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
   fileRoutesById: FileRoutesById
 }
@@ -79,6 +91,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
   ApiPublicCloudConfigRoute: typeof ApiPublicCloudConfigRoute
+  ApiPublicLiveClassesRoute: typeof ApiPublicLiveClassesRoute
   ApiPublicPdfReformatRoute: typeof ApiPublicPdfReformatRoute
 }
 
@@ -105,6 +118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCloudConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/live-classes': {
+      id: '/api/public/live-classes'
+      path: '/api/public/live-classes'
+      fullPath: '/api/public/live-classes'
+      preLoaderRoute: typeof ApiPublicLiveClassesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/pdf-reformat': {
       id: '/api/public/pdf-reformat'
       path: '/api/public/pdf-reformat'
@@ -119,6 +139,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPublicAiChatRoute: ApiPublicAiChatRoute,
   ApiPublicCloudConfigRoute: ApiPublicCloudConfigRoute,
+  ApiPublicLiveClassesRoute: ApiPublicLiveClassesRoute,
   ApiPublicPdfReformatRoute: ApiPublicPdfReformatRoute,
 }
 export const routeTree = rootRouteImport
