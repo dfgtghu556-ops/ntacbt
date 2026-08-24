@@ -731,6 +731,15 @@ img.qimg{cursor:zoom-in}
 .ai-msg.model li{margin:4px 0}
 .ai-msg.model code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
 /* answer line highlight: the "Answer:" line models are told to end with */
+/* PYQ diagram figures (inline SVG from 2025/2026 papers) */
+.qsvg{display:block;margin:10px 0;max-width:100%;overflow-x:auto}
+.qsvg svg{max-width:100%;height:auto;background:#fff;border-radius:8px;padding:4px}
+html.dark .qsvg svg{background:#f2ece6}
+/* tappable section chips inside AI replies (Saarthi can drive the app) */
+.ai-navlink{display:inline-flex;align-items:center;gap:4px;background:var(--blue-soft);color:var(--accent-text);
+  border:1px solid color-mix(in srgb,var(--blue) 30%,transparent);border-radius:8px;padding:1px 8px;margin:0 1px;
+  font-weight:700;font-size:.92em;cursor:pointer;font-family:inherit;transition:.15s}
+.ai-navlink:hover{background:var(--blue);color:#fff}
 .ai-answer-line{display:block;margin-top:8px;padding:8px 12px;border-radius:10px;
   background:color-mix(in srgb,var(--green) 10%,var(--panel));border-left:3px solid var(--green);font-weight:700}
 /* polished video-solution picker */
@@ -854,7 +863,36 @@ svg.ic{vertical-align:-0.15em;flex-shrink:0;display:inline-block}
 .live-chlink:hover{border-color:var(--blue);transform:translateY(-1px)}
 .live-chlink .lgo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;color:#fff;font-size:13px}
 .live-meta{font-size:12px;color:var(--muted);font-weight:600}
+.live-cat-head{display:flex;align-items:baseline;gap:10px;margin-top:6px}
 @media(max-width:640px){.live-grid{grid-template-columns:1fr}}
+/* ---------- PYQ Papers (real JEE Main previous-year papers) ---------- */
+.pyq-years{display:flex;gap:6px;overflow-x:auto;padding:5px;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;margin:12px 0;scrollbar-width:none}
+.pyq-years::-webkit-scrollbar{display:none}
+.pyq-years button{background:transparent;border:0;border-radius:9px;padding:9px 18px;font-weight:800;font-size:13.5px;
+  color:var(--muted);cursor:pointer;white-space:nowrap;transition:.15s}
+.pyq-years button.active{background:var(--blue);color:#fff;box-shadow:0 4px 12px -4px color-mix(in srgb,var(--blue) 60%,transparent)}
+.pyq-session{margin-top:14px}
+.pyq-session>h3{display:flex;align-items:baseline;gap:8px}
+.pyq-session>h3 .small{font-weight:600}
+.pyq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-top:8px}
+.pyq-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:14px;
+  display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;position:relative}
+.pyq-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px -14px rgba(20,10,40,.3)}
+.pyq-card .pc-title{font-weight:800;font-size:14.5px}
+.pyq-card .pc-sub{font-size:12px;color:var(--muted);font-weight:600}
+.pyq-card .pc-counts{display:flex;gap:6px;flex-wrap:wrap}
+.pyq-card .pc-counts span{font-size:11px;font-weight:800;border-radius:999px;padding:3px 9px;background:var(--blue-soft);color:var(--accent-text)}
+.pyq-card .pc-done{position:absolute;top:12px;right:12px;color:var(--green)}
+.pyq-card .pc-score{font-size:12px;font-weight:800;color:var(--green)}
+.pyq-card .btn{margin-top:auto}
+.pyq-hero{border-radius:20px;padding:22px;background:linear-gradient(130deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;position:relative;overflow:hidden}
+.pyq-hero:after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;background:color-mix(in srgb,var(--blue) 50%,transparent);filter:blur(70px);top:-120px;right:-70px}
+.pyq-hero .muted{color:rgba(255,255,255,.75)}
+.pyq-hero h2{color:#fff}
+.pyq-hero .pyq-stats{display:flex;gap:18px;margin-top:14px;position:relative;flex-wrap:wrap}
+.pyq-hero .pyq-stats b{display:block;font-size:24px;font-family:var(--font-display)}
+.pyq-hero .pyq-stats span{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.72)}
 /* ==================== RESPONSIVE / DEVICE OPTIMIZATION PASS ====================
    Professional adaptive layout: every screen size gets a deliberate layout,
    nothing overflows sideways, tap targets stay comfortable, and phone
@@ -1240,11 +1278,90 @@ async function imgURL(k){if(!k)return null;if(imgCache.has(k))return imgCache.ge
  *                      theme-aware, tiny to store. Falls back to the
  *                      image automatically when the text layer is too
  *                      thin to trust (heavy diagrams/equations). */
+/* ---- lightweight LaTeX support (for PYQ papers, which store real math
+   markup like $$\int_0^{\pi/4} f(x)dx$$). KaTeX is lazy-loaded from the
+   same CDN the app already uses (cached offline by the service worker);
+   until/unless it loads, a plain-text cleanup keeps questions readable. */
+let _katexP=null;
+function ensureKatex(){
+  if(window.katex)return Promise.resolve(true);
+  if(_katexP)return _katexP;
+  _katexP=new Promise(res=>{
+    const css=document.createElement("link");css.rel="stylesheet";
+    css.href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css";
+    document.head.appendChild(css);
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js";
+    s.onload=()=>res(true); s.onerror=()=>res(false);
+    document.head.appendChild(s);
+  });
+  return _katexP;
+}
+/** Plain-text de-TeX for when KaTeX isn't available: keeps the math readable. */
+function texPlain(s){
+  return String(s).replace(/\$\$?/g,"")
+    .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g,"($1)/($2)")
+    .replace(/\\sqrt\{([^{}]*)\}/g,"√($1)")
+    .replace(/\\(?:mathrm|mathbf|text|operatorname)\s*\{([^{}]*)\}/g,"$1")
+    .replace(/\\(?:left|right|,|;|!|:)/g,"").replace(/\\(?:times)/g,"×")
+    .replace(/\\(?:cdot)/g,"·").replace(/\\pi/g,"π").replace(/\\theta/g,"θ")
+    .replace(/\\alpha/g,"α").replace(/\\beta/g,"β").replace(/\\gamma/g,"γ")
+    .replace(/\\lambda/g,"λ").replace(/\\mu/g,"μ").replace(/\\omega/g,"ω")
+    .replace(/\\Delta/g,"Δ").replace(/\\infty/g,"∞").replace(/\\pm/g,"±")
+    .replace(/\\(?:geq?|ge)\b/g,"≥").replace(/\\(?:leq?|le)\b/g,"≤")
+    .replace(/\\(?:rightarrow|to)\b/g,"→").replace(/~/g," ")
+    .replace(/\\[a-zA-Z]+/g,"").replace(/[{}]/g,"");
+}
+/** Render text that may contain $...$/$$...$$ math into safe HTML.
+ *  Non-math parts are escaped; math parts go through KaTeX (trusted).
+ *  PYQ diagrams: 2025/2026 papers embed figures as inline <svg> — those
+ *  are lifted out first, sanitized (no scripts/handlers), and re-inserted
+ *  so students see the actual diagram, never raw markup. */
+function svgSafe(svg){
+  return svg.replace(/<script[\s\S]*?<\/script\s*>/gi,"")
+            .replace(/<foreignObject[\s\S]*?<\/foreignObject\s*>/gi,"")
+            .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi,"")
+            .replace(/(href|xlink:href)\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*')/gi,"")
+            .replace(/javascript:/gi,"");
+}
+function texHTML(raw){
+  let s=String(raw||"");
+  // lift SVG diagrams out before escaping
+  const svgs=[];
+  s=s.replace(/<svg[\s\S]*?<\/svg>/gi,m=>{svgs.push(svgSafe(m));return "\u0000SVG"+(svgs.length-1)+"\u0000";});
+  let out;
+  if(!/[$\\]/.test(s))out=esc(s).replace(/\n/g,"<br>");
+  else if(!window.katex)out=esc(texPlain(s)).replace(/\n/g,"<br>");
+  else{
+    out="";let i=0;
+    const re=/\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g;let m;
+    while((m=re.exec(s))){
+      out+=esc(s.slice(i,m.index)).replace(/\n/g,"<br>");
+      const tex=m[1]!=null?m[1]:m[2];
+      try{out+=katex.renderToString(tex,{throwOnError:false,displayMode:false,output:"html"});}
+      catch(e){out+=esc(texPlain(tex));}
+      i=m.index+m[0].length;
+    }
+    out+=esc(s.slice(i)).replace(/\n/g,"<br>");
+  }
+  // re-insert the (sanitized) diagrams
+  return out.replace(/\u0000SVG(\d+)\u0000/g,(_,n)=>`<span class="qsvg">${svgs[+n]||""}</span>`);
+}
 function imgTag(key,cls="qimg",fallbackText){
   const preferText=S.settings.questionDisplay==="text";
   const textOK=fallbackText&&String(fallbackText).replace(/\s+/g," ").trim().length>=12;
-  if((!key||preferText&&textOK)&&fallbackText)
-    return el("div",cls+" qtext"+(preferText?" qtext-mode":""),esc(fallbackText));
+  if((!key||preferText&&textOK)&&fallbackText){
+    const s=String(fallbackText);
+    // PYQ/math content: render LaTeX + inline-SVG diagrams properly,
+    // never as raw $..$ or markup soup
+    if(/\$[^$]/.test(s)||/\\(frac|sqrt|int|sum|mathrm|alpha|beta|pi\b)/.test(s)||/<svg[\s>]/i.test(s)){
+      const d=el("div",cls+" qtext"+(preferText?" qtext-mode":""));
+      d.innerHTML=texHTML(s);
+      if(!window.katex)ensureKatex().then(ok=>{if(ok&&d.isConnected)d.innerHTML=texHTML(s);});
+      return d;
+    }
+    return el("div",cls+" qtext"+(preferText?" qtext-mode":""),esc(s));
+  }
   const i=el("img",cls); i.alt="";
   i.loading="lazy"; i.decoding="async"; // don't block scroll/paint on question images
   if(key) (key.startsWith("cloud:")?cloudObjectURL(key.slice(6)):imgURL(key)).then(u=>{if(u)i.src=u;});
@@ -2232,7 +2349,16 @@ function isRight(q,ans){
   if(ans==null||ans==="")return false;
   if(q.type==="mcq")return String(ans).toLowerCase()===String(q.answer||"").toLowerCase();
   const a=parseFloat(String(ans).replace(/,/g,"")),b=parseFloat(String(q.answer).replace(/,/g,""));
-  if(!isFinite(a)||!isFinite(b))return false;
+  if(!isFinite(a))return false;
+  // PYQ papers carry NTA's official non-exact keys: answer ranges
+  // ("600 to 700"), multiple accepted values ("30 OR 60"), and dropped/
+  // bonus questions (everyone gets the marks) — grade exactly like NTA did.
+  if(q.accept){
+    if(q.accept.kind==="all")return true;
+    if(q.accept.kind==="range")return a>=q.accept.lo-1e-9&&a<=q.accept.hi+1e-9;
+    if(q.accept.kind==="any")return q.accept.vals.some(v=>Math.abs(a-v)<=Math.max(0.01,Math.abs(v)*0.001));
+  }
+  if(!isFinite(b))return false;
   // NTA numerical questions are integer-keyed since 2021 — exact match for
   // integers; for decimal keys allow the rounding NTA itself instructs
   // ("round to 2 decimal places"): |Δ| ≤ 0.01 absolute or 0.1% relative.
@@ -2522,7 +2648,7 @@ function analyse(test,attempt){
 }
 
 /* ------------------------------- 6. ROUTER ------------------------------- */
-const ROUTES=[["dash","Dashboard","home"],["library","Test Library","library"],["upload","Upload PDFs","upload"],["planner","Planner","calendar"],
+const ROUTES=[["dash","Dashboard","home"],["library","Test Library","library"],["pyq","PYQ Papers","bank"],["upload","Upload PDFs","upload"],["planner","Planner","calendar"],
   ["analytics","Analytics","chart"],["mastery","Mastery","target"],["notebook","Mistake Notebook","notebook"],["formulas","Formulas","formula"],
   ["practice","Practice","pencil"],["review","Review","repeat"],["live","Live Classes","wave"],["search","Search","search"],["settings","Settings","settings"]];
 let route="dash", routeArg=null;
@@ -2542,7 +2668,7 @@ function go(r,arg,dir){
 window.addEventListener("popstate",e=>{
   if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
   const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
-  route=({dash:1,library:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,live:1,search:1,settings:1,result:1}[r])?r:"dash";
+  route=({dash:1,library:1,pyq:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,live:1,search:1,settings:1,result:1}[r])?r:"dash";
   routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
 });
 function renderNav(){
@@ -2569,7 +2695,7 @@ function render(dir=0){
   a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
-    practice:viewPractice,review:viewReview,live:viewLive,search:viewSearch,result:viewResult}[route]||viewDash)(a);
+    practice:viewPractice,review:viewReview,live:viewLive,pyq:viewPyq,search:viewSearch,result:viewResult}[route]||viewDash)(a);
 
 }
 
@@ -3920,39 +4046,69 @@ function liveTrustInfo(channel){
   for(const [m,name,why] of LIVE_TRUSTED){if(c.includes(m))return {name,why};}
   return null;
 }
-/* Rank: trusted channel (+30) > weak-chapter title match (+22 each, cap 44)
-   > viewers (log-ish) > subject keyword. Explanations are built from the
-   same signals so the "why watch this" text is always truthful. */
+function parseViewerCount(v){
+  const m=String(v||"").replace(/,/g,"").match(/([\d.]+)\s*([kKmM]?)/);
+  if(!m)return 0;let n=parseFloat(m[1])||0;
+  if(/k/i.test(m[2]))n*=1000;if(/m/i.test(m[2]))n*=1000000;return n;
+}
+/* CLASSIFIER: bucket every stream into exactly one exam category from the
+   title (and channel hints). Streams that don't clearly belong to a
+   student category are DROPPED — that's the quality gate the section
+   promises ("only classes a JEE/boards student should see"). */
+function liveClassify(it){
+  const t=(" "+(it.title||"")+" "+(it.channel||"")+" ").toLowerCase();
+  if(/jee\s*adv|advanced/.test(t)&&/jee/.test(t))return "jeeadv";
+  if(/\bjee\b|iit[- ]?jee|jee\s*main|mains/.test(t))return "jeemain";
+  if(/board|cbse|isc\b|intermediate|hsc\b/.test(t)&&/12|xii|senior/.test(t))return "board12";
+  if(/class\s*12|12th|xii\b/.test(t))return "class12";
+  if(/class\s*11|11th|\bxi\b/.test(t))return "class11";
+  // NEET/other-exam-only streams are not for this audience
+  if(/neet|gate\b|upsc|ssc\b|banking|cat\b|clat/.test(t))return null;
+  // physics/chem/maths one-shots without a class tag: still useful for JEE
+  if(/physics|chemistry|math|organic|inorganic|calculus|mechanics/.test(t))return "jeemain";
+  return null;
+}
+const LIVE_CATEGORIES=[
+  ["jeemain","JEE Main"],["jeeadv","JEE Advanced"],["class12","Class 12"],
+  ["board12","12th Boards"],["class11","Class 11"]
+];
+/* QUALITY GATE + RANK. Professional rule, like a curated ed-tech app:
+   • Channel must be a KNOWN education company (trusted list), OR the
+   stream must already have a real audience (500+ watching). Small
+   unknown creators — the "which students even watch this?" problem —
+   never make the list.
+   • Must classify into a student category (see liveClassify).
+   Rank: weak-chapter match > trusted > audience size. Reasons are built
+   from the same signals so "why watch" is always truthful. */
 function rankLiveItems(items){
   let weak=[];
   try{weak=chapterPriorities().slice(0,6).map(p=>p.name.toLowerCase());}catch(e){}
-  const parseViewers=v=>{
-    const m=String(v||"").replace(/,/g,"").match(/([\d.]+)\s*([kKmM]?)/);
-    if(!m)return 0;let n=parseFloat(m[1])||0;
-    if(/k/i.test(m[2]))n*=1000;if(/m/i.test(m[2]))n*=1000000;return n;
-  };
-  return items.map(it=>{
-    let score=0;const reasons=[];const title=(it.title||"").toLowerCase();
+  const out=[];
+  (items||[]).forEach(it=>{
     const trust=liveTrustInfo(it.channel);
+    const v=parseViewerCount(it.viewers);
+    if(!trust&&v<500)return;               // small/unknown creators: dropped
+    const cat=liveClassify(it);
+    if(!cat)return;                        // not JEE/11/12/boards content: dropped
+    let score=0;const reasons=[];const title=(it.title||"").toLowerCase();
     if(trust){score+=30;reasons.push(trust.why);}
+    else reasons.push("Large live audience — popular teacher");
     const matched=[];
     weak.forEach(w=>{
-      // match on the significant words of the chapter name (>=5 chars)
       const words=w.split(/[^a-z]+/).filter(x=>x.length>=5);
       if(words.some(x=>title.includes(x))){matched.push(w);}
     });
     if(matched.length){score+=Math.min(44,22*matched.length);
       reasons.unshift("Covers your weak chapter: "+matched.map(m=>m.replace(/\b\w/g,c=>c.toUpperCase())).join(", "));}
-    const v=parseViewers(it.viewers);
     if(v>0)score+=Math.min(18,Math.log10(v+1)*6);
     if(v>=1000)reasons.push(Math.round(v/100)/10+"K students are watching right now");
-    else if(v>0)reasons.push("Live class in progress");
     if(/one shot|oneshot/.test(title))reasons.push("One-shot: full chapter in one sitting — great for revision");
     if(/marathon/.test(title))reasons.push("Marathon session — long deep-dive, join anytime");
     if(/pyq|previous year/.test(title))reasons.push("PYQ practice — directly exam-relevant");
     if(/mock|test series/.test(title))reasons.push("Live test practice — match it with your CBT mocks");
-    return {...it,score,reasons:reasons.slice(0,2),matched:matched.length>0,trusted:!!trust};
-  }).sort((a,b)=>b.score-a.score);
+    out.push({...it,cat,score,reasons:reasons.slice(0,2),matched:matched.length>0,trusted:!!trust});
+  });
+  return out.sort((a,b)=>b.score-a.score);
 }
 /* Curated always-works fallback: channel /live pages (open the channel's
    current stream if any) + live-filtered searches. Shown when the finder
@@ -3965,7 +4121,7 @@ const LIVE_FALLBACK_CHANNELS=[
   ["eSaral","https://www.youtube.com/@eSaral/streams","#1e6ed9"],
   ["MathonGo","https://www.youtube.com/@MathonGo/streams","#d33b3b"]
 ];
-let liveState={level:localStorage.getItem("jeecbt.liveLevel")||"jee",subject:localStorage.getItem("jeecbt.liveSubject")||"all",
+let liveState={level:localStorage.getItem("jeecbt.liveLevel")||"all",subject:localStorage.getItem("jeecbt.liveSubject")||"all",
   loading:false,items:null,fallback:false,fetchedAt:0};
 async function liveFetch(force){
   if(liveState.loading)return;
@@ -3999,9 +4155,8 @@ function liveRenderList(){
   const items=liveState.items||[];
   if(items.length){
     const when=new Date(liveState.fetchedAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-    box.appendChild(el("div","live-meta",`${items.length} live class${items.length>1?"es":""} found · checked at ${when} · auto-picked for ${liveState.level==="jee"?"JEE":liveState.level==="class11"?"Class 11":liveState.level==="class12"?"Class 12":"all levels"}`));
-    const g=el("div","live-grid");
-    items.forEach(it=>{
+    box.appendChild(el("div","live-meta",`${items.length} verified live class${items.length>1?"es":""} · trusted institutes only · checked at ${when}`));
+    const liveCardEl=it=>{
       const c=el("div","live-card");
       const safeTitle=esc(it.title), safeCh=esc(it.channel);
       const why=it.reasons&&it.reasons.length?`<div class="live-why">${it.reasons.map(r=>esc(r)).join(" · ")}</div>`:"";
@@ -4020,9 +4175,19 @@ function liveRenderList(){
             <a class="btn sm" href="https://www.youtube.com/watch?v=${encodeURIComponent(it.id)}" target="_blank" rel="noopener noreferrer">${ic("play",14)} Watch now</a>
           </div>
         </div>`;
-      g.appendChild(c);
+      return c;
+    };
+    // grouped by exam category — the professional "sections" layout
+    LIVE_CATEGORIES.forEach(([key,label])=>{
+      const inCat=items.filter(it=>it.cat===key);
+      if(!inCat.length)return;
+      const h=el("div","live-cat-head");
+      h.innerHTML=`<h3 style="margin:14px 0 0">${esc(label)}</h3><span class="small muted">${inCat.length} live now</span>`;
+      box.appendChild(h);
+      const g=el("div","live-grid");
+      inCat.forEach(it=>g.appendChild(liveCardEl(it)));
+      box.appendChild(g);
     });
-    box.appendChild(g);
   }else{
     const emp=el("div","live-empty");
     emp.innerHTML=`${ic("wave",34)}<h3 style="margin:12px 0 6px">No live classes found right now</h3>
@@ -4051,15 +4216,16 @@ function viewLive(root){
       <div>
         <span class="live-pill"><span class="dot"></span>LIVE NOW</span>
         <h2 style="margin:8px 0 4px">Free Live Classes</h2>
-        <div class="small muted" style="max-width:560px">The finder scans YouTube for classes streaming <b>right now</b> for JEE, Class 11 and Class 12 — ranked for you: trusted teachers first, and classes covering <b>your weak chapters</b> get flagged. All 100% free.</div>
+        <div class="small muted" style="max-width:560px">Classes streaming <b>right now</b> from verified coaching institutes only (PW, Vedantu, Unacademy, eSaral, ALLEN…), organised by JEE Main · JEE Advanced · Class 11 · Class 12 · 12th Boards. Classes covering <b>your weak chapters</b> get flagged. All 100% free.</div>
       </div>
     </div>
     <div class="live-toolbar" style="margin-top:14px">
       <select id="liveLevel" aria-label="Level filter">
+        <option value="all">All categories</option>
         <option value="jee">JEE (Main + Advanced)</option>
         <option value="class11">Class 11</option>
         <option value="class12">Class 12</option>
-        <option value="all">All levels</option>
+        <option value="board12">12th Board Exam</option>
       </select>
       <select id="liveSubject" aria-label="Subject filter">
         <option value="all">All subjects</option>
@@ -4081,6 +4247,179 @@ function viewLive(root){
   lv.onchange=onFilter;sb.onchange=onFilter;
   head.querySelector("#liveRefresh").onclick=()=>liveFetch(true);
   liveFetch(false);
+}
+/* ========================= PYQ PAPERS (real JEE Main) =========================
+   Real previous-year papers — every session & shift — served by
+   /api/public/pyq-papers (11,000+ questions, official answer keys and
+   step-by-step solutions, LaTeX rendered by KaTeX). One tap converts a
+   paper into a normal test in the SAME NTA CBT engine used everywhere
+   else: full timer, palette, marking scheme, analytics, percentile,
+   mistake notebook — everything just works. */
+let pyqState={index:null,loading:false,error:null,year:null};
+const PYQ_MONTH_ORDER=["January","February","March","April","June","July","August","September","Offline","AIEEE"];
+async function pyqLoadIndex(force){
+  if(pyqState.loading)return;
+  if(!force&&pyqState.index)return;
+  // repaint helper — deferred so a load kicked off from inside render()
+  // never re-enters render() while it's still building the page
+  const repaint=()=>{if(route==="pyq")setTimeout(()=>{if(route==="pyq")render(0);},0);};
+  // cache the paper list locally so the tab opens instantly (and offline)
+  if(!force){try{
+    const c=JSON.parse(localStorage.getItem("jeecbt.pyqIndex")||"null");
+    if(c&&c.at>Date.now()-7*86400000&&Array.isArray(c.papers)&&c.papers.length){
+      pyqState.index=c.papers;repaint();return;
+    }
+  }catch(e){}}
+  pyqState.loading=true;pyqState.error=null;
+  repaint();
+  // Papers are baked into THIS site at build time (public/pyq/) — served
+  // from our own domain like every big ed-tech platform, no cloud storage,
+  // no third party. The API route is only a fallback for the rare deploy
+  // where the bake hasn't happened yet.
+  try{
+    let papers=null;
+    try{
+      const r=await fetch("/pyq/index.json");
+      if(r.ok){const d=await r.json();if(d&&Array.isArray(d.papers)&&d.papers.length)papers=d.papers;}
+    }catch(e){}
+    if(!papers){
+      const r=await fetch("/api/public/pyq-papers?list=1");
+      const data=await r.json().catch(()=>null);
+      if(r.ok&&data&&Array.isArray(data.papers)&&data.papers.length)papers=data.papers;
+      else pyqState.error=(data&&data.error)||"Could not load the PYQ library";
+    }
+    if(papers){
+      pyqState.index=papers;
+      try{localStorage.setItem("jeecbt.pyqIndex",JSON.stringify({at:Date.now(),papers}));}catch(e){}
+    }
+  }catch(e){pyqState.error="Could not reach the PYQ library — check your connection";}
+  pyqState.loading=false;
+  repaint();
+}
+/** Download one paper and convert it into a normal test object. */
+async function pyqStart(meta,btn){
+  const existing=S.tests.find(t=>t.pyqId===meta.id);
+  if(existing){startExam(existing.id);return;}
+  if(btn){btn.disabled=true;btn.innerHTML=ic("clock")+" Loading…";}
+  try{
+    // static file on our own site first; API fallback second
+    let data=null;
+    try{
+      const rs=await fetch("/pyq/"+encodeURIComponent(meta.id)+".json");
+      if(rs.ok)data=await rs.json().catch(()=>null);
+    }catch(e){}
+    if(!data||!data.paper){
+      const r=await fetch("/api/public/pyq-papers?paper="+encodeURIComponent(meta.id));
+      data=await r.json().catch(()=>null);
+      if(!r.ok||!data||!data.paper)throw new Error((data&&data.error)||"download failed");
+    }
+    ensureKatex(); // warm math rendering before the exam opens
+    const qs=data.paper.questions.map((q,i)=>({
+      id:meta.id+"-q"+(i+1), no:q.no, index:i,
+      subject:q.subject, chapter:q.chapter||"", topic:q.topic||"",
+      type:q.type, text:q.text,
+      options:(q.options||[]).map(o=>({label:o.label,text:o.text})),
+      answer:q.answer, ...(q.accept?{accept:q.accept}:{}),
+      solText:q.sol||""
+    }));
+    const t={id:uid(),name:`JEE Main ${meta.year} · ${meta.label}`,createdAt:Date.now(),
+      date:new Date().toISOString(),duration:TEST_MINUTES*60,questions:qs,chapter:{},
+      pyqId:meta.id,pyq:true};
+    // storage hygiene: PYQ papers re-download in one tap, so never-attempted
+    // old ones don't need to sit in localStorage forever (keeps us far from
+    // the 5MB cap however many papers the student browses)
+    const unattempted=S.tests.filter(x=>x.pyq&&!attemptsOf(x.id).length&&x.id!==t.id);
+    if(unattempted.length>2)unattempted.slice(0,unattempted.length-2).forEach(x=>{
+      S.tests=S.tests.filter(y=>y.id!==x.id);
+    });
+    S.tests.push(t);save();
+    startExam(t.id);
+  }catch(e){
+    toast("Couldn't download this paper — try again");
+    if(btn){btn.disabled=false;btn.innerHTML=ic("play")+" Start paper";}
+  }
+}
+function pyqBestScore(meta){
+  const t=S.tests.find(x=>x.pyqId===meta.id);if(!t)return null;
+  let best=null;
+  attemptsOf(t.id).filter(a=>a.submittedAt).forEach(a=>{
+    if(!best||a.result.all.marks>best.marks)best={marks:a.result.all.marks,max:a.result.all.max};
+  });
+  return best;
+}
+function viewPyq(root){
+  const hero=el("div","card pyq-hero");
+  const idx=pyqState.index||[];
+  const years=[...new Set(idx.map(p=>p.year))].sort((a,b)=>b-a);
+  const totalQ=idx.reduce((s,p)=>s+p.total,0);
+  hero.innerHTML=`<div style="position:relative">
+    <span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">${ic("bank")} Official previous-year papers</span>
+    <h2 style="margin-top:10px">JEE Main PYQ Papers</h2>
+    <div class="muted">Real papers from every session and shift — attempt them in the exact NTA CBT interface with the real marking scheme, official answer keys and step-by-step solutions.</div>
+    ${idx.length?`<div class="pyq-stats">
+      <div><b>${idx.length}</b><span>Papers</span></div>
+      <div><b>${years.length}</b><span>Years (${Math.min(...years)}–${Math.max(...years)})</span></div>
+      <div><b>${totalQ.toLocaleString("en-IN")}</b><span>Real questions</span></div>
+    </div>`:""}</div>`;
+  root.appendChild(hero);
+  if(pyqState.loading&&!idx.length){
+    const g=el("div","pyq-grid");
+    for(let i=0;i<6;i++){const c=el("div","pyq-card");
+      c.innerHTML=`<div class="skel" style="width:75%"></div><div class="skel" style="width:50%"></div><div class="skel" style="width:100%;height:34px"></div>`;
+      g.appendChild(c);}
+    root.appendChild(g);return;
+  }
+  if(!idx.length){
+    const c=el("div","card");
+    c.innerHTML=`<div class="live-empty">${ic("cloud",34)}
+      <h3 style="margin:12px 0 6px">${pyqState.error?esc(pyqState.error):"Loading the PYQ library…"}</h3>
+      <div class="small muted">The library holds 150+ real JEE Main papers (11,000+ questions). First load can take a few seconds.</div></div>`;
+    const rb=el("button","btn",ic("refresh")+" Retry");rb.style.margin="0 auto";rb.onclick=()=>pyqLoadIndex(true);
+    c.appendChild(el("div","row")).appendChild(rb);c.lastElementChild.style.justifyContent="center";
+    root.appendChild(c);
+    if(!pyqState.loading&&!pyqState.error)pyqLoadIndex(false);
+    return;
+  }
+  // ---- year tabs (sessions of that year inside) ----
+  if(pyqState.year==null||!years.includes(pyqState.year))pyqState.year=years[0];
+  const tabs=el("div","pyq-years");
+  years.forEach(y=>{
+    const b=el("button",y===pyqState.year?"active":"",String(y));
+    b.type="button";b.onclick=()=>{pyqState.year=y;render(0);};
+    tabs.appendChild(b);
+  });
+  root.appendChild(tabs);
+  const inYear=idx.filter(p=>p.year===pyqState.year);
+  // group by session/month, NTA calendar order
+  const sessions=[...new Set(inYear.map(p=>p.month))]
+    .sort((a,b)=>PYQ_MONTH_ORDER.indexOf(a)-PYQ_MONTH_ORDER.indexOf(b));
+  sessions.forEach(mon=>{
+    const papers=inYear.filter(p=>p.month===mon);
+    const sec=el("div","pyq-session");
+    const label=mon==="Offline"?"Offline Paper":mon==="AIEEE"?"AIEEE Era":mon+" Session";
+    sec.innerHTML=`<h3>${esc(label)}<span class="small muted">${papers.length} paper${papers.length>1?"s":""}</span></h3>`;
+    const g=el("div","pyq-grid");
+    papers.forEach(meta=>{
+      const c=el("div","pyq-card");
+      const best=pyqBestScore(meta);
+      c.innerHTML=`
+        ${best?`<span class="pc-done" title="Attempted">${ic("check",18)}</span>`:""}
+        <div class="pc-title">${esc(meta.label)}</div>
+        <div class="pc-sub">${meta.total} questions · ${meta.mcq} MCQ + ${meta.integer} numerical · 3 hours</div>
+        <div class="pc-counts"><span>PHY ${meta.counts.Physics}</span><span>CHE ${meta.counts.Chemistry}</span><span>MAT ${meta.counts.Mathematics}</span></div>
+        ${best?`<div class="pc-score">Best: ${best.marks}/${best.max}</div>`:""}`;
+      const b=el("button","btn sm",best?ic("repeat")+" Re-attempt":ic("play")+" Start paper");
+      b.type="button";b.onclick=()=>pyqStart(meta,b);
+      c.appendChild(b);
+      g.appendChild(c);
+    });
+    sec.appendChild(g);root.appendChild(sec);
+  });
+  // refresh affordance
+  const foot=el("div","row");foot.style.cssText="justify-content:center;margin-top:16px";
+  const rf=el("button","btn ghost sm",ic("refresh")+" Refresh paper list");
+  rf.onclick=()=>{pyqLoadIndex(true);};
+  foot.appendChild(rf);root.appendChild(foot);
 }
 function viewSearch(root){
   const c=el("div","card");
