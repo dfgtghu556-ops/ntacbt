@@ -41,7 +41,8 @@ function buildQueries(level: string, subject: string): string[] {
   }
   if (level === "class11" || level === "all") qs.push(`class 11${sub} live class`);
   if (level === "class12" || level === "all") qs.push(`class 12${sub} live class`);
-  return qs.slice(0, 3); // bounded fan-out
+  if (level === "board12" || level === "all") qs.push(`class 12 board exam${sub} live`);
+  return qs.slice(0, 4); // bounded fan-out
 }
 
 /** Walk arbitrary JSON and collect every object under a given key. */
@@ -156,7 +157,7 @@ export const Route = createFileRoute("/api/public/live-classes")({
         } catch {
           /* defaults below */
         }
-        const level = ["jee", "class11", "class12", "all"].includes(body.level || "")
+        const level = ["jee", "class11", "class12", "board12", "all"].includes(body.level || "")
           ? (body.level as string)
           : "all";
         const subject = ["physics", "chemistry", "maths", "all"].includes(body.subject || "")

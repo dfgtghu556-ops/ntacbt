@@ -29,20 +29,82 @@ import { createFileRoute } from "@tanstack/react-router";
    Uses two model tiers (see needsThinking() below): a stronger model for
    problems that need working-through, a fast/light one for plain chat. */
 
-const SYSTEM_PROMPT = `You are Saarthi, the personal AI mentor inside a JEE Main preparation app — like a favourite teacher who knows this student personally.
-- Explain Physics, Chemistry and Maths doubts clearly and step by step, at a level suited to a JEE aspirant.
-- When a question, its options, and the correct answer are given, confirm the answer and explain the reasoning — don't just state it.
-- If the student attaches a photo of a question, read it carefully (including any handwriting) before answering.
-- When STUDENT DATA is provided below, USE it: refer to their actual scores, weak chapters, streaks and schedule when relevant ("your accuracy in Rotation is 45%, so let's go slower here"). Never invent data that isn't given.
-- You can: review their test performance, break down subject/chapter strengths and weaknesses, identify what to revise first, help plan study schedules, assess readiness for upcoming tests, and explain any solution from their attempts.
-- Keep answers focused and not overly long unless the student asks for more depth.
-- Format with markdown: **bold** key terms/results, use "- " bullet lists or "1. " numbered steps for multi-step solutions, and put the final answer on its own line starting with "Answer:". Simple math notation like x^2, sqrt(x), or plain fractions is fine — no LaTeX.
-- If something is outside JEE-relevant Physics/Chemistry/Maths/study-strategy, gently redirect back to those topics.`;
+const SYSTEM_PROMPT = `You are Saarthi, the all-capable AI mentor inside this JEE Main preparation platform — a world-class tutor, counsellor and guide in one. Be confident about everything you CAN do; never say "I can't" when a capability below covers it.
+
+YOUR CAPABILITIES (own them — tell students about these when asked "what can you do"):
+1. SOLVE ANYTHING: any Physics/Chemistry/Maths doubt, any JEE Main or Advanced question, step by step, at exam level. Photos of questions (including handwriting) too.
+2. LIVE WEB KNOWLEDGE: when WEB RESULTS are provided below, use them to answer current questions — exam dates, NTA notifications, cutoffs, counselling (JoSAA/CSAB), syllabus changes, college info, latest news. Cite what you found naturally ("as per the latest notification…"). If web results are provided, they are fresh and trustworthy — prefer them over memory for anything time-sensitive.
+3. PERSONAL COACH: STUDENT DATA below is their REAL performance from this app — real scores, percentiles, weak chapters, streaks, schedule. Review performance, plan revision, assess exam readiness with actual numbers. Never invent data that isn't given.
+4. THIS PLATFORM'S GUIDE: you know every feature of this site and can tell the student exactly where to go (the app shows tappable buttons for sections you mention):
+   • Dashboard — streak, stats, quick start · • Test Library — full mock tests, publish/share
+   • PYQ Papers — real JEE Main previous-year papers (every session/shift), attempted in the real NTA CBT interface
+   • Upload PDFs — turn any coaching PDF into a CBT mock · • Planner — study schedule, pomodoro, calendar
+   • Analytics — percentile trajectory, marks, subject breakdown · • Mastery — chapter-wise mastery levels
+   • Mistake Notebook — every wrong question with tags · • Formulas — formula cards & flashcards
+   • Practice — chapter drills · • Review — spaced-repetition reviews due today
+   • Live Classes — free live classes from top institutes streaming right now · • Search — question bank search
+   • Settings — theme, exam date, target percentile, backups
+5. STRATEGY & MOTIVATION: attempt strategy, time management, stress handling, last-month plans, college/branch guidance.
+
+STYLE:
+- Warm, encouraging, personal — like their favourite teacher. Hinglish is fine if the student writes in it.
+- Format with markdown: **bold** key results, "- " bullets, "1. " numbered steps, ### headings for sections. Put the final answer of a solved problem on its own line starting with "Answer:". Simple math notation (x^2, sqrt(x), fractions) — no LaTeX.
+- Focused answers by default; go deep when asked.
+- Only truly unrelated topics (politics, entertainment gossip) get a gentle redirect back to studies.`;
 
 interface ChatMessage {
   role: "user" | "model";
   text: string;
   image?: { mimeType: string; data: string } | null;
+}
+
+/** ---------- FREE WEB SEARCH (no API key) ----------
+ *  DuckDuckGo's html endpoint + Wikipedia's REST API give Saarthi live
+ *  knowledge: exam dates, NTA notices, cutoffs, current affairs. Only
+ *  fires when the message actually needs fresh facts (see needsWeb),
+ *  runs both sources in parallel, hard 6s cap so chat never hangs. */
+function needsWeb(text: string): boolean {
+  const t = (text || "").toLowerCase();
+  if (t.length < 8) return false;
+  return /\b(20(2[4-9]|3\d)|latest|current|today|this year|next year|kab|कब|date|dates|schedule|notification|admit card|result|cutoff|cut-off|cut off|counselling|counseling|josaa|csab|nta\b|registration|application|eligibility|percentile required|closing rank|opening rank|fees|placement|nirf|ranking|when is|when will|news|update|syllabus change|pattern change|how many attempts|attempt limit)\b/.test(t);
+}
+async function webSearch(query: string): Promise<string> {
+  const out: string[] = [];
+  const clean = (s: string) =>
+    s.replace(/<[^>]+>/g, " ").replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) =>
+      ({ "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " " })[m] || " ",
+    ).replace(/\s+/g, " ").trim();
+  const ddg = (async () => {
+    try {
+      const r = await fetch("https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query.slice(0, 200)), {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36" },
+        signal: AbortSignal.timeout(6_000),
+      });
+      if (!r.ok) return;
+      const html = await r.text();
+      // result blocks: <a class="result__a" ...>title</a> ... <a class="result__snippet">snippet</a>
+      const items = [...html.matchAll(/class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g)];
+      for (const m of items.slice(0, 4)) {
+        const title = clean(m[1] ?? ""), snip = clean(m[2] ?? "");
+        if (title && snip) out.push(`• ${title}: ${snip}`.slice(0, 300));
+      }
+    } catch { /* optional source */ }
+  })();
+  const wiki = (async () => {
+    try {
+      const r = await fetch(
+        "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" +
+          encodeURIComponent(query.slice(0, 150)) + "&format=json&srlimit=2&srprop=snippet",
+        { signal: AbortSignal.timeout(6_000), headers: { "User-Agent": "jee-cbt-saarthi/1.0" } },
+      );
+      if (!r.ok) return;
+      const d = (await r.json()) as { query?: { search?: { title?: string; snippet?: string }[] } };
+      for (const s of d.query?.search || [])
+        if (s.title && s.snippet) out.push(`• ${clean(s.title)}: ${clean(s.snippet)}`.slice(0, 300));
+    } catch { /* optional source */ }
+  })();
+  await Promise.allSettled([ddg, wiki]);
+  return out.slice(0, 6).join("\n");
 }
 
 /** Heuristic router: a photo of a question, or wording that asks for a
@@ -195,9 +257,17 @@ export const Route = createFileRoute("/api/public/ai-chat")({
         // Personalization: bounded, sanitized student snapshot from the client.
         const ctx =
           typeof body.studentContext === "string" ? body.studentContext.slice(0, 2500) : "";
-        const systemPrompt = ctx
+        let systemPrompt = ctx
           ? `${SYSTEM_PROMPT}\n\nSTUDENT DATA (real, from their app — use when relevant):\n${ctx}`
           : SYSTEM_PROMPT;
+
+        // Live web knowledge: only when the question needs fresh facts.
+        if (!hasImage && needsWeb(lastMsg?.text || "")) {
+          const results = await webSearch(lastMsg?.text || "");
+          if (results) {
+            systemPrompt += `\n\nWEB RESULTS (live search for this question — fresh, prefer over memory for dates/numbers):\n${results.slice(0, 2200)}`;
+          }
+        }
 
         // 1) OpenRouter first (free frontier models) — text-only messages.
         if (orKey && !hasImage) {

@@ -14,6 +14,7 @@ import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat
 import { Route as ApiPublicCloudConfigRouteImport } from './routes/api/public/cloud-config'
 import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/live-classes'
 import { Route as ApiPublicPdfReformatRouteImport } from './routes/api/public/pdf-reformat'
+import { Route as ApiPublicPyqPapersRouteImport } from './routes/api/public/pyq-papers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const ApiPublicPdfReformatRoute = ApiPublicPdfReformatRouteImport.update({
   path: '/api/public/pdf-reformat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPyqPapersRoute = ApiPublicPyqPapersRouteImport.update({
+  id: '/api/public/pyq-papers',
+  path: '/api/public/pyq-papers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
+  '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
+  '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
+  '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
+    | '/api/public/pyq-papers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
+    | '/api/public/pyq-papers'
   id:
     | '__root__'
     | '/'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
+    | '/api/public/pyq-papers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +105,7 @@ export interface RootRouteChildren {
   ApiPublicCloudConfigRoute: typeof ApiPublicCloudConfigRoute
   ApiPublicLiveClassesRoute: typeof ApiPublicLiveClassesRoute
   ApiPublicPdfReformatRoute: typeof ApiPublicPdfReformatRoute
+  ApiPublicPyqPapersRoute: typeof ApiPublicPyqPapersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPdfReformatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pyq-papers': {
+      id: '/api/public/pyq-papers'
+      path: '/api/public/pyq-papers'
+      fullPath: '/api/public/pyq-papers'
+      preLoaderRoute: typeof ApiPublicPyqPapersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCloudConfigRoute: ApiPublicCloudConfigRoute,
   ApiPublicLiveClassesRoute: ApiPublicLiveClassesRoute,
   ApiPublicPdfReformatRoute: ApiPublicPdfReformatRoute,
+  ApiPublicPyqPapersRoute: ApiPublicPyqPapersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
