@@ -44,10 +44,73 @@ const SK_FILES = [
   "jeeMain_2026_02April_shift1.json",
   "jeeMain_2026_02April_shift2.json",
   "jeeMain_2026_04April_shift1.json",
+  // (Only these 2025/2026 shift files exist in machine-readable form today.
+  // The remaining 2025 shifts are published only as PDFs; when a clean
+  // source appears we add its file name here and move the pin.)
 ];
 
 const SUBJ = { physics: "Physics", chemistry: "Chemistry", maths: "Mathematics", mathematics: "Mathematics" };
 const pretty = (s) => String(s || "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
+
+/* ---------- HTML cleanup + image baking ----------
+   Dataset text carries HTML markup (<p>, <b>, <br>, &nbsp;, <img …>).
+   Students must see clean text, real math and real images — never tags.
+   • layout tags → stripped (line breaks preserved)
+   • <sub>/<sup> → plain/caret notation (H2O, x^2)
+   • entities → decoded
+   • <img src="https://…"> → image DOWNLOADED into public/pyq/img/ and the
+     tag rewritten to our own path, so figures ship with the site. */
+const IMG_TASKS = new Map(); // remote url -> local path (dedup across questions)
+function cleanHTML(raw) {
+  let t = String(raw || "");
+  // protect svg + img from the tag stripper
+  const keep = [];
+  t = t.replace(/<svg[\s\S]*?<\/svg\s*>/gi, (m) => { keep.push(m); return `\u0001K${keep.length - 1}\u0001`; });
+  t = t.replace(/<img\b[^>]*>/gi, (m) => { keep.push(m); return `\u0001K${keep.length - 1}\u0001`; });
+  t = t.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<\/div>/gi, "\n").replace(/<\/tr>/gi, "\n");
+  t = t.replace(/<sub[^>]*>([\s\S]*?)<\/sub>/gi, "$1").replace(/<sup[^>]*>([\s\S]*?)<\/sup>/gi, "^$1");
+  t = t.replace(/<td[^>]*>/gi, " ").replace(/<\/td>/gi, "  ");
+  t = t.replace(/<\/?(p|b|strong|i|em|u|s|span|div|ul|ol|li|table|tbody|thead|tr|th|h[1-6]|a|center|font|small|big|blockquote|pre|code|section|figure|figcaption)(\s[^>]*)?\/?>/gi, "");
+  t = t.replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+       .replace(/&quot;/gi, '"').replace(/&#0?39;/g, "'").replace(/&hellip;/gi, "…").replace(/&mdash;/gi, "—")
+       .replace(/&times;/gi, "×").replace(/&deg;/gi, "°").replace(/&plusmn;/gi, "±");
+  t = t.replace(/\u0001K(\d+)\u0001/g, (_, i) => keep[+i] || "");
+  return t.replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ").trim();
+}
+/** Register every remote <img> for download; rewrite src to /pyq/img/… */
+function collectImages(text) {
+  return String(text || "").replace(/<img\b([^>]*?)src\s*=\s*["'](https?:\/\/[^"']+)["']([^>]*)>/gi, (m, pre, url, post) => {
+    let local = IMG_TASKS.get(url);
+    if (!local) {
+      const ext = (url.match(/\.(png|jpe?g|gif|webp|svg)(\?|$)/i) || [, "png"])[1].toLowerCase().replace("jpeg", "jpg");
+      let h = 0; for (let i = 0; i < url.length; i++) h = ((h << 5) - h + url.charCodeAt(i)) | 0;
+      local = `/pyq/img/${(h >>> 0).toString(36)}.${ext}`;
+      IMG_TASKS.set(url, local);
+    }
+    return `<img src="${local}">`;
+  });
+}
+async function downloadImages() {
+  if (!IMG_TASKS.size) return 0;
+  await mkdir(join(OUT, "img"), { recursive: true });
+  let ok = 0;
+  const entries = [...IMG_TASKS.entries()];
+  for (let i = 0; i < entries.length; i += 6) {
+    const batch = entries.slice(i, i + 6);
+    const results = await Promise.allSettled(batch.map(async ([url, local]) => {
+      const r = await fetch(url, { signal: AbortSignal.timeout(30_000),
+        headers: { "user-agent": "Mozilla/5.0 (jee-cbt bake)" } });
+      if (!r.ok) throw new Error(String(r.status));
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > 2_000_000) throw new Error("too big");
+      await writeFile(join(root, "public", local), buf);
+    }));
+    results.forEach((res) => { if (res.status === "fulfilled") ok++; });
+  }
+  return ok;
+}
+/** Full text pipeline for any question/option/solution string. */
+function cleanText(s) { return collectImages(cleanHTML(s)); }
 
 function parseIntegerKey(raw) {
   const s = String(raw || "").trim();
@@ -85,9 +148,10 @@ function transformRow(row) {
     catch { return null; }
     if (!answer || !options.some((o) => o.label === answer)) return null;
   }
-  const sol = String(row.explanation || row.solution || "").trim().slice(0, 2400);
+  const sol = cleanText(String(row.explanation || row.solution || "").trim()).slice(0, 2400);
   return { paperId, no: 0, subject, chapter: pretty(String(row.chapter || "")), topic: pretty(String(row.topic || "")),
-    type: qtype === "integer" ? "integer" : "mcq", text, options, answer, ...(accept ? { accept } : {}), sol };
+    type: qtype === "integer" ? "integer" : "mcq", text: cleanText(text),
+    options: options.map((o) => ({ ...o, text: cleanText(o.text) })), answer, ...(accept ? { accept } : {}), sol };
 }
 
 function parsePaperId(id) {
@@ -96,7 +160,7 @@ function parsePaperId(id) {
   m = id.match(/^jee-main-(\d{4})-offline$/i);
   if (m) return { year: +m[1], month: "Offline", label: "Offline Paper" };
   m = id.match(/^jee-main-(\d{4})-online-(\d+)(?:st|nd|rd|th)?-([a-z]+)-(?:morning|evening)?-?(?:shift|slot)?$/i);
-  if (m) { return { year: +m[1], month: pretty(m[3]), label: `${m[2]} ${pretty(m[3]).slice(0, 3)}` }; }
+  if (m) return { year: +m[1], month: pretty(m[3]), label: `${m[2]} ${pretty(m[3]).slice(0, 3)}` };
   m = id.match(/^aieee-(\d{4})$/i);
   if (m) return { year: +m[1], month: "AIEEE", label: `AIEEE ${m[1]} (Full Paper)` };
   return null;
@@ -177,8 +241,9 @@ function skTransform(rows, paperId) {
     }
     out.push({ paperId, no: 0, subject: skSubject(row, i, rows.length),
       chapter: pretty(String(row.topic || "")), topic: pretty(String(row.topic || "")),
-      type: isInt ? "integer" : "mcq", text, options, answer, ...(accept ? { accept } : {}),
-      sol: String(row.explanation || "").trim().slice(0, 2400) });
+      type: isInt ? "integer" : "mcq", text: cleanText(text),
+      options: options.map((o) => ({ ...o, text: cleanText(o.text) })), answer, ...(accept ? { accept } : {}),
+      sol: cleanText(String(row.explanation || "").trim()).slice(0, 2400) });
   });
   return out;
 }
@@ -274,6 +339,9 @@ async function main() {
   for (const meta of index)
     await writeFile(join(OUT, meta.id + ".json"),
       JSON.stringify({ paper: { id: meta.id, meta, questions: papers[meta.id] } }));
+  // download every referenced figure into public/pyq/img/ (ships with the site)
+  const gotImgs = await downloadImages();
+  if (IMG_TASKS.size) console.log(`[pyq] figures: ${gotImgs}/${IMG_TASKS.size} downloaded into public/pyq/img/`);
   const totalQ = index.reduce((s, p) => s + p.total, 0);
   const years = [...new Set(index.map((p) => p.year))].sort((a, b) => b - a);
   console.log(`[pyq] baked ${index.length} papers (${years[years.length - 1]}–${years[0]}), ${totalQ} questions → public/pyq/`);
