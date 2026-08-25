@@ -733,6 +733,8 @@ img.qimg{cursor:zoom-in}
 /* answer line highlight: the "Answer:" line models are told to end with */
 /* PYQ diagram figures (inline SVG from 2025/2026 papers) */
 .qsvg{display:block;margin:10px 0;max-width:100%;overflow-x:auto}
+.qfig{display:block;margin:10px 0;max-width:min(100%,420px);height:auto;background:#fff;border-radius:8px;padding:4px}
+html.dark .qfig{background:#f2ece6}
 .qsvg svg{max-width:100%;height:auto;background:#fff;border-radius:8px;padding:4px}
 html.dark .qsvg svg{background:#f2ece6}
 /* tappable section chips inside AI replies (Saarthi can drive the app) */
@@ -1324,11 +1326,38 @@ function svgSafe(svg){
             .replace(/(href|xlink:href)\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*')/gi,"")
             .replace(/javascript:/gi,"");
 }
+/** RUNTIME HTML CLEANUP (safety net): question text should arrive clean
+ *  from the bake, but if any <p>/<b>/&nbsp; markup slips through (older
+ *  baked files, API fallback), strip it here so students NEVER see tags. */
+function stripQHTML(raw){
+  let t=String(raw||"");
+  if(!/<[a-z][\s\S]*>|&[a-z#]+;/i.test(t))return t;    // nothing to clean
+  const keep=[];
+  t=t.replace(/<svg[\s\S]*?<\/svg\s*>/gi,m=>{keep.push(m);return "\u0002K"+(keep.length-1)+"\u0002";});
+  t=t.replace(/<img\b[^>]*>/gi,m=>{keep.push(m);return "\u0002K"+(keep.length-1)+"\u0002";});
+  t=t.replace(/<br\s*\/?>/gi,"\n").replace(/<\/(p|div|tr)>/gi,"\n");
+  t=t.replace(/<sub[^>]*>([\s\S]*?)<\/sub>/gi,"$1").replace(/<sup[^>]*>([\s\S]*?)<\/sup>/gi,"^$1");
+  t=t.replace(/<\/?(p|b|strong|i|em|u|s|span|div|ul|ol|li|table|tbody|thead|tr|td|th|h[1-6]|a|center|font|small|big|blockquote|pre|code|section|figure|figcaption)(\s[^>]*)?\/?>/gi,"");
+  t=t.replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&lt;/gi,"<").replace(/&gt;/gi,">")
+     .replace(/&quot;/gi,'"').replace(/&#0?39;/g,"'").replace(/&hellip;/gi,"…").replace(/&mdash;/gi,"—")
+     .replace(/&times;/gi,"×").replace(/&deg;/gi,"°").replace(/&plusmn;/gi,"±");
+  t=t.replace(/\u0002K(\d+)\u0002/g,(_,i)=>keep[+i]||"");
+  return t.replace(/\n{3,}/g,"\n\n").replace(/[ \t]{2,}/g," ").trim();
+}
+/** <img> tags in question text (figures baked into /pyq/img/ or remote):
+ *  sanitized to a plain same-origin/https img with lazy loading. */
+function imgSafe(tag){
+  const m=String(tag).match(/src\s*=\s*["']([^"']+)["']/i);
+  const src=m?m[1]:"";
+  if(!src||/^(javascript|data:text)/i.test(src))return "";
+  return `<img class="qfig" loading="lazy" decoding="async" src="${esc(src)}" alt="figure">`;
+}
 function texHTML(raw){
-  let s=String(raw||"");
-  // lift SVG diagrams out before escaping
+  let s=stripQHTML(raw);
+  // lift SVG diagrams + figure images out before escaping
   const svgs=[];
   s=s.replace(/<svg[\s\S]*?<\/svg>/gi,m=>{svgs.push(svgSafe(m));return "\u0000SVG"+(svgs.length-1)+"\u0000";});
+  s=s.replace(/<img\b[^>]*>/gi,m=>{svgs.push(imgSafe(m));return "\u0000SVG"+(svgs.length-1)+"\u0000";});
   let out;
   if(!/[$\\]/.test(s))out=esc(s).replace(/\n/g,"<br>");
   else if(!window.katex)out=esc(texPlain(s)).replace(/\n/g,"<br>");
@@ -1352,9 +1381,10 @@ function imgTag(key,cls="qimg",fallbackText){
   const textOK=fallbackText&&String(fallbackText).replace(/\s+/g," ").trim().length>=12;
   if((!key||preferText&&textOK)&&fallbackText){
     const s=String(fallbackText);
-    // PYQ/math content: render LaTeX + inline-SVG diagrams properly,
-    // never as raw $..$ or markup soup
-    if(/\$[^$]/.test(s)||/\\(frac|sqrt|int|sum|mathrm|alpha|beta|pi\b)/.test(s)||/<svg[\s>]/i.test(s)){
+    // PYQ/math/HTML content: render LaTeX, inline-SVG diagrams, baked
+    // figure images AND strip stray markup (<p>, <b>, &nbsp;) — students
+    // never see tags or raw $..$
+    if(/\$[^$]/.test(s)||/\\(frac|sqrt|int|sum|mathrm|alpha|beta|pi\b)/.test(s)||/<[a-z][\s\S]*>/i.test(s)||/&[a-z#]+;/i.test(s)){
       const d=el("div",cls+" qtext"+(preferText?" qtext-mode":""));
       d.innerHTML=texHTML(s);
       if(!window.katex)ensureKatex().then(ok=>{if(ok&&d.isConnected)d.innerHTML=texHTML(s);});
@@ -1381,13 +1411,24 @@ function load(){
     saved.dailyQuestions=saved.dailyQuestions||{};
     saved.reviewSchedule=saved.reviewSchedule||{};
     saved.qtags=saved.qtags||{};
-    saved.tests=(saved.tests||[]).filter(t=>t.practice);
+    // keep practice drills AND downloaded PYQ papers (results/review need them)
+    saved.tests=(saved.tests||[]).filter(t=>t.practice||t.pyq);
     return saved;
   }catch(e){return JSON.parse(JSON.stringify(DEFAULT));}
 }
 function save(){
-  try{localStorage.setItem(LS,JSON.stringify({...S,tests:S.tests.filter(t=>t.practice)}));}
-  catch(e){toast("Local progress storage is full.");}
+  // BUG FIX ("Test deleted" after submitting a PYQ paper): only practice
+  // tests were persisted, so a downloaded PYQ paper vanished on reload and
+  // its result review broke. PYQ tests now persist too (their pruning in
+  // pyqStart keeps storage bounded).
+  try{localStorage.setItem(LS,JSON.stringify({...S,tests:S.tests.filter(t=>t.practice||t.pyq)}));}
+  catch(e){
+    // storage full? drop unattempted PYQ papers (re-downloadable in one tap)
+    try{
+      const keep=S.tests.filter(t=>t.practice||(t.pyq&&attemptsOf(t.id).length));
+      localStorage.setItem(LS,JSON.stringify({...S,tests:keep}));
+    }catch(e2){toast("Local progress storage is full.");}
+  }
 }
 
 /* Public test papers live in Lovable Cloud. Results, bookmarks, planner and
@@ -1613,10 +1654,28 @@ async function publishPublicTest(test,files,onProgress,meta={}){
   const r=await cloudFetch("/rest/v1/public_tests",{method:"POST",headers:{"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(payload)});
   return rowToTest((await r.json())[0]);
 }
+/** Deterministic UUID for a PYQ paper id — every device computes the same
+ *  one, giving each paper a shared anonymous score pool. */
+function pyqUUID(pid){
+  let h1=0x811c9dc5,h2=0x01000193;
+  for(let i=0;i<pid.length;i++){const c=pid.charCodeAt(i);
+    h1=(h1^c)*16777619>>>0; h2=((h2<<5)-h2+c)>>>0;}
+  const hex=(n)=>n.toString(16).padStart(8,"0");
+  const a=hex(h1),b=hex(h2),c2=hex((h1^h2)>>>0),d=hex(((h1>>>1)+(h2>>>1))>>>0);
+  return `${a}-${b.slice(0,4)}-4${b.slice(5,8)}-8${c2.slice(1,4)}-${c2.slice(4)}${d.slice(0,8)}`;
+}
 /** Anonymous leaderboard: posts just the marks/accuracy of a submitted
  *  attempt on a published test (no identity attached), then lets the
  *  result page show "you vs everyone" via the test_score_stats RPC. */
 async function postScore(test,result){
+  // PYQ papers share one community pool per paper via a stable UUID derived
+  // from the paper id (same for every student), so "you vs everyone" works
+  // on previous-year papers exactly like on published tests.
+  if(test.pyqId){try{
+    await cloudFetch("/rest/v1/test_scores",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({test_id:pyqUUID(test.pyqId),marks:result.all.marks,max_marks:result.all.max,accuracy:result.all.accuracy})});
+  }catch(e){} return;}
   if(!test.cloud)return;
   try{
     await cloudFetch("/rest/v1/test_scores",{method:"POST",
@@ -3214,7 +3273,9 @@ function scheduleCard(){
   const row=el("div","row");row.style.marginTop="12px";
   const sel=el("select");
   cloudTests.forEach(t=>{const o=el("option",null,t.name);o.value=t.id;sel.appendChild(o);});
-  if(!cloudTests.length){const o=el("option",null,"No tests in library yet");o.value="";sel.appendChild(o);}
+  // downloaded PYQ papers are schedulable too
+  S.tests.filter(t=>t.pyq).forEach(t=>{const o=el("option",null,t.name+" (PYQ)");o.value=t.id;sel.appendChild(o);});
+  if(!sel.children.length){const o=el("option",null,"No tests in library yet");o.value="";sel.appendChild(o);}
   const dt=el("input");dt.type="datetime-local";
   const addB=el("button","btn sm","Schedule");
   addB.onclick=()=>{
@@ -4322,8 +4383,12 @@ async function pyqStart(meta,btn){
       answer:q.answer, ...(q.accept?{accept:q.accept}:{}),
       solText:q.sol||""
     }));
+    // Era-correct timing: modern papers are 75Q/180min. Older papers (90Q
+    // AIEEE era) also ran 180min, but short salvaged sets get proportional
+    // time (~2.4 min/Q) so a 45-question fragment isn't a padded 3 hours.
+    const durMin=qs.length>=70?180:Math.max(30,Math.round(qs.length*2.4));
     const t={id:uid(),name:`JEE Main ${meta.year} · ${meta.label}`,createdAt:Date.now(),
-      date:new Date().toISOString(),duration:TEST_MINUTES*60,questions:qs,chapter:{},
+      date:new Date().toISOString(),duration:durMin*60,questions:qs,chapter:{},
       pyqId:meta.id,pyq:true};
     // storage hygiene: PYQ papers re-download in one tap, so never-attempted
     // old ones don't need to sit in localStorage forever (keeps us far from
@@ -4415,15 +4480,50 @@ function viewPyq(root){
     });
     sec.appendChild(g);root.appendChild(sec);
   });
+  root.appendChild(pyqPracticeCard());
   // refresh affordance
   const foot=el("div","row");foot.style.cssText="justify-content:center;margin-top:16px";
   const rf=el("button","btn ghost sm",ic("refresh")+" Refresh paper list");
   rf.onclick=()=>{pyqLoadIndex(true);};
   foot.appendChild(rf);root.appendChild(foot);
 }
+/* ---- CHAPTER-WISE PYQ PRACTICE ----------------------------------------
+   The topper strategy: solve every PYQ of one chapter in a row. Pulls
+   questions from ALL downloaded papers (download a few papers first),
+   grouped by chapter, launched as a timed drill in the same CBT engine. */
+function pyqChapterPool(){
+  const byCh={};
+  S.tests.filter(t=>t.pyq).forEach(t=>t.questions.forEach(q=>{
+    const c=q.chapter||q.subject||"Misc";
+    (byCh[c]=byCh[c]||[]).push(q);
+  }));
+  return byCh;
+}
+function pyqPracticeCard(){
+  const pool=pyqChapterPool();
+  const chapters=Object.entries(pool).sort((a,b)=>b[1].length-a[1].length);
+  const c=el("div","card");
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">Chapter-wise PYQ Practice</h3></div>
+    <div class="small muted">The topper move: hammer one chapter's real past questions in a row. Questions come from the papers you've opened — start a few papers above to grow this bank (${chapters.reduce((s2,x)=>s2+x[1].length,0)} questions from ${chapters.length} chapters so far).</div>`;
+  if(chapters.length){
+    const row=el("div","row");row.style.cssText="margin-top:12px;gap:8px";
+    const sel=el("select");
+    chapters.forEach(([name,qs])=>{const o=el("option",null,`${name} (${qs.length} PYQs)`);o.value=name;sel.appendChild(o);});
+    const n=el("select");
+    [10,15,25].forEach(v=>{const o=el("option",null,v+" questions");o.value=v;n.appendChild(o);});
+    const b=el("button","btn sm",ic("play")+" Start PYQ drill");
+    b.onclick=()=>{
+      const qs=(pool[sel.value]||[]).slice().sort(()=>Math.random()-0.5).slice(0,+n.value);
+      startDrill(sel.value+" · PYQ Drill",qs.map(q=>({q})),144); // 2.4 min/Q, exam pace
+    };
+    row.append(sel,n,b);c.appendChild(row);
+  }
+  return c;
+}
 function viewSearch(root){
   const c=el("div","card");
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("search")}</span><h2 style="margin:0">Search &amp; Question Bank</h2></div>
+    <div class="small muted">Searches your uploaded papers AND every PYQ paper you've opened (open more papers in PYQ Papers to grow the bank).</div>
     <div class="muted small">Search every uploaded question — or browse the whole bank chapter by chapter and practise any slice.</div>`;
   const row=el("div","row");row.style.marginTop="12px";
   const q=el("input");q.type="text";q.placeholder="e.g. dimensional, 12, complex numbers, mole…";q.style.flex="1";
@@ -4665,7 +4765,36 @@ function downloadScorecardPDF(t,a,r,ai,btn){
 function viewResult(root){
   const a=S.attempts.find(x=>x.id===routeArg)||S.attempts.filter(x=>x.submittedAt).slice(-1)[0];
   if(!a){root.appendChild(el("div","card","<p class='muted'>No result.</p>"));return;}
-  const t=testById(a.testId);
+  let t=testById(a.testId);
+  // BUG FIX ("Test deleted" for PYQ results): if the paper was pruned from
+  // local storage, re-download it from our own site and rebuild the review
+  // automatically — the student's attempt data was never lost.
+  if(!t&&a.pyqId){
+    const c=el("div","card");
+    c.innerHTML=`<div class="live-empty">${ic("refresh",30)}<h3 style="margin:12px 0 6px">Restoring this paper…</h3>
+      <div class="small muted">Re-downloading the question paper to show your full review.</div></div>`;
+    root.appendChild(c);
+    (async()=>{
+      try{
+        let data=null;
+        try{const rs=await fetch("/pyq/"+encodeURIComponent(a.pyqId)+".json");if(rs.ok)data=await rs.json().catch(()=>null);}catch(e){}
+        if(!data||!data.paper){const r2=await fetch("/api/public/pyq-papers?paper="+encodeURIComponent(a.pyqId));data=await r2.json().catch(()=>null);}
+        if(!data||!data.paper)throw new Error("fetch failed");
+        const meta=data.paper.meta;
+        const qs=data.paper.questions.map((q,i)=>({id:a.pyqId+"-q"+(i+1),no:q.no,index:i,subject:q.subject,
+          chapter:q.chapter||"",topic:q.topic||"",type:q.type,text:q.text,
+          options:(q.options||[]).map(o=>({label:o.label,text:o.text})),
+          answer:q.answer,...(q.accept?{accept:q.accept}:{}),solText:q.sol||""}));
+        const nt={id:a.testId,name:`JEE Main ${meta.year} · ${meta.label}`,createdAt:Date.now(),
+          date:new Date().toISOString(),duration:TEST_MINUTES*60,questions:qs,chapter:{},pyqId:a.pyqId,pyq:true};
+        S.tests.push(nt);save();
+        if(route==="result")render(0);
+      }catch(e){
+        c.innerHTML="<p class='muted'>Couldn't restore this paper — check your connection and reopen the result.</p>";
+      }
+    })();
+    return;
+  }
   if(!t){root.appendChild(el("div","card","<p class='muted'>Test was deleted.</p>"));return;}
   const r=a.result, ai=analyseCached(t,a);
 
@@ -4675,8 +4804,9 @@ function viewResult(root){
   // 1) Verdict hero — one sentence anyone understands
   const beatPct=Math.round(ai.percentile);
   const vh=el("div","verdict-hero");
-  vh.innerHTML=`<div class="verdict-line">You scored <b>${r.all.marks}/${r.all.max}</b> — on the real 2025 JEE Main curve that beats
+  vh.innerHTML=`<div class="verdict-line">You scored <b>${r.all.marks}/${r.all.max}</b> — on the real 2025 JEE Main normalisation curve (latest official data${(t.pyqId&&!/2025/.test(t.name||""))?", applied to this older paper":""}) that beats
     <b>${beatPct}%</b> of the <b>14.75 lakh</b> candidates who actually appeared, landing you around <b>AIR ${ai.rank.toLocaleString("en-IN")}</b>.</div>
+    ${t.pyqId?`<div class="small" style="opacity:.85;margin-top:6px">${ic("bulb")} Shift difficulties differ — NTA normalises real scores per shift. Treat this percentile as an estimate on the standard curve.</div>`:""}
     <div class="verdict-sub">${ai.improving>0?`${ic("trendup")} You're trending up: +${Math.round(ai.improving)}% vs your first test.`:
       ai.improving<0?`${ic("trenddown")} This one dipped ${Math.abs(Math.round(ai.improving))}% vs your first test — one bad day changes nothing; the plan below does.`:
       `Every conversion here uses NTA's published 2025 data — no invented numbers.`}</div>`;
@@ -4932,12 +5062,12 @@ function viewResult(root){
   }
 
   // ---- anonymous community comparison (published tests only) ----
-  if(t.cloud){
+  if(t.cloud||t.pyqId){
     const cmpCard=el("div","card");
-    cmpCard.innerHTML=`<div class="section-title"><span class="ico">${ic("trophy")}</span><h3 style="margin:0">You vs everyone on this test</h3></div>
+    cmpCard.innerHTML=`<div class="section-title"><span class="ico">${ic("trophy")}</span><h3 style="margin:0">You vs everyone on this ${t.pyqId?"paper":"test"}</h3></div>
       <div class="small muted" data-cmp-body>Loading community scores…</div>`;
     root.appendChild(cmpCard);
-    fetchScoreStats(t.id,r.all.marks).then(st2=>{
+    fetchScoreStats(t.pyqId?pyqUUID(t.pyqId):t.id,r.all.marks).then(st2=>{
       const body=cmpCard.querySelector("[data-cmp-body]");
       if(!st2||!st2.count){body.textContent="No community scores yet — yours is the first!";return;}
       body.outerHTML=`<div class="grid g4" style="margin-top:10px">
@@ -5375,6 +5505,21 @@ function buildFoot(){
 }
 const cq=()=>EX.test.questions[EX.cur];
 const res=q=>EX.attempt.responses[q.id];
+/* Gentle pacing nudge: if a single question crosses 4 minutes, a one-time
+   toast suggests marking it for review — the classic time-sink saver. */
+let _nudgeTimer=null,_nudgedFor=null;
+function armPaceNudge(){
+  if(_nudgeTimer)clearTimeout(_nudgeTimer);
+  if(!EX)return;
+  const qid=EX.test.questions[EX.cur].id;
+  if(_nudgedFor===qid)return;
+  _nudgeTimer=setTimeout(()=>{
+    if(EX&&EX.test.questions[EX.cur].id===qid){
+      _nudgedFor=qid;
+      toast("4 min on this question — consider Mark for Review & move on",4000);
+    }
+  },240000);
+}
 function commitTime(){
   const now=Date.now(); const q=cq(); if(q) res(q).time+=(now-EX.lastTick)/1000;
   EX.lastTick=now;
@@ -5386,6 +5531,7 @@ function move(d,keep){
   EX.cur=n;drawQuestion();
 }
 function drawQuestion(){
+  armPaceNudge();
   const q=cq(),r=res(q);
   if(r.status==="notvisited")r.status=r.ans?"answered":"notanswered";
   EX.lastTick=Date.now();
@@ -5522,6 +5668,7 @@ function submitExam(auto){
   attempt.submittedAt=Date.now();
   attempt.timeTaken=(attempt.submittedAt-attempt.startedAt)/1000;
   attempt.autoSubmitted=!!auto;
+  if(test.pyqId)attempt.pyqId=test.pyqId; // lets the review self-restore the paper if it's ever pruned
   attempt.result=evaluate(test,attempt.responses);
   updateReviewSchedule(test,attempt.responses);
   postScore(test,attempt.result); // anonymous community comparison (fire & forget)
@@ -5628,14 +5775,25 @@ function applyTheme(){
   root.dataset.anim=st.anim||"on";
   $("#themeBtn").innerHTML=st.theme==="system"?ic("monitor"):dark?ic("sun"):ic("moon");
   $("#themeBtn").title="Theme: "+(st.theme||"system");
+  // keep the browser/OS chrome (address bar, PWA titlebar) in sync
+  const mt=document.querySelector('meta[name="theme-color"]');
+  if(mt)mt.setAttribute("content",dark?"#141232":"#1b1b4b");
 }
 $("#themeBtn").onclick=()=>{
   const order=["light","dark","system"];
   S.settings.theme=order[(order.indexOf(S.settings.theme)+1)%3];
-  save();applyTheme();toast("Theme: "+S.settings.theme,1200);
+  save();applyTheme();
+  // BUG FIX (invisible dashboard after dark→light): canvases (charts,
+  // trajectory, donuts) are painted with getComputedStyle() colors at
+  // draw time — after a theme flip they kept the OLD ink colors (light
+  // text on a light page = invisible). Re-render the current view so
+  // every chart repaints with the new theme's palette. Views are cheap
+  // to rebuild; the live exam overlay is untouched (separate DOM).
+  render();
+  toast("Theme: "+S.settings.theme,1200);
 };
 initOfflineDownloadButton();
-if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(S.settings.theme==="system")applyTheme();});
+if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(S.settings.theme==="system"){applyTheme();render();}});
 
 /** Recursively walks the Supabase storage bucket (folders → files) and
  *  sums byte sizes — gives an actual, live total of everything the site
@@ -5996,6 +6154,17 @@ function viewMastery(root){
   });
   root.appendChild(videoCard("Recommended revision videos","One-shot and short revision links matched to your weakest chapters.",weakVideoItems()));
 }
+function notebookAutoTagCard(untaggedCount){
+  const c=el("div","card");
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("robot")}</span><h3 style="margin:0">Let Saarthi sort your mistakes</h3></div>
+    <div class="small muted">${untaggedCount} wrong answer(s) not yet tagged. Ask Saarthi to walk through them with you and decide: concept gap, silly slip, or bad guess.</div>`;
+  const b=el("button","btn sm",ic("spark")+" Analyse my mistakes");b.style.marginTop="10px";
+  b.onclick=()=>{
+    $("#aiChatInput").value="Look at my recent wrong answers (you can see my weak chapters and mistake tags in my data). Help me categorise my mistakes: which look like concept gaps vs silly errors vs guesses? Then give me one concrete fix for each category.";
+    aiChatOpen();setTimeout(()=>aiChatSend(),50);
+  };
+  c.appendChild(b);return c;
+}
 function viewNotebook(root){
   const list=wrongQuestions();
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("notebook")}</span><h2 style="margin:0">Mistake Notebook</h2></div>
@@ -6016,7 +6185,9 @@ function viewNotebook(root){
   practiceDue.onclick=()=>{
     startDrill("Spaced Review · "+fmtDate(Date.now()),due);
   };
+  const untagged=list.filter(x=>!S.qtags[x.q.id]).length;
   bar.firstElementChild.appendChild(el("div","row"));
+  /* AI mistake analysis entry point (only when there are untagged mistakes) */
   bar.firstElementChild.lastElementChild.append(practice,practiceDue);
 
   // ---- filters: subject / chapter / tag / due + free-text search ----
@@ -6042,6 +6213,7 @@ function viewNotebook(root){
   filt.appendChild(searchIn);
   bar.appendChild(filt);
   root.appendChild(bar);
+  if(untagged>=3)root.appendChild(notebookAutoTagCard(untagged));
 
   const filtered=list.filter(x=>{
     if(NBF.sub!=="All"&&x.q.subject!==NBF.sub)return false;
@@ -6123,7 +6295,31 @@ const FORMULAS={
     ["Probability","P(A∪B) = P(A)+P(B)−P(A∩B) · Bayes: P(A|B) = P(B|A)P(A)/P(B)"],
     ["Vectors & 3D","a·b = |a||b|cosθ · |a×b| = |a||b|sinθ"]]
 };
+function weakFormulaCard(){
+  let weak=[];try{weak=chapterPriorities().slice(0,4).map(p=>p.name);}catch(e){return null;}
+  if(!weak.length)return null;
+  // match weak chapter names against the formula bank (loose word match)
+  const hits=[];
+  Object.entries(FORMULAS).forEach(([sub,rows])=>rows.forEach(([name,body])=>{
+    if(weak.some(w=>{
+      const a=w.toLowerCase(),b=name.toLowerCase();
+      return a.includes(b)||b.includes(a)||a.split(/\s+/).some(x=>x.length>4&&b.includes(x));
+    }))hits.push([sub,name,body]);
+  }));
+  if(!hits.length)return null;
+  const c=el("div","card");
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("zap")}</span><h3 style="margin:0">Formulas for YOUR weak chapters</h3></div>
+    <div class="small muted">Auto-picked from your mistake data — revise these first.</div>`;
+  hits.slice(0,6).forEach(([sub,name,body])=>{
+    const r=el("div","frow");
+    r.innerHTML=`<b style="color:${SUBCOLOR[sub]||'var(--accent-text)'}">${esc(name)}</b><div class="small" style="margin-top:3px">${esc(body)}</div>`;
+    r.style.cssText="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px";
+    c.appendChild(r);
+  });
+  return c;
+}
 function viewFormulas(root){
+  const wf=weakFormulaCard(); if(wf)root.appendChild(wf);
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("calc")}</span><h2 style="margin:0">Formula &amp; Concept Revision</h2></div>
     <div class="muted small">Quick last-minute sheet for all three subjects. Search to jump to a chapter — or flip through them as flashcards.</div>`));
 
@@ -6438,6 +6634,31 @@ function viewLibrary(root){
     clearTimeout(window.__libT);window.__libT=setTimeout(()=>{render();
       const s=document.querySelector(".filters input");if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}},250);};
 }
+/** WEEKLY REPORT CARD — every Sunday-to-Saturday summary of real activity:
+ *  attempts, marks trend, accuracy trend, strongest improvement, next focus.
+ *  Pure local computation; shows on the dashboard once there's data. */
+function weeklyReportCard(){
+  const now=Date.now(), weekMs=7*86400000;
+  const wk=S.attempts.filter(a=>a.submittedAt&&a.submittedAt>now-weekMs);
+  const prev=S.attempts.filter(a=>a.submittedAt&&a.submittedAt<=now-weekMs&&a.submittedAt>now-2*weekMs);
+  if(!wk.length)return null;
+  const avg=arr=>arr.length?Math.round(arr.reduce((s2,a)=>s2+a.result.all.marks,0)/arr.length):0;
+  const acc=arr=>arr.length?Math.round(arr.reduce((s2,a)=>s2+a.result.all.accuracy,0)/arr.length):0;
+  const dMarks=prev.length?avg(wk)-avg(prev):0, dAcc=prev.length?acc(wk)-acc(prev):0;
+  const qDone=Object.entries(S.dailyQuestions||{}).filter(([k])=>new Date(k).getTime()>now-weekMs)
+    .reduce((s2,[,v])=>s2+v,0);
+  let focus="";try{const p=chapterPriorities()[0];if(p)focus=p.name+" ("+p.acc+"%)";}catch(e){}
+  const c=el("div","card");
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("news")}</span><h3 style="margin:0">This Week's Report</h3></div>
+    <div class="grid g4" style="margin-top:10px">
+      ${statCard("Tests taken",wk.length)}
+      ${statCard("Avg marks",avg(wk)+(prev.length?` <span class="small ${dMarks>=0?"ok":"no"}" style="font-size:12px">${dMarks>=0?"+":""}${dMarks}</span>`:""))}
+      ${statCard("Avg accuracy",acc(wk)+"%"+(prev.length?` <span class="small ${dAcc>=0?"ok":"no"}" style="font-size:12px">${dAcc>=0?"+":""}${dAcc}%</span>`:""))}
+      ${statCard("Questions done",qDone)}
+    </div>
+    ${focus?`<div class="small muted" style="margin-top:10px">${ic("target")} Next week's focus: <b>${esc(focus)}</b> — your weakest chapter right now.</div>`:""}`;
+  return c;
+}
 function viewDash(root){
   const g=globalStats(), st=streakInfo();
   const resume=pendingResume();
@@ -6464,6 +6685,7 @@ function viewDash(root){
   const lb=el("button","btn ghost",ic("library")+" Test Library");lb.onclick=()=>go("library");
   acts.append(qs,up,lb);hero.appendChild(acts);
   root.appendChild(hero);
+  const wr=weeklyReportCard(); if(wr)root.appendChild(wr);
 
   if(resume){
     const r=el("div","card");
@@ -6703,11 +6925,29 @@ function mdLite(raw){
     else{closeLists();html+=inline(line)+"<br>";}
   });
   closeLists();
+  // SITE NAVIGATION: when Saarthi mentions a section of this platform by
+  // name, turn it into a tappable chip that jumps straight there — the AI
+  // isn't just describing the app, it can drive it.
+  const NAV_WORDS=[["PYQ Papers","pyq"],["Test Library","library"],["Upload PDFs","upload"],["Mistake Notebook","notebook"],
+    ["Live Classes","live"],["Analytics","analytics"],["Planner","planner"],["Mastery","mastery"],
+    ["Formulas","formulas"],["Practice","practice"],["Review","review"],["Dashboard","dash"],["Settings","settings"]];
+  NAV_WORDS.forEach(([label,r])=>{
+    html=html.replace(new RegExp("(?<![\\w>])("+label.replace(/ /g,"\\s")+")(?![\\w<])","g"),
+      `<button type="button" class="ai-navlink" data-nav="${r}">$1</button>`);
+  });
   return html;
 }
+// tap a section chip inside any AI reply → go there (chat closes itself)
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest(".ai-navlink");
+  if(!b)return;
+  const r=b.dataset.nav;
+  if(typeof aiChatClose==="function")aiChatClose();
+  go(r);
+});
 const AI_AVATAR_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>';
 const AI_FILE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6"/></svg>';
-const AI_STARTERS=["How am I performing? Review my recent tests","What should I revise first this week?","Am I ready for my next mock test?","Solve: \u222B x\u00b7e^x dx step by step"];
+const AI_STARTERS=["How am I performing? Review my recent tests","When is the next JEE Main? Latest updates","What should I revise first this week?","Solve: \u222B x\u00b7e^x dx step by step"];
 const AI_COPY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
 const AI_RETRY_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
 function aiChatRenderMsgs(){
@@ -6715,7 +6955,7 @@ function aiChatRenderMsgs(){
   if(!aiChatHistory.length){
     const empty=el("div","ai-empty");
     empty.innerHTML=`<span class="ai-avatar">${AI_AVATAR_SVG}</span><h4>Hi! I'm Saarthi</h4>
-      <p>Your personal AI mentor — I can see your real scores, weak chapters, streak and schedule. Ask me to review your performance, plan your revision, or solve any doubt. Attach a photo or PDF of a question anytime.</p>
+      <p>Your all-in-one AI mentor — I solve any PCM doubt, search the web for the latest exam dates and cutoffs, know your real scores and weak chapters, and can guide you to any feature of this platform. Attach a photo or PDF of a question anytime.</p>
       <div class="ai-cap"><div><b>${ic("zap")}</b>Instant doubts</div><div><b>${ic("camera")}</b>Photo &amp; PDF</div><div><b>${ic("brain")}</b>Step-by-step</div></div>`;
     const starters=el("div","ai-starters");
     AI_STARTERS.forEach(s=>{
@@ -6938,6 +7178,13 @@ function buildStudentContext(){
     // next scheduled mock
     const sched=(S.schedules||[]).filter(s2=>s2.when>Date.now()).sort((a,b)=>a.when-b.when)[0];
     if(sched){const t2=testById(sched.testId);if(t2)parts.push(`Next scheduled mock: ${t2.name} at ${new Date(sched.when).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}.`);}
+    // long-term chat memory: one line about what was discussed before,
+    // so Saarthi remembers earlier sessions beyond the 16-message window
+    try{
+      const past=aiChatHistory.filter(m=>!m.pending&&m.role==="user").slice(0,-8).slice(-6)
+        .map(m=>String(m.text||"").slice(0,60)).filter(Boolean);
+      if(past.length)parts.push("Earlier in our chats the student asked about: "+past.join(" | "));
+    }catch(e){}
     return parts.join("\n").slice(0,2400);
   }catch(e){return "";}
 }
