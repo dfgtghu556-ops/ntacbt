@@ -48,10 +48,36 @@ interface ReformattedQuestion {
   answer: string | null;
 }
 
+/* RATE LIMIT: Gemini-backed and token-heavy (page images!). 6/min per IP is
+ * generous for legitimate PDF uploads and blocks accidental client loops. */
+const rlBuckets = new Map<string, number[]>();
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = (rlBuckets.get(ip) || []).filter((t) => now - t < 60_000);
+  if (arr.length >= 6) {
+    rlBuckets.set(ip, arr);
+    return true;
+  }
+  arr.push(now);
+  rlBuckets.set(ip, arr);
+  if (rlBuckets.size > 2000) rlBuckets.clear();
+  return false;
+}
+
 export const Route = createFileRoute("/api/public/pdf-reformat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const ip =
+          request.headers.get("cf-connecting-ip") ||
+          (request.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
+          "anon";
+        if (rateLimited(ip)) {
+          return Response.json(
+            { error: "Too many AI parsing requests — wait a minute and retry." },
+            { status: 429 },
+          );
+        }
         const apiKey = process.env["GEMINI_API_KEY"];
         if (!apiKey) {
           return Response.json(
@@ -63,7 +89,11 @@ export const Route = createFileRoute("/api/public/pdf-reformat")({
           );
         }
 
-        let body: { text?: string; subject?: string; images?: { mimeType?: string; data?: string }[] };
+        let body: {
+          text?: string;
+          subject?: string;
+          images?: { mimeType?: string; data?: string }[];
+        };
         try {
           body = await request.json();
         } catch {
@@ -112,10 +142,18 @@ export const Route = createFileRoute("/api/public/pdf-reformat")({
           required: ["questions"],
         };
 
-        interface ImgIn { mimeType?: string; data?: string }
+        interface ImgIn {
+          mimeType?: string;
+          data?: string;
+        }
         const imgParts = images
           .filter((im: ImgIn) => im && im.mimeType && im.data)
-          .map((im: ImgIn) => ({ inline_data: { mime_type: String(im.mimeType).slice(0, 40), data: String(im.data).slice(0, 6_000_000) } }));
+          .map((im: ImgIn) => ({
+            inline_data: {
+              mime_type: String(im.mimeType).slice(0, 40),
+              data: String(im.data).slice(0, 6_000_000),
+            },
+          }));
 
         let r: Response;
         try {
