@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">JEE CBT</string>
+    <string name="guard_desc">Focus Lock ke दौरान yeh service sirf yeh dekhti hai ki kaunsa app screen par khula hai, aur distracting apps (reels, games, social media) se turant wapas padhai par le aati hai. Koi content nahi padha jata, kuch bhi record ya upload nahi hota.</string>
+</resources>
