@@ -1,0 +1,53 @@
+# Builds the Android APK automatically on GitHub's servers whenever anything
+# in android/ changes (or when run manually from the Actions tab).
+# The finished APK lands in a GitHub RELEASE named "app-latest", so the
+# website's Download-App button always points to a stable URL:
+#   https://github.com/<owner>/<repo>/releases/download/app-latest/jee-cbt.apk
+name: Build Android APK
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # needed to create/update the release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate Gradle wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.7
+
+      - name: Build release APK (debug-signed, sideload-ready)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk jee-cbt.apk
+
+      - name: Publish to the app-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-latest
+          name: "JEE CBT Android App (latest)"
+          body: |
+            📱 JEE CBT Android app — website + REAL Focus Lock (app blocker).
+            Install: download jee-cbt.apk → open → allow "Install unknown apps" → install.
+            Focus Guard: Settings → Accessibility → JEE CBT Focus Guard → ON.
+          files: jee-cbt.apk
+
