@@ -10,6 +10,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,46 +20,61 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.text.InputType;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Calendar;
 
 /**
- * JEE CBT — native shell v2.0 (full production app).
+ * JEE CBT — native shell v3.0 (real-app feel).
  *
- * Native superpowers exposed to the site via the "AndroidFocus" JS bridge:
- *  - REAL Focus Lock (accessibility app blocker, survives process death)
- *  - Daily study reminder notifications (work with the app CLOSED, re-armed
- *    after reboot) — browsers can't do this without a push server
- *  - Keep-screen-on during exams (no more screen-off mid mock)
- *  - Haptic feedback (submit, streak, block bounces)
- *  - Native share (scorecards/streaks straight to WhatsApp etc.)
- *  - Reliable guard detection + full onboarding incl. Android 13+
- *    "Restricted settings" path
+ * v3.0:
+ *  - NO URL prompt: the site is baked in and opens instantly (URL dialog
+ *    only appears as a fallback if the page fails to load)
+ *  - Native SPLASH screen while the site loads — opens like a real app
+ *  - First-launch SETUP WIZARD: welcome → notifications → Focus Guard,
+ *    so the app blocker is configured BEFORE the first lock, not after
+ *  - everything from v2.0: real app blocker, daily reminders (closed-app),
+ *    keep-awake exams, haptics, native share, reboot survival
  */
 public class MainActivity extends Activity {
 
     static final String PREFS = "jeecbt";
     static final String CHANNEL_ID = "study_reminders";
+    static final String DEFAULT_URL = "https://ntacbt.lovable.app/jee-cbt.html";
+
     private WebView web;
+    private View splash;
+    private FrameLayout rootLayout;
+    private boolean pageLoaded = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         makeChannel(this);
-        maybeAskNotifPermission();
 
+        rootLayout = new FrameLayout(this);
         web = new WebView(this);
-        setContentView(web);
+        rootLayout.addView(web);
+        splash = buildSplash();
+        rootLayout.addView(splash);
+        setContentView(rootLayout);
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -64,10 +82,27 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT); // cache → faster next opens
 
         web.addJavascriptInterface(new FocusBridge(this), "AndroidFocus");
         web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (!pageLoaded) {
+                    pageLoaded = true;
+                    hideSplash();
+                    maybeRunSetupWizard();
+                }
+            }
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
+                // main page failed (wrong URL / no net) → fallback dialog
+                if (req != null && req.isForMainFrame()) {
+                    hideSplash();
+                    askUrl("Site load nahi hui — internet check karo ya address badlo.");
+                }
+            }
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 String home = host(getUrl(MainActivity.this));
@@ -79,8 +114,82 @@ public class MainActivity extends Activity {
             }
         });
 
-        String url = getUrl(this);
-        if (url.isEmpty()) askUrl(); else web.loadUrl(url);
+        web.loadUrl(getUrl(this)); // opens instantly — no prompt
+    }
+
+    /* ---------- splash: brand screen while the site boots ---------- */
+    private View buildSplash() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{0xFF141232, 0xFF1B1B4B, 0xFF2A1E5C});
+        box.setBackground(bg);
+
+        TextView logo = new TextView(this);
+        logo.setText("🎯");
+        logo.setTextSize(64);
+        logo.setGravity(Gravity.CENTER);
+        box.addView(logo);
+
+        TextView title = new TextView(this);
+        title.setText("JEE CBT");
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(30);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setGravity(Gravity.CENTER);
+        box.addView(title);
+
+        TextView sub = new TextView(this);
+        sub.setText("Padhai ka poora system — tests, AI planner, Focus Lock");
+        sub.setTextColor(0xB3FFFFFF);
+        sub.setTextSize(13);
+        sub.setGravity(Gravity.CENTER);
+        sub.setPadding(60, 12, 60, 30);
+        box.addView(sub);
+
+        ProgressBar pb = new ProgressBar(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.gravity = Gravity.CENTER;
+        box.addView(pb, lp);
+        return box;
+    }
+
+    private void hideSplash() {
+        if (splash != null) {
+            splash.animate().alpha(0f).setDuration(300)
+                    .withEndAction(() -> { rootLayout.removeView(splash); splash = null; })
+                    .start();
+        }
+    }
+
+    /* ---------- first-launch setup wizard ---------- */
+    private void maybeRunSetupWizard() {
+        SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (p.getBoolean("onboarded", false)) {
+            // already set up — but if guard got turned off later, remind gently once per launch
+            if (!guardEnabled(this) && !p.getBoolean("guardNagged", false)) {
+                p.edit().putBoolean("guardNagged", true).apply();
+            }
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("👋 Welcome — 1 minute ka setup")
+                .setMessage("Yeh app website se 2 kadam aage hai:\n\n"
+                        + "🔒 REAL Focus Lock — reels/games सचमुच block honge\n"
+                        + "⏰ Pakka daily reminder — app band ho tab bhi\n"
+                        + "🔆 Exam mein screen kabhi off nahi\n\n"
+                        + "In sab ke liye 2 chhoti permissions chahiye. Abhi set karein?")
+                .setCancelable(false)
+                .setPositiveButton("Haan, set karo", (d, w) -> {
+                    getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean("onboarded", true).apply();
+                    maybeAskNotifPermission();
+                    if (!guardEnabled(this)) showGuardOnboarding();
+                })
+                .setNegativeButton("Baad mein", (d, w) ->
+                        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean("onboarded", true).apply())
+                .show();
     }
 
     static void makeChannel(Context c) {
@@ -100,25 +209,27 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void askUrl() {
+    private void askUrl(String why) {
         final EditText in = new EditText(this);
         in.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
-        in.setText("https://ntacbt.lovable.app/jee-cbt.html");
+        in.setText(getUrl(this));
         new AlertDialog.Builder(this)
-                .setTitle("Apni website ka address")
-                .setMessage("Apni JEE CBT website ka poora address daalo (bas ek baar).")
+                .setTitle("Website address")
+                .setMessage(why)
                 .setView(in)
-                .setCancelable(false)
                 .setPositiveButton("Kholo", (d, w) -> {
                     String u = in.getText().toString().trim();
                     if (!u.startsWith("http")) u = "https://" + u;
                     getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("url", u).apply();
+                    pageLoaded = false;
                     web.loadUrl(u);
-                }).show();
+                })
+                .setNegativeButton("Retry", (d, w) -> { pageLoaded = false; web.reload(); })
+                .show();
     }
 
     static String getUrl(Context c) {
-        return c.getSharedPreferences(PREFS, MODE_PRIVATE).getString("url", "");
+        return c.getSharedPreferences(PREFS, MODE_PRIVATE).getString("url", DEFAULT_URL);
     }
 
     static String host(String url) {
@@ -136,7 +247,7 @@ public class MainActivity extends Activity {
     void showGuardOnboarding() {
         new AlertDialog.Builder(this)
                 .setTitle("🔒 REAL blocking ke liye 1 setting")
-                .setMessage("Focus Guard abhi OFF hai — isliye doosre apps block NAHI ho rahe.\n\n"
+                .setMessage("Focus Guard abhi OFF hai — jab tak yeh ON nahi hoga, doosre apps block NAHI honge (Android ka rule hai, har blocker app ko yeh chahiye).\n\n"
                         + "① Neeche 'Accessibility kholo' dabao\n"
                         + "② 'Downloaded apps' mein JEE CBT Focus Guard → ON → Allow\n\n"
                         + "⚠️ Agar 'Restricted setting' bolke rok de (Android 13+):\n"
@@ -157,7 +268,6 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    /** Schedule (or reschedule) the daily reminder at hour:minute. */
     static void scheduleReminder(Context c, int hour, int minute) {
         SharedPreferences p = c.getSharedPreferences(PREFS, MODE_PRIVATE);
         p.edit().putInt("remHour", hour).putInt("remMin", minute).apply();
@@ -172,14 +282,12 @@ public class MainActivity extends Activity {
         cal.set(Calendar.SECOND, 0);
         if (cal.getTimeInMillis() <= System.currentTimeMillis())
             cal.add(Calendar.DAY_OF_YEAR, 1);
-        // inexact repeating is battery-friendly and survives Doze well enough
         am.setInexactRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY, pi);
     }
 
     static void cancelReminder(Context c) {
-        c.getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putInt("remHour", -1).apply();
+        c.getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("remHour", -1).apply();
         AlarmManager am = (AlarmManager) c.getSystemService(ALARM_SERVICE);
         if (am == null) return;
         Intent i = new Intent(c, ReminderReceiver.class);
@@ -207,16 +315,15 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
-    /* ═══════════════ JS BRIDGE — the site's native superpowers ═══════════════ */
+    /* ═══════════════ JS BRIDGE ═══════════════ */
     public static class FocusBridge {
         private final MainActivity act;
         FocusBridge(MainActivity a) { act = a; }
 
         @JavascriptInterface public boolean isApp() { return true; }
-        @JavascriptInterface public String appVersion() { return "2.0"; }
+        @JavascriptInterface public String appVersion() { return "3.0"; }
         @JavascriptInterface public boolean isGuardEnabled() { return guardEnabled(act); }
 
-        /* ---- Focus Lock ---- */
         @JavascriptInterface
         public void startLock(int minutes) {
             long until = System.currentTimeMillis() + minutes * 60000L;
@@ -246,7 +353,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openGuardSettings() { act.runOnUiThread(act::showGuardOnboarding); }
 
-        /* ---- Daily reminder (works with app closed) ---- */
         @JavascriptInterface
         public void setDailyReminder(int hour, int minute) {
             scheduleReminder(act, hour, minute);
@@ -263,7 +369,6 @@ public class MainActivity extends Activity {
             return act.getSharedPreferences(PREFS, MODE_PRIVATE).getInt("remHour", -1);
         }
 
-        /* ---- Keep screen on (exam mode) ---- */
         @JavascriptInterface
         public void keepAwake(boolean on) {
             act.runOnUiThread(() -> {
@@ -272,7 +377,6 @@ public class MainActivity extends Activity {
             });
         }
 
-        /* ---- Haptics ---- */
         @JavascriptInterface
         public void vibrate(int ms) {
             try {
@@ -285,7 +389,6 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
 
-        /* ---- Native share ---- */
         @JavascriptInterface
         public void share(String text) {
             try {
