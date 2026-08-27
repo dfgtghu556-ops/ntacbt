@@ -72,17 +72,23 @@ function parseDuration(s: string): number {
 /** Build topic-specific, language- and objective-aware search queries.
  *  A preferred channel ("Dream Team" pick) gets its own dedicated query so
  *  its lessons surface when they exist — without excluding better fits. */
-function buildQueries(topic: string, subject: string, language: string, kind: string, channel: string): string[] {
+/** DEPTH-AWARE queries: a crash plan and a mastery plan search for genuinely
+ *  different videos. depth: oneshot | lecture | detailed. kind adds the
+ *  objective (learn/practice/revision/advanced). */
+function buildQueries(topic: string, subject: string, language: string, kind: string, channel: string, depth: string): string[] {
   const lang =
     language === "hi" ? " hindi" :
     language === "hinglish" ? " hindi english" : "";
-  const kindWords =
-    kind === "practice" ? ["questions practice", "important questions jee"] :
-    kind === "revision" ? ["revision one shot", "quick revision"] :
-    ["one shot lecture", "full chapter class 11 12"];
+  let kindWords: string[];
+  if (kind === "practice") kindWords = ["important questions practice jee main", "pyq questions solved"];
+  else if (kind === "revision") kindWords = ["quick revision short notes", "revision one shot mind map"];
+  else if (kind === "advanced") kindWords = ["jee advanced level questions", "advanced problems tricky"];
+  else if (depth === "oneshot") kindWords = ["one shot complete jee", "one shot revision full chapter"];
+  else if (depth === "detailed") kindWords = ["detailed lecture complete concepts", "full chapter in depth lecture jee"];
+  else kindWords = ["full chapter lecture jee", "complete chapter class 11 12"];
   const base = `${topic} ${subject}`.trim();
-  const qs = kindWords.map((k) => `${base} ${k}${lang} jee`);
-  if (channel) qs.unshift(`${base} ${channel}${kind === "practice" ? " questions" : kind === "revision" ? " revision" : " one shot"}`);
+  const qs = kindWords.map((k) => `${base} ${k}${lang}`);
+  if (channel) qs.unshift(`${base} ${channel}${kind === "practice" ? " questions" : kind === "revision" ? " revision" : kind === "advanced" ? " advanced" : depth === "oneshot" ? " one shot" : " lecture"}`);
   else qs.push(`${base}${lang} jee main`); // broad safety net
   return qs.slice(0, 3); // bounded fan-out — be polite to YouTube
 }
@@ -154,20 +160,35 @@ async function fetchSearch(query: string): Promise<RawItem[]> {
 }
 
 /** Deterministic filter + explainable educational-fit ranking. */
-function rank(raw: RawItem[], topic: string, language: string, kind: string, maxMinutes: number, channel = ""): Candidate[] {
+/** Trusted JEE educators — quality prior, not a monopoly (relevance still rules). */
+const TRUSTED = ["physics wallah", "pw ", "jee wallah", "unacademy", "vedantu", "mohit tyagi",
+  "physics galaxy", "esaral", "competishun", "etoos", "motion", "allen", "aakash", "sri chaitanya",
+  "eduniti", "maths unplugged", "chem shiksha", "nv sir", "mc sir", "arvind kalia", "next toppers", "manocha"];
+function rank(raw: RawItem[], topic: string, language: string, kind: string, maxMinutes: number, channel = "", depth = "lecture", minMinutes = 0): Candidate[] {
   const topicToks = tokens(topic);
   const seen = new Set<string>();
   const out: Candidate[] = [];
-  const minSec = kind === "revision" ? 240 : 600;       // no 30-second clips for real lessons
-  const maxSec = Math.max(1200, (maxMinutes || 180) * 60 * 1.6); // soft ceiling
+  // DEPTH-SPECIFIC duration bands — the heart of "different timeline, different videos":
+  //   crash/oneshot  learn: 30–150 min sweet spot (long one-shots)
+  //   lecture        learn: 60–210 min
+  //   detailed       learn: 90 min – 5 h (marathon depth is a FEATURE here)
+  let idealLo: number, idealHi: number, minSec: number;
+  if (kind === "revision") { minSec = 240; idealLo = 480; idealHi = 2700; }
+  else if (kind === "practice" || kind === "advanced") { minSec = 600; idealLo = 1200; idealHi = 5400; }
+  else if (depth === "oneshot") { minSec = 900; idealLo = 1800; idealHi = 9000; }
+  else if (depth === "detailed") { minSec = 1800; idealLo = 5400; idealHi = 18000; }
+  else { minSec = 1200; idealLo = 3600; idealHi = 12600; }
+  if (minMinutes) minSec = Math.max(minSec, Math.round(minMinutes * 60 * 0.5));
+  const hardMax = Math.max(idealHi * 1.6, (maxMinutes || 180) * 60 * 2);
   for (const v of raw) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     if (v.live) continue;                                // live streams don't schedule
     if (!v.durationSec || v.durationSec < 65) continue;  // Shorts / clips
     if (v.durationSec < minSec) continue;                // too thin for the objective
+    if (v.durationSec > hardMax) continue;               // absurdly long for the slot
     const tl = v.title.toLowerCase();
-    if (/#shorts|\bshorts\b|status|whatsapp|motivation|song|dance/.test(tl)) continue;
+    if (/#shorts|\bshorts\b|status|whatsapp|motivation|song|dance|vlog|reaction/.test(tl)) continue;
     // topic relevance — highest priority signal
     const tToks = tokens(v.title);
     const hit = topicToks.filter((t) => tToks.some((x) => x === t || x.startsWith(t) || t.startsWith(x))).length;
@@ -180,14 +201,28 @@ function rank(raw: RawItem[], topic: string, language: string, kind: string, max
       if (/hindi|हिंदी/.test(tl)) { score += 12; why.push("language match"); }
     } else if (!/hindi|हिंदी/.test(tl)) { score += 8; why.push("language match"); }
     // objective fit
-    if (kind === "practice" && /question|problem|pyq|practice|numerical/.test(tl)) { score += 14; why.push("problem-solving lesson"); }
-    if (kind === "revision" && /revision|one shot|oneshot|short|recap|summary/.test(tl)) { score += 14; why.push("revision lesson"); }
-    if (kind === "learn" && /one shot|oneshot|full|complete|lecture|chapter/.test(tl)) { score += 12; why.push("full lecture"); }
+    if (kind === "practice" && /question|problem|pyq|practice|numerical|solved/.test(tl)) { score += 14; why.push("problem-solving lesson"); }
+    if (kind === "advanced" && /advanced|tough|tricky|hard|olympiad/.test(tl)) { score += 16; why.push("advanced-level"); }
+    if (kind === "revision" && /revision|one shot|oneshot|short|recap|summary|mind map/.test(tl)) { score += 14; why.push("revision lesson"); }
+    if (kind === "learn") {
+      // DEPTH fit: reward the video TYPE this plan actually needs
+      if (depth === "oneshot" && /one shot|oneshot|in one video|complete.*(one|1)\s*(shot|video)/.test(tl)) { score += 16; why.push("one-shot (crash fit)"); }
+      if (depth === "detailed" && /detailed|in depth|depth|complete course|full course|marathon/.test(tl)) { score += 16; why.push("detailed depth (mastery fit)"); }
+      if (depth === "lecture" && /full|complete|lecture|chapter/.test(tl)) { score += 12; why.push("full lecture"); }
+      // penalise the WRONG type: a 45-min one-shot is not a mastery lesson,
+      // a 6-hour detailed course is not a crash lesson
+      if (depth === "detailed" && /one shot|oneshot/.test(tl) && v.durationSec < 5400) { score -= 18; why.push("too shallow for mastery"); }
+      if (depth === "oneshot" && v.durationSec > 12600) { score -= 15; why.push("too long for crash"); }
+    }
     // exam-level fit
-    if (/jee|iit|class 11|class 12|neet/.test(tl)) { score += 8; why.push("exam-level"); }
-    // duration suitability (don't grab a 9-hour marathon for a 45-min slot)
-    if (v.durationSec <= maxSec) { score += 8; why.push("duration fits"); }
-    else score -= Math.min(25, ((v.durationSec - maxSec) / maxSec) * 25);
+    if (/jee|iit|class 11|class 12/.test(tl)) { score += 8; why.push("exam-level"); }
+    // duration band: full points inside the depth's ideal band, taper outside
+    if (v.durationSec >= idealLo && v.durationSec <= idealHi) { score += 14; why.push("ideal duration"); }
+    else if (v.durationSec < idealLo) score -= Math.min(20, ((idealLo - v.durationSec) / idealLo) * 25);
+    else score -= Math.min(20, ((v.durationSec - idealHi) / idealHi) * 20);
+    // trusted-educator prior (quality signal, never a gate)
+    const chLow = v.channel.toLowerCase();
+    if (TRUSTED.some((t) => chLow.includes(t))) { score += 10; why.push("trusted educator"); }
     // mild recency preference (syllabus drifts)
     if (/month|week|day/.test(v.published)) { score += 3; }
     // Dream Team: student's chosen educator gets a strong (not absolute) boost
@@ -211,23 +246,25 @@ export const Route = createFileRoute("/api/public/study-planner")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        let body: { topic?: string; subject?: string; language?: string; kind?: string; maxMinutes?: number; channel?: string } = {};
+        let body: { topic?: string; subject?: string; language?: string; kind?: string; maxMinutes?: number; minMinutes?: number; channel?: string; depth?: string } = {};
         try { body = await request.json(); } catch { /* defaults */ }
         const topic = String(body.topic || "").slice(0, 120).trim();
         if (!topic) return Response.json({ error: "topic required" }, { status: 400 });
         const subject = String(body.subject || "").slice(0, 40);
         const language = ["en", "hi", "hinglish"].includes(body.language || "") ? (body.language as string) : "en";
-        const kind = ["learn", "practice", "revision"].includes(body.kind || "") ? (body.kind as string) : "learn";
+        const kind = ["learn", "practice", "revision", "advanced"].includes(body.kind || "") ? (body.kind as string) : "learn";
+        const depth = ["oneshot", "lecture", "detailed"].includes(body.depth || "") ? (body.depth as string) : "lecture";
         const maxMinutes = Math.min(600, Math.max(10, Number(body.maxMinutes) || 180));
+        const minMinutes = Math.min(300, Math.max(0, Number(body.minMinutes) || 0));
         const channel = String(body.channel || "").slice(0, 60).trim(); // Dream Team preference (optional)
 
-        const key = [topic.toLowerCase(), subject, language, kind, channel.toLowerCase()].join("|");
+        const key = [topic.toLowerCase(), subject, language, kind, depth, channel.toLowerCase()].join("|");
         const hit = cache.get(key);
         if (hit && Date.now() - hit.at < TTL) {
           return Response.json({ items: hit.items, fetchedAt: hit.at, fallback: hit.fallback, cached: true });
         }
 
-        const queries = buildQueries(topic, subject, language, kind, channel);
+        const queries = buildQueries(topic, subject, language, kind, channel, depth);
         const settled = await Promise.allSettled(queries.map((q) => fetchSearch(q)));
         const raw: RawItem[] = [];
         let anyOk = false;
@@ -236,7 +273,7 @@ export const Route = createFileRoute("/api/public/study-planner")({
           anyOk = true;
           raw.push(...s.value);
         }
-        const items = rank(raw, topic, language, kind, maxMinutes, channel);
+        const items = rank(raw, topic, language, kind, maxMinutes, channel, depth, minMinutes);
         const fallback = !anyOk || items.length === 0;
         cache.set(key, { at: Date.now(), items, fallback });
         if (cache.size > 500) cache.clear(); // bounded
