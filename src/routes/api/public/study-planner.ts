@@ -75,21 +75,30 @@ function parseDuration(s: string): number {
 /** DEPTH-AWARE queries: a crash plan and a mastery plan search for genuinely
  *  different videos. depth: oneshot | lecture | detailed. kind adds the
  *  objective (learn/practice/revision/advanced). */
-function buildQueries(topic: string, subject: string, language: string, kind: string, channel: string, depth: string): string[] {
+/** Exam-target keyword: the SAME chapter gets board-level or JEE-level
+ *  videos depending on what the student is actually preparing for. */
+function targetWord(target: string): string {
+  if (target === "board12") return " class 12 boards cbse";
+  if (target === "board11") return " class 11 cbse";
+  if (target === "jeeadv") return " jee advanced";
+  return " jee main";
+}
+function buildQueries(topic: string, subject: string, language: string, kind: string, channel: string, depth: string, target: string): string[] {
   const lang =
     language === "hi" ? " hindi" :
     language === "hinglish" ? " hindi english" : "";
+  const tw = targetWord(target);
   let kindWords: string[];
-  if (kind === "practice") kindWords = ["important questions practice jee main", "pyq questions solved"];
-  else if (kind === "revision") kindWords = ["quick revision short notes", "revision one shot mind map"];
+  if (kind === "practice") kindWords = [`important questions practice${tw}`, target.startsWith("board") ? "board exam questions solved" : "pyq questions solved" + tw];
+  else if (kind === "revision") kindWords = [`quick revision short notes${tw}`, "revision one shot mind map"];
   else if (kind === "advanced") kindWords = ["jee advanced level questions", "advanced problems tricky"];
-  else if (depth === "oneshot") kindWords = ["one shot complete jee", "one shot revision full chapter"];
-  else if (depth === "detailed") kindWords = ["detailed lecture complete concepts", "full chapter in depth lecture jee"];
-  else kindWords = ["full chapter lecture jee", "complete chapter class 11 12"];
+  else if (depth === "oneshot") kindWords = [`one shot complete${tw}`, "one shot revision full chapter"];
+  else if (depth === "detailed") kindWords = [`detailed lecture complete concepts${tw}`, `full chapter in depth lecture${tw}`];
+  else kindWords = [`full chapter lecture${tw}`, "complete chapter class 11 12"];
   const base = `${topic} ${subject}`.trim();
   const qs = kindWords.map((k) => `${base} ${k}${lang}`);
-  if (channel) qs.unshift(`${base} ${channel}${kind === "practice" ? " questions" : kind === "revision" ? " revision" : kind === "advanced" ? " advanced" : depth === "oneshot" ? " one shot" : " lecture"}`);
-  else qs.push(`${base}${lang} jee main`); // broad safety net
+  if (channel) qs.unshift(`${base} ${channel}${kind === "practice" ? " questions" : kind === "revision" ? " revision" : kind === "advanced" ? " advanced" : depth === "oneshot" ? " one shot" : " lecture"}${tw}`);
+  else qs.push(`${base}${lang}${tw}`); // broad safety net
   return qs.slice(0, 3); // bounded fan-out — be polite to YouTube
 }
 
@@ -164,7 +173,7 @@ async function fetchSearch(query: string): Promise<RawItem[]> {
 const TRUSTED = ["physics wallah", "pw ", "jee wallah", "unacademy", "vedantu", "mohit tyagi",
   "physics galaxy", "esaral", "competishun", "etoos", "motion", "allen", "aakash", "sri chaitanya",
   "eduniti", "maths unplugged", "chem shiksha", "nv sir", "mc sir", "arvind kalia", "next toppers", "manocha"];
-function rank(raw: RawItem[], topic: string, language: string, kind: string, maxMinutes: number, channel = "", depth = "lecture", minMinutes = 0): Candidate[] {
+function rank(raw: RawItem[], topic: string, language: string, kind: string, maxMinutes: number, channel = "", depth = "lecture", minMinutes = 0, target = "jeemain"): Candidate[] {
   const topicToks = tokens(topic);
   const seen = new Set<string>();
   const out: Candidate[] = [];
@@ -214,8 +223,18 @@ function rank(raw: RawItem[], topic: string, language: string, kind: string, max
       if (depth === "detailed" && /one shot|oneshot/.test(tl) && v.durationSec < 5400) { score -= 18; why.push("too shallow for mastery"); }
       if (depth === "oneshot" && v.durationSec > 12600) { score -= 15; why.push("too long for crash"); }
     }
-    // exam-level fit
-    if (/jee|iit|class 11|class 12/.test(tl)) { score += 8; why.push("exam-level"); }
+    // exam-level fit — matched to the student's TARGET, not generic
+    if (target === "board12" || target === "board11") {
+      if (/board|cbse|ncert|class 12|class 11/.test(tl)) { score += 12; why.push("board-level"); }
+      if (/jee advanced|olympiad/.test(tl)) { score -= 10; why.push("too advanced for boards"); }
+    } else if (target === "jeeadv") {
+      if (/jee advanced|advanced/.test(tl)) { score += 12; why.push("advanced-level"); }
+      else if (/jee|iit/.test(tl)) { score += 6; }
+      if (/boards? exam|cbse sample/.test(tl)) { score -= 8; why.push("board-only content"); }
+    } else {
+      if (/jee main|jee|iit/.test(tl)) { score += 10; why.push("JEE-level"); }
+      if (/boards? exam preparation|cbse sample paper/.test(tl)) { score -= 6; }
+    }
     // duration band: full points inside the depth's ideal band, taper outside
     if (v.durationSec >= idealLo && v.durationSec <= idealHi) { score += 14; why.push("ideal duration"); }
     else if (v.durationSec < idealLo) score -= Math.min(20, ((idealLo - v.durationSec) / idealLo) * 25);
@@ -246,7 +265,7 @@ export const Route = createFileRoute("/api/public/study-planner")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        let body: { topic?: string; subject?: string; language?: string; kind?: string; maxMinutes?: number; minMinutes?: number; channel?: string; depth?: string } = {};
+        let body: { topic?: string; subject?: string; language?: string; kind?: string; maxMinutes?: number; minMinutes?: number; channel?: string; depth?: string; target?: string } = {};
         try { body = await request.json(); } catch { /* defaults */ }
         const topic = String(body.topic || "").slice(0, 120).trim();
         if (!topic) return Response.json({ error: "topic required" }, { status: 400 });
@@ -254,17 +273,18 @@ export const Route = createFileRoute("/api/public/study-planner")({
         const language = ["en", "hi", "hinglish"].includes(body.language || "") ? (body.language as string) : "en";
         const kind = ["learn", "practice", "revision", "advanced"].includes(body.kind || "") ? (body.kind as string) : "learn";
         const depth = ["oneshot", "lecture", "detailed"].includes(body.depth || "") ? (body.depth as string) : "lecture";
+        const target = ["jeemain", "jeeadv", "board12", "board11"].includes(body.target || "") ? (body.target as string) : "jeemain";
         const maxMinutes = Math.min(600, Math.max(10, Number(body.maxMinutes) || 180));
         const minMinutes = Math.min(300, Math.max(0, Number(body.minMinutes) || 0));
         const channel = String(body.channel || "").slice(0, 60).trim(); // Dream Team preference (optional)
 
-        const key = [topic.toLowerCase(), subject, language, kind, depth, channel.toLowerCase()].join("|");
+        const key = [topic.toLowerCase(), subject, language, kind, depth, target, channel.toLowerCase()].join("|");
         const hit = cache.get(key);
         if (hit && Date.now() - hit.at < TTL) {
           return Response.json({ items: hit.items, fetchedAt: hit.at, fallback: hit.fallback, cached: true });
         }
 
-        const queries = buildQueries(topic, subject, language, kind, channel, depth);
+        const queries = buildQueries(topic, subject, language, kind, channel, depth, target);
         const settled = await Promise.allSettled(queries.map((q) => fetchSearch(q)));
         const raw: RawItem[] = [];
         let anyOk = false;
@@ -273,7 +293,7 @@ export const Route = createFileRoute("/api/public/study-planner")({
           anyOk = true;
           raw.push(...s.value);
         }
-        const items = rank(raw, topic, language, kind, maxMinutes, channel, depth, minMinutes);
+        const items = rank(raw, topic, language, kind, maxMinutes, channel, depth, minMinutes, target);
         const fallback = !anyOk || items.length === 0;
         cache.set(key, { at: Date.now(), items, fallback });
         if (cache.size > 500) cache.clear(); // bounded
