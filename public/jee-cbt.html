@@ -3276,24 +3276,55 @@ let plannerTab="schedule";
    REVISION tasks → YouTube lesson discovery per task (server-ranked by
    educational fit, never "most views wins") → completion tracking → plan
    health → adaptive catch-up when the student falls behind.               */
+/* Topic tuples: [name, difficulty 1-3, JEE-Main weightage 1-3].
+   Weightage follows the last 5 years' official paper analysis — it drives
+   chapter ORDER in tight timelines (high-yield first) and never silently
+   drops anything. */
 const JEE_TOPICS={
-  Physics:[["Units & Measurement",1],["Kinematics",2],["Laws of Motion",2],["Work, Energy & Power",2],
-    ["Rotational Motion",3],["Gravitation",2],["Properties of Solids & Liquids",2],["Thermodynamics",2],
-    ["Kinetic Theory of Gases",1],["Oscillations & Waves",2],["Electrostatics",3],["Current Electricity",2],
-    ["Magnetic Effects of Current",3],["EMI & Alternating Current",3],["Electromagnetic Waves",1],
-    ["Ray Optics",2],["Wave Optics",2],["Dual Nature of Matter",1],["Atoms & Nuclei",1],["Semiconductors",1]],
-  Chemistry:[["Some Basic Concepts of Chemistry",1],["Atomic Structure",2],["Chemical Bonding",3],
-    ["Chemical Thermodynamics",2],["Solutions",2],["Equilibrium",3],["Redox & Electrochemistry",2],
-    ["Chemical Kinetics",2],["Classification of Elements",1],["p-Block Elements",2],["d & f Block Elements",2],
-    ["Coordination Compounds",3],["General Organic Chemistry",3],["Hydrocarbons",2],["Haloalkanes & Haloarenes",2],
-    ["Alcohols, Phenols & Ethers",2],["Aldehydes, Ketones & Acids",3],["Amines",2],["Biomolecules",1]],
-  Mathematics:[["Sets, Relations & Functions",1],["Complex Numbers",2],["Quadratic Equations",2],
-    ["Matrices & Determinants",2],["Permutations & Combinations",2],["Binomial Theorem",1],
-    ["Sequences & Series",2],["Limits, Continuity & Differentiability",3],["Applications of Derivatives",2],
-    ["Integral Calculus",3],["Differential Equations",2],["Straight Lines & Circles",2],["Conic Sections",3],
-    ["3D Geometry",2],["Vector Algebra",2],["Statistics & Probability",2],["Trigonometry",2]]
+  Physics:[["Units & Measurement",1,2],["Kinematics",2,2],["Laws of Motion",2,2],["Work, Energy & Power",2,2],
+    ["Rotational Motion",3,3],["Gravitation",2,2],["Properties of Solids & Liquids",2,2],["Thermodynamics",2,3],
+    ["Kinetic Theory of Gases",1,1],["Oscillations & Waves",2,3],["Electrostatics",3,3],["Current Electricity",2,3],
+    ["Magnetic Effects of Current",3,3],["EMI & Alternating Current",3,3],["Electromagnetic Waves",1,2],
+    ["Ray Optics",2,3],["Wave Optics",2,2],["Dual Nature of Matter",1,2],["Atoms & Nuclei",1,2],["Semiconductors",1,3]],
+  Chemistry:[["Some Basic Concepts of Chemistry",1,1],["Atomic Structure",2,2],["Chemical Bonding",3,3],
+    ["Chemical Thermodynamics",2,2],["Solutions",2,2],["Equilibrium",3,2],["Redox & Electrochemistry",2,3],
+    ["Chemical Kinetics",2,2],["Classification of Elements",1,1],["p-Block Elements",2,3],["d & f Block Elements",2,2],
+    ["Coordination Compounds",3,3],["General Organic Chemistry",3,3],["Hydrocarbons",2,2],["Haloalkanes & Haloarenes",2,2],
+    ["Alcohols, Phenols & Ethers",2,2],["Aldehydes, Ketones & Acids",3,3],["Amines",2,2],["Biomolecules",1,2]],
+  Mathematics:[["Sets, Relations & Functions",1,2],["Complex Numbers",2,2],["Quadratic Equations",2,2],
+    ["Matrices & Determinants",2,3],["Permutations & Combinations",2,2],["Binomial Theorem",1,2],
+    ["Sequences & Series",2,3],["Limits, Continuity & Differentiability",3,3],["Applications of Derivatives",2,2],
+    ["Integral Calculus",3,3],["Differential Equations",2,2],["Straight Lines & Circles",2,3],["Conic Sections",3,3],
+    ["3D Geometry",2,3],["Vector Algebra",2,3],["Statistics & Probability",2,2],["Trigonometry",2,2]]
 };
-const AIP_EST=[0,90,120,150]; // learn minutes by difficulty (1..3) at 1× speed
+/* ═══ DEPTH ENGINE — the timeline decides HOW you study, not just when ═══
+   Research + topper consensus: little time → one-shots, high-weightage
+   first, PYQ sprints; lots of time → full detailed lectures, problem
+   solving on every chapter, deeper revision. Four modes, chosen from the
+   days-per-chapter budget, each with its OWN video type, time estimates
+   and task mix — so a 45-day plan and a 120-day plan are genuinely
+   different preparations, not the same videos on a different calendar. */
+const AIP_DEPTHS={
+  crash:{label:"CRASH",icon:"⚡",color:"var(--red)",kind:"oneshot",
+    est:[0,45,60,80],pr:[0,0,30,40],prMin:3,adv:false,rev:[[3,15]],
+    hi:"One-shots + PYQ sprints, high-weightage chapters first — the proven <45-day comeback formula."},
+  focused:{label:"FOCUSED",icon:"🎯",color:"var(--amber)",kind:"oneshot",
+    est:[0,60,85,110],pr:[0,30,35,45],prMin:2,adv:false,rev:[[3,20],[7,15]],
+    hi:"Long one-shots + practice on medium/hard chapters, weightage-ordered — solid coverage at speed."},
+  standard:{label:"STANDARD",icon:"📘",color:"var(--blue)",kind:"lecture",
+    est:[0,90,120,150],pr:[0,35,40,55],prMin:2,adv:false,rev:[[3,20],[7,15]],
+    hi:"Full chapter lectures + dedicated problem-solving — the balanced full-syllabus preparation."},
+  mastery:{label:"MASTERY",icon:"🏆",color:"var(--green)",kind:"detailed",
+    est:[0,110,150,200],pr:[0,35,50,65],prMin:1,adv:true,rev:[[3,20],[7,15],[21,15]],
+    hi:"Detailed lectures, practice on EVERY chapter, advanced-level problems on hard ones, triple revision — topper-grade depth."}
+};
+/** Which depth does this timeline afford? days-per-chapter is the honest metric. */
+function aipDepthFor(days,subjects,topics){
+  let ch=0;(subjects||[]).forEach(s=>ch+=((topics||{})[s]||[]).length);
+  if(!ch)return AIP_DEPTHS.standard;
+  const dpc=days/ch;
+  return dpc<0.85?AIP_DEPTHS.crash:dpc<1.35?AIP_DEPTHS.focused:dpc<1.95?AIP_DEPTHS.standard:AIP_DEPTHS.mastery;
+}
 const AIP_CHANNELS={ // popular free JEE educators on YouTube (Dream Team options)
   Physics:["Physics Wallah","JEE Wallah","Vedantu JEE","Unacademy JEE","eSaral","Competishun"],
   Chemistry:["Physics Wallah","JEE Wallah","Vedantu JEE","Unacademy JEE","eSaral","Competishun"],
@@ -3312,24 +3343,39 @@ function aipAddDays(key,n){const d=new Date(key+"T00:00:00");d.setDate(d.getDate
 /** Total effective workload (min) for a topic selection at a playback speed:
  *  lectures + DPP/practice + spaced-revision slots. Powers the JEE-360 style
  *  "N days → X h/day required" live computation in the wizard. */
-function aipTotalEff(subjects,topics,speed){
+function aipTotalEff(subjects,topics,speed,depth){
+  const D=depth||AIP_DEPTHS.standard;
   let raw=0;
   subjects.forEach(s=>(topics[s]||[]).forEach(([,d])=>{
-    raw+=AIP_EST[d];                       // lecture
-    if(d>=2)raw+=(d===3?50:35);            // practice/DPP
-    raw+=35;                               // revision slots (+3d, +7d)
+    raw+=D.est[d];                          // lecture (depth-sized)
+    if(d>=D.prMin)raw+=D.pr[d];             // practice/DPP (depth mix)
+    if(D.adv&&d===3)raw+=45;                // advanced problems (mastery only)
+    raw+=D.rev.reduce((s2,[,m])=>s2+m,0);   // revision slots (depth count)
   }));
   return Math.round(raw/(speed||1.25));
 }
 /** Build the full task list + schedule. Returns {tasks, endDate, overflowMin}.
- *  Weekly Timetable = JEE-360 model: 2 subjects active per week, rotating,
- *  so every subject keeps moving without daily thrash. */
+ *  Weekly Timetable = JEE-360 model: 2 subjects active per week, rotating.
+ *  DEPTH-AWARE: the timeline's depth mode decides video type (oneshot vs
+ *  full lecture), practice mix, advanced tasks, revision passes AND the
+ *  chapter order (tight timelines = high-weightage chapters first). */
 function aipGenerate(prof){
+  const D=AIP_DEPTHS[prof.depth]||aipDepthFor(prof.days,prof.subjects,prof.topics);
+  prof.depth=Object.keys(AIP_DEPTHS).find(k=>AIP_DEPTHS[k]===D)||prof.depth;
   const queues={};let uid2=1;
   prof.subjects.forEach(s=>{
-    queues[s]=(prof.topics[s]||[]).map(([name,diff])=>{
-      const unit=[{id:"a"+uid2++,subject:s,topic:name,kind:"learn",diff,estMin:AIP_EST[diff],status:"todo"}];
-      if(diff>=2)unit.push({id:"a"+uid2++,subject:s,topic:name,kind:"practice",diff,estMin:diff===3?50:35,status:"todo"});
+    let list=(prof.topics[s]||[]).slice();
+    // CRASH/FOCUSED: high-weightage chapters first (marks per hour is king);
+    // STANDARD/MASTERY: official syllabus order (prerequisite chain intact)
+    if(D===AIP_DEPTHS.crash||D===AIP_DEPTHS.focused)
+      list.sort((a,b)=>((b[2]||2)-(a[2]||2))||((a[1]||2)-(b[1]||2)));
+    queues[s]=list.map(([name,diff,wt])=>{
+      const unit=[{id:"a"+uid2++,subject:s,topic:name,kind:"learn",diff,wt:wt||2,
+        depth:D.kind,estMin:D.est[diff],status:"todo"}];
+      if(diff>=D.prMin&&D.pr[diff])unit.push({id:"a"+uid2++,subject:s,topic:name,kind:"practice",diff,wt:wt||2,
+        depth:D.kind,estMin:D.pr[diff],status:"todo"});
+      if(D.adv&&diff===3)unit.push({id:"a"+uid2++,subject:s,topic:name,kind:"advanced",diff,wt:wt||2,
+        depth:D.kind,estMin:45,status:"todo"});
       return unit;
     });
   });
@@ -3365,12 +3411,12 @@ function aipGenerate(prof){
   // anything that didn't fit lands on the final day (counted as overflow)
   prof.subjects.forEach(s=>queues[s].forEach(unit=>unit.forEach(t2=>{
     t2.date=lastDay;overflowMin+=aipEff(t2.estMin,prof);tasks.push(t2);})));
-  // spaced revision after each learn (+3 and +7 days, capped at plan end)
+  // spaced revision after each learn — the DEPTH decides how many passes
   const revs=[];
   tasks.filter(t2=>t2.kind==="learn").forEach(t2=>{
-    [[3,20],[7,15]].forEach(([gap,min])=>{
+    D.rev.forEach(([gap,min])=>{
       const rd=aipAddDays(t2.date,gap);
-      if(rd<=lastDay)revs.push({id:"a"+uid2++,subject:t2.subject,topic:t2.topic,kind:"revision",diff:t2.diff,estMin:min,status:"todo",date:rd});
+      if(rd<=lastDay)revs.push({id:"a"+uid2++,subject:t2.subject,topic:t2.topic,kind:"revision",diff:t2.diff,wt:t2.wt,depth:D.kind,estMin:min,status:"todo",date:rd});
     });
   });
   return {tasks:tasks.concat(revs),endDate:aipAddDays(prof.startDate,Math.max(0,Math.min(dayOff,prof.days)-1)),overflowMin};
@@ -3411,7 +3457,9 @@ async function aipFindVideo(t,cb){
   try{
     const r=await fetch("/api/public/study-planner",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({topic:t.topic,subject:t.subject,language:p.profile.language,
-        kind:t.kind==="practice"?"practice":t.kind==="revision"?"revision":"learn",
+        kind:t.kind==="practice"?"practice":t.kind==="revision"?"revision":t.kind==="advanced"?"advanced":"learn",
+        depth:t.depth||"lecture",           // oneshot | lecture | detailed — changes the SEARCH itself
+        minMinutes:Math.round(t.estMin*0.4),
         maxMinutes:Math.round(t.estMin*1.6),channel:prefCh})});
     const data=await r.json().catch(()=>null);
     let items=(data&&data.items)||[];
@@ -3436,6 +3484,7 @@ function aipOpenLesson(t){
     <div class="row" style="justify-content:space-between;align-items:flex-start">
       <div><span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
         <span class="badge">${t.kind.toUpperCase()}</span>
+        ${t.depth?`<span class="badge">${t.depth==="oneshot"?"⚡ ONE-SHOT":t.depth==="detailed"?"🏆 DETAILED":"📘 LECTURE"}</span>`:""}
         <h3 style="margin:6px 0 2px">${esc(t.topic)}</h3>
         <div class="small muted">~${aipEff(t.estMin,p.profile)} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}</div></div>
       <button class="iconbtn" data-x>✕</button></div>
@@ -3552,10 +3601,10 @@ function aipWizard(root){
     c.appendChild(nav(true,()=>{w.step=4;render(0);}));
   }
   if(w.step===4){
-    // JEE-360 core screen: completion window ⇄ required h/day, live, with
-    // playback speed changing the maths in real time.
-    const total=aipTotalEff(w.subjects,w.topics,w.speed);
-    c.innerHTML=H("Choose your completion target","Your selection totals <b>"+Math.round(total/60)+" hours</b> of lectures + practice + revision at "+w.speed+"×. Pick the window — we show exactly what it costs per day. The green row is comfortable; red is honest about the grind.");
+    // JEE-360 core screen, now DEPTH-AWARE: every window shows not just the
+    // hours/day cost but WHAT KIND of preparation it buys (crash one-shots
+    // vs full mastery). Different timelines = genuinely different plans.
+    c.innerHTML=H("Choose your completion target","Har window sirf time nahi — <b>taiyari ka level</b> badalta hai: kam din = one-shots + high-weightage first; zyada din = full lectures + har chapter par practice + deep revision. Pick karo, hum poora breakdown dikhate hain.");
     const spd=el("div");spd.style.marginTop="12px";spd.appendChild(el("h4",null,"Playback speed"));
     const seg2=el("div","seg");[[1,"1×"],[1.25,"1.25×"],[1.5,"1.5×"],[1.75,"1.75×"],[2,"2×"]].forEach(([v,l])=>{
       const b=el("button",v===w.speed?"on":"",l);b.onclick=()=>{w.speed=v;render(0);};seg2.appendChild(b);});
@@ -3564,26 +3613,47 @@ function aipWizard(root){
     c.appendChild(spd);
     const tbl=el("div");tbl.style.marginTop="12px";tbl.appendChild(el("h4",null,"Completion window"));
     [30,45,60,90,120,150].forEach(days=>{
+      const D=aipDepthFor(days,w.subjects,w.topics);
+      const total=aipTotalEff(w.subjects,w.topics,w.speed,D); // depth-specific hours!
       const perDay=total/days;
       const hh=Math.floor(perDay/60),mm=Math.round(perDay%60);
       const tone=perDay<=210?"var(--green)":perDay<=300?"var(--amber)":"var(--red)";
       const on=w.days===days;
       const row=el("button","optrow"+(on?" sel":""));
       row.style.cssText="width:100%;text-align:left;cursor:pointer;margin-top:6px";
-      row.innerHTML=`<div style="flex:1"><b>${days} days</b>${perDay<=210&&perDay>150?` <span class="badge" style="color:var(--green)">RECOMMENDED</span>`:""}
-          <div class="small muted">finishes ${fmtDate(aipAddDays(todayKey(Date.now()),days-1))}</div></div>
+      row.innerHTML=`<div style="flex:1"><b>${days} days</b>
+          <span class="badge" style="color:${D.color}">${D.icon} ${D.label}</span>${D===AIP_DEPTHS.standard&&perDay<=240?` <span class="badge" style="color:var(--green)">RECOMMENDED</span>`:""}
+          <div class="small muted">${D.kind==="oneshot"?"One-shots":D.kind==="detailed"?"Detailed lectures":"Full lectures"} · ${Math.round(total/60)} h total · finishes ${fmtDate(aipAddDays(todayKey(Date.now()),days-1))}</div></div>
         <b style="color:${tone}">${hh}h ${String(mm).padStart(2,"0")}m / day</b>`;
       row.onclick=()=>{w.days=days;render(0);};
       tbl.appendChild(row);
     });
     c.appendChild(tbl);
-    const curPer=total/w.days;
-    c.appendChild(el("div","small",`${ic("clock")} Your pick: <b>${w.days} days</b> → <b>${Math.floor(curPer/60)}h ${String(Math.round(curPer%60)).padStart(2,"0")}m/day</b> ≈ <b>${Math.round(curPer*7/60)} h/week</b> of watching + practice.`)).style.marginTop="10px";
-    c.appendChild(nav(true,()=>{w.dailyMin=Math.ceil(total/w.days/5)*5;w.step=5;render(0);}));
+    // full breakdown of the currently selected depth — the "what you get" card
+    const Dcur=aipDepthFor(w.days,w.subjects,w.topics);
+    const totCur=aipTotalEff(w.subjects,w.topics,w.speed,Dcur);
+    const perCur=totCur/w.days;
+    const dcard=el("div","card");dcard.style.cssText="margin-top:12px;border-color:"+Dcur.color;
+    dcard.innerHTML=`<b style="color:${Dcur.color}">${Dcur.icon} ${Dcur.label} MODE — ${w.days} days buys you:</b>
+      <div class="small" style="margin-top:6px;line-height:1.7">${Dcur.hi}</div>
+      <div class="small muted" style="margin-top:6px">
+        📹 ${Dcur.kind==="oneshot"?"One-shot lectures (45–110 min/chapter)":Dcur.kind==="detailed"?"Detailed full lectures (up to 200 min on hard chapters)":"Full chapter lectures (90–150 min)"} ·
+        ✍️ Practice on ${Dcur.prMin===1?"EVERY chapter":Dcur.prMin===2?"medium + hard chapters":"hard chapters only"} ·
+        ${Dcur.adv?"🧗 Advanced problems on hard chapters · ":""}🔁 ${Dcur.rev.length}× spaced revision ·
+        📋 ${(Dcur===AIP_DEPTHS.crash||Dcur===AIP_DEPTHS.focused)?"High-weightage chapters FIRST":"Official syllabus order"}
+      </div>
+      <div class="small" style="margin-top:8px">${ic("clock")} <b>${Math.floor(perCur/60)}h ${String(Math.round(perCur%60)).padStart(2,"0")}m/day</b> ≈ ${Math.round(perCur*7/60)} h/week</div>`;
+    c.appendChild(dcard);
+    c.appendChild(nav(true,()=>{
+      const D2=aipDepthFor(w.days,w.subjects,w.topics);
+      w.depth=Object.keys(AIP_DEPTHS).find(k=>AIP_DEPTHS[k]===D2);
+      w.dailyMin=Math.ceil(aipTotalEff(w.subjects,w.topics,w.speed,D2)/w.days/5)*5;
+      w.step=5;render(0);}));
   }
   if(w.step===5){
     // JEE-360 "how do you want to study?" + language, then reality check.
-    const total=aipTotalEff(w.subjects,w.topics,w.speed);
+    const Dw=AIP_DEPTHS[w.depth]||aipDepthFor(w.days,w.subjects,w.topics);
+    const total=aipTotalEff(w.subjects,w.topics,w.speed,Dw);
     const mk=(label,val,opts,fn,hint)=>{const d2=el("div");d2.style.marginTop="12px";d2.appendChild(el("h4",null,label));
       if(hint)d2.appendChild(el("div","small muted",hint));
       const seg3=el("div","seg");opts.forEach(([v,l])=>{const b=el("button",v===val?"on":"",l);b.onclick=()=>{fn(v);render(0);};seg3.appendChild(b);});
@@ -3592,6 +3662,7 @@ function aipWizard(root){
     c.appendChild(mk("Timetable",w.style,[["weekly","Weekly Timetable (recommended)"],["one","One Subject at a Time"]],v=>w.style=v,"Weekly = 2 subjects active each week, rotating so nothing rusts."));
     c.appendChild(mk("Lesson language",w.language,[["en","English"],["hinglish","Hinglish"],["hi","Hindi"]],v=>w.language=v));
     const prof={subjects:w.subjects,topics:w.topics,days:w.days,dailyMin:w.dailyMin||Math.ceil(total/w.days/5)*5,
+      depth:w.depth||Object.keys(AIP_DEPTHS).find(k=>AIP_DEPTHS[k]===Dw),
       language:w.language,speed:w.speed,style:w.style,channels:w.channels||{},startDate:todayKey(Date.now())};
     const g=aipGenerate(prof);
     const per=prof.dailyMin;
@@ -3625,9 +3696,10 @@ function aipToday(root){
   const today=p.tasks.filter(t=>t.date===tk).sort((a,b)=>(a.kind==="revision")-(b.kind==="revision"));
   const todayEff=today.filter(t=>t.status==="todo").reduce((s2,t)=>s2+aipEff(t.estMin,p.profile),0);
   const head=el("div","card");
+  const Dp=AIP_DEPTHS[p.profile.depth]||AIP_DEPTHS.standard;
   head.innerHTML=`<div class="section-title"><span class="ico">${ic("spark")}</span>
-      <div><h3 style="margin:0">Today's Study Plan</h3>
-      <div class="small muted">${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})} · free YouTube classes, planned around your time</div></div></div>
+      <div><h3 style="margin:0">Today's Study Plan <span class="badge" style="color:${Dp.color}">${Dp.icon} ${Dp.label}</span></h3>
+      <div class="small muted">${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})} · ${Dp.kind==="oneshot"?"one-shots, high-weightage first":Dp.kind==="detailed"?"detailed lectures, full practice":"full lectures + practice"} · planned around your time</div></div></div>
     <div class="plan-summary">
       <div><b>${Math.floor(todayEff/60)}h ${todayEff%60}m</b><span>Left today</span></div>
       <div><b>${h.pctDone}%</b><span>Plan progress</span></div>
@@ -6552,6 +6624,21 @@ function viewSettings(root){
     }).join("")}</div>`;
   root.appendChild(hm);
 
+  // ---- Get the Android app (browser-only card; hidden inside the APK) ----
+  if(!nativeFocus()&&/android/i.test(navigator.userAgent||"")){
+    const ap=el("div","card");
+    ap.innerHTML=`<div class="section-title"><span class="ico">${ic("rocket")}</span><h3 style="margin:0">📱 Android App — REAL Focus Lock ke saath</h3></div>
+      <div class="small muted">Website wali sab cheezein + <b>asli app blocker</b>: Focus Lock ke दौरान reels/games/socials kholte hi wapas padhai par phenk deta hai (accessibility-based, wahi technique jo scroll-stopper apps use karte hain). Privacy: sirf app ka NAAM dekha jata hai, koi content nahi — kuch bhi upload nahi hota.</div>`;
+    const dl=el("a","btn sm");
+    dl.style.cssText="margin-top:10px;display:inline-flex;align-items:center;gap:6px;text-decoration:none";
+    dl.href="https://github.com/dfgtghu556-ops/ntacbt/releases/download/app-latest/jee-cbt.apk";
+    dl.setAttribute("download","jee-cbt.apk");
+    dl.innerHTML=`⬇️ Download App (APK)`;
+    ap.appendChild(dl);
+    ap.appendChild(el("div","small muted","Install hone ke baad: Settings → Accessibility → JEE CBT Focus Guard → ON (bas ek baar)."));
+    root.appendChild(ap);
+  }
+
   const d=el("div","card");
   d.innerHTML=`<div class="section-title"><span class="ico">${ic("broom")}</span><h3 style="margin:0">Local data</h3></div>
     <div class="small muted">Public test papers live in the cloud. Attempts, bookmarks, notes and planner data are local.</div>`;
@@ -7683,23 +7770,39 @@ function momentumCard(){
      iPhone Guided Access) which locks the device to this app at OS level. */
 function focusActive(){const f=S.focusLock;return f&&f.until>Date.now()?f:null;}
 let _flTimer=null,_flPill=null;
+/* Native Android bridge (present only inside the APK): window.AndroidFocus
+   gives the REAL app blocker — an accessibility service that bounces the
+   student back from reels/games during a session. On the plain website
+   these helpers quietly return null/false and the soft lock runs alone. */
+function nativeFocus(){try{return (typeof AndroidFocus!=="undefined"&&AndroidFocus&&AndroidFocus.isApp())?AndroidFocus:null;}catch(e){return null;}}
+function nativeGuardOn(){try{const n=nativeFocus();return !!(n&&n.isGuardEnabled());}catch(e){return false;}}
 function focusStart(minutes){
   S.focusLock={until:Date.now()+minutes*60000,started:Date.now(),mins:minutes,distractions:0};
   save();
+  const n=nativeFocus();
+  if(n){
+    try{n.startLock(minutes);}catch(e){}
+    if(!nativeGuardOn()){
+      toast("💡 REAL blocking ke liye Focus Guard on karo — pill par tap karke guide dekho",4500);
+    }
+  }
   try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}
   focusPill();
-  toast(`🔒 Focus Lock ON — ${minutes} min. Phone ko asli lock karne ke liye pill par tap karo.`,3500);
+  toast(`🔒 Focus Lock ON — ${minutes} min.${n?(nativeGuardOn()?" Doosre apps ab block hain!":""):" Phone ko asli lock karne ke liye pill par tap karo."}`,3500);
 }
 function focusEnd(early){
   const f=S.focusLock;if(!f)return;
+  const n=nativeFocus();
+  let nBlocks=0;
+  if(n){try{nBlocks=n.getBlockCount()||0;n.stopLock();}catch(e){}}
   const doneMin=Math.round((Math.min(Date.now(),f.until)-f.started)/60000);
   S.focusSessions=S.focusSessions||[];
-  S.focusSessions.push({on:todayKey(Date.now()),mins:doneMin,planned:f.mins,distractions:f.distractions||0,early:!!early});
+  S.focusSessions.push({on:todayKey(Date.now()),mins:doneMin,planned:f.mins,distractions:(f.distractions||0)+nBlocks,early:!!early});
   delete S.focusLock;save();
   if(_flTimer){clearInterval(_flTimer);_flTimer=null;}
   if(_flPill){_flPill.remove();_flPill=null;}
   try{document.exitFullscreen&&document.exitFullscreen().catch(()=>{});}catch(e){}
-  if(!early)toast(`🎉 Focus session complete — ${doneMin} min bina bhaage! Ye hai discipline.`,4000);
+  if(!early)toast(`🎉 Focus session complete — ${doneMin} min bina bhaage!${nBlocks?` (${nBlocks} escape attempts blocked 🔒)`:""}`,4000);
   else toast(`Session ended — ${doneMin} min phir bhi kiye. Agli baar aur.`,3000);
   if(route==="dash")render(0);
 }
@@ -7728,18 +7831,30 @@ function focusMenu(){
   m.innerHTML=`<div class="box" style="max-width:520px">
     <h3 style="margin:0 0 4px">🔒 Focus Lock chal raha hai</h3>
     <div class="small muted">${fmtTime(Math.max(0,Math.round((f.until-Date.now())/1000)))} baaki · ${f.distractions||0} distraction(s) pakde</div>
-    <div class="card" style="margin-top:12px;border-color:var(--blue)">
+    ${nativeFocus()?`<div class="card" style="margin-top:12px;border-color:${nativeGuardOn()?"var(--green)":"var(--amber)"}">
+      ${nativeGuardOn()
+        ?`<b style="color:var(--green)">${ic("check")} REAL app blocker ACTIVE 🔒</b>
+          <div class="small muted" style="margin-top:6px">Koi bhi doosra app khologe — turant wapas padhai par. ${(()=>{try{return nativeFocus().getBlockCount()||0;}catch(e){return 0;}})()} escape attempt(s) ab tak roke.</div>`
+        :`<b style="color:var(--amber)">${ic("warn")} Focus Guard OFF hai — REAL blocking ke liye on karo</b>
+          <div class="small muted" style="margin-top:6px">Ek baar on karna hai, phir har session mein reels/games khud block honge:</div>
+          <div class="small" style="margin-top:6px">Settings → Accessibility → <b>JEE CBT Focus Guard</b> → ON</div>
+          <button class="btn sm" style="margin-top:8px" data-guard>⚙️ Settings kholo</button>`}
+    </div>`
+    :`<div class="card" style="margin-top:12px;border-color:var(--blue)">
       <b>${ic("lock")} Phone ko SACHMEIN lock karna hai?</b>
-      <div class="small muted" style="margin-top:6px">Browser phone lock nahi kar sakta — lekin tumhara phone khud kar sakta hai (2 taps):</div>
-      <div class="small" style="margin-top:8px"><b>Android — App Pinning:</b> Settings → Security → App pinning → ON. Phir Recent apps → is app ke icon par tap → <b>Pin</b>. Ab bina PIN ke koi app nahi khulegi.</div>
-      <div class="small" style="margin-top:6px"><b>iPhone — Guided Access:</b> Settings → Accessibility → Guided Access → ON. Is app mein side button 3 baar dabao. Lock ho gaya.</div>
-    </div>
+      <div class="small muted" style="margin-top:6px">Browser doosre apps block nahi kar sakta — 2 raste hain:</div>
+      <div class="small" style="margin-top:8px"><b>🥇 Best: Hamara Android app install karo</b> — usme REAL app blocker hai (reels kholte hi wapas phenk deta hai). Dashboard ke Focus Lock card mein "📱 Download App" button hai.</div>
+      <div class="small" style="margin-top:6px"><b>Android — App Pinning:</b> Settings → Security → App pinning → ON. Phir Recent apps → is app par tap → <b>Pin</b>.</div>
+      <div class="small" style="margin-top:6px"><b>iPhone — Guided Access:</b> Settings → Accessibility → Guided Access → ON. Side button 3 baar dabao.</div>
+    </div>`}
     <div class="row" style="margin-top:12px;gap:8px">
       <button class="btn ghost sm" data-close>Wapas padhai par</button>
       <button class="btn red sm" data-quit>Chhodna hai (5 sec hold)</button>
     </div></div>`;
   document.body.appendChild(m);
   m.querySelector("[data-close]").onclick=()=>m.remove();
+  const gb=m.querySelector("[data-guard]");
+  if(gb)gb.onclick=()=>{try{nativeFocus().openGuardSettings();}catch(e){}};
   // exit friction: 5-second press-and-hold — enough for second thoughts
   const qb=m.querySelector("[data-quit]");
   let hold=null,t0=0;
@@ -7774,9 +7889,13 @@ function focusLockCard(){
   }
   const today=(S.focusSessions||[]).filter(s2=>s2.on===todayKey(Date.now()));
   const todayMin=today.reduce((s2,x)=>s2+x.mins,0);
+  const inApp=!!nativeFocus(),guardOn=nativeGuardOn();
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("lock")}</span>
-      <div><h3 style="margin:0">Focus Lock — distraction-proof padhai</h3>
-      <div class="small muted">Time chuno → fullscreen lock → tab/app switch pakda jayega → beech mein chhodne ke liye 5-second hold. Phone ka <b>asli lock</b> (Android App Pinning / iPhone Guided Access) on karne ki guide bhi andar hai.${todayMin?` <b>Aaj: ${todayMin} min focused.</b>`:""}</div></div></div>`;
+      <div><h3 style="margin:0">Focus Lock — distraction-proof padhai${inApp?(guardOn?' <span class="badge" style="color:var(--green)">REAL 🔒</span>':' <span class="badge" style="color:var(--amber)">GUARD OFF</span>'):""}</h3>
+      <div class="small muted">${inApp
+        ?(guardOn?"App blocker ACTIVE: session ke दौरान reels/games kholte hi wapas padhai par. Beech mein chhodne ke liye 5-second hold."
+          :"App install hai, par <b>Focus Guard OFF</b> hai — ek baar on karo to REAL app blocking milegi: Settings → Accessibility → JEE CBT Focus Guard → ON.")
+        :"Time chuno → fullscreen lock → tab/app switch pakda jayega → 5-second hold se hi exit. <b>REAL app blocking chahiye?</b> Neeche se Android app download karo — usme reels/games kholte hi wapas phenk deta hai (scroll-stopper apps wali technique)."}${todayMin?` <b>Aaj: ${todayMin} min focused.</b>`:""}</div></div></div>`;
   const row=el("div","row");row.style.cssText="margin-top:10px;gap:8px;flex-wrap:wrap";
   [[25,"25 min"],[60,"1 ghanta"],[120,"2 ghante"]].forEach(([m2,l])=>{
     const b=el("button","btn sm"+(m2===60?"":" ghost"),`🔒 ${l}`);
@@ -7784,6 +7903,21 @@ function focusLockCard(){
     row.appendChild(b);
   });
   c.appendChild(row);
+  if(inApp&&!guardOn){
+    const gb=el("button","btn sm",`⚙️ Focus Guard ON karo (1 baar)`);
+    gb.style.marginTop="8px";
+    gb.onclick=()=>{try{nativeFocus().openGuardSettings();}catch(e){}};
+    c.appendChild(gb);
+  }
+  if(!inApp&&/android/i.test(navigator.userAgent||"")){
+    const dl=el("a","btn ghost sm");
+    dl.style.cssText="margin-top:8px;display:inline-flex;align-items:center;gap:6px;text-decoration:none";
+    dl.href="https://github.com/dfgtghu556-ops/ntacbt/releases/download/app-latest/jee-cbt.apk";
+    dl.innerHTML=`📱 Download Android App (REAL app blocker)`;
+    dl.setAttribute("download","jee-cbt.apk");
+    c.appendChild(dl);
+    c.appendChild(el("div","small muted","Install: APK kholo → \"Unknown apps\" allow karo → install. Phir Accessibility mein Focus Guard on karna (guide app ke andar)."));
+  }
   return c;
 }
 function weeklyReportCard(){
