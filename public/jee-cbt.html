@@ -1453,6 +1453,20 @@ function imgTag(key,cls="qimg",fallbackText){
   return i;
 }
 
+/* memoScan: cheap memoization for the heavy attempt-history scans
+   (wrongQuestions / chapterMastery / chapterPriorities). One dashboard
+   render calls them 6-10×; results only change when state changes, and
+   every state change goes through save() which bumps the epoch. */
+var _memoEpoch=0;
+var _memo={};
+function memoScan(key,fn){
+  const stamp=_memoEpoch+":"+S.attempts.length+":"+S.tests.length;
+  const hit=_memo[key];
+  if(hit&&hit.stamp===stamp)return hit.val;
+  const val=fn();
+  _memo[key]={stamp,val};
+  return val;
+}
 const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],plannerDone:{},notes:{},studyLog:{},dailyQuestions:{},reviewSchedule:{},
   qtags:{},   // per-question mistake tags: {qid:"guessed"|"silly"|"concept"}
   settings:{theme:"system",accent:"orange",density:"comfortable",fontSize:"md",cards:"elevated",anim:"on",candidate:"Candidate",
@@ -1472,6 +1486,8 @@ function load(){
   }catch(e){return JSON.parse(JSON.stringify(DEFAULT));}
 }
 function save(){
+  // memoScan invalidation: any state write may change derived analytics
+  try{_memoEpoch++;}catch(e){}
   // BUG FIX ("Test deleted" after submitting a PYQ paper): only practice
   // tests were persisted, so a downloaded PYQ paper vanished on reload and
   // its result review broke. PYQ tests now persist too (their pruning in
@@ -1484,6 +1500,52 @@ function save(){
       localStorage.setItem(LS,JSON.stringify({...S,tests:keep}));
     }catch(e2){toast("Local progress storage is full.");}
   }
+}
+
+/* ═══ MISTAKE DNA — one shared tag vocabulary for the whole app ═══
+   Every wrong answer can be classified; patterns across tests become the
+   student's "mistake DNA" and drive targeted interventions.            */
+const MISTAKE_TAGS=[
+  ["concept","🧠 Concept gap"],
+  ["formula","📐 Formula bhool"],
+  ["calculation","🔢 Calculation slip"],
+  ["misread","👀 Misread question"],
+  ["silly","🤦 Silly mistake"],
+  ["guessed","🎲 Guessed"]
+];
+const MISTAKE_TAG_LABEL=Object.fromEntries(MISTAKE_TAGS);
+const MISTAKE_FIX={
+  concept:"pehle theory revise karo, phir attempt — ulta nahi",
+  formula:"us chapter ki formula sheet banao aur roz 2 min flashcards",
+  calculation:"rough work ko 2 columns mein likho, last line dobara check karo",
+  misread:"question ko lock karne se pehle stem ek baar dobara padho",
+  silly:"speed 10% kam karo — accuracy ka paisa speed se zyada hai",
+  guessed:"3+ options mein confusion ho to SKIP karo, negative marking kha jati hai"
+};
+/** Mistake-DNA pattern detector: scans the last 6 submitted attempts and
+ *  finds the strongest (subject × tag) cluster. Returns null until a real
+ *  pattern exists (≥3 same-tag mistakes in one subject) — no fake insight. */
+function mistakeDNA(){
+  try{
+    const recent=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>b.submittedAt-a.submittedAt).slice(0,6);
+    if(recent.length<2)return null;
+    const cell={}; // "subject|tag" -> {n, tests:Set}
+    recent.forEach(a=>{
+      const t=testById(a.testId);if(!t)return;
+      t.questions.forEach(q=>{
+        const r=a.responses[q.id]||{};
+        if(r.ans==null||r.ans===""||isRight(q,r.ans))return;
+        const tag=S.qtags[q.id];if(!tag)return;
+        const k=q.subject+"|"+tag;
+        const o=cell[k]=cell[k]||{n:0,tests:new Set()};
+        o.n++;o.tests.add(a.testId);
+      });
+    });
+    const best=Object.entries(cell).map(([k,o])=>({sub:k.split("|")[0],tag:k.split("|")[1],n:o.n,tests:o.tests.size}))
+      .sort((a,b)=>b.n-a.n)[0];
+    if(!best||best.n<3)return null;
+    return {...best,label:MISTAKE_TAG_LABEL[best.tag]||best.tag,fix:MISTAKE_FIX[best.tag]||""};
+  }catch(e){return null;}
 }
 
 /* Public test papers live in Lovable Cloud. Results, bookmarks, planner and
@@ -1599,7 +1661,7 @@ async function hydrateFromCache(){
     const rows=await imgGet(LIB_CACHE);
     if(!rows||!rows.length)return false;
     cloudTests=rows.map(rowToTest);
-    S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
+    S.tests=[...S.tests.filter(t=>t.practice||t.pyq),...cloudTests]; // ROOT-CAUSE FIX: cloud refresh silently dropped downloaded PYQ papers from the in-memory list — review/drills broke after the next 45s refresh
     return true;
   }catch(e){return false;}
 }
@@ -1610,7 +1672,7 @@ async function loadPublicTests(silent=false){
     imgPut(LIB_CACHE,rows).catch(()=>{});          // library stays browsable offline
     setOffline(false);
     cloudTests=rows.map(rowToTest);
-    S.tests=[...S.tests.filter(t=>t.practice),...cloudTests];
+    S.tests=[...S.tests.filter(t=>t.practice||t.pyq),...cloudTests]; // ROOT-CAUSE FIX: cloud refresh silently dropped downloaded PYQ papers from the in-memory list — review/drills broke after the next 45s refresh
     const changed=before!==cloudTests.map(t=>t.id+":"+t.createdAt).join("|");
     /* BUG FIX (mid-use page wipe): the background refresh re-rendered even
        on non-silent manual loads while the user was deep in Result/
@@ -2484,7 +2546,13 @@ function evaluate(test,resp){
   const per={},all={correct:0,wrong:0,skipped:0,marks:0,neg:0,time:0,total:test.questions.length};
   SUBJECTS.forEach(s=>per[s]={correct:0,wrong:0,skipped:0,marks:0,total:0,time:0});
   test.questions.forEach(q=>{
-    const r=resp[q.id]||{}; const p=per[q.subject]; p.total++;
+    const r=resp[q.id]||{};
+    // ROOT-CAUSE FIX (crash): a question whose subject isn't in SUBJECTS
+    // (bad PDF import, unusual PYQ row) made per[q.subject] undefined and
+    // the WHOLE submit exploded — losing the attempt. Create the bucket
+    // lazily instead of trusting the data.
+    const p=per[q.subject]=per[q.subject]||{correct:0,wrong:0,skipped:0,marks:0,total:0,time:0};
+    p.total++;
     const t=r.time||0; p.time+=t; all.time+=t;
     if(r.ans==null||r.ans===""){p.skipped++;all.skipped++;}
     else if(isRight(q,r.ans)){p.correct++;all.correct++;p.marks+=MARK_C;all.marks+=MARK_C;}
@@ -2496,7 +2564,8 @@ function evaluate(test,resp){
   all.max=all.total*MARK_C;
   // BUG FIX: per-subject accuracy was never computed, so every consumer
   // reading per[s].accuracy (e.g. the "Strong Areas" panel) showed 0%.
-  SUBJECTS.forEach(s=>{const p=per[s];p.accuracy=pct(p.correct,p.correct+p.wrong);p.max=p.total*MARK_C;});
+  // (computed over every bucket that exists, not just the PCM three)
+  Object.keys(per).forEach(s=>{const p=per[s];p.accuracy=pct(p.correct,p.correct+p.wrong);p.max=p.total*MARK_C;});
   return {per,all};
 }
 
@@ -2857,7 +2926,7 @@ function render(dir=0){
   ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
     mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
     practice:viewPractice,review:viewReview,live:viewLive,pyq:viewPyq,search:viewSearch,result:viewResult}[route]||viewDash)(a);
-
+  try{launcherDock();}catch(e){} // study-launcher app dock (APK v3.1+ only)
 }
 
 /* --------------------- SWIPE NAVIGATION (touch devices) -------------------
@@ -4390,6 +4459,9 @@ function barChart(cv,vals,labels,colors){
 /** Chapter priority score: how urgently each chapter needs work =
  *  weakness × how often it appears × how recently you failed it. */
 function chapterPriorities(){
+  return memoScan("chPrio",()=>chapterPrioritiesCalc());
+}
+function chapterPrioritiesCalc(){
   const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
   const map={};const now=Date.now();
   done.forEach(a=>{const t=testById(a.testId);if(!t)return;
@@ -4421,10 +4493,10 @@ function coachSummary(done){
   const accNow=accs[accs.length-1],accAvg=Math.round(accs.reduce((x,y)=>x+y,0)/accs.length*10)/10;
   const prios=chapterPriorities();
   const worst=prios[0];
-  const tagCounts={concept:0,silly:0,guessed:0};
+  const tagCounts={};MISTAKE_TAGS.forEach(([k])=>tagCounts[k]=0);
   Object.values(S.qtags||{}).forEach(v=>{if(tagCounts[v]!=null)tagCounts[v]++;});
   const topTag=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1])[0];
-  const tagName={concept:"concept gaps",silly:"silly mistakes",guessed:"guessing"}[topTag&&topTag[1]>2?topTag[0]:""]||null;
+  const tagName={concept:"concept gaps",formula:"formula slips",calculation:"calculation errors",misread:"misreading questions",silly:"silly mistakes",guessed:"guessing"}[topTag&&topTag[1]>2?topTag[0]:""]||null;
   let p1=`Across <b>${done.length} tests</b>, your marks went from <b>${first.result.all.marks}</b> to <b>${last.result.all.marks}</b>`;
   p1+=trend.slope>0.3?` — a genuine upward trend of about <b>+${trend.slope} percentile per test</b>.`:
       trend.slope<-0.3?` — the trend is slipping (${trend.slope}/test). Usually that's fatigue or rushing, not lost knowledge.`:
@@ -4543,19 +4615,21 @@ function viewAnalytics(root){
   mk("Marks Trend",cv=>lineChart(cv,done.map(a=>a.result.all.marks),labels,"Marks"));
   mk("Accuracy Trend",cv=>lineChart(cv,done.map(a=>a.result.all.accuracy),labels,"Accuracy %","#1e9e57"));
   mk("Time Trend (minutes used)",cv=>lineChart(cv,done.map(a=>Math.round(a.result.all.time/60)),labels,"Minutes","#7a3ec8"));
-  // ---- confirmed mistake-type breakdown (from your own tags) ----
-  const tagCounts={concept:0,silly:0,guessed:0};
+  // ---- confirmed mistake-type breakdown (from your own tags — Mistake DNA) ----
+  const tagCounts={};MISTAKE_TAGS.forEach(([k])=>tagCounts[k]=0);
   Object.values(S.qtags||{}).forEach(v=>{if(tagCounts[v]!=null)tagCounts[v]++;});
-  const tagTotal=tagCounts.concept+tagCounts.silly+tagCounts.guessed;
+  const tagTotal=Object.values(tagCounts).reduce((a,b)=>a+b,0);
   if(tagTotal){
+    const maxTag=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1])[0][0];
     const tg=el("div","card");
-    tg.innerHTML=`<h3>Why you lose marks (your own tags)</h3>
+    tg.innerHTML=`<h3>Why you lose marks (your Mistake DNA)</h3>
       <div class="small muted">Based on the ${tagTotal} mistake(s) you've classified in post-test review — more reliable than any guess.</div>
       <div class="grid g3" style="margin-top:12px">
-        ${statCard(ic("brain")+" Concept gaps",tagCounts.concept,tagCounts.concept>=tagCounts.silly&&tagCounts.concept>=tagCounts.guessed&&tagCounts.concept?`<div class="small" style="color:var(--red)">Your #1 leak — revise theory first</div>`:"")}
-        ${statCard(ic("faceplant")+" Silly mistakes",tagCounts.silly,tagCounts.silly>tagCounts.concept&&tagCounts.silly>=tagCounts.guessed?`<div class="small" style="color:var(--red)">Your #1 leak — slow down & re-read stems</div>`:"")}
-        ${statCard(ic("dice")+" Guesses",tagCounts.guessed,tagCounts.guessed>tagCounts.concept&&tagCounts.guessed>tagCounts.silly?`<div class="small" style="color:var(--red)">Your #1 leak — skip when unsure</div>`:"")}
+        ${MISTAKE_TAGS.map(([k,label])=>statCard(label,tagCounts[k],
+          k===maxTag&&tagCounts[k]?`<div class="small" style="color:var(--red)">#1 leak — ${esc(MISTAKE_FIX[k])}</div>`:"")).join("")}
       </div>`;
+    const dna=mistakeDNA();
+    if(dna)tg.innerHTML+=`<div class="small" style="margin-top:10px;color:var(--red)"><b>🧬 Pattern detected:</b> ${dna.n} × ${esc(dna.label)} in ${esc(dna.sub)} across ${dna.tests} recent test(s). Intervention: ${esc(dna.fix)}.</div>`;
     root.appendChild(tg);
   }
   const subAvg=SUBJECTS.map(s=>{const v=done.map(a=>(a.result.per[s]||{}).marks||0);return Math.round(v.reduce((x,y)=>x+y,0)/v.length);});
@@ -4710,9 +4784,47 @@ function collectQuestions(kind){
   }
   return out;
 }
+/** PERSONALIZED PRACTICE — one drill built from YOUR data:
+ *  ~50% weakest chapters, ~30% due spaced-reviews, ~20% mistake-DNA subject.
+ *  Every question has a reason to be there.                              */
+function smartPracticePool(){
+  const seen=new Set(),out=[];
+  const add=(items,why,cap)=>{let n=0;
+    for(const x of items){if(n>=cap)break;const q=x.q||x;if(seen.has(q.id))continue;seen.add(q.id);out.push({q,why});n++;}};
+  // 1) weakest chapters (up to 8)
+  try{
+    const weak=chapterPriorities().slice(0,3).map(p=>p.name);
+    const pool=[];S.tests.forEach(t=>t.questions.forEach(q=>{if(weak.includes(q.chapter||q.subject))pool.push({q});}));
+    add(pool.sort(()=>Math.random()-0.5),"weak chapter",8);
+  }catch(e){}
+  // 2) due reviews (up to 4)
+  try{add(dueReviewQuestions(),"review due",4);}catch(e){}
+  // 3) mistake-DNA subject (up to 3)
+  try{
+    const dna=mistakeDNA();
+    if(dna)add(errorLogStats().open.filter(x=>x.q.subject===dna.sub),"DNA fix",3);
+  }catch(e){}
+  return out;
+}
 function viewPractice(root){
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("pencil")}</span><h2 style="margin:0">Practice Mode</h2></div>
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`));
+
+  // ---- Smart Practice: the personalized daily mix ----
+  const spPool=smartPracticePool();
+  if(spPool.length>=5){
+    const nWeak=spPool.filter(x=>x.why==="weak chapter").length,
+          nRev=spPool.filter(x=>x.why==="review due").length,
+          nDna=spPool.filter(x=>x.why==="DNA fix").length;
+    const sp=el("div","card");sp.style.borderColor="var(--accent-text)";
+    sp.innerHTML=`<div class="section-title"><span class="ico">${ic("spark")}</span>
+      <div><h3 style="margin:0">🎯 Smart Practice — tumhare liye bana mix</h3>
+      <div class="small muted">Random nahi: ${nWeak?`${nWeak} weakest-chapter Q`:""}${nRev?` + ${nRev} due-review Q`:""}${nDna?` + ${nDna} mistake-DNA Q`:""} — har question ke hone ki wajah hai.</div></div></div>`;
+    const spb=el("button","btn sm",ic("play")+` Start Smart Practice (${Math.min(15,spPool.length)} Q)`);
+    spb.style.marginTop="10px";
+    spb.onclick=()=>startDrill("Smart Practice · "+fmtDate(Date.now()),spPool.slice(0,15),100);
+    sp.appendChild(spb);root.appendChild(sp);
+  }
 
   // ---- Sectional tests: one subject, exam-ratio timing (36 min per 25 Q) ----
   const sec=el("div","card");
@@ -5629,6 +5741,8 @@ function viewResult(root){
   else{
     const genBtn=el("button","btn sm",ic("spark")+" Generate my takeaways");
     genBtn.onclick=async()=>{
+      if(genBtn.disabled)return;          // double-tap = double AI cost
+      genBtn.disabled=true;
       tkBody.innerHTML=`<div class="takeaway-load"><span class="ai-typing"><i></i><i></i><i></i></span> Reading your attempt…</div>`;
       const wrongs=ai.rows.filter(x=>x.status==="wrong").slice(0,10)
         .map(x=>`Q${x.q.no} (${x.q.subject}${x.q.chapter?", "+x.q.chapter:""}): answered ${String(x.ans).toUpperCase()}, correct ${String(x.q.answer||"?").toUpperCase()}, took ${Math.round(x.time)}s`);
@@ -5644,8 +5758,9 @@ function viewResult(root){
         if(resp.ok&&data&&data.reply){
           a.takeaways=data.reply;save();       // cache on the attempt
           renderTk(data.reply);
-        }else tkBody.innerHTML=`<div class="small" style="color:var(--red)">${esc((data&&data.error)||"Couldn't generate takeaways — try again.")}</div><div style="margin-top:8px"></div>`,tkBody.lastElementChild.appendChild(genBtn);
+        }else{genBtn.disabled=false;tkBody.innerHTML=`<div class="small" style="color:var(--red)">${esc((data&&data.error)||"Couldn't generate takeaways — try again.")}</div><div style="margin-top:8px"></div>`;tkBody.lastElementChild.appendChild(genBtn);}
       }catch(e){
+        genBtn.disabled=false;
         tkBody.innerHTML=`<div class="small" style="color:var(--red)">Network error — try again.</div><div style="margin-top:8px"></div>`;
         tkBody.lastElementChild.appendChild(genBtn);
       }
@@ -5868,6 +5983,40 @@ function viewResult(root){
   });
   root.appendChild(videoCard("Revision videos for this test","One-shot and short revision links for the chapters that cost you marks.",recVids));
 
+  // ── ADAPTIVE NEXT STEP — the result decides what happens tomorrow ──
+  // strong (≥75% acc): raise the challenge. weak (<45%): diagnose the
+  // prerequisite instead of throwing harder questions (adaptive-testing rule).
+  (()=>{
+    try{
+      const accNow=r.all.accuracy;
+      const ns=el("div","card");ns.style.borderColor="var(--accent-text)";
+      let title,body,btnLabel,run;
+      if(accNow>=75){
+        title="🔥 Level up — ab challenge badhao";
+        body=`${accNow}% accuracy strong hai. Ab isi standard par ruko mat: agla kaam <b>harder mix</b> hai — speed drill (60s/question) tumhare weak chapters par.`;
+        const pool=collectQuestions("weak");
+        btnLabel="Speed Drill shuru karo";
+        run=pool.length?()=>startDrill("Level-Up Speed Drill · "+fmtDate(Date.now()),pool.sort(()=>Math.random()-0.5).slice(0,10),60):null;
+      }else if(accNow<45){
+        const worst=(ai.weakCh&&ai.weakCh[0])||null;
+        title="🩺 Pehle diagnosis — harder questions nahi";
+        body=`${accNow}% accuracy ka matlab concept base hilta hua hai. Zyada mushkil questions abhi ulta nuksan karenge. Pehla kadam: ${worst?`<b>${esc(worst.name)}</b> ki theory dobara (planner me learn task ya ek concept video)`:"sabse weak chapter ki theory dobara"} — phir easy questions se wapas confidence banao.`;
+        btnLabel="Concept video dhundo";
+        run=()=>go("planner");
+      }else{
+        title="🎯 Sahi raste par — ab galtiyan pakki karo";
+        body=`${accNow}% accuracy — base hai, ab isi paper ki galtiyan FIX karna sabse zyada marks dega. Neeche har wrong answer ko tag karo (Mistake DNA), phir kal unhi chapters ke fresh questions.`;
+        btnLabel="Wrong answers dekho";
+        run=()=>{const h=$("#qrevHead");if(h)h.scrollIntoView({behavior:"smooth"});};
+      }
+      ns.innerHTML=`<div class="section-title"><span class="ico">${ic("compass")}</span>
+        <div><h3 style="margin:0">${title}</h3>
+        <div class="small muted" style="margin-top:4px;line-height:1.6">${body}</div></div></div>`;
+      if(run){const b=el("button","btn sm",ic("play")+" "+btnLabel);b.style.marginTop="10px";b.onclick=run;ns.appendChild(b);}
+      root.appendChild(ns);
+    }catch(e){}
+  })();
+
   // question review — subject sections + status filters + jump to next incorrect
   const rc=el("div","card");
   rc.innerHTML=`<div class="section-title"><span class="ico">${ic("fileText")}</span><h3 style="margin:0" id="qrevHead">Answers &amp; Solutions</h3></div>
@@ -6000,7 +6149,7 @@ function viewResult(root){
     if(x.status==="wrong"){
       const tagRow=el("div","tag-row");
       tagRow.appendChild(el("span","small muted","Why was it wrong?"));
-      [["concept",ic("brain")+" Concept gap"],["silly",ic("faceplant")+" Silly mistake"],["guessed",ic("dice")+" Guessed"]].forEach(([k,label])=>{
+      MISTAKE_TAGS.forEach(([k,label])=>{
         const b=el("button","tagchip"+(S.qtags[x.q.id]===k?" on":""),label);
         b.type="button";b.setAttribute("aria-pressed",S.qtags[x.q.id]===k?"true":"false");
         b.onclick=()=>{
@@ -6132,7 +6281,7 @@ function showInstructions(test,onProceed){
         return `<div class="card" style="border-color:var(--amber);margin:12px 0">
           <b>${ic("bulb")} 2-minute briefing — your recent patterns</b>
           ${recurring.length?`<div class="small" style="margin-top:6px">Chapters that keep biting you: <b>${recurring.slice(0,3).map(esc).join(" · ")}</b> — slow down there.</div>`:""}
-          ${topTag?`<div class="small" style="margin-top:4px">Most common mistake type: <b>${esc(topTag[0])}</b> (${topTag[1]}×)${topTag[0]==="silly"?" — re-read the stem once before locking answers":topTag[0]==="guessed"?" — skip when unsure between 3+ options, negatives add up":" — revise the concept before attempting, not after"}.</div>`:""}
+          ${topTag?`<div class="small" style="margin-top:4px">Most common mistake type: <b>${esc(MISTAKE_TAG_LABEL[topTag[0]]||topTag[0])}</b> (${topTag[1]}×) — ${esc(MISTAKE_FIX[topTag[0]]||"pattern par dhyan do")}.</div>`:""}
           <div class="small muted" style="margin-top:4px">Reviewing your error patterns before a test measurably cuts repeat mistakes.</div></div>`;
       }catch(e){return "";}
     })()}
@@ -6425,7 +6574,9 @@ function startTimer(){
     t.className="timer"+(EX.left<=300?" crit":EX.left<=1800?" warn":"");
     [[1800,"30 minutes remaining"],[600,"10 minutes remaining"],[300,"5 minutes remaining"],[60,"1 minute remaining"]]
       .forEach(([s,m])=>{if(EX.left<=s&&!EX.warned[s]){EX.warned[s]=1;toast(m,4000);}});
-    if(EX.left%5===0){commitTime();examAutosave();}
+    // RELIABILITY FIX: `%5===0` missed autosaves when a throttled/hidden tab
+    // skipped ticks past the exact multiple. Anchor to wall-clock instead.
+    if(!EX._lastSave||Date.now()-EX._lastSave>=5000){EX._lastSave=Date.now();commitTime();examAutosave();}
     if(EX.left<=0)submitExam(true);
   };
   t.textContent=fmtTime(EX.left);
@@ -6646,7 +6797,7 @@ function viewSettings(root){
   c.appendChild(block("Font size",seg([["sm","Small"],["md","Medium"],["lg","Large"]],st.fontSize,v=>st.fontSize=v)));
   c.appendChild(block("Animations",seg([["on","Enabled"],["off","Reduced"]],st.anim,v=>st.anim=v),"Reduced motion disables all transitions."));
   const nameIn=el("input");nameIn.type="text";nameIn.value=st.candidate||"Candidate";nameIn.style.maxWidth="320px";
-  nameIn.oninput=()=>{st.candidate=nameIn.value||"Candidate";save();};
+  nameIn.oninput=()=>{st.candidate=nameIn.value||"Candidate";clearTimeout(nameIn._t);nameIn._t=setTimeout(save,500);}; // debounced — full-state save per keystroke froze typing
   c.appendChild(block("Candidate name",nameIn,"Shown on the exam header, exactly like the NTA console."));
   root.appendChild(c);
 
@@ -6724,6 +6875,40 @@ function viewSettings(root){
   }
   root.appendChild(eb);
 
+  // ---- STUDY LAUNCHER MODE (APK v3.1+): Home button = padhai ----
+  if(nativeLauncher()){
+    const isOn=launcherModeOn(),isHome=isDefaultLauncher();
+    const lc=el("div","card");
+    lc.style.borderColor=isHome?"var(--green)":"var(--line)";
+    lc.innerHTML=`<div class="section-title"><span class="ico">${ic("home")}</span>
+        <div><h3 style="margin:0">🏠 Study Launcher Mode${isHome?' <span class="badge" style="color:var(--green)">ACTIVE</span>':isOn?' <span class="badge" style="color:var(--amber)">set default baaki</span>':""}</h3>
+        <div class="small muted" style="margin-top:4px">PW LearnOS jaisa: app ko phone ki <b>home screen</b> bana do. Home button dabao → seedha padhai, reels nahi. Zaroori apps (Phone, Camera, WhatsApp…) neeche 📱 dock se khulti hain — aur Focus Lock ke दौरान distraction apps wahan bhi block rahenge.</div></div></div>`;
+    const lrow=el("div","row");lrow.style.cssText="margin-top:10px;gap:8px;flex-wrap:wrap";
+    if(!isOn){
+      const on=el("button","btn sm","🏠 Launcher mode ON karo");
+      on.onclick=()=>{try{nativeLauncher().setLauncherMode(true);}catch(e){}
+        toast("Ab Android poochhega — 'JEE CBT' ko Home app chuno",5000);setTimeout(()=>render(0),800);};
+      lrow.appendChild(on);
+    }else{
+      if(!isHome){
+        const pick=el("button","btn sm","⚙️ Default home app chuno");
+        pick.onclick=()=>{try{nativeLauncher().openHomeSettings();}catch(e){}};
+        lrow.appendChild(pick);
+      }
+      const off=el("button","btn ghost sm","Wapas normal phone");
+      off.onclick=()=>{try{nativeLauncher().setLauncherMode(false);}catch(e){}
+        toast("Launcher mode OFF — phone wapas normal 🏠");setTimeout(()=>render(0),500);};
+      lrow.appendChild(off);
+      const dr=el("button","btn ghost sm","📱 App drawer kholo");
+      dr.onclick=appDrawerOpen;
+      lrow.appendChild(dr);
+    }
+    lc.appendChild(lrow);
+    lc.appendChild(el("div","small muted","Poori tarah reversible: yahin se OFF karo, phone turant purane launcher par wapas. Ye tumhari marzi ka switch hai — koi zabardasti nahi."));
+    lc.lastElementChild.style.marginTop="8px";
+    root.appendChild(lc);
+  }
+
   const hm=el("div","card");
   const {heat}=streakInfo();
   const maxC=Math.max(1,...heat.map(h=>h.count));
@@ -6793,6 +6978,21 @@ function viewSettings(root){
   d.appendChild(el("div","small muted",ic("warn")+" All progress lives in this browser only. Take a backup regularly — clearing browser data without one loses everything."));
   d.lastElementChild.style.marginTop="10px";
   root.appendChild(d);
+
+  // ---- TRANSPARENCY: exactly what is tracked, why, and where it lives ----
+  const tp=el("div","card");
+  tp.innerHTML=`<div class="section-title"><span class="ico">${ic("lock")}</span><h3 style="margin:0">Kya track hota hai — aur kyun</h3></div>
+    <div class="small muted">Sab kuch <b>sirf is device par</b> save hota hai (localStorage). Koi account nahi, koi server upload nahi. AI chat use karne par sirf tumhara sawal + niche wali summary bheji jati hai — kabhi poora data nahi.</div>
+    <table class="small" style="margin-top:10px;width:100%;border-collapse:collapse">
+      <tr><td style="padding:4px 8px 4px 0"><b>Test attempts &amp; answers</b></td><td class="muted">weak chapters + mistake patterns nikaalne ke liye</td></tr>
+      <tr><td style="padding:4px 8px 4px 0"><b>Mistake tags (DNA)</b></td><td class="muted">galti ka TYPE samajhne ke liye — concept/silly/calc…</td></tr>
+      <tr><td style="padding:4px 8px 4px 0"><b>Daily question count</b></td><td class="muted">momentum + contract + readiness ke liye</td></tr>
+      <tr><td style="padding:4px 8px 4px 0"><b>Study-plan progress</b></td><td class="muted">plan adapt karne + backlog rebalance ke liye</td></tr>
+      <tr><td style="padding:4px 8px 4px 0"><b>Review schedule</b></td><td class="muted">spaced repetition (1/3/7/21/45 din) ke liye</td></tr>
+      <tr><td style="padding:4px 8px 4px 0"><b>Chat history</b></td><td class="muted">Saarthi ko context yaad rakhne ke liye — sirf is device par</td></tr>
+    </table>
+    <div class="small muted" style="margin-top:8px">Delete karna ho to upar "Reset local progress" — ek tap mein sab saaf.</div>`;
+  root.appendChild(tp);
 
   // ---- Cloud storage usage (live, on-demand) ----
   const sd=el("div","card");
@@ -6887,27 +7087,62 @@ function questionDifficulty(qid){
   const acc=pct(c,n);
   return {label:acc>=70?"Easy":acc>=40?"Medium":"Hard",acc,n};
 }
+/* MASTERY MODEL v2 — accuracy alone lies. Real mastery must account for:
+   (a) recency-weighted accuracy: last month's attempts count ~2× vs old ones
+       (you are what you can do NOW, not what you once did);
+   (b) retention decay: an untouched chapter silently loses "trust" —
+       after 14 days we flag revision, after 25 it's urgent;
+   (c) evidence size: <4 questions = "insufficient data", never "Mastered". */
 function chapterMastery(){
-  const acc={};
+  return memoScan("chMastery",()=>chapterMasteryCalc());
+}
+function chapterMasteryCalc(){
+  const acc={};const now=Date.now();
   S.attempts.filter(a=>a.submittedAt).forEach(a=>{
     const t=testById(a.testId);if(!t)return;
+    // recency weight: attempts in the last 30 days count double
+    const w=(now-a.submittedAt)<30*86400000?2:1;
     t.questions.forEach(q=>{
-      const key=q.chapter||q.subject;const o=acc[key]=acc[key]||{c:0,n:0,sub:q.subject,time:0};
-      const r=a.responses[q.id]||{};o.n++;o.time+=r.time||0;if(isRight(q,r.ans))o.c++;});});
-  return Object.entries(acc).map(([name,v])=>({name,sub:v.sub,n:v.n,acc:pct(v.c,v.n),
-    level:pct(v.c,v.n)>=85?"Mastered":pct(v.c,v.n)>=70?"Strong":pct(v.c,v.n)>=50?"Developing":"Needs work"}))
-    .sort((a,b)=>a.acc-b.acc);
-}
-function wrongQuestions(){
-  const out=[];const seen=new Set();
-  S.attempts.filter(a=>a.submittedAt).slice().reverse().forEach(a=>{
-    const t=testById(a.testId);if(!t)return;
-    t.questions.forEach(q=>{
+      const key=q.chapter||q.subject;const o=acc[key]=acc[key]||{c:0,n:0,wc:0,wn:0,sub:q.subject,time:0,lastSeen:0};
       const r=a.responses[q.id]||{};
-      if(r.ans==null||r.ans===""||isRight(q,r.ans))return;
-      if(seen.has(q.id))return;seen.add(q.id);
-      out.push({q,t,ans:r.ans,when:a.submittedAt,time:r.time||0});});});
-  return out;
+      o.n++;o.wn+=w;o.time+=r.time||0;o.lastSeen=Math.max(o.lastSeen,a.submittedAt);
+      if(isRight(q,r.ans)){o.c++;o.wc+=w;}});});
+  return Object.entries(acc).map(([name,v])=>{
+    const rawAcc=pct(v.c,v.n);
+    const recAcc=pct(v.wc,v.wn);              // recency-weighted accuracy
+    const idleDays=Math.floor((now-v.lastSeen)/86400000);
+    const revision=idleDays>=25?"urgent":idleDays>=14?"due":idleDays>=8?"recommended":"fresh";
+    const thin=v.n<4;                          // not enough evidence to judge
+    const level=thin?"Not enough data":recAcc>=85?"Mastered":recAcc>=70?"Strong":recAcc>=50?"Developing":"Needs work";
+    return {name,sub:v.sub,n:v.n,acc:recAcc,rawAcc,idleDays,revision,thin,level};
+  }).sort((a,b)=>a.acc-b.acc);
+}
+/** Chapter-level smart-revision queue: strongest chapters decay too.
+ *  Returns chapters worth revising NOW, most urgent first. */
+function revisionQueue(){
+  return chapterMastery()
+    .filter(r=>!r.thin&&(r.revision==="urgent"||r.revision==="due"))
+    .sort((a,b)=>(b.revision==="urgent"?1:0)-(a.revision==="urgent"?1:0)||b.idleDays-a.idleDays);
+}
+/* PERF ROOT-CAUSE FIX: wrongQuestions/chapterMastery/chapterPriorities all
+   walk every attempt × every question. One dashboard render calls them
+   6-10× (mission control, mentor ping, NBA, prep score, cards…) — on a
+   phone with months of history that's tens of thousands of iterations per
+   render. The underlying data only changes when an attempt is submitted or
+   a test list changes, so memoize per (attempts, tests) fingerprint.
+   save() bumps the epoch, keeping results always-correct. */
+function wrongQuestions(){
+  return memoScan("wrongQ",()=>{
+    const out=[];const seen=new Set();
+    S.attempts.filter(a=>a.submittedAt).slice().reverse().forEach(a=>{
+      const t=testById(a.testId);if(!t)return;
+      t.questions.forEach(q=>{
+        const r=a.responses[q.id]||{};
+        if(r.ans==null||r.ans===""||isRight(q,r.ans))return;
+        if(seen.has(q.id))return;seen.add(q.id);
+        out.push({q,t,ans:r.ans,when:a.submittedAt,time:r.time||0});});});
+    return out;
+  });
 }
 /** Spaced-repetition queue: every previously-wrong question whose review is
  *  due now (or that has never been scheduled). Powers the dashboard card
@@ -6917,12 +7152,27 @@ function dueReviewQuestions(){
   return wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=now;});
 }
 /** Builds & starts an ad-hoc practice test from a list of {q} items. */
+/** QUESTION VALIDATION GATE: one place that decides whether a question is
+ *  usable by the CBT engine. Malformed rows (no id, no answer, no content,
+ *  MCQ without options) are rejected here instead of crashing/mis-scoring
+ *  somewhere deep in the exam or evaluate(). */
+function validQuestion(q){
+  if(!q||!q.id)return false;
+  if(q.answer==null||q.answer==="")return false;
+  if(!(q.img||(q.text&&String(q.text).trim().length>=3)))return false;   // needs something to show
+  if(q.type==="mcq"&&!q.img&&(!Array.isArray(q.options)||q.options.length<2))return false;
+  return true;
+}
 function startDrill(name,items,secsPerQ=90){
   if(!items.length){toast("Nothing to practise right now");return;}
   prunePracticeTests();
+  // validation gate — a single malformed imported question used to poison
+  // the whole drill (unanswerable Q + guaranteed "wrong" in scoring)
+  const qs=items.map(x=>x.q||x).filter(validQuestion);
+  if(!qs.length){toast("These questions are malformed — re-download the paper");return;}
   const t={id:uid(),name,createdAt:Date.now(),date:new Date().toISOString(),
-    practice:true,duration:Math.max(600,items.length*secsPerQ),chapter:{},
-    questions:items.map((x,i)=>({...(x.q||x),index:i,no:i+1}))};
+    practice:true,duration:Math.max(600,qs.length*secsPerQ),chapter:{},
+    questions:qs.map((q,i)=>({...q,index:i,no:i+1}))};
   S.tests.push(t);save();startExam(t.id);
 }
 /** BUG FIX (storage leak): every drill/practice run stored a full copy of
@@ -6990,19 +7240,45 @@ function viewMastery(root){
     b2.onclick=()=>go("library");em.firstElementChild.appendChild(b2);
     root.appendChild(em);return;
   }
-  const counts={Mastered:0,Strong:0,Developing:0,"Needs work":0};rows.forEach(r=>counts[r.level]++);
+  const counts={Mastered:0,Strong:0,Developing:0,"Needs work":0,"Not enough data":0};
+  rows.forEach(r=>{if(counts[r.level]!=null)counts[r.level]++;});
   root.appendChild(el("div","grid g4",
     statCard("Mastered",counts.Mastered)+statCard("Strong",counts.Strong)+
     statCard("Developing",counts.Developing)+statCard("Needs Work",counts["Needs work"])));
+  // smart-revision queue: even strong chapters decay without touch
+  const rq=revisionQueue();
+  if(rq.length){
+    const rv=el("div","card");rv.style.borderColor="var(--amber)";
+    rv.innerHTML=`<div class="section-title"><span class="ico">${ic("alarm")}</span>
+      <div><h3 style="margin:0">🔔 Revision due — bhoolne se pehle</h3>
+      <div class="small muted">Jin chapters ko kai din se touch nahi kiya — accuracy chahe kitni bhi ho, memory decay hoti hai.</div></div></div>`;
+    rq.slice(0,5).forEach(r=>{
+      const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
+      row.innerHTML=`<div style="min-width:0"><b>${esc(r.name).slice(0,50)}</b>
+        <div class="small muted">${r.idleDays} din se untouched · ${r.acc}% accuracy</div></div>
+        <span class="pill ${r.revision==="urgent"?"r":""}">${r.revision==="urgent"?"🚨 URGENT":"⏳ Due"}</span>`;
+      rv.appendChild(row);
+    });
+    const rb=el("button","btn sm",ic("play")+" Revise top chapter now");rb.style.marginTop="10px";
+    rb.onclick=()=>{
+      const target=rq[0];const pool=[];const seen=new Set();
+      S.tests.forEach(t=>t.questions.forEach(q=>{if(!seen.has(q.id)&&(q.chapter||q.subject)===target.name){seen.add(q.id);pool.push({q});}}));
+      if(pool.length)startDrill("Revision · "+target.name+" · "+fmtDate(Date.now()),pool.sort(()=>Math.random()-0.5).slice(0,10),100);
+      else toast("Is chapter ke questions locally nahi mile — library se test download karo");
+    };
+    rv.appendChild(rb);root.appendChild(rv);
+  }
   SUBJECTS.forEach(s=>{
     const list=rows.filter(r=>r.sub===s);if(!list.length)return;
     const c=el("div","card");
     c.innerHTML=`<div class="section-title"><span class="ico" style="color:${SUBCOLOR[s]}">●</span><h3 style="margin:0">${s}</h3></div>`;
     list.forEach(r=>{
       const d=el("div","mastery-row");
-      d.innerHTML=`<div><b>${esc(r.name).slice(0,60)}</b><div class="small muted">${r.n} questions · ${r.level}</div></div>
-        <div style="text-align:right"><b>${r.acc}%</b></div>
-        <div class="bar"><i style="width:${r.acc}%;background:${r.acc<50?"var(--red)":r.acc<75?"var(--amber)":"var(--green)"}"></i></div>`;
+      const revBadge=r.thin?"":r.revision==="urgent"?` <span class="pill r" style="font-size:10px">revision urgent</span>`:
+        r.revision==="due"?` <span class="pill" style="font-size:10px">revision due</span>`:"";
+      d.innerHTML=`<div><b>${esc(r.name).slice(0,60)}</b><div class="small muted">${r.n} questions · ${r.level}${r.thin?" (kam se kam 4 chahiye)":""}${revBadge}</div></div>
+        <div style="text-align:right"><b>${r.thin?"—":r.acc+"%"}</b></div>
+        <div class="bar"><i style="width:${r.thin?0:r.acc}%;background:${r.acc<50?"var(--red)":r.acc<75?"var(--amber)":"var(--green)"}"></i></div>`;
       c.appendChild(d);
     });
     root.appendChild(c);
@@ -7118,7 +7394,7 @@ function viewNotebook(root){
   filt.append(
     mkSel2("sub",[["All","Subject: All"],...SUBJECTS.map(s=>[s,s])]),
     mkSel2("ch",[["All","Chapter: All"],...chaps.map(ch=>[ch,ch])]),
-    mkSel2("tag",[["All","Tag: All"],["concept","Concept gap"],["silly","Silly mistake"],["guessed","Guessed"],["untagged","Untagged"]]),
+    mkSel2("tag",[["All","Tag: All"],...MISTAKE_TAGS.map(([k,l])=>[k,l.replace(/^[^ ]+ /,"")]),["untagged","Untagged"]]),
     mkSel2("due",[["All","Due: All"],["due","Due now"],["later","Scheduled later"]]));
   const searchIn=el("input");searchIn.type="text";searchIn.placeholder="Search text / notes…";searchIn.value=NBF.q;
   searchIn.oninput=()=>{NBF.q=searchIn.value;clearTimeout(searchIn._t);
@@ -7177,10 +7453,28 @@ function viewNotebook(root){
     const why=el("button","btn sm warn",ic("bulb")+" Explain my mistake");why.type="button";why.style.margin="8px 0 8px 8px";
     why.onclick=()=>explainMyMistake(x.q,x.ans);
     d.appendChild(why);
+    // Mistake-DNA tagging directly in the notebook (previously review-only)
+    const tagRow=el("div","tag-row");
+    tagRow.appendChild(el("span","small muted","Why wrong?"));
+    MISTAKE_TAGS.forEach(([k,label])=>{
+      const b=el("button","tagchip"+(S.qtags[x.q.id]===k?" on":""),label);
+      b.type="button";
+      b.onclick=()=>{
+        if(S.qtags[x.q.id]===k)delete S.qtags[x.q.id];else S.qtags[x.q.id]=k;
+        save();
+        [...tagRow.querySelectorAll(".tagchip")].forEach(c2=>c2.classList.remove("on"));
+        if(S.qtags[x.q.id]===k)b.classList.add("on");
+      };
+      tagRow.appendChild(b);
+    });
+    d.appendChild(tagRow);
     const note=el("textarea");note.placeholder="Why did I get this wrong? (saved on this device)";
     note.value=S.notes[x.q.id]||"";note.rows=2;
     note.style.cssText="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;background:var(--panel);margin-top:6px";
-    note.oninput=()=>{S.notes[x.q.id]=note.value;save();};
+    // PERF: save() serializes the whole multi-MB state — doing that on EVERY
+    // keystroke froze typing on low-end phones. Update memory instantly,
+    // persist after a 500 ms pause.
+    note.oninput=()=>{S.notes[x.q.id]=note.value;clearTimeout(note._t);note._t=setTimeout(save,500);};
     d.appendChild(note);
     wrap.appendChild(d);
   });
@@ -7854,7 +8148,116 @@ function prepScore(){
   const score=Math.round((cov*30+acc*30+prac*20+rev*10+cons*10));
   const parts={cov:Math.round(cov*100),acc:Math.round(acc*100),prac:Math.round(prac*100),rev:Math.round(rev*100),cons:Math.round(cons*100)};
   const weakest=Object.entries({["syllabus"]:parts.cov,["accuracy"]:parts.acc,["practice"]:parts.prac,["revision"]:parts.rev,["consistency"]:parts.cons}).sort((a,b)=>a[1]-b[1])[0];
-  return {score,parts,weakest:weakest[0]};
+  // readiness is TARGET-specific: same data, but labeled for the exam the
+  // student is actually preparing for (Board / JEE Main / JEE Advanced)
+  const target=(p&&p.profile&&p.profile.target)||"jeemain";
+  const readinessLabel={jeemain:"JEE Main readiness",jeeadv:"JEE Advanced readiness",board12:"Board readiness",board11:"Class 11 readiness"}[target]||"Readiness";
+  return {score,parts,weakest:weakest[0],target,readinessLabel};
+}
+/* ═════════ NEXT BEST ACTION — "abhi sabse zaroori kya hai" ═════════
+   The ONE-action principle: collect every possible action as a candidate,
+   score it with real data (exam proximity, weakness, forgetting risk,
+   backlog, time of day), pick the single winner, and EXPLAIN why.
+   Deterministic code, no AI call — fast, free, always available.       */
+function nextBestAction(){
+  const tk=todayKey(Date.now()),hour=new Date().getHours();
+  const done=S.attempts.filter(a=>a.submittedAt);
+  let daysToExam=999;
+  if(S.settings.examDate){const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(dl>0)daysToExam=dl;}
+  const examBoost=daysToExam<45?2:daysToExam<90?1:0;
+  const cand=[];
+  // 0) unfinished attempt — nothing outranks a running test
+  const resume=pendingResume();
+  if(resume){const t=testById(resume.testId);
+    cand.push({score:100,ico:"⏸️",title:`Resume: ${t?t.name:"Test"}`,mins:Math.ceil(resume.left/60),
+      why:"Adhura test sabse pehle — data tabhi complete hota hai jab paper complete ho.",
+      run:()=>startExam(resume.testId,resume)});}
+  // 1) brand-new student → diagnostic first
+  if(!done.length&&cloudTests.length){const t=cloudTests[0];
+    cand.push({score:90,ico:"🧪",title:`Pehla mock: ${t.name}`,mins:Math.ceil((t.duration||3600)/60),
+      why:"Bina pehle test ke main tumhari kamzori jaan hi nahi sakta. Ye diagnostic hai, score nahi.",
+      run:()=>startExam(t.id)});}
+  // 2) urgent spaced reviews — beating the forgetting curve pays the most
+  try{
+    const now=Date.now();
+    const due=wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=now;});
+    const urgent=due.filter(x=>{const sch=S.reviewSchedule[x.q.id];return sch&&now-sch.due>5*86400000;});
+    if(urgent.length>=5)cand.push({score:70+examBoost,ico:"🚨",title:`URGENT: ${urgent.length} reviews 5+ din overdue`,mins:Math.min(25,urgent.length*2),
+      why:"Ye galtiyan bhoolne ke curve par sabse aage hain — aaj nahi kiya to dobara zero se seekhna padega.",
+      run:()=>startDrill("Urgent Review · "+fmtDate(Date.now()),urgent.slice(0,15),100)});
+    else if(due.length>=6)cand.push({score:55+examBoost,ico:"🔁",title:`${due.length} review questions due`,mins:Math.min(25,due.length*2),
+      why:"Spaced repetition ka window khula hai — ab revise karoge to memory 3× tikegi.",
+      run:()=>startDrill("Spaced Review · "+fmtDate(Date.now()),due.slice(0,15),100)});
+  }catch(e){}
+  // 3) mistake-DNA intervention: the strongest recurring error pattern
+  try{
+    const dna=mistakeDNA();
+    if(dna){
+      const open=errorLogStats().open.filter(x=>x.q.subject===dna.sub);
+      if(open.length>=4)cand.push({score:60+examBoost,ico:"🧬",title:`Mistake-DNA fix: ${dna.sub} (${dna.n}× ${dna.label.replace(/^[^ ]+ /,"")})`,mins:20,
+        why:`Pichhle ${dna.tests} tests mein ${dna.n} baar same type ki galti — ${dna.fix}.`,
+        run:()=>startDrill("DNA Fix · "+dna.sub+" · "+fmtDate(Date.now()),open.slice(0,10),100)});
+    }
+  }catch(e){}
+  // 4) today's first planner task (the plan exists to be followed)
+  const p=aip();
+  if(p&&p.tasks){
+    const t=p.tasks.filter(x=>x.date===tk&&x.status==="todo")[0];
+    if(t)cand.push({score:(t.catchup?58:50)+examBoost,ico:t.kind==="learn"?"📹":"✍️",
+      title:`Plan: ${t.topic} (${t.kind})`,mins:aipEff(t.estMin,p.profile),
+      why:t.catchup?"Ye backlog task hai — jitna der karoge, plan utna risky hoga.":"Aaj ke plan ka pehla kaam — plan follow karna hi asli speed hai.",
+      run:()=>aipOpenLesson(t)});
+  }
+  // 5) Daily 10 (evening पर urgency badh jati hai)
+  if(!daily10Done()&&daily10Pool().length)
+    cand.push({score:(hour>=17?52:40)+examBoost,ico:"⚡",title:"Daily 10 — aaj ka recall quiz",mins:15,
+      why:hour>=17?"Shaam ho gayi, Daily 10 abhi bhi baaki — streak ke liye ye minimum hai.":"Roz ke 10 questions — chhota kaam, compound result.",
+      run:()=>{const pool=daily10Pool();if(pool.length)startDrill("Daily 10 · "+fmtDate(Date.now()),pool.slice(0,10),90);}});
+  // 6) weakest chapter drill (only when we actually know a weakness)
+  try{
+    const w=chapterPriorities()[0];
+    if(w&&done.length>=2){
+      const pool=[];const seen=new Set();
+      S.tests.forEach(t2=>t2.questions.forEach(q=>{if(!seen.has(q.id)&&(q.chapter||q.subject)===w.name){seen.add(q.id);pool.push({q});}}));
+      if(pool.length>=5)cand.push({score:45+examBoost*2,ico:"💪",title:`Weak chapter: ${w.name}`,mins:25,
+        why:`${w.acc}% accuracy over ${w.n} questions — yahi chapter sabse zyada marks chhupa ke baitha hai.`,
+        run:()=>startDrill("Weak Chapter Attack · "+fmtDate(Date.now()),pool.sort(()=>Math.random()-0.5).slice(0,15),100)});
+    }
+  }catch(e){}
+  // 7) contract gap
+  if(S.contract&&S.contract.active){
+    const dq=S.dailyQuestions[tk]||0;
+    if(dq<S.contract.daily)cand.push({score:35,ico:"🤝",title:`Contract: ${S.contract.daily-dq} questions aur`,mins:Math.min(30,(S.contract.daily-dq)*2),
+      why:`Tumne khud se ${S.contract.daily}/din ka promise kiya tha — abhi ${dq} hue hain.`,run:twoMinStart});
+  }
+  // 8) genuinely late + already studied → rest IS the right action
+  if(hour>=23&&S.studyLog[tk])
+    cand.push({score:80,ico:"😴",title:"Ab so jao — seriously",mins:0,rest:true,
+      why:"Aaj ka kaam ho chuka hai aur 11 baj gaye. Neend memory-consolidation ka time hai — ab padhna ulta padega.",
+      run:null});
+  // fallback: the 2-minute starter
+  cand.push({score:10,ico:"🚀",title:"Bas 2 Minute — ek question",mins:2,
+    why:"Shuruaat sabse mushkil hoti hai — ek question se momentum banta hai.",run:twoMinStart});
+  cand.sort((a,b)=>b.score-a.score);
+  return cand[0];
+}
+function nextBestActionCard(){
+  const a=nextBestAction();
+  const c=el("div","card");c.style.cssText="border-color:var(--accent-text);border-width:2px";
+  c.innerHTML=`<div class="small muted" style="letter-spacing:.08em;font-weight:700">🎯 AB YEH KARO — sabse zaroori ek kaam</div>
+    <div class="row" style="gap:12px;margin-top:8px;align-items:flex-start">
+      <div style="font-size:34px;flex:none">${a.ico}</div>
+      <div style="flex:1;min-width:0">
+        <b style="font-size:17px">${esc(a.title)}</b>
+        ${a.mins?`<span class="pill n" style="margin-left:8px">~${a.mins} min</span>`:""}
+        <div class="small muted" style="margin-top:5px;line-height:1.55"><b>Kyun:</b> ${esc(a.why)}</div>
+      </div></div>`;
+  if(a.run){
+    const b=el("button","btn",ic("play")+" START NOW");
+    b.style.cssText="margin-top:12px;width:100%;justify-content:center;font-size:15px";
+    b.onclick=a.run;c.appendChild(b);
+  }
+  return c;
 }
 /* ═════════ MISSION CONTROL — "aaj kya karna hai" ek jagah ═════════
    Sab sources ko jodkar aaj + kal ka poora din banata hai:
@@ -7934,9 +8337,9 @@ function missionControlCard(){
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span>
       <div style="flex:1"><h3 style="margin:0">🎛️ Mission Control — Aaj ka din</h3>
       <div class="small muted">${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})} · tap karo, shuru karo${doneCount?` · ${doneCount} ho gaye ✅`:""}</div></div>
-      <div style="text-align:center;flex:none" title="Estimate: syllabus 30% + accuracy 30% + practice 20% + revision 10% + consistency 10%">
+      <div style="text-align:center;flex:none" title="${esc(ps.readinessLabel)} — Estimate: syllabus 30% + accuracy 30% + practice 20% + revision 10% + consistency 10%. Ye guarantee nahi, data-based andaza hai.">
         <b style="font-size:22px;color:${ps.score>=70?"var(--green)":ps.score>=45?"var(--amber)":"var(--red)"}">${ps.score}</b>
-        <div class="small muted" style="font-size:10.5px">prep score<br>(est.)</div></div></div>
+        <div class="small muted" style="font-size:10.5px">${esc(ps.readinessLabel.replace(/ readiness$/,""))}<br>readiness (est.)</div></div></div>
     <div class="small muted" style="margin-top:4px">Sabse kamzor dimension: <b>${esc(ps.weakest)}</b> — score sirf chapters ticket karne se nahi, asli practice se badhta hai.</div>`;
   if(!items.length){
     c.innerHTML+=`<div class="small" style="margin-top:10px;color:var(--green)">${ic("check")} Aaj ke sab planned kaam ho gaye! Aage badhna hai to Daily 10 dobara ya koi PYQ paper.</div>`;
@@ -7974,6 +8377,53 @@ function missionControlCard(){
   }
   return c;
 }
+/* ═════════ STUDY-BEHAVIOUR DETECTOR — mentor ki asli intelligence ═════════
+   Detects the classic self-deception patterns and returns ONE honest call-out
+   (or null when behaviour is healthy — no fake nagging).                   */
+function behaviorInsight(){
+  try{
+    const now=Date.now(),wk=7*86400000;
+    // A) lecture-heavy, practice-light: planner "learn" done >> questions solved
+    const p=aip();
+    if(p&&p.tasks){
+      const learnDone=p.tasks.filter(t=>t.kind==="learn"&&t.status==="done"&&(t.completedAt||0)>now-wk).length;
+      let q7=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);q7+=S.dailyQuestions[todayKey(d.getTime())]||0;}
+      if(learnDone>=4&&q7<learnDone*5)
+        return {kind:"lectures",mood:"🎬",
+          msg:`Is hafte ${learnDone} lectures complete kiye lekin sirf ${q7} questions solve hue. Lecture dekhna padhai FEEL hota hai — marks questions solve karne se aate hain.`,
+          ask:"Aaj koi naya lecture nahi. Pehle 20 questions solve karo.",
+          run:()=>go("practice")};
+    }
+    // B) tests without mistake review: recent attempts but no review activity
+    const recent=S.attempts.filter(a=>a.submittedAt&&a.submittedAt>now-wk);
+    if(recent.length>=3){
+      const wrongIds=new Set();
+      recent.forEach(a=>{const t=testById(a.testId);if(!t)return;
+        t.questions.forEach(q=>{const r=a.responses[q.id]||{};
+          if(r.ans!=null&&r.ans!==""&&!isRight(q,r.ans))wrongIds.add(q.id);});});
+      const reviewed=[...wrongIds].filter(id=>S.qtags[id]||S.notes[id]||(S.reviewSchedule[id]&&S.reviewSchedule[id].step>0)).length;
+      if(wrongIds.size>=8&&reviewed/wrongIds.size<0.25)
+        return {kind:"noreview",mood:"🔄",
+          msg:`Is hafte ${recent.length} tests diye lekin ${wrongIds.size} galtiyon mein se sirf ${reviewed} review hui hain. Bina review ke test dena = same galti dobara karna.`,
+          ask:"Aaj naya test nahi — pehle Mistake Notebook kholo.",
+          run:()=>go("notebook")};
+    }
+    // C) same chapter over-grinding: one chapter dominating recent practice
+    if(p&&p.tasks){
+      const wkTasks=p.tasks.filter(t=>t.status==="done"&&(t.completedAt||0)>now-wk);
+      if(wkTasks.length>=6){
+        const byTopic={};wkTasks.forEach(t=>byTopic[t.topic]=(byTopic[t.topic]||0)+1);
+        const top=Object.entries(byTopic).sort((a,b)=>b[1]-a[1])[0];
+        if(top&&top[1]/wkTasks.length>0.6)
+          return {kind:"grind",mood:"🔂",
+            msg:`Hafte ka ${Math.round(top[1]/wkTasks.length*100)}% time sirf "${top[0]}" par gaya. Ek chapter mein perfection ka peechha karna baaki syllabus ko rok deta hai.`,
+            ask:"Aaj doosra chapter uthao — planner ka agla task karo.",
+            run:()=>go("planner")};
+      }
+    }
+    return null;
+  }catch(e){return null;}
+}
 function mentorPingCard(){
   const st=streakInfo();
   const tk=todayKey(Date.now());
@@ -7987,12 +8437,16 @@ function mentorPingCard(){
   const todayQ=S.dailyQuestions[tk]||0;
   let planBehind=null;try{const h=aipHealth();if(h)planBehind=h;}catch(e){}
   let weakest="";try{const p=chapterPriorities()[0];if(p)weakest=p.name;}catch(e){}
+  const beh=behaviorInsight();
+  let behRun=null;
   if(!done.length){
     msg=`${name}, pehla mock hi asli shuruaat hai. Jab tak paper nahi doge, mujhe pata hi nahi chalega kahan kaam karna hai.`;
     ask="Aaj pehla mock do — main analysis karke exact plan bana dunga.";mood="🎯";
   }else if(st.streak===0&&Object.keys(S.studyLog).length>2){
     msg=`${name}, streak toot gayi. Koi baat nahi — lekin aaj wapas nahi aaye to kal aur mushkil hoga. ${goal} khud nahi milega.`;
     ask="Bas 2 minute se shuru karo — abhi.";mood="😤";
+  }else if(beh){
+    msg=`${name}, ${beh.msg}`;ask=beh.ask;mood=beh.mood;behRun=beh.run;
   }else if(planBehind&&planBehind.label==="At Risk"){
     msg=`${name}, tumhara study plan ${planBehind.ratio}% par atka hai. Main tumhare liye plan banata hoon, tum use chhod dete ho — aise ${goal} nahi hoga.`;
     ask="Aaj ke tasks kholo aur pehla wala khatam karo.";mood="😠";
@@ -8013,6 +8467,7 @@ function mentorPingCard(){
       <div class="small" style="margin-top:4px;line-height:1.6">${esc(msg)}</div>
       <div class="small" style="margin-top:6px"><b>👉 ${esc(ask)}</b></div></div></div>`;
   const row=el("div","row");row.style.cssText="margin-top:10px;gap:8px";
+  if(behRun){const fix=el("button","btn sm","👉 Theek karo abhi");fix.onclick=behRun;row.appendChild(fix);}
   const talk=el("button","btn ghost sm","💬 Saarthi se baat karo");
   talk.onclick=()=>{try{$("#aiChatInput").value="Mentor, aaj ka mera plan kya hai? Meri performance dekh kar seedha batao kya karna hai.";aiChatOpen();setTimeout(()=>aiChatSend(),50);}catch(e){aiChatOpen();}};
   row.appendChild(talk);c.appendChild(row);
@@ -8076,6 +8531,56 @@ let _flTimer=null,_flPill=null;
    these helpers quietly return null/false and the soft lock runs alone. */
 function nativeFocus(){try{return (typeof AndroidFocus!=="undefined"&&AndroidFocus&&AndroidFocus.isApp())?AndroidFocus:null;}catch(e){return null;}}
 function nativeGuardOn(){try{const n=nativeFocus();return !!(n&&n.isGuardEnabled());}catch(e){return false;}}
+/* ═══ STUDY LAUNCHER (APK v3.1+) — PW LearnOS-style home-screen mode ═══
+   The app can become the phone's HOME screen: Home button = padhai.
+   Bridge methods only exist in v3.1+, so every call is feature-checked —
+   an older APK (or the plain website) simply never shows these controls. */
+function nativeLauncher(){try{const n=nativeFocus();return (n&&typeof n.isLauncherMode==="function")?n:null;}catch(e){return null;}}
+function launcherModeOn(){try{const n=nativeLauncher();return !!(n&&n.isLauncherMode());}catch(e){return false;}}
+function isDefaultLauncher(){try{const n=nativeLauncher();return !!(n&&n.isDefaultLauncher());}catch(e){return false;}}
+/** Minimal app drawer — the "dock" of the study launcher. Zaroori apps
+ *  (Phone/Camera/WhatsApp…) yahin se khulti hain; Focus Lock ke दौरान
+ *  blocked apps ko native side hi mana kar deta hai. */
+function appDrawerOpen(){
+  const n=nativeLauncher();if(!n)return;
+  let apps=[];try{apps=JSON.parse(n.listApps()||"[]");}catch(e){}
+  const m=el("div","modal");m.setAttribute("data-static","1");
+  m.innerHTML=`<div class="box" style="max-width:560px;max-height:82vh;display:flex;flex-direction:column">
+    <h3 style="margin:0 0 4px">📱 Apps${focusActive()?' <span class="badge" style="color:var(--red)">🔒 Focus Lock — sirf zaroori apps</span>':""}</h3>
+    <div class="small muted">Study launcher mode: yahan se koi bhi app kholo. Padhai ke time distraction apps khud block ho jayenge.</div>
+    <input type="text" placeholder="App dhundo…" data-q style="width:100%;margin:10px 0">
+    <div data-list style="overflow:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"></div>
+    <button class="btn ghost sm" data-close style="margin-top:10px">Band karo</button></div>`;
+  document.body.appendChild(m);
+  const list=m.querySelector("[data-list]"),q=m.querySelector("[data-q]");
+  const draw2=()=>{
+    const term=(q.value||"").trim().toLowerCase();
+    list.innerHTML="";
+    apps.filter(a=>!term||String(a.label||"").toLowerCase().includes(term)).slice(0,200).forEach(a=>{
+      const b=el("button","optrow");b.style.cssText="cursor:pointer;text-align:left;padding:10px";
+      b.innerHTML=`<b style="font-size:13px">${esc(String(a.label||a.pkg).slice(0,26))}</b>`;
+      b.onclick=()=>{let ok=false;try{ok=n.openApp(a.pkg);}catch(e){}
+        if(ok)m.remove();};
+      list.appendChild(b);
+    });
+    if(!list.children.length)list.innerHTML=`<div class="small muted">Kuch nahi mila.</div>`;
+  };
+  q.oninput=draw2;draw2();
+  m.querySelector("[data-close]").onclick=()=>m.remove();
+}
+/** Floating dock button — only when we ARE the phone's home screen
+ *  (otherwise the normal launcher has its own drawer). */
+function launcherDock(){
+  let d=document.getElementById("launcherDock");
+  if(!isDefaultLauncher()){if(d)d.remove();return;}
+  if(d)return;
+  d=el("button",null,"📱");
+  d.id="launcherDock";d.title="Apps";
+  d.style.cssText="position:fixed;bottom:18px;right:16px;z-index:9000;width:52px;height:52px;border-radius:50%;"+
+    "font-size:24px;border:1px solid var(--line);background:var(--panel);box-shadow:0 4px 16px rgba(0,0,0,.25);cursor:pointer";
+  d.onclick=appDrawerOpen;
+  document.body.appendChild(d);
+}
 function focusStart(minutes){
   const n=nativeFocus();
   // APP MEIN GUARD OFF = lock bekaar hai. Fake security mat do — pehle
@@ -8235,14 +8740,32 @@ function weeklyReportCard(){
     .reduce((s2,[,v])=>s2+v,0);
   let focus="";try{const p=chapterPriorities()[0];if(p)focus=p.name+" ("+p.acc+"%)";}catch(e){}
   const c=el("div","card");
-  c.innerHTML=`<div class="section-title"><span class="ico">${ic("news")}</span><h3 style="margin:0">This Week's Report</h3></div>
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("news")}</span><h3 style="margin:0">Weekly Mentor Report</h3></div>
     <div class="grid g4" style="margin-top:10px">
       ${statCard("Tests taken",wk.length)}
       ${statCard("Avg marks",avg(wk)+(prev.length?` <span class="small ${dMarks>=0?"ok":"no"}" style="font-size:12px">${dMarks>=0?"+":""}${dMarks}</span>`:""))}
       ${statCard("Avg accuracy",acc(wk)+"%"+(prev.length?` <span class="small ${dAcc>=0?"ok":"no"}" style="font-size:12px">${dAcc>=0?"+":""}${dAcc}%</span>`:""))}
       ${statCard("Questions done",qDone)}
-    </div>
-    ${focus?`<div class="small muted" style="margin-top:10px">${ic("target")} Next week's focus: <b>${esc(focus)}</b> — your weakest chapter right now.</div>`:""}`;
+    </div>`;
+  // full mentor-report lines: subjects, mistake pattern, backlog, revision, priorities
+  const lines=[];
+  try{
+    const per={};wk.forEach(a=>{Object.entries(a.result.per||{}).forEach(([s2,v])=>{
+      const o=per[s2]=per[s2]||{m:0,n:0};o.m+=v.accuracy||0;o.n++;});});
+    const subs=Object.entries(per).map(([s2,o])=>({s:s2,acc:Math.round(o.m/o.n)})).sort((a,b2)=>b2.acc-a.acc);
+    if(subs.length>=2)lines.push(`💪 Strongest: <b>${esc(subs[0].s)}</b> (${subs[0].acc}%) · 📉 Weakest: <b>${esc(subs[subs.length-1].s)}</b> (${subs[subs.length-1].acc}%)`);
+  }catch(e){}
+  try{const dna=mistakeDNA();if(dna)lines.push(`🧬 Mistake pattern: <b>${dna.n}× ${esc(dna.label)}</b> in ${esc(dna.sub)} — ${esc(dna.fix)}`);}catch(e){}
+  try{
+    const p=aip();
+    if(p&&p.tasks){const tk2=todayKey(Date.now());
+      const backlog=p.tasks.filter(t=>t.status==="todo"&&t.date<tk2).length;
+      if(backlog)lines.push(`📋 Backlog: <b>${backlog} task(s)</b> pending — rebalance ho jayega, lekin clear tumhe hi karna hai`);
+    }
+  }catch(e){}
+  try{const rq=revisionQueue();if(rq.length)lines.push(`🔔 Revision pending: <b>${rq.length} chapter(s)</b> untouched 14+ din — top: ${esc(rq[0].name)}`);}catch(e){}
+  if(lines.length)c.innerHTML+=`<div class="small" style="margin-top:10px;line-height:1.9">${lines.join("<br>")}</div>`;
+  c.innerHTML+=focus?`<div class="small muted" style="margin-top:8px">${ic("target")} Next week's #1 priority: <b>${esc(focus)}</b> — your weakest chapter right now.</div>`:"";
   return c;
 }
 function viewDash(root){
@@ -8278,7 +8801,8 @@ function viewDash(root){
   const lb=el("button","btn ghost",ic("library")+" Test Library");lb.onclick=()=>go("library");
   acts.append(two,qs,lb);hero.appendChild(acts);
   root.appendChild(hero);
-  // ── war-room order: mentor bolta hai pehle, phir aaj ka mission ──
+  // ── launcher order: ONE next action → mentor → aaj ka mission ──
+  root.appendChild(nextBestActionCard());
   root.appendChild(mentorPingCard());
   root.appendChild(missionControlCard());
   // today's promise (implementation intention) — kept above everything
@@ -8786,6 +9310,7 @@ function buildStudentContext(){
     if(S.contract&&S.contract.active){const tq=S.dailyQuestions[todayKey(Date.now())]||0;
       if(tq<S.contract.daily)acc.push(`self-contract of ${S.contract.daily} questions/day NOT yet met today (${tq} done)`);}
     try{const h=aipHealth();if(h&&(h.label==="At Risk"||h.label==="Slightly Behind"))acc.push(`AI study plan is ${h.label} (${h.ratio}% of planned work done) — push them to catch up`);}catch(e){}
+    try{const beh=behaviorInsight();if(beh)acc.push(`BAD STUDY PATTERN detected (${beh.kind}): ${beh.msg.replace(/<[^>]+>/g,"")}`);}catch(e){}
     if(acc.length)parts.push("ACCOUNTABILITY (raise these YOURSELF, mentor-style): "+acc.join("; ")+".");
     // last up-to-3 results
     const recent=done.slice(-3).map(a=>{
@@ -8802,13 +9327,20 @@ function buildStudentContext(){
     // weakest chapters by priority
     const prios=chapterPriorities().slice(0,5);
     if(prios.length)parts.push("Weakest chapters (fix-first order): "+prios.map(p=>`${p.name} ${p.acc}% over ${p.n}Q`).join("; "));
-    // mistake profile from their own tags
-    const tags={concept:0,silly:0,guessed:0};
+    // mistake profile from their own tags (full Mistake-DNA vocabulary)
+    const tags={};MISTAKE_TAGS.forEach(([k])=>tags[k]=0);
     Object.values(S.qtags||{}).forEach(v=>{if(tags[v]!=null)tags[v]++;});
-    if(tags.concept+tags.silly+tags.guessed>0)parts.push(`Self-tagged mistakes: ${tags.concept} concept gaps, ${tags.silly} silly, ${tags.guessed} guesses`);
+    const tagTotal=Object.values(tags).reduce((a,b)=>a+b,0);
+    if(tagTotal>0)parts.push("Self-tagged mistakes: "+Object.entries(tags).filter(([,n])=>n>0).map(([k,n])=>`${n} ${k}`).join(", "));
+    const dna=mistakeDNA();
+    if(dna)parts.push(`MISTAKE-DNA PATTERN: ${dna.n}× "${dna.tag}" mistakes in ${dna.sub} across ${dna.tests} recent tests — raise this proactively with the fix: ${dna.fix}.`);
     // spaced review + streak + goal
     const due=dueReviewQuestions().length;
     parts.push(`Streak: ${st.streak} day(s). Due spaced-review questions today: ${due}. Daily goal: ${S.settings.dailyGoal||20} questions.`);
+    // chapter-level revision decay (smart revision)
+    try{const rq=revisionQueue();if(rq.length)parts.push(`Chapters overdue for revision (memory decay): ${rq.slice(0,3).map(r=>`${r.name} (${r.idleDays}d untouched)`).join(", ")}.`);}catch(e){}
+    // what the launcher is recommending right now — mentor should align with it
+    try{const nba=nextBestAction();if(nba)parts.push(`App's current #1 recommended action: "${nba.title}" — reason: ${nba.why}`);}catch(e){}
     // trajectory + target
     const trend=percentileTrend();
     if(trend.projected!=null)parts.push(`Projected exam-day percentile: ${trend.projected}${S.settings.targetPercentile?` (target ${S.settings.targetPercentile})`:""}.`);
@@ -8830,9 +9362,13 @@ function buildStudentContext(){
   }catch(e){return "";}
 }
 async function aiChatSend(){
+  // RACE FIX: Enter-spam / double-tap used to fire parallel AI requests —
+  // duplicate cost, interleaved replies. One in-flight request at a time.
+  if(aiChatSend._busy)return;
   const inp=$("#aiChatInput"); const text=(inp.value||"").trim();
   const file=aiChatPendingFile;
   if(!text&&!file) return;
+  aiChatSend._busy=true;
   inp.value=""; inp.style.height=""; aiChatSyncSend();
   const prev=$("#aiChatImgPrev"); prev.classList.add("hide"); prev.innerHTML=""; aiChatPendingFile=null;
   aiChatHistory.push({role:"user",text:text||(file&&file.isImage?"(photo attached)":"(file attached)"),
@@ -8847,6 +9383,7 @@ async function aiChatSend(){
       body:JSON.stringify({messages:payloadMsgs,studentContext:buildStudentContext()})});
     const data=await r.json().catch(()=>null);
     if(r.ok&&data&&data.reply){
+      aiChatSend._busy=false;
       aiChatTypeOut(modelMsg,data.reply);   // smooth streaming-style reveal
       return;
     }
@@ -8856,6 +9393,7 @@ async function aiChatSend(){
     modelMsg.text="Network error — please check your connection and try again.";
     modelMsg.error=true;
   }
+  aiChatSend._busy=false;
   modelMsg.pending=false;
   aiChatRenderMsgs(); aiChatRenderChips(); save_aiChatHistory();
 }
