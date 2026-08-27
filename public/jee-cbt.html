@@ -60,7 +60,6 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .iconbtn.offline-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:7px 12px}
 .iconbtn.offline-btn.busy{background:rgba(255,255,255,.28);cursor:progress}
 .iconbtn.offline-btn.ready{background:rgba(30,158,87,.35)}
-.offline-btn .ob-pct{font-variant-numeric:tabular-nums}
 .nav{display:flex;gap:4px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;position:sticky;top:50px;z-index:35}
 .nav button{background:transparent;border:0;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:700;font-size:13.5px;transition:.18s}
 .nav button.active{background:var(--blue);color:#fff;box-shadow:0 4px 12px -4px color-mix(in srgb,var(--blue) 60%,transparent)}
@@ -83,7 +82,7 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .heatcell{aspect-ratio:1;border-radius:3px;min-width:6px}
 @media (max-width:600px){.heatgrid{grid-template-columns:repeat(10,1fr)}}
 @media print{
-  .topbar,.nav,#offlineBar,.q-actions,.setup-actions,.subject-tabs,button,.ai-chat-fab,.ai-chat-panel{display:none !important}
+  .topbar,.nav,#offlineBar,button,.ai-chat-fab,.ai-chat-panel{display:none !important}
   body{background:#fff !important;color:#000 !important}
   .card{box-shadow:none !important;border:1px solid #ccc !important;break-inside:avoid}
   .hero-card{background:#fff !important;color:#000 !important;border:1px solid #ccc !important}
@@ -1310,7 +1309,7 @@ const SUBJECTS=["Physics","Chemistry","Mathematics"];
 /* CONTRAST FIX: subject colours as CSS variables so dark mode can brighten
    them — the old fixed dark hexes (#0b57a4 etc.) were near-invisible on
    dark panels. Light mode keeps the original tones. */
-const SUBCOLOR={Physics:"var(--sub-phy)",Chemistry:"var(--sub-che)",Mathematics:"var(--sub-mat)"};
+const SUBCOLOR={Physics:"var(--sub-phy)",Chemistry:"var(--sub-che)",Mathematics:"var(--sub-mat)",English:"var(--amber)"};
 const SUBCOLOR_HEX={Physics:"#0b57a4",Chemistry:"#1e9e57",Mathematics:"#7a3ec8"}; // for canvas charts (no CSS vars there)
 
 /* ------------------------------ 2. STORAGE ------------------------------- */
@@ -3280,23 +3279,65 @@ let plannerTab="schedule";
    Weightage follows the last 5 years' official paper analysis — it drives
    chapter ORDER in tight timelines (high-yield first) and never silently
    drops anything. */
+/* COMPLETE syllabus — JEE Main + Advanced + Class 11/12 boards. Every NCERT
+   chapter present; tuple = [name, difficulty 1-3, weightage 1-3]. */
 const JEE_TOPICS={
   Physics:[["Units & Measurement",1,2],["Kinematics",2,2],["Laws of Motion",2,2],["Work, Energy & Power",2,2],
-    ["Rotational Motion",3,3],["Gravitation",2,2],["Properties of Solids & Liquids",2,2],["Thermodynamics",2,3],
-    ["Kinetic Theory of Gases",1,1],["Oscillations & Waves",2,3],["Electrostatics",3,3],["Current Electricity",2,3],
-    ["Magnetic Effects of Current",3,3],["EMI & Alternating Current",3,3],["Electromagnetic Waves",1,2],
-    ["Ray Optics",2,3],["Wave Optics",2,2],["Dual Nature of Matter",1,2],["Atoms & Nuclei",1,2],["Semiconductors",1,3]],
-  Chemistry:[["Some Basic Concepts of Chemistry",1,1],["Atomic Structure",2,2],["Chemical Bonding",3,3],
-    ["Chemical Thermodynamics",2,2],["Solutions",2,2],["Equilibrium",3,2],["Redox & Electrochemistry",2,3],
-    ["Chemical Kinetics",2,2],["Classification of Elements",1,1],["p-Block Elements",2,3],["d & f Block Elements",2,2],
-    ["Coordination Compounds",3,3],["General Organic Chemistry",3,3],["Hydrocarbons",2,2],["Haloalkanes & Haloarenes",2,2],
-    ["Alcohols, Phenols & Ethers",2,2],["Aldehydes, Ketones & Acids",3,3],["Amines",2,2],["Biomolecules",1,2]],
+    ["Circular Motion",2,2],["Centre of Mass & Collisions",2,2],["Rotational Motion",3,3],["Gravitation",2,2],
+    ["Mechanical Properties of Solids",1,1],["Fluid Mechanics",2,2],["Thermal Properties of Matter",1,2],
+    ["Thermodynamics",2,3],["Kinetic Theory of Gases",1,1],["Oscillations (SHM)",2,3],["Waves & Sound",2,2],
+    ["Electrostatics",3,3],["Capacitance",2,2],["Current Electricity",2,3],["Magnetic Effects of Current",3,3],
+    ["Magnetism & Matter",1,1],["EMI (Electromagnetic Induction)",3,3],["Alternating Current",2,2],
+    ["Electromagnetic Waves",1,2],["Ray Optics",2,3],["Wave Optics",2,2],["Dual Nature of Matter",1,2],
+    ["Atoms",1,2],["Nuclei",1,2],["Semiconductors & Electronics",1,3],["Experimental Physics & Errors",1,2]],
+  Chemistry:[["Some Basic Concepts (Mole Concept)",1,1],["Atomic Structure",2,2],["Chemical Bonding",3,3],
+    ["States of Matter (Gaseous & Liquid)",1,1],["Chemical Thermodynamics",2,2],["Equilibrium (Chemical & Ionic)",3,2],
+    ["Redox Reactions",1,2],["Solid State",1,1],["Solutions",2,2],["Electrochemistry",2,3],["Chemical Kinetics",2,2],
+    ["Surface Chemistry",1,1],["Classification & Periodicity",1,1],["Hydrogen & s-Block",1,1],["p-Block Elements",2,3],
+    ["d & f Block Elements",2,2],["Coordination Compounds",3,3],["Metallurgy (Isolation of Elements)",1,1],
+    ["General Organic Chemistry (GOC)",3,3],["Isomerism",2,2],["Hydrocarbons",2,2],["Haloalkanes & Haloarenes",2,2],
+    ["Alcohols, Phenols & Ethers",2,2],["Aldehydes, Ketones & Carboxylic Acids",3,3],["Amines & Diazonium Salts",2,2],
+    ["Biomolecules",1,2],["Polymers",1,1],["Chemistry in Everyday Life",1,1],["Environmental Chemistry",1,1],
+    ["Practical/Analytical Chemistry",1,2]],
   Mathematics:[["Sets, Relations & Functions",1,2],["Complex Numbers",2,2],["Quadratic Equations",2,2],
     ["Matrices & Determinants",2,3],["Permutations & Combinations",2,2],["Binomial Theorem",1,2],
-    ["Sequences & Series",2,3],["Limits, Continuity & Differentiability",3,3],["Applications of Derivatives",2,2],
-    ["Integral Calculus",3,3],["Differential Equations",2,2],["Straight Lines & Circles",2,3],["Conic Sections",3,3],
-    ["3D Geometry",2,3],["Vector Algebra",2,3],["Statistics & Probability",2,2],["Trigonometry",2,2]]
+    ["Sequences & Series (AP/GP)",2,3],["Trigonometric Ratios & Identities",2,2],["Trigonometric Equations",2,1],
+    ["Inverse Trigonometric Functions",2,2],["Heights & Distances",1,1],["Straight Lines",2,2],["Circles",2,2],
+    ["Conic Sections (Parabola/Ellipse/Hyperbola)",3,3],["Limits, Continuity & Differentiability",3,3],
+    ["Differentiation (Methods)",2,2],["Applications of Derivatives",2,2],["Indefinite Integration",3,3],
+    ["Definite Integration & Area",3,3],["Differential Equations",2,2],["Vector Algebra",2,3],["3D Geometry",2,3],
+    ["Probability",2,2],["Statistics",1,2],["Mathematical Reasoning",1,1]]
 };
+/* Board-only subject (planner-only — CBT test engine stays PCM):
+   Class 12 CBSE English Core, complete. */
+const BOARD_EXTRA_TOPICS={
+  English:[["Flamingo: The Last Lesson",1,2],["Flamingo: Lost Spring",1,2],["Flamingo: Deep Water",1,2],
+    ["Flamingo: The Rattrap",1,2],["Flamingo: Indigo",1,2],["Flamingo: Poets and Pancakes",1,1],
+    ["Flamingo: The Interview",1,1],["Flamingo: Going Places",1,1],
+    ["Poetry: My Mother at Sixty-six",1,2],["Poetry: Keeping Quiet",1,2],["Poetry: A Thing of Beauty",1,2],
+    ["Poetry: A Roadside Stand",1,1],["Poetry: Aunt Jennifer's Tigers",1,2],
+    ["Vistas: The Third Level",1,2],["Vistas: The Tiger King",1,2],["Vistas: Journey to the End of the Earth",1,1],
+    ["Vistas: The Enemy",1,2],["Vistas: On the Face of It",1,2],["Vistas: Memories of Childhood",1,1],
+    ["Writing: Notice & Advertisement",1,3],["Writing: Letter Writing (Formal)",1,3],
+    ["Writing: Article & Report Writing",2,3],["Reading: Comprehension Practice",2,3]]
+};
+/* JEE Advanced–only additions (appended when target = jeeadv) */
+const ADV_EXTRA_TOPICS={
+  Physics:[["Rotational Dynamics (Advanced)",3,3],["Errors & Instruments (Advanced)",2,2]],
+  Chemistry:[["Qualitative Salt Analysis",3,3],["Stereochemistry (Advanced)",3,2]],
+  Mathematics:[["Functions & Functional Equations (Adv)",3,2],["Inequalities & Max-Min (Adv)",3,2]]
+};
+/** Chapters available for a given target — the SINGLE source the wizard uses. */
+function topicsForTarget(target){
+  const base=JSON.parse(JSON.stringify(JEE_TOPICS));
+  if(target==="jeeadv"){
+    Object.keys(ADV_EXTRA_TOPICS).forEach(s=>{base[s]=base[s].concat(ADV_EXTRA_TOPICS[s]);});
+  }
+  if(target==="board12"||target==="board11"){
+    base.English=BOARD_EXTRA_TOPICS.English.slice();
+  }
+  return base;
+}
 /* ═══ DEPTH ENGINE — the timeline decides HOW you study, not just when ═══
    Research + topper consensus: little time → one-shots, high-weightage
    first, PYQ sprints; lots of time → full detailed lectures, problem
@@ -3422,15 +3463,32 @@ function aipGenerate(prof){
   return {tasks:tasks.concat(revs),endDate:aipAddDays(prof.startDate,Math.max(0,Math.min(dayOff,prof.days)-1)),overflowMin};
 }
 /** Adaptive catch-up: spread overdue work forward instead of piling it on tomorrow. */
-function aipRebalance(){
+function aipRebalance(force){
   const p=aip();if(!p||!p.tasks)return;
   const tk=todayKey(Date.now());
   const overdue=p.tasks.filter(t=>t.status==="todo"&&t.date<tk&&t.kind!=="revision");
   if(!overdue.length)return;
+  // MENTOR BEHAVIOUR: don't silently shuffle the plan — ask once per day.
+  // "Kal ke 3 kaam reh gaye — redistribute kar dun?" A real mentor asks.
+  if(!force){
+    if((p._rebAsked||"")===tk)return;   // already asked today; wait for answer
+    p._rebAsked=tk;aipSave(p);
+    toast(`📋 ${overdue.length} kaam pichhle dino ke reh gaye hain`,2500);
+    setTimeout(()=>{try{
+      confirmBox("Kaam reh gaya — redistribute karun?",
+        `${overdue.length} task(s) miss hue hain. Main unhe aane wale dino mein samajhdari se baant dunga (kal par dher nahi lagaunga, weak chapters pehle).`,
+        ()=>{aipRebalance(true);toast("✅ Plan rebalance ho gaya — aaj se naya schedule");if(route==="dash"||route==="planner")render(0);},
+        "Haan, baant do");
+    }catch(e){aipRebalance(true);}},400);
+    return;
+  }
   const lastDay=aipAddDays(p.profile.startDate,p.profile.days-1);
   // book existing future load per day, then slot overdue tasks into the gaps
   const load={};
   p.tasks.filter(t=>t.status==="todo"&&t.date>=tk).forEach(t=>{load[t.date]=(load[t.date]||0)+aipEff(t.estMin,p.profile);});
+  // weak chapters and high-weightage first — the marks you're most likely losing
+  let weakSet=new Set();try{weakSet=new Set(chapterPriorities().slice(0,5).map(x=>x.name));}catch(e){}
+  overdue.sort((a,b)=>((weakSet.has(b.topic)?1:0)-(weakSet.has(a.topic)?1:0))||((b.wt||2)-(a.wt||2)));
   let day=tk;
   overdue.forEach(t=>{
     const eff=aipEff(t.estMin,p.profile);
@@ -3459,6 +3517,7 @@ async function aipFindVideo(t,cb){
       body:JSON.stringify({topic:t.topic,subject:t.subject,language:p.profile.language,
         kind:t.kind==="practice"?"practice":t.kind==="revision"?"revision":t.kind==="advanced"?"advanced":"learn",
         depth:t.depth||"lecture",           // oneshot | lecture | detailed — changes the SEARCH itself
+        target:p.profile.target||"jeemain", // jeemain | jeeadv | board12 | board11 — video level
         minMinutes:Math.round(t.estMin*0.4),
         maxMinutes:Math.round(t.estMin*1.6),channel:prefCh})});
     const data=await r.json().catch(()=>null);
@@ -3511,7 +3570,7 @@ function aipOpenLesson(t){
     });
     toast("Marked complete 🎉");if(route==="planner")setTimeout(()=>{if(route==="planner")render(0);},400);
   };
-  m.querySelector("[data-move]").onclick=()=>{t.date=aipAddDays(todayKey(Date.now()),1);aipSave(aip());m.remove();aipRebalance();if(route==="planner")render(0);toast("Moved to tomorrow — plan rebalanced");};
+  m.querySelector("[data-move]").onclick=()=>{t.date=aipAddDays(todayKey(Date.now()),1);aipSave(aip());m.remove();aipRebalance(true);if(route==="planner")render(0);toast("Moved to tomorrow — plan rebalanced");};
   const show=v=>{
     t.videoId=v.id;t.videoTitle=v.title;t.channel=v.channel;t.durationSec=v.durationSec;aipSave(aip());
     m.querySelector("[data-player]").innerHTML=`
@@ -3520,7 +3579,8 @@ function aipOpenLesson(t){
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
       <div class="small" style="margin-top:8px"><b>${esc(v.title)}</b></div>
-      <div class="small muted">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec/(aip().profile.speed||1.25)))} at ${aip().profile.speed}×)</div>`;
+      <div class="small muted">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec/(aip().profile.speed||1.25)))} at ${aip().profile.speed}×)</div>
+      ${v.why?`<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target||"")==="board12"?" · board-level fit":(p.profile.target||"")==="jeeadv"?" · Advanced-level fit":" · JEE Main-level fit"}</div>`:""}`;
   };
   aipFindVideo(t,(items,fallback)=>{
     if(!m.isConnected)return;
@@ -3544,8 +3604,21 @@ function aipWizard(root){
     if(back){const b=el("button","btn ghost sm","Back");b.onclick=()=>{w.step--;render(0);};r.appendChild(b);}
     const n=el("button","btn sm",nextLabel||"Continue");n.onclick=next;r.appendChild(n);return r;};
   if(w.step===1){
-    c.innerHTML=H("Build Your Personalized Study Plan","Tell us what you want to study and how much time you have. We'll build your plan from the best free YouTube classes — no paid course needed.");
-    const grid=el("div","row");grid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:12px";
+    c.innerHTML=H("Build Your Personalized Study Plan","Kis exam ke liye taiyari? Isi se videos, difficulty aur chapter priority tay hogi — board walo ko board-level videos, JEE walo ko JEE-level.");
+    // EXAM TARGET — decides video search style + which chapters get priority
+    const tgt=el("div");tgt.style.marginTop="12px";tgt.appendChild(el("h4",null,"Target exam"));
+    const tgrid=el("div","row");tgrid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:8px";
+    [["jeemain","🎯 JEE Main"],["jeeadv","🏔️ JEE Main + Advanced"],["board12","📚 Class 12 Boards"],["board11","📖 Class 11 (foundation)"]].forEach(([v,l])=>{
+      const on=(w.target||"jeemain")===v;
+      const b=el("button","btn sm"+(on?"":" ghost"),l);
+      b.onclick=()=>{w.target=v;render(0);};
+      tgrid.appendChild(b);
+    });
+    tgt.appendChild(tgrid);
+    c.appendChild(tgt);
+    c.appendChild(el("div","h4spacer")).style.marginTop="14px";
+    c.appendChild(el("h4",null,"Subjects"));
+    const grid=el("div","row");grid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:8px";
     SUBJECTS.forEach(s=>{
       const on=w.subjects.includes(s);
       const b=el("button","btn sm"+(on?"":" ghost"),(on?ic("check")+" ":"")+s);
@@ -3554,22 +3627,30 @@ function aipWizard(root){
     });
     c.appendChild(grid);
     c.appendChild(el("div","small muted",`${w.subjects.length} subject(s) selected`)).style.marginTop="8px";
-    c.appendChild(nav(false,()=>{if(!w.subjects.length){toast("Pick at least one subject");return;}w.step=2;render(0);}));
+    c.appendChild(nav(false,()=>{if(!w.subjects.length){toast("Pick at least one subject");return;}w.target=w.target||"jeemain";w.step=2;render(0);}));
   }
   if(w.step===2){
-    c.innerHTML=H("Choose your topics","Full syllabus, or untick chapters you've already finished. Order follows the natural prerequisite chain.");
-    w.subjects.forEach(s=>{
-      w.topics[s]=w.topics[s]||JEE_TOPICS[s].slice();
+    const SYL=topicsForTarget(w.target||"jeemain");   // target-specific chapter lists
+    const subjList=w.subjects.slice();
+    // board mode: English becomes selectable right here
+    if((w.target==="board12"||w.target==="board11")&&SYL.English&&!subjList.includes("English"))subjList.push("English");
+    c.innerHTML=H("Choose your topics",(w.target==="jeeadv"?"JEE Advanced syllabus (extra advanced chapters included). ":w.target&&w.target.startsWith("board")?"Board syllabus — English bhi neeche mil jayegi. ":"")+"Full syllabus, or untick chapters you've already finished.");
+    subjList.forEach(s=>{
+      if(!SYL[s])return;
+      const isExtra=!w.subjects.includes(s);
+      w.topics[s]=w.topics[s]||(isExtra?[]:SYL[s].slice());
       const sec=el("div");sec.style.marginTop="12px";
-      sec.innerHTML=`<b style="color:${SUBCOLOR[s]}">${s}</b> <span class="small muted">(${w.topics[s].length}/${JEE_TOPICS[s].length} chapters)</span>`;
+      sec.innerHTML=`<b style="color:${SUBCOLOR[s]||"var(--accent-text)"}">${s}</b> <span class="small muted">(${w.topics[s].length}/${SYL[s].length} chapters${isExtra?" · optional":""})</span>`;
       const row=el("div","row");row.style.cssText="gap:6px;flex-wrap:wrap;margin-top:8px";
-      JEE_TOPICS[s].forEach(([name,diff])=>{
+      SYL[s].forEach(([name,diff])=>{
         const on=w.topics[s].some(x=>x[0]===name);
         const b=el("button","btn sm"+(on?"":" ghost"),name+(diff===3?" ★":""));b.style.fontSize="12px";
         b.onclick=()=>{
           // toggle, preserving official syllabus order
           const now=on?w.topics[s].filter(x=>x[0]!==name):w.topics[s].concat([[name,diff]]);
-          w.topics[s]=JEE_TOPICS[s].filter(x=>now.some(y=>y[0]===x[0]));
+          w.topics[s]=SYL[s].filter(x=>now.some(y=>y[0]===x[0]));
+          if(w.topics[s].length&&!w.subjects.includes(s))w.subjects.push(s);
+          if(!w.topics[s].length&&isExtra)w.subjects=w.subjects.filter(x=>x!==s);
           render(0);};
         row.appendChild(b);
       });
@@ -3661,7 +3742,7 @@ function aipWizard(root){
     c.innerHTML=H("How do you want to study?","Weekly timetable rotates 2 subjects per week — the JEE-360 recommended way. One-subject goes deep, chapter by chapter.");
     c.appendChild(mk("Timetable",w.style,[["weekly","Weekly Timetable (recommended)"],["one","One Subject at a Time"]],v=>w.style=v,"Weekly = 2 subjects active each week, rotating so nothing rusts."));
     c.appendChild(mk("Lesson language",w.language,[["en","English"],["hinglish","Hinglish"],["hi","Hindi"]],v=>w.language=v));
-    const prof={subjects:w.subjects,topics:w.topics,days:w.days,dailyMin:w.dailyMin||Math.ceil(total/w.days/5)*5,
+    const prof={subjects:w.subjects,topics:w.topics,days:w.days,dailyMin:w.dailyMin||Math.ceil(total/w.days/5)*5,target:w.target||"jeemain",
       depth:w.depth||Object.keys(AIP_DEPTHS).find(k=>AIP_DEPTHS[k]===Dw),
       language:w.language,speed:w.speed,style:w.style,channels:w.channels||{},startDate:todayKey(Date.now())};
     const g=aipGenerate(prof);
@@ -3721,7 +3802,7 @@ function aipToday(root){
     if(t.status!=="done"){
       const wb=el("button","btn sm",ic("play")+" Watch");wb.onclick=()=>aipOpenLesson(t);
       const db=el("button","btn green sm",ic("check"));db.title="Done";db.onclick=()=>{t.status="done";t.completedAt=Date.now();aipSave(p);render(0);toast("Done 🎉");};
-      const mb=el("button","btn ghost sm","Move");mb.onclick=()=>{t.date=aipAddDays(tk,1);aipSave(p);aipRebalance();render(0);toast("Moved to tomorrow — plan rebalanced");};
+      const mb=el("button","btn ghost sm","Move");mb.onclick=()=>{t.date=aipAddDays(tk,1);aipSave(p);aipRebalance(true);render(0);toast("Moved to tomorrow — plan rebalanced");};
       acts.append(wb,db,mb);
     } else acts.appendChild(el("span","small",ic("check")+" Done"));
     row.appendChild(acts);list.appendChild(row);
@@ -7748,6 +7829,195 @@ function intentionCards(root){
   }
 }
 /** #3 — "Why I Started": the goal, visible every single day. */
+/* REALISTIC PREP SCORE — multi-dimensional honesty. A student who watched
+   100% lectures but solved nothing is NOT prepared. Dimensions:
+   syllabus coverage (30%) + test accuracy (30%) + practice volume (20%)
+   + revision discipline (10%) + consistency (10%). Clearly an ESTIMATE. */
+function prepScore(){
+  const p=aip();
+  // 1) syllabus coverage (learn tasks done / total)
+  let cov=0;
+  if(p&&p.tasks){const L=p.tasks.filter(t=>t.kind==="learn");cov=L.length?L.filter(t=>t.status==="done").length/L.length:0;}
+  // 2) accuracy from last 5 attempts
+  const done=S.attempts.filter(a=>a.submittedAt).slice(-5);
+  const acc=done.length?done.reduce((s2,a)=>s2+a.result.all.accuracy,0)/done.length/100:0;
+  // 3) practice volume: questions in last 14 days vs (goal×14)
+  const goal=Math.max(10,S.settings.dailyGoal||20);let q14=0;
+  for(let i=0;i<14;i++){const d2=new Date();d2.setDate(d2.getDate()-i);q14+=S.dailyQuestions[todayKey(d2.getTime())]||0;}
+  const prac=Math.min(1,q14/(goal*14));
+  // 4) revision discipline: due reviews cleared
+  let rev=1;try{const due=wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=Date.now();}).length;
+    rev=due===0?1:due<5?0.7:due<15?0.4:0.15;}catch(e){}
+  // 5) consistency: study days in last 14
+  let days=0;for(let i=0;i<14;i++){const d2=new Date();d2.setDate(d2.getDate()-i);if(S.studyLog[todayKey(d2.getTime())])days++;}
+  const cons=days/14;
+  const score=Math.round((cov*30+acc*30+prac*20+rev*10+cons*10));
+  const parts={cov:Math.round(cov*100),acc:Math.round(acc*100),prac:Math.round(prac*100),rev:Math.round(rev*100),cons:Math.round(cons*100)};
+  const weakest=Object.entries({["syllabus"]:parts.cov,["accuracy"]:parts.acc,["practice"]:parts.prac,["revision"]:parts.rev,["consistency"]:parts.cons}).sort((a,b)=>a[1]-b[1])[0];
+  return {score,parts,weakest:weakest[0]};
+}
+/* ═════════ MISSION CONTROL — "aaj kya karna hai" ek jagah ═════════
+   Sab sources ko jodkar aaj + kal ka poora din banata hai:
+   AI-planner tasks · Daily 10 · test-series ka aaj ka test · scheduled
+   mocks · due spaced-reviews · Sunday review · contract gap · live classes
+   (background fetch). Har item par TAP = seedha wahi kaam shuru.        */
+function missionControlCard(){
+  const tk=todayKey(Date.now()),tmr=tomorrowKey();
+  const items=[],tomorrow=[];
+  // 1) AI planner tasks (aaj + kal)
+  const p=aip();
+  if(p&&p.tasks){
+    p.tasks.filter(t=>t.date===tk&&t.status==="todo").slice(0,4).forEach(t=>{
+      items.push({ico:t.kind==="learn"?"📹":t.kind==="practice"?"✍️":t.kind==="advanced"?"🧗":"🔁",
+        label:`${t.topic} (${t.kind}) · ~${aipEff(t.estMin,p.profile)} min`,sub:t.subject,
+        run:()=>aipOpenLesson(t)});
+    });
+    p.tasks.filter(t=>t.date===tmr&&t.status==="todo").slice(0,3).forEach(t=>{
+      tomorrow.push(`${t.kind==="learn"?"📹":"✍️"} ${t.topic} (${t.subject})`);
+    });
+  }
+  // 2) Daily 10
+  if(!daily10Done()&&daily10Pool().length){
+    items.push({ico:"⚡",label:"Daily 10 — aaj ka recall quiz (15 min)",sub:"Consistency",
+      run:()=>{const pool=daily10Pool();if(pool.length)startDrill("Daily 10 · "+fmtDate(Date.now()),pool.slice(0,10),90);}});
+  }
+  // 3) test-series ka aaj/kal ka test
+  try{
+    const rows=PLAN();
+    rows.filter(r=>todayKey(r.date)===tk&&!r.done).slice(0,1).forEach(r=>{
+      items.push({ico:"📝",label:`Test: ${r.name}`,sub:r.subject+(r.time?" · "+r.time:""),run:()=>go("planner")});
+    });
+    rows.filter(r=>todayKey(r.date)===tmr&&!r.done).slice(0,1).forEach(r=>tomorrow.push(`📝 ${r.name}`));
+  }catch(e){}
+  // 4) scheduled mocks (self-scheduled)
+  (S.schedules||[]).filter(s2=>s2.when>Date.now()&&s2.when<Date.now()+36*3600e3).slice(0,1).forEach(s2=>{
+    const t=testById(s2.testId);
+    if(t)items.push({ico:"⏰",label:`Scheduled mock: ${t.name}`,
+      sub:new Date(s2.when).toLocaleString("en-IN",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"short"}),
+      run:()=>startExam(t.id)});
+  });
+  // 5) due spaced-reviews
+  try{
+    const due=wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=Date.now();});
+    if(due.length>=3)items.push({ico:"🔁",label:`${due.length} review questions due (bhoolne se pehle)`,sub:"Spaced repetition",
+      run:()=>startDrill("Spaced Review · "+fmtDate(Date.now()),due.slice(0,15),100)});
+  }catch(e){}
+  // 6) Sunday review
+  if(new Date().getDay()===0&&(S.sundayReview||{}).lastDone!==tk)
+    items.push({ico:"📅",label:"Sunday Review — is hafte ki galtiyan",sub:"Topper habit",run:()=>go("dash")});
+  // 7) contract gap
+  if(S.contract&&S.contract.active){
+    const done=S.dailyQuestions[tk]||0;
+    if(done<S.contract.daily)items.push({ico:"🤝",label:`Contract: ${S.contract.daily-done} questions aur (${done}/${S.contract.daily})`,sub:"Apna promise",run:twoMinStart});
+  }
+  // PRIORITY ENGINE: 🔴 critical (overdue/weak/exam-near) → 🟢 low.
+  // Score = weakness + backlog + exam proximity + revision-due, then sort.
+  let weakSet=new Set();try{weakSet=new Set(chapterPriorities().slice(0,4).map(x=>x.name));}catch(e){}
+  let daysToExam=999;if(S.settings.examDate){const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(dl>0)daysToExam=dl;}
+  const behind=(p&&p.tasks)?p.tasks.filter(t=>t.status==="todo"&&t.date<tk).length:0;
+  items.forEach(it=>{
+    let s2=0;
+    if(/review questions due|Sunday Review/.test(it.label))s2+=2;                  // revision due
+    if(it.sub&&weakSet.has((it.label.match(/^([^(]+)\(/)||[])[1]?.trim()))s2+=3;   // weak chapter
+    if(/Contract/.test(it.label))s2+=1;
+    if(it.catch||/CATCH-UP/.test(it.label))s2+=3;                                   // backlog
+    if(daysToExam<45)s2+=2; else if(daysToExam<90)s2+=1;                            // exam near
+    if(behind>3)s2+=1;
+    it.pri=s2>=5?0:s2>=3?1:s2>=1?2:3; // 0=critical..3=low
+  });
+  items.sort((a,b)=>(a.pri??3)-(b.pri??3));
+  const PRI=["🔴","🟠","🟡","🟢"];
+  // build the card
+  const c=el("div","card");c.style.borderColor="var(--blue)";
+  const doneCount=(p&&p.tasks)?p.tasks.filter(t=>t.date===tk&&t.status==="done").length:0;
+  const ps=prepScore();
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span>
+      <div style="flex:1"><h3 style="margin:0">🎛️ Mission Control — Aaj ka din</h3>
+      <div class="small muted">${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})} · tap karo, shuru karo${doneCount?` · ${doneCount} ho gaye ✅`:""}</div></div>
+      <div style="text-align:center;flex:none" title="Estimate: syllabus 30% + accuracy 30% + practice 20% + revision 10% + consistency 10%">
+        <b style="font-size:22px;color:${ps.score>=70?"var(--green)":ps.score>=45?"var(--amber)":"var(--red)"}">${ps.score}</b>
+        <div class="small muted" style="font-size:10.5px">prep score<br>(est.)</div></div></div>
+    <div class="small muted" style="margin-top:4px">Sabse kamzor dimension: <b>${esc(ps.weakest)}</b> — score sirf chapters ticket karne se nahi, asli practice se badhta hai.</div>`;
+  if(!items.length){
+    c.innerHTML+=`<div class="small" style="margin-top:10px;color:var(--green)">${ic("check")} Aaj ke sab planned kaam ho gaye! Aage badhna hai to Daily 10 dobara ya koi PYQ paper.</div>`;
+  }
+  items.slice(0,6).forEach((it,i)=>{
+    const row=el("button","optrow");row.style.cssText="width:100%;text-align:left;cursor:pointer;margin-top:8px";
+    row.innerHTML=`<div style="font-size:20px;flex:none;width:32px;text-align:center">${it.ico}</div>
+      <div style="flex:1;min-width:0"><b style="font-size:14px">${PRI[it.pri??3]} ${esc(it.label)}</b>
+        <div class="small muted">${esc(it.sub||"")}</div></div>
+      <span class="badge">${i===0?"START →":"→"}</span>`;
+    row.onclick=it.run;
+    c.appendChild(row);
+  });
+  // live classes (async — appears when found, no blocking)
+  const liveSlot=el("div");c.appendChild(liveSlot);
+  (async()=>{
+    try{
+      const r=await fetch("/api/public/live-classes",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({level:"jee",subject:"all"})});
+      const data=await r.json().catch(()=>null);
+      if(data&&Array.isArray(data.items)&&data.items.length&&liveSlot.isConnected){
+        const v=data.items[0];
+        liveSlot.innerHTML=`<div class="optrow" style="margin-top:8px;cursor:pointer;border-color:var(--red)">
+          <div style="font-size:20px;flex:none;width:32px;text-align:center">🔴</div>
+          <div style="flex:1;min-width:0"><b style="font-size:14px">LIVE abhi: ${esc(v.title.slice(0,60))}${v.title.length>60?"…":""}</b>
+            <div class="small muted">${esc(v.channel)} · ${esc(v.viewers||"")} — dekhna sahi rahega?</div></div>
+          <span class="badge" style="color:var(--red)">WATCH</span></div>`;
+        liveSlot.firstElementChild.onclick=()=>go("live");
+      }
+    }catch(e){}
+  })();
+  // tomorrow preview
+  if(tomorrow.length){
+    c.appendChild(el("div","small muted",`<b>Kal:</b> ${tomorrow.slice(0,3).map(esc).join(" · ")}${tomorrow.length>3?` +${tomorrow.length-3} aur`:""}`)).style.cssText="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)";
+  }
+  return c;
+}
+function mentorPingCard(){
+  const st=streakInfo();
+  const tk=todayKey(Date.now());
+  const name=(S.settings.candidate||"Champion").split(" ")[0];
+  const goal=(S.goal&&S.goal.college)?S.goal.college:"tumhara sapna";
+  let daysLeft=0;if(S.settings.examDate){daysLeft=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);}
+  const done=S.attempts.filter(a=>a.submittedAt);
+  // pick the ONE thing a real mentor would say today (priority order)
+  let msg="",ask="",mood="🔥";
+  const d10=(S.daily10||{})[tk];
+  const todayQ=S.dailyQuestions[tk]||0;
+  let planBehind=null;try{const h=aipHealth();if(h)planBehind=h;}catch(e){}
+  let weakest="";try{const p=chapterPriorities()[0];if(p)weakest=p.name;}catch(e){}
+  if(!done.length){
+    msg=`${name}, pehla mock hi asli shuruaat hai. Jab tak paper nahi doge, mujhe pata hi nahi chalega kahan kaam karna hai.`;
+    ask="Aaj pehla mock do — main analysis karke exact plan bana dunga.";mood="🎯";
+  }else if(st.streak===0&&Object.keys(S.studyLog).length>2){
+    msg=`${name}, streak toot gayi. Koi baat nahi — lekin aaj wapas nahi aaye to kal aur mushkil hoga. ${goal} khud nahi milega.`;
+    ask="Bas 2 minute se shuru karo — abhi.";mood="😤";
+  }else if(planBehind&&planBehind.label==="At Risk"){
+    msg=`${name}, tumhara study plan ${planBehind.ratio}% par atka hai. Main tumhare liye plan banata hoon, tum use chhod dete ho — aise ${goal} nahi hoga.`;
+    ask="Aaj ke tasks kholo aur pehla wala khatam karo.";mood="😠";
+  }else if(!d10&&new Date().getHours()>=17){
+    msg=`${name}, shaam ho gayi aur aaj ka Daily 10 baaki hai. Roz ka chhota kaam hi bada result banata hai${daysLeft>0?` — sirf ${daysLeft} din bache hain`:""}.`;
+    ask="15 minute — Daily 10 abhi karo.";mood="⏰";
+  }else if(weakest&&done.length>=2){
+    msg=`${name}, ${st.streak} din ki streak — badhiya chal rahe ho! Ab agla level: "${weakest}" tumhara sabse kamzor chapter hai, wahi sabse zyada marks chhupa ke baitha hai.`;
+    ask=`Aaj ${weakest} ke 10 questions karo.`;mood="💪";
+  }else{
+    msg=`${name}, consistency dikh rahi hai — yehi cheez selection karati hai. ${daysLeft>0?`${daysLeft} din hain, `:""}bas raftar banaye rakho.`;
+    ask="Aaj ka Daily 10 + ek weak chapter drill.";mood="🔥";
+  }
+  const c=el("div","card");c.style.borderColor="var(--accent-text)";
+  c.innerHTML=`<div class="row" style="gap:12px;align-items:flex-start">
+    <div style="font-size:30px;flex:none">${mood}</div>
+    <div style="flex:1"><b>Saarthi (tumhara mentor):</b>
+      <div class="small" style="margin-top:4px;line-height:1.6">${esc(msg)}</div>
+      <div class="small" style="margin-top:6px"><b>👉 ${esc(ask)}</b></div></div></div>`;
+  const row=el("div","row");row.style.cssText="margin-top:10px;gap:8px";
+  const talk=el("button","btn ghost sm","💬 Saarthi se baat karo");
+  talk.onclick=()=>{try{$("#aiChatInput").value="Mentor, aaj ka mera plan kya hai? Meri performance dekh kar seedha batao kya karna hai.";aiChatOpen();setTimeout(()=>aiChatSend(),50);}catch(e){aiChatOpen();}};
+  row.appendChild(talk);c.appendChild(row);
+  return c;
+}
 function goalSetupCard(){
   if(S.goal&&S.goal.college)return null;
   const c=el("div","card");
@@ -7807,17 +8077,18 @@ let _flTimer=null,_flPill=null;
 function nativeFocus(){try{return (typeof AndroidFocus!=="undefined"&&AndroidFocus&&AndroidFocus.isApp())?AndroidFocus:null;}catch(e){return null;}}
 function nativeGuardOn(){try{const n=nativeFocus();return !!(n&&n.isGuardEnabled());}catch(e){return false;}}
 function focusStart(minutes){
+  const n=nativeFocus();
+  // APP MEIN GUARD OFF = lock bekaar hai. Fake security mat do — pehle
+  // setup karwao, tabhi lock chalega. (Yahi "YouTube phir bhi chal raha
+  // hai" wali shikayat ki asli jad thi.)
+  if(n&&!nativeGuardOn()){
+    try{n.openGuardSettings();}catch(e){}
+    toast("⚠️ Pehle Focus Guard ON karo — bina uske doosre apps block NAHI ho sakte. Guide khul gayi hai.",6000);
+    return;
+  }
   S.focusLock={until:Date.now()+minutes*60000,started:Date.now(),mins:minutes,distractions:0};
   save();
-  const n=nativeFocus();
-  if(n){
-    try{n.startLock(minutes);}catch(e){}
-    if(!nativeGuardOn()){
-      // HARD, unmissable warning — a "lock" without the guard blocks nothing,
-      // and a fake sense of security is worse than none.
-      toast("⚠️ Focus Guard OFF hai — abhi doosre apps block NAHI honge! Setup 30 second ka hai.",6000);
-    }
-  }
+  if(n){try{n.startLock(minutes);}catch(e){}}
   try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}
   focusPill();
   toast(`🔒 Focus Lock ON — ${minutes} min.${n?(nativeGuardOn()?" Doosre apps ab block hain!":""):" Phone ko asli lock karne ke liye pill par tap karo."}`,3500);
@@ -8007,6 +8278,9 @@ function viewDash(root){
   const lb=el("button","btn ghost",ic("library")+" Test Library");lb.onclick=()=>go("library");
   acts.append(two,qs,lb);hero.appendChild(acts);
   root.appendChild(hero);
+  // ── war-room order: mentor bolta hai pehle, phir aaj ka mission ──
+  root.appendChild(mentorPingCard());
+  root.appendChild(missionControlCard());
   // today's promise (implementation intention) — kept above everything
   intentionCards(root);
   // urgency order: an unfinished attempt outranks everything else on the page
@@ -8497,9 +8771,22 @@ function aiChatSetFile(file){
 function buildStudentContext(){
   try{
     const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
-    if(!done.length)return "New student — no tests attempted yet. Encourage them to take their first mock from the Test Library.";
     const parts=[];
+    // THE MISSION — the mentor's north star (goal + urgency), even for new students
+    if(S.goal&&S.goal.college)parts.push(`STUDENT'S DREAM: ${S.goal.college}${S.goal.why?` — reason: "${S.goal.why}"`:""}. This is YOUR mission too.`);
+    if(S.settings.examDate){const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(dl>0)parts.push(`⏳ ONLY ${dl} days to JEE Main. Every reply should respect this urgency.`);}
+    if(!done.length){parts.push("New student — no tests attempted yet. Encourage them to take their first mock from the Test Library.");return parts.join("\n");}
     const st=streakInfo();
+    // accountability signals the mentor should PROACTIVELY raise
+    const acc=[];
+    if(st.streak===0&&Object.keys(S.studyLog).length>2)acc.push("streak is BROKEN (0 days) — ask what happened, restart today");
+    const d10=S.daily10||{};let missedD10=0;
+    for(let i=1;i<=3;i++){const d2=new Date();d2.setDate(d2.getDate()-i);if(!d10[todayKey(d2.getTime())])missedD10++;}
+    if(missedD10>=2)acc.push(`Daily 10 quiz missed ${missedD10} of last 3 days — call this out`);
+    if(S.contract&&S.contract.active){const tq=S.dailyQuestions[todayKey(Date.now())]||0;
+      if(tq<S.contract.daily)acc.push(`self-contract of ${S.contract.daily} questions/day NOT yet met today (${tq} done)`);}
+    try{const h=aipHealth();if(h&&(h.label==="At Risk"||h.label==="Slightly Behind"))acc.push(`AI study plan is ${h.label} (${h.ratio}% of planned work done) — push them to catch up`);}catch(e){}
+    if(acc.length)parts.push("ACCOUNTABILITY (raise these YOURSELF, mentor-style): "+acc.join("; ")+".");
     // last up-to-3 results
     const recent=done.slice(-3).map(a=>{
       const t=testById(a.testId);
