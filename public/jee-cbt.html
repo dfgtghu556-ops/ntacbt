@@ -5577,6 +5577,13 @@ function viewResult(root){
   const printRow=el("div","row",""); printRow.style.cssText="justify-content:flex-end;margin-bottom:12px;gap:10px";
   const shareBtn=el("button","btn ghost sm",ic("share")+" Share Result Card");
   shareBtn.onclick=()=>shareResultCard(t,a,r,ai,shareBtn);
+  // APK: quick text share via native sheet (WhatsApp etc.) — always works
+  if(nativeFocus()){
+    const ns=el("button","btn ghost sm","📤 WhatsApp/Share");
+    ns.onclick=()=>{try{nativeFocus().share(`Scored ${r.all.marks}/${r.all.max} (${ai.percentile} %ile est.) on "${t.name}" — JEE CBT app par! 🎯`);}catch(e){}};
+    printRow&&0; // (appended below with the other buttons)
+    shareBtn.after&&setTimeout(()=>{try{shareBtn.after(ns);}catch(e){}},0);
+  }
   const printBtn=el("button","btn ghost sm",ic("printer")+" Print / Save as PDF");
   printBtn.onclick=()=>window.print();
   const pdfBtn=el("button","btn ghost sm",ic("download")+" Download Scorecard PDF");
@@ -6130,6 +6137,8 @@ function startExam(testId,resume){
   if(!resume&&t.cloud)registerAttempt(t.id);
   examAutosave();
   $("#examView").classList.remove("hide");
+  // APK: screen stays awake for the whole exam (native superpower)
+  try{const nk=nativeFocus();if(nk&&nk.keepAwake)nk.keepAwake(true);}catch(e){}
   $("#exTitle").textContent=t.name;
   $("#exCand").textContent=S.settings.candidate;
   // exam font scale (persisted preference, adjustable from the exam header)
@@ -6155,7 +6164,8 @@ document.addEventListener("visibilitychange",()=>{
   if(EX&&EX.strict&&!document.hidden&&(EX.attempt.tabSwitches||0)>0)
     toast(`Focus lost ${EX.attempt.tabSwitches} time(s) — this is recorded on your result`,3200);
 });
-function endExamUI(){$("#examView").classList.add("hide");document.body.style.overflow="";clearInterval(EX&&EX.timerId);EX=null;}
+function endExamUI(){$("#examView").classList.add("hide");document.body.style.overflow="";clearInterval(EX&&EX.timerId);EX=null;
+  try{const n=nativeFocus();if(n&&n.keepAwake)n.keepAwake(false);}catch(e){}} // screen can sleep again
 function subjectsInTest(){return [...new Set(EX.test.questions.map(q=>q.subject))];}
 function buildSubTabs(){
   const w=$("#exSubs");w.innerHTML="";
@@ -6375,6 +6385,7 @@ function submitExam(auto){
   attempt.autoSubmitted=!!auto;
   if(test.pyqId)attempt.pyqId=test.pyqId; // lets the review self-restore the paper if it's ever pruned
   attempt.result=evaluate(test,attempt.responses);
+  try{const nv=nativeFocus();if(nv&&nv.vibrate)nv.vibrate(120);}catch(e){} // haptic: paper submitted
   updateReviewSchedule(test,attempt.responses);
   postScore(test,attempt.result); // anonymous community comparison (fire & forget)
   Object.values(attempt.responses).forEach(r=>r.time=Math.round(r.time));
@@ -6611,6 +6622,25 @@ function viewSettings(root){
     save();render();
   };
   eb.appendChild(block("Daily practice reminder",remBtn,"Sends a browser notification once a day if you haven't practiced yet (only while a tab is open)."));
+  // APK-only: REAL alarm-based reminder — fires even with the app closed,
+  // survives reboots. This is one of the native superpowers of the app.
+  if(nativeFocus()){
+    const nr=el("div");
+    const cur=(()=>{try{return nativeFocus().getReminderHour();}catch(e){return -1;}})();
+    const row2=el("div","row");row2.style.cssText="gap:8px;flex-wrap:wrap";
+    [[6,0,"6:00 subah"],[17,0,"5:00 shaam"],[19,30,"7:30 shaam"],[21,0,"9:00 raat"]].forEach(([h,m2,l])=>{
+      const b=el("button","btn sm"+(cur===h?"":" ghost"),"⏰ "+l);
+      b.onclick=()=>{try{nativeFocus().setDailyReminder(h,m2);}catch(e){}render();};
+      row2.appendChild(b);
+    });
+    if(cur>=0){
+      const off=el("button","btn ghost sm","🔕 Band karo");
+      off.onclick=()=>{try{nativeFocus().cancelDailyReminder();}catch(e){}toast("Reminder band");render();};
+      row2.appendChild(off);
+    }
+    nr.appendChild(row2);
+    eb.appendChild(block("📱 App reminder (pakka wala)",nr,"App band ho tab bhi notification aayegi — phone ke alarm system se. Reboot ke baad bhi chalti rahegi."+(cur>=0?" Abhi set: roz "+cur+":00 baje.":"")));
+  }
   root.appendChild(eb);
 
   const hm=el("div","card");
@@ -7783,7 +7813,9 @@ function focusStart(minutes){
   if(n){
     try{n.startLock(minutes);}catch(e){}
     if(!nativeGuardOn()){
-      toast("💡 REAL blocking ke liye Focus Guard on karo — pill par tap karke guide dekho",4500);
+      // HARD, unmissable warning — a "lock" without the guard blocks nothing,
+      // and a fake sense of security is worse than none.
+      toast("⚠️ Focus Guard OFF hai — abhi doosre apps block NAHI honge! Setup 30 second ka hai.",6000);
     }
   }
   try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}
