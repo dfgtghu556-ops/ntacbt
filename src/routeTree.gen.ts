@@ -15,6 +15,7 @@ import { Route as ApiPublicCloudConfigRouteImport } from './routes/api/public/cl
 import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/live-classes'
 import { Route as ApiPublicPdfReformatRouteImport } from './routes/api/public/pdf-reformat'
 import { Route as ApiPublicPyqPapersRouteImport } from './routes/api/public/pyq-papers'
+import { Route as ApiPublicStudyPlannerRouteImport } from './routes/api/public/study-planner'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const ApiPublicPyqPapersRoute = ApiPublicPyqPapersRouteImport.update({
   path: '/api/public/pyq-papers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStudyPlannerRoute = ApiPublicStudyPlannerRouteImport.update({
+  id: '/api/public/study-planner',
+  path: '/api/public/study-planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
+  '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
+  '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
+  '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
+    | '/api/public/study-planner'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
+    | '/api/public/study-planner'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/api/public/live-classes'
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
+    | '/api/public/study-planner'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +118,7 @@ export interface RootRouteChildren {
   ApiPublicLiveClassesRoute: typeof ApiPublicLiveClassesRoute
   ApiPublicPdfReformatRoute: typeof ApiPublicPdfReformatRoute
   ApiPublicPyqPapersRoute: typeof ApiPublicPyqPapersRoute
+  ApiPublicStudyPlannerRoute: typeof ApiPublicStudyPlannerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPyqPapersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/study-planner': {
+      id: '/api/public/study-planner'
+      path: '/api/public/study-planner'
+      fullPath: '/api/public/study-planner'
+      preLoaderRoute: typeof ApiPublicStudyPlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLiveClassesRoute: ApiPublicLiveClassesRoute,
   ApiPublicPdfReformatRoute: ApiPublicPdfReformatRoute,
   ApiPublicPyqPapersRoute: ApiPublicPyqPapersRoute,
+  ApiPublicStudyPlannerRoute: ApiPublicStudyPlannerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
