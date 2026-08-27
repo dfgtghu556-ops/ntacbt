@@ -55,6 +55,8 @@ MENTOR MINDSET (this is who you are, not just what you do):
 - You are a REAL mentor on a mission: getting THIS student their JEE rank. Their goal (in STUDENT DATA) is YOUR goal. Act invested — like a coach whose own reputation rides on their selection.
 - Be proactively demanding, with love: if their data shows missed days, falling accuracy or an untouched weak chapter, BRING IT UP YOURSELF at the start of your reply ("Pehle ye batao — 3 din se Daily 10 kyun chhoda?"). Don't wait to be asked.
 - Every reply should end with ONE concrete next action ("Ab ye karo: ...") — a specific chapter, a specific drill, a specific number of questions. A mentor never leaves a student without a next step.
+- MISTAKE DNA: STUDENT DATA may include self-tagged mistake types (concept / formula / calculation / misread / silly / guessed) and a detected pattern. Treat a repeated pattern as the #1 coaching point — e.g. 9 calculation slips in Physics means "do rough work in 2 columns, recheck last line", NOT "practice more". Match the intervention to the mistake TYPE.
+- BAD STUDY PATTERNS: if STUDENT DATA flags one (many lectures but few questions solved; tests without mistake review; over-grinding one chapter), address it head-on — watching more lectures never fixes low problem-solving, and re-tests without error review repeat the same mistakes.
 - Celebrate real wins from their data ("streak 12 din — ye consistency hi rank layegi"). Call out excuses gently but firmly. Never fake-praise.
 - If exam date is near (see STUDENT DATA), inject urgency naturally — days-left math, what fits in the time remaining.
 
@@ -78,42 +80,69 @@ interface ChatMessage {
 function needsWeb(text: string): boolean {
   const t = (text || "").toLowerCase();
   if (t.length < 8) return false;
-  return /\b(20(2[4-9]|3\d)|latest|current|today|this year|next year|kab|कब|date|dates|schedule|notification|admit card|result|cutoff|cut-off|cut off|counselling|counseling|josaa|csab|nta\b|registration|application|eligibility|percentile required|closing rank|opening rank|fees|placement|nirf|ranking|when is|when will|news|update|syllabus change|pattern change|how many attempts|attempt limit)\b/.test(t);
+  return /\b(20(2[4-9]|3\d)|latest|current|today|this year|next year|kab|कब|date|dates|schedule|notification|admit card|result|cutoff|cut-off|cut off|counselling|counseling|josaa|csab|nta\b|registration|application|eligibility|percentile required|closing rank|opening rank|fees|placement|nirf|ranking|when is|when will|news|update|syllabus change|pattern change|how many attempts|attempt limit)\b/.test(
+    t,
+  );
 }
 async function webSearch(query: string): Promise<string> {
   const out: string[] = [];
   const clean = (s: string) =>
-    s.replace(/<[^>]+>/g, " ").replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) =>
-      ({ "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " " })[m] || " ",
-    ).replace(/\s+/g, " ").trim();
+    s
+      .replace(/<[^>]+>/g, " ")
+      .replace(
+        /&(amp|lt|gt|quot|#39|nbsp);/g,
+        (m) =>
+          ({ "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " " })[
+            m
+          ] || " ",
+      )
+      .replace(/\s+/g, " ")
+      .trim();
   const ddg = (async () => {
     try {
-      const r = await fetch("https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query.slice(0, 200)), {
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36" },
-        signal: AbortSignal.timeout(6_000),
-      });
+      const r = await fetch(
+        "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query.slice(0, 200)),
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+          },
+          signal: AbortSignal.timeout(6_000),
+        },
+      );
       if (!r.ok) return;
       const html = await r.text();
       // result blocks: <a class="result__a" ...>title</a> ... <a class="result__snippet">snippet</a>
-      const items = [...html.matchAll(/class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g)];
+      const items = [
+        ...html.matchAll(
+          /class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g,
+        ),
+      ];
       for (const m of items.slice(0, 4)) {
-        const title = clean(m[1] ?? ""), snip = clean(m[2] ?? "");
+        const title = clean(m[1] ?? ""),
+          snip = clean(m[2] ?? "");
         if (title && snip) out.push(`• ${title}: ${snip}`.slice(0, 300));
       }
-    } catch { /* optional source */ }
+    } catch {
+      /* optional source */
+    }
   })();
   const wiki = (async () => {
     try {
       const r = await fetch(
         "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" +
-          encodeURIComponent(query.slice(0, 150)) + "&format=json&srlimit=2&srprop=snippet",
+          encodeURIComponent(query.slice(0, 150)) +
+          "&format=json&srlimit=2&srprop=snippet",
         { signal: AbortSignal.timeout(6_000), headers: { "User-Agent": "jee-cbt-saarthi/1.0" } },
       );
       if (!r.ok) return;
       const d = (await r.json()) as { query?: { search?: { title?: string; snippet?: string }[] } };
       for (const s of d.query?.search || [])
-        if (s.title && s.snippet) out.push(`• ${clean(s.title)}: ${clean(s.snippet)}`.slice(0, 300));
-    } catch { /* optional source */ }
+        if (s.title && s.snippet)
+          out.push(`• ${clean(s.title)}: ${clean(s.snippet)}`.slice(0, 300));
+    } catch {
+      /* optional source */
+    }
   })();
   await Promise.allSettled([ddg, wiki]);
   return out.slice(0, 6).join("\n");
@@ -228,6 +257,26 @@ async function tryGemini(
   return reply ? { reply } : { status: 502 };
 }
 
+/* RATE LIMIT: the most expensive endpoint on the site. A stuck client loop
+ * or abuse script could burn the whole free-tier quota for every student.
+ * Sliding 1-minute window per IP, in-memory (single instance is fine for
+ * this deployment). 12 requests/min is far above any human chat speed. */
+const rlBuckets = new Map<string, number[]>();
+const RL_MAX = 12;
+const RL_WINDOW = 60_000;
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = (rlBuckets.get(ip) || []).filter((t) => now - t < RL_WINDOW);
+  if (arr.length >= RL_MAX) {
+    rlBuckets.set(ip, arr);
+    return true;
+  }
+  arr.push(now);
+  rlBuckets.set(ip, arr);
+  if (rlBuckets.size > 2000) rlBuckets.clear(); // bounded memory
+  return false;
+}
+
 export const Route = createFileRoute("/api/public/ai-chat")({
   server: {
     handlers: {
@@ -241,6 +290,18 @@ export const Route = createFileRoute("/api/public/ai-chat")({
                 "The AI doubt-solver isn't configured yet — add an OPENROUTER_API_KEY or GEMINI_API_KEY secret.",
             },
             { status: 503 },
+          );
+        }
+        const ip =
+          request.headers.get("cf-connecting-ip") ||
+          (request.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() ||
+          "anon";
+        if (rateLimited(ip)) {
+          return Response.json(
+            {
+              error: "Thoda dheere — bahut saare messages ek saath. 1 minute mein dobara try karo.",
+            },
+            { status: 429 },
           );
         }
 
@@ -316,4 +377,3 @@ export const Route = createFileRoute("/api/public/ai-chat")({
     },
   },
 });
-
