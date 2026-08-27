@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:label="JEE CBT"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="false"
+        android:allowBackup="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- FOCUS GUARD: the accessibility service that watches which app is
+             on screen during a Focus Lock session and bounces the student
+             back to studying — the same mechanism reel-scroll-stopper apps
+             use. It reads ONLY the foreground package name; no content, no
+             keystrokes, nothing stored or sent anywhere. -->
+        <service
+            android:name=".FocusGuardService"
+            android:exported="false"
+            android:label="JEE CBT Focus Guard"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/focus_guard_config" />
+        </service>
+    </application>
+</manifest>
+
