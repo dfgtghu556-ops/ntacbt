@@ -4,6 +4,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:label="JEE CBT"
@@ -23,11 +26,9 @@
             </intent-filter>
         </activity>
 
-        <!-- FOCUS GUARD: the accessibility service that watches which app is
-             on screen during a Focus Lock session and bounces the student
-             back to studying — the same mechanism reel-scroll-stopper apps
-             use. It reads ONLY the foreground package name; no content, no
-             keystrokes, nothing stored or sent anywhere. -->
+        <!-- FOCUS GUARD: accessibility-based app blocker for Focus Lock.
+             Reads ONLY the foreground package name; no content, nothing
+             stored or uploaded. -->
         <service
             android:name=".FocusGuardService"
             android:exported="false"
@@ -40,6 +41,15 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/focus_guard_config" />
         </service>
+
+        <!-- Daily study reminder (fires even when the app is closed) -->
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
+
+        <!-- Re-arm the reminder after the phone reboots -->
+        <receiver android:name=".BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
-
