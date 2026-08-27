@@ -50,4 +50,3 @@ jobs:
             Install: download jee-cbt.apk → open → allow "Install unknown apps" → install.
             Focus Guard: Settings → Accessibility → JEE CBT Focus Guard → ON.
           files: jee-cbt.apk
-
