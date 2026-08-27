@@ -8,4 +8,3 @@
     android:canRetrieveWindowContent="false"
     android:description="@string/guard_desc"
     android:notificationTimeout="200" />
-
