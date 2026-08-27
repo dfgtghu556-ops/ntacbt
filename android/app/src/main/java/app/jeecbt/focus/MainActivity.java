@@ -7,9 +7,13 @@ import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.role.RoleManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -38,10 +42,24 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
- * JEE CBT — native shell v3.0 (real-app feel).
+ * JEE CBT — native shell v3.1 (study launcher).
+ *
+ * v3.1 — STUDY LAUNCHER MODE (PW LearnOS-style):
+ *  - Optional HOME-screen mode: press Home → padhai, not reels. Enabled by
+ *    the student inside the app (activity-alias flipped on, Android asks to
+ *    pick default home). Fully reversible from the same switch.
+ *  - App dock: launcher JS bridge lists installed apps; the site renders a
+ *    minimal drawer so zaroori apps (Phone/WhatsApp/Camera) khul sakein.
+ *  - During Focus Lock the drawer respects the guard — blocked apps bounce.
  *
  * v3.0:
  *  - NO URL prompt: the site is baked in and opens instantly (URL dialog
@@ -268,6 +286,117 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    /* ═══════════════ STUDY LAUNCHER MODE (v3.1) ═══════════════ */
+
+    /** The HOME-role alias declared in the manifest (disabled by default). */
+    static ComponentName homeAlias(Context c) {
+        return new ComponentName(c, "app.jeecbt.focus.HomeActivity");
+    }
+
+    static boolean launcherModeEnabled(Context c) {
+        try {
+            int st = c.getPackageManager().getComponentEnabledSetting(homeAlias(c));
+            return st == PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+        } catch (Exception e) { return false; }
+    }
+
+    /** Are we ACTUALLY the current default home app? */
+    static boolean isDefaultHome(Context c) {
+        try {
+            Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
+            ResolveInfo ri = c.getPackageManager().resolveActivity(i, PackageManager.MATCH_DEFAULT_ONLY);
+            return ri != null && ri.activityInfo != null
+                    && "app.jeecbt.focus".equals(ri.activityInfo.packageName);
+        } catch (Exception e) { return false; }
+    }
+
+    void setLauncherMode(boolean on) {
+        try {
+            getPackageManager().setComponentEnabledSetting(homeAlias(this),
+                    on ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                       : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP);
+        } catch (Exception ignored) {}
+        if (on) {
+            // ask Android to make us the default home (student always confirms)
+            openHomeChooser();
+        } else {
+            Toast.makeText(this, "🏠 Launcher mode OFF — phone wapas normal", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    void openHomeChooser() {
+        boolean asked = false;
+        if (Build.VERSION.SDK_INT >= 29) {
+            try {
+                RoleManager rm = (RoleManager) getSystemService(Context.ROLE_SERVICE);
+                if (rm != null && rm.isRoleAvailable(RoleManager.ROLE_HOME)
+                        && !rm.isRoleHeld(RoleManager.ROLE_HOME)) {
+                    startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_HOME), 7001);
+                    asked = true;
+                }
+            } catch (Exception ignored) {}
+        }
+        if (!asked) {
+            try { startActivity(new Intent(Settings.ACTION_HOME_SETTINGS)); }
+            catch (Exception e) {
+                // last resort: fire a HOME intent so the picker appears
+                try {
+                    Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    /** All launchable apps (for the dock/drawer), sorted by label. */
+    String listLaunchableApps() {
+        JSONArray arr = new JSONArray();
+        try {
+            Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+            PackageManager pm = getPackageManager();
+            List<ResolveInfo> apps = pm.queryIntentActivities(main, 0);
+            List<JSONObject> rows = new ArrayList<>();
+            for (ResolveInfo ri : apps) {
+                if (ri.activityInfo == null) continue;
+                String pkg = ri.activityInfo.packageName;
+                if ("app.jeecbt.focus".equals(pkg)) continue;
+                JSONObject o = new JSONObject();
+                o.put("pkg", pkg);
+                o.put("label", String.valueOf(ri.loadLabel(pm)));
+                rows.add(o);
+            }
+            Collections.sort(rows, (a, b) ->
+                    a.optString("label").compareToIgnoreCase(b.optString("label")));
+            for (JSONObject o : rows) arr.put(o);
+        } catch (Exception ignored) {}
+        return arr.toString();
+    }
+
+    /** Open another app from the dock. During Focus Lock only the guard's
+     *  ALLOW list opens — everything else gets an honest refusal. */
+    boolean openApp(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        if (FocusGuardService.isLocked(this)) {
+            String low = pkg.toLowerCase();
+            boolean ok = low.contains("dialer") || low.contains("phone")
+                    || low.contains("emergency") || low.contains("telecom")
+                    || low.contains("camera") || low.contains("settings");
+            if (!ok) {
+                Toast.makeText(this, "🔒 Focus Lock: pehle padhai — app baad mein", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+        try {
+            Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
+            if (i == null) return false;
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
     static void scheduleReminder(Context c, int hour, int minute) {
         SharedPreferences p = c.getSharedPreferences(PREFS, MODE_PRIVATE);
         p.edit().putInt("remHour", hour).putInt("remMin", minute).apply();
@@ -311,6 +440,8 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "🔒 Focus Lock chal raha hai — padhai khatam karke hi niklo", Toast.LENGTH_SHORT).show();
                 return true;
             }
+            // LAUNCHER MODE: a home screen never "exits" on Back
+            if (isDefaultHome(this)) return true;
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -321,8 +452,20 @@ public class MainActivity extends Activity {
         FocusBridge(MainActivity a) { act = a; }
 
         @JavascriptInterface public boolean isApp() { return true; }
-        @JavascriptInterface public String appVersion() { return "3.0"; }
+        @JavascriptInterface public String appVersion() { return "3.1"; }
         @JavascriptInterface public boolean isGuardEnabled() { return guardEnabled(act); }
+
+        /* ---- STUDY LAUNCHER bridge (v3.1) ---- */
+        @JavascriptInterface public boolean isLauncherMode() { return launcherModeEnabled(act); }
+        @JavascriptInterface public boolean isDefaultLauncher() { return isDefaultHome(act); }
+        @JavascriptInterface public void setLauncherMode(boolean on) {
+            act.runOnUiThread(() -> act.setLauncherMode(on));
+        }
+        @JavascriptInterface public void openHomeSettings() {
+            act.runOnUiThread(act::openHomeChooser);
+        }
+        @JavascriptInterface public String listApps() { return act.listLaunchableApps(); }
+        @JavascriptInterface public boolean openApp(String pkg) { return act.openApp(pkg); }
 
         @JavascriptInterface
         public void startLock(int minutes) {
