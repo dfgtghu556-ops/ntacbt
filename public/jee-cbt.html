@@ -74,8 +74,14 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 #app.slide-in-right .card,#app.slide-in-left .card,#app.dragging .card,#app.settling .card{animation:none}
 .grid{display:grid;gap:14px}
 .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
-@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.g4,.g3,.g2{grid-template-columns:1fr}}
+.g6{grid-template-columns:repeat(6,1fr)}
+/* stats-strip: compact 6-up overview — phone par 3×2, kabhi 1-column
+   ka lamba tower nahi (wahi cheez dashboard ko "bekar" feel deti thi) */
+.stats-strip .stat{padding:10px 12px;border-left-width:2px}
+.stats-strip .stat .v{font-size:19px}
+.stats-strip .stat .k{font-size:10px;letter-spacing:.4px}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.g4,.g3,.g2{grid-template-columns:1fr}.g6{grid-template-columns:repeat(3,1fr)}.stats-strip{gap:8px}}
 .stat{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease}
 .stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px -14px rgba(20,10,40,.35)}
 .heatgrid{display:grid;grid-template-columns:repeat(15,1fr);gap:4px}
@@ -484,6 +490,35 @@ html[data-cards="glass"] body{background-image:radial-gradient(900px 420px at 8%
 html[data-anim="off"] *{animation:none !important;transition:none !important}
 
 /* ---------- premium UI primitives ---------- */
+/* ═══ LAUNCHER v2 — professional "command center" look ═══
+   NBA card = the hero action: deep gradient, glow ring on the icon,
+   big single CTA. Mentor = chat-bubble feel. Everything aligned to an
+   8px rhythm, no borders shouting for attention. */
+.nba-card{position:relative;overflow:hidden;border:0 !important;color:#fff;
+  background:linear-gradient(135deg,#d95a14 0%,#b3450e 55%,#8a3410 100%);
+  box-shadow:0 18px 40px -16px rgba(217,90,20,.55)}
+.nba-card:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;
+  background:rgba(255,255,255,.14);filter:blur(60px);top:-120px;right:-70px;pointer-events:none}
+.nba-kicker{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.85);display:flex;align-items:center;gap:6px}
+.nba-ico{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.25);display:grid;place-items:center;font-size:28px;flex:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.nba-title{font-family:var(--font-display);font-size:19px;letter-spacing:-.01em;line-height:1.3}
+.nba-why{color:rgba(255,255,255,.88);font-size:13px;line-height:1.6;margin-top:6px}
+.nba-meta{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.16);
+  border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700;margin-left:8px;vertical-align:middle}
+.nba-start{width:100%;margin-top:14px;padding:14px;font-size:15.5px;font-weight:800;border:0;border-radius:12px;
+  background:#fff;color:#b3450e;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.22);transition:.15s}
+.nba-start:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.28)}
+.nba-start:active{transform:scale(.985)}
+.mentor-card{border-left:4px solid var(--accent-text) !important;background:
+  linear-gradient(180deg,color-mix(in srgb,var(--accent-text) 6%,var(--panel)),var(--panel))}
+.mentor-avatar{width:44px;height:44px;border-radius:14px;background:var(--blue-soft);
+  display:grid;place-items:center;font-size:24px;flex:none}
+.mc-item{width:100%;text-align:left;cursor:pointer;margin-top:8px;transition:.15s}
+.mc-item:hover{transform:translateX(3px);border-color:color-mix(in srgb,var(--blue) 45%,var(--line))}
 .section-title{display:flex;align-items:center;gap:9px;margin-bottom:4px}
 .section-title .ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue-d);font-size:15px;flex:0 0 auto}
 .hero-card{background:linear-gradient(125deg,var(--ink-nav-a),var(--ink-nav-b));color:#fff;border:0;position:relative;overflow:hidden;box-shadow:0 20px 44px -20px rgba(20,10,40,.55)}
@@ -4154,15 +4189,45 @@ function aipToday(root){
       <div class="bar"><i style="width:${pct(dn,all.length)}%;background:${SUBCOLOR[s]}"></i></div></div>`;
   });
   root.appendChild(sp);
-  // upcoming days (next 7)
-  const up=el("div","card");up.innerHTML=`<h3>Next 7 days</h3>`;
+  // ── UPCOMING (next 7 days) — ab sirf dekhna nahi, KARNA bhi ──
+  // "Aaj ka ho gaya, aage ka karna hai" — har future task khul sakta hai
+  // (Watch + Done). Aaj ke tasks complete hon to pehla din auto-expand.
+  const todayLeft=p.tasks.filter(t=>t.date===tk&&t.status==="todo").length;
+  const up=el("div","card");
+  up.innerHTML=`<div class="section-title"><span class="ico">${ic("calendar")}</span>
+    <div><h3 style="margin:0">Aage ke 7 din — aage badho 🚀</h3>
+    <div class="small muted">${todayLeft===0?"Aaj ka sab ho gaya! Kal ka kaam AAJ karke lead banao — har task khul sakta hai.":"Kisi bhi din ka task pehle karna ho to yahin se kholo."}</div></div></div>`;
+  let firstExpanded=false;
   for(let i=1;i<=7;i++){
     const dk=aipAddDays(tk,i),dts=p.tasks.filter(t=>t.date===dk&&t.status==="todo");
     if(!dts.length)continue;
     const eff=dts.reduce((s2,t)=>s2+aipEff(t.estMin,p.profile),0);
-    up.innerHTML+=`<div class="small" style="margin-top:8px"><b>${fmtDate(dk)}</b> <span class="muted">· ${Math.floor(eff/60)}h ${eff%60}m</span><br>
-      ${dts.slice(0,4).map(t=>`<span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.topic.slice(0,26))}${t.kind!=="learn"?" ("+t.kind+")":""}</span>`).join(" ")}${dts.length>4?` <span class="muted">+${dts.length-4} more</span>`:""}</div>`;
+    const open=(todayLeft===0&&!firstExpanded);firstExpanded=firstExpanded||open;
+    const day=el("details");day.style.marginTop="10px";if(open)day.open=true;
+    day.innerHTML=`<summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px">
+      <b>${i===1?"Kal":fmtDate(dk)}</b><span class="small muted">· ${dts.length} task · ${Math.floor(eff/60)}h ${eff%60}m</span>
+      <span class="small muted" style="margin-left:auto">${open?"👇 shuru karo":"tap karo ▾"}</span></summary>`;
+    const body=el("div");body.style.cssText="padding:4px 2px 2px";
+    dts.forEach(t=>{
+      const row=el("div","optrow");row.style.cssText="cursor:default;margin-top:8px";
+      row.innerHTML=`<div style="flex:1;min-width:0"><span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
+        <span class="badge">${t.kind.toUpperCase()}</span>
+        <div style="margin-top:4px"><b>${esc(t.topic)}</b></div>
+        <div class="small muted">~${aipEff(t.estMin,p.profile)} min at ${p.profile.speed}×</div></div>`;
+      const acts=el("div","row");acts.style.cssText="gap:6px;flex:none";
+      const wb=el("button","btn sm",ic("play")+" Watch");wb.onclick=()=>aipOpenLesson(t);
+      const db=el("button","btn green sm",ic("check"));db.title="Done";
+      db.onclick=()=>{
+        t.status="done";t.completedAt=Date.now();aipSave(p);
+        toast("🚀 Future task pehle hi complete — tum plan se aage ho!");
+        render(0);
+      };
+      acts.append(wb,db);row.appendChild(acts);body.appendChild(row);
+    });
+    day.appendChild(body);up.appendChild(day);
   }
+  if(!firstExpanded&&todayLeft===0&&!up.querySelector("details"))
+    up.appendChild(el("div","small muted","Aane wale 7 din ka sab kuch already done — legend ho tum! 🏆"));
   root.appendChild(up);
   // ── WHAT-IF SIMULATOR: study-hours ka asli asar dikhta hai ──
   (()=>{
@@ -8811,18 +8876,17 @@ function nextBestAction(){
 }
 function nextBestActionCard(){
   const a=nextBestAction();
-  const c=el("div","card");c.style.cssText="border-color:var(--accent-text);border-width:2px";
-  c.innerHTML=`<div class="small muted" style="letter-spacing:.08em;font-weight:700">🎯 AB YEH KARO — sabse zaroori ek kaam</div>
-    <div class="row" style="gap:12px;margin-top:8px;align-items:flex-start">
-      <div style="font-size:34px;flex:none">${a.ico}</div>
+  const c=el("div","card nba-card");
+  c.innerHTML=`<div class="nba-kicker">🎯 AB YEH KARO<span style="opacity:.6;font-weight:600;letter-spacing:0;text-transform:none">· sabse zaroori ek kaam</span></div>
+    <div class="row" style="gap:14px;margin-top:12px;align-items:flex-start;position:relative">
+      <div class="nba-ico">${a.ico}</div>
       <div style="flex:1;min-width:0">
-        <b style="font-size:17px">${esc(a.title)}</b>
-        ${a.mins?`<span class="pill n" style="margin-left:8px">~${a.mins} min</span>`:""}
-        <div class="small muted" style="margin-top:5px;line-height:1.55"><b>Kyun:</b> ${esc(a.why)}</div>
+        <div class="nba-title">${esc(a.title)}${a.mins?`<span class="nba-meta">⏱ ~${a.mins} min</span>`:""}</div>
+        <div class="nba-why">${esc(a.why)}</div>
       </div></div>`;
   if(a.run){
-    const b=el("button","btn",ic("play")+" START NOW");
-    b.style.cssText="margin-top:12px;width:100%;justify-content:center;font-size:15px";
+    const b=el("button","nba-start");
+    b.innerHTML=`▶ START NOW`;
     b.onclick=a.run;c.appendChild(b);
   }
   return c;
@@ -8984,7 +9048,7 @@ function missionControlCard(){
     c.innerHTML+=`<div class="small" style="margin-top:10px;color:var(--green)">${ic("check")} Aaj ke sab planned kaam ho gaye! Aage badhna hai to Daily 10 dobara ya koi PYQ paper.</div>`;
   }
   items.slice(0,6).forEach((it,i)=>{
-    const row=el("button","optrow");row.style.cssText="width:100%;text-align:left;cursor:pointer;margin-top:8px";
+    const row=el("button","optrow mc-item");
     row.innerHTML=`<div style="font-size:20px;flex:none;width:32px;text-align:center">${it.ico}</div>
       <div style="flex:1;min-width:0"><b style="font-size:14px">${PRI[it.pri??3]} ${esc(it.label)}</b>
         <div class="small muted">${esc(it.sub||"")}</div></div>
@@ -9114,12 +9178,13 @@ function mentorPingCard(){
     msg=`${name}, consistency dikh rahi hai — yehi cheez selection karati hai. ${daysLeft>0?`${daysLeft} din hain, `:""}bas raftar banaye rakho.`;
     ask="Aaj ka Daily 10 + ek weak chapter drill.";mood="🔥";
   }
-  const c=el("div","card");c.style.borderColor="var(--accent-text)";
+  const c=el("div","card mentor-card");
   c.innerHTML=`<div class="row" style="gap:12px;align-items:flex-start">
-    <div style="font-size:30px;flex:none">${mood}</div>
-    <div style="flex:1"><b>Saarthi (tumhara mentor):</b>
-      <div class="small" style="margin-top:4px;line-height:1.6">${esc(msg)}</div>
-      <div class="small" style="margin-top:6px"><b>👉 ${esc(ask)}</b></div></div></div>`;
+    <div class="mentor-avatar">${mood}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px"><b>Saarthi</b><span class="small muted">· tumhara mentor</span></div>
+      <div class="small" style="margin-top:5px;line-height:1.65">${esc(msg)}</div>
+      <div class="small" style="margin-top:8px;padding:8px 12px;background:var(--blue-soft);border-radius:10px;color:var(--blue-d)"><b>👉 ${esc(ask)}</b></div></div></div>`;
   const row=el("div","row");row.style.cssText="margin-top:10px;gap:8px";
   if(behRun){const fix=el("button","btn sm","👉 Theek karo abhi");fix.onclick=behRun;row.appendChild(fix);}
   const talk=el("button","btn ghost sm","💬 Saarthi se baat karo");
@@ -9483,21 +9548,23 @@ function viewDash(root){
     if(S.settings.examDate){const d2=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(d2>0)days=` · ${d2} din baaki`;}
     return `<div class="pill" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3);margin-left:6px">🎯 ${esc(S.goal.college)}${days}</div>`;
   })();
+  // LAUNCHER v2 hero: compact greeting + streak + goal. Stats moved out of
+  // the hero (the NBA card is the star; hero sirf context deta hai).
+  const hr2=new Date().getHours();
+  const greet=hr2<5?"Raat ko bhi lage ho":hr2<12?"Good morning":hr2<17?"Good afternoon":hr2<21?"Good evening":"Der raat ki padhai";
+  const todayQ2=S.dailyQuestions[todayKey(Date.now())]||0;
   hero.innerHTML=`<div style="position:relative">
-    <span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">${ic("flame")} ${st.streak}-day streak${st.freezes?` · ${ic("ice")} ${st.freezes} freeze${st.freezes>1?"s":""} used`:""}</span>${goalLine}
-    <h2 style="margin-top:10px">Hi, ${esc(S.settings.candidate||"Candidate")}</h2>
-    <div class="muted">${esc(insight)}${S.goal&&S.goal.why?` <i style="opacity:.85">— "${esc(S.goal.why)}"</i>`:""}</div>
-    <div class="streak">${st.days.map(d=>`<i class="${d.on?"on":""}">${d.label}</i>`).join("")}</div>
-    <div class="hero-stats">
-      <div><b>${cloudTests.length}</b><span>Public tests</span></div>
-      <div><b>${g.total}</b><span>Attempts</span></div>
-      <div><b>${g.avg}</b><span>Avg marks</span></div>
-      <div><b>${g.avgAcc}%</b><span>Avg accuracy</span></div>
-    </div></div>`;
-  const acts=el("div","row");acts.style.cssText="margin-top:16px;position:relative";
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">${ic("flame")} ${st.streak}-day streak</span>${goalLine}
+      ${todayQ2?`<span class="pill" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)">✍️ Aaj: ${todayQ2} Q</span>`:""}
+    </div>
+    <h2 style="margin-top:12px">${greet}, ${esc((S.settings.candidate||"Candidate").split(" ")[0])} 👋</h2>
+    <div class="muted" style="max-width:520px">${esc(insight)}${S.goal&&S.goal.why?` <i style="opacity:.85">— "${esc(S.goal.why)}"</i>`:""}</div>
+    <div class="streak">${st.days.map(d=>`<i class="${d.on?"on":""}">${d.label}</i>`).join("")}</div></div>`;
+  const acts=el("div","row");acts.style.cssText="margin-top:14px;position:relative";
   const two=el("button","btn",ic("zap")+" Bas 2 Minute");two.title="Mann nahi kar raha? Ek question — bas itna.";two.onclick=twoMinStart;
-  const qs=el("button","btn ghost",ic("play")+" Quick Start Test");qs.onclick=()=>{const t=upcoming[0]||cloudTests[0];t?startExam(t.id):go("library");};
-  const lb=el("button","btn ghost",ic("library")+" Test Library");lb.onclick=()=>go("library");
+  const qs=el("button","btn ghost",ic("play")+" Quick Test");qs.onclick=()=>{const t=upcoming[0]||cloudTests[0];t?startExam(t.id):go("library");};
+  const lb=el("button","btn ghost",ic("library")+" Library");lb.onclick=()=>go("library");
   acts.append(two,qs,lb);hero.appendChild(acts);
   root.appendChild(hero);
   // ── launcher order: ONE next action → mentor → aaj ka mission ──
@@ -9520,10 +9587,13 @@ function viewDash(root){
     root.appendChild(r);
   }
 
-  root.appendChild(el("div","grid g4",
-    statCard("Highest Marks",g.high)+statCard("This Week",st.week+" / 7 days")+
-    statCard("Strong Subject",g.strong?g.strong.s:"—",g.strong?`<div class="small muted">${g.strong.acc}% accuracy</div>`:"")+
-    statCard("Weak Subject",g.weak?g.weak.s:"—",g.weak?`<div class="small muted">${g.weak.acc}% accuracy</div>`:"")));
+  // LAUNCHER v2: one clean 6-up stats strip (hero stats + performance)
+  // instead of numbers scattered across hero + a separate g4 block
+  root.appendChild(el("div","grid g6 stats-strip",
+    statCard("Attempts",g.total)+statCard("Avg Marks",g.avg)+
+    statCard("Accuracy",g.avgAcc+"%")+statCard("Best",g.high)+
+    statCard("Strong",g.strong?g.strong.s.slice(0,5):"—",g.strong?`<div class="small muted">${g.strong.acc}%</div>`:"")+
+    statCard("Weak",g.weak?g.weak.s.slice(0,5):"—",g.weak?`<div class="small muted">${g.weak.acc}%</div>`:"")));
   const wr=weeklyReportCard(); if(wr)root.appendChild(wr);
   const eod=endOfDayCard(); if(eod)root.appendChild(eod);
   // ---- motivation engine (the "mann nahi kar raha" toolkit) ----
