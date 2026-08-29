@@ -122,11 +122,26 @@ input:focus,select:focus{border-color:var(--accent-text)}
    Opens as a true full-screen panel (like a native chat app) rather than
    a small floating box — easier to use on phones, and unambiguous to
    close (one big header button, plus Escape on desktop). */
-.ai-chat-fab{position:fixed;right:20px;bottom:20px;z-index:55;width:58px;height:58px;border-radius:50%;
+/* ═══ FLOATING-ELEMENT LAYOUT SYSTEM (root-cause fix for overlapping FABs) ═══
+   Three fixed elements used to fight for the same bottom-right corner:
+   AI fab (z-55), launcher dock (z-9000!) and the pomodoro pill. Instead of
+   z-index whack-a-mole, each floating element now OWNS a slot:
+     bottom-right  → AI Mentor fab (primary action, one-thumb reach)
+     bottom-left   → app dock (launcher mode only)
+     above AI fab  → pomodoro mini-pill
+   All slots respect the phone's safe-area insets (gesture bars, notches). */
+.ai-chat-fab{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:55;width:58px;height:58px;border-radius:50%;
   border:none;background:linear-gradient(145deg,var(--blue-l),var(--blue-d));color:#fff;cursor:pointer;
   display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(217,90,20,.55),0 2px 8px rgba(0,0,0,.15);
   transition:transform .18s,box-shadow .18s}
 .ai-chat-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 12px 28px -4px rgba(217,90,20,.6),0 2px 8px rgba(0,0,0,.18)}
+/* contextual label chip — tells the student what the AI can do RIGHT HERE.
+   Static (no looping animation), hides on very narrow screens to save space. */
+.ai-fab-label{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:55;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+  font-size:12px;font-weight:700;box-shadow:var(--shadow);cursor:pointer;white-space:nowrap}
+@media (max-width:380px){.ai-fab-label{display:none}}
+body.pomo-visible .ai-fab-label{display:none} /* pomodoro pill owns that slot when running */
 .ai-chat-fab:active{transform:scale(.96)}
 .ai-chat-fab svg{width:25px;height:25px}
 .ai-chat-fab.pulse::before{content:"";position:absolute;inset:0;border-radius:50%;
@@ -770,7 +785,7 @@ img.qimg{cursor:zoom-in}
 .pomo-ring .lbl b{font-size:34px;font-variant-numeric:tabular-nums;font-family:var(--font-display)}
 .pomo-ring .lbl span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
 .pomo-controls{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
-.pomo-mini{position:fixed;right:20px;bottom:88px;z-index:54;background:var(--panel);border:1px solid var(--line);
+.pomo-mini{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:54;background:var(--panel);border:1px solid var(--line);
   border-radius:999px;padding:8px 16px;font-weight:800;font-size:14px;box-shadow:var(--shadow);cursor:pointer;
   font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:8px}
 .pomo-mini i{width:8px;height:8px;border-radius:50%;background:var(--green);font-style:normal;animation:pulse 2s infinite}
@@ -1473,6 +1488,30 @@ const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],plannerDone:{},notes
     negMarking:true,randomizeOrder:false,dailyGoal:20,examDate:"",dailyReminder:false,
     strictMode:false,targetPercentile:null,examFontScale:1,questionDisplay:"image"}};
 let S = load();
+/* MULTI-TAB SAFETY (data-loss fix): with two tabs open, the tab that saved
+   LAST silently overwrote everything the other tab did — submit a mock in
+   tab A, then touch anything in tab B and the attempt was GONE (classic
+   last-writer-wins). The `storage` event fires in every OTHER tab on each
+   save; there we merge by re-reading and keeping whichever side has MORE
+   submitted attempts (attempts are append-only, so more = newer truth),
+   instead of blindly trusting our own stale in-memory copy. Never runs
+   mid-exam — the running attempt lives in EX and its own autosave key. */
+window.addEventListener("storage",e=>{
+  if(e.key!==LS||!e.newValue)return;
+  if(typeof EX!=="undefined"&&EX)return;            // never disturb a live exam
+  try{
+    const incoming=JSON.parse(e.newValue);
+    const mine=S.attempts.filter(a=>a.submittedAt).length;
+    const theirs=(incoming.attempts||[]).filter(a=>a&&a.submittedAt).length;
+    if(theirs>mine){
+      S=Object.assign({},S,incoming);
+      S.settings=Object.assign({},DEFAULT.settings,incoming.settings||{});
+      S.tests=[...(incoming.tests||[]).filter(t=>t&&(t.practice||t.pyq)),...cloudTests];
+      _memoEpoch++;
+      if(typeof route!=="undefined"&&(route==="dash"||route==="analytics"))try{render(0);}catch(e2){}
+    }
+  }catch(e2){}
+});
 function load(){
   try{
     const saved=Object.assign({},DEFAULT,JSON.parse(localStorage.getItem(LS)||"{}"));
@@ -2878,6 +2917,7 @@ function analyse(test,attempt){
    → follow the plan → practise & fix mistakes → study aids → analytics →
    utilities last. (Swipe navigation follows this same order.) */
 const ROUTES=[["dash","Dashboard","home"],["library","Test Library","library"],["pyq","PYQ Papers","bank"],["planner","Planner","calendar"],
+  ["youtube","YouTube","play"],
   ["practice","Practice","pencil"],["review","Review","repeat"],["notebook","Mistake Notebook","notebook"],["mastery","Mastery","target"],
   ["formulas","Formulas","formula"],["live","Live Classes","wave"],["analytics","Analytics","chart"],
   ["upload","Upload PDFs","upload"],["search","Search","search"],["settings","Settings","settings"]];
@@ -2923,10 +2963,58 @@ function render(dir=0){
   else if(dir===-1)a.classList.add("slide-in-left");
   if(dir)a.addEventListener("animationend",()=>a.classList.remove("slide-in-right","slide-in-left"),{once:true});
   a.setAttribute("aria-label",(ROUTES.find(x=>x[0]===route)||["","Results"])[1]+" page");
-  ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
-    mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
-    practice:viewPractice,review:viewReview,live:viewLive,pyq:viewPyq,search:viewSearch,result:viewResult}[route]||viewDash)(a);
+  // ERROR BOUNDARY: a throwing view used to leave a permanent blank screen
+  // with zero feedback. Now the student sees what happened and has two
+  // working ways out (dashboard is the safest page; reload is the reset).
+  try{
+    ({dash:viewDash,library:viewLibrary,upload:viewUpload,planner:viewPlanner,analytics:viewAnalytics,
+      mastery:viewMastery,notebook:viewNotebook,formulas:viewFormulas,settings:viewSettings,
+      practice:viewPractice,review:viewReview,live:viewLive,pyq:viewPyq,search:viewSearch,
+      youtube:viewYouTube,result:viewResult}[route]||viewDash)(a);
+  }catch(err){
+    console.error("[view:"+route+"]",err);
+    a.innerHTML="";
+    const c=el("div","card");
+    c.innerHTML=`<div class="empty"><div class="big">${ic("warn")}</div>
+      <b>Ye page load nahi ho paya</b>
+      <div class="small muted" style="margin:8px 0 14px">Tumhara data safe hai — bas ye section render nahi hua. Dashboard se kaam chalta rahega.</div></div>`;
+    const row=el("div","row");row.style.cssText="justify-content:center;gap:8px";
+    const home=el("button","btn sm","🏠 Dashboard kholo");home.onclick=()=>go("dash");
+    const rel=el("button","btn ghost sm","🔄 Page reload karo");rel.onclick=()=>location.reload();
+    row.append(home,rel);c.appendChild(row);
+    a.appendChild(c);
+  }
   try{launcherDock();}catch(e){} // study-launcher app dock (APK v3.1+ only)
+  try{aiFabContext();}catch(e){} // contextual AI label ("Optimize Plan" on planner, etc.)
+}
+/* ═══ CONTEXTUAL AI BUTTON — decorative → useful ═══
+   The fab itself stays put (muscle memory); a small label chip above it
+   changes with the route and pre-fills a genuinely useful question. No
+   looping animation — it just quietly says what the AI can do HERE. */
+const AI_FAB_CTX={
+  dash:["🎯 Kya karun abhi?","Mentor, meri current situation dekh kar batao: abhi sabse pehle kya karna chahiye aur kyun?"],
+  planner:["📋 Plan optimize karo","Mera study plan dekho — backlog, weak chapters aur bache hue din ke hisaab se kya adjust karna chahiye?"],
+  analytics:["📊 Performance samjhao","Meri analytics ka honest summary do: kya sudhra, kya bigda, aur agla hafta kis par lagana chahiye?"],
+  notebook:["🧬 Galtiyon ka pattern?","Meri wrong answers aur mistake tags dekh kar batao: mera sabse bada repeating pattern kya hai aur usse kaise todun?"],
+  youtube:["🎬 Video ke baad kya?","Maine abhi video dekha hai — is topic ko pakka karne ke liye ab exactly kya karun?"],
+  mastery:["📈 Kamzori kahan hai?","Mere chapter mastery data ke hisaab se kaunse 2 chapters pe focus karna sabse zyada marks dega?"],
+  result:["🔍 Ye result samjhao","Mera latest test result analyse karo — asli problem kahan thi aur agle test se pehle kya fix karun?"],
+  pyq:["📝 Kaunsa paper lun?","Meri taiyari ke hisaab se abhi kaunsa PYQ paper attempt karna sahi rahega?"],
+  review:["🔁 Revision strategy?","Mere due reviews ke hisaab se aaj ki revision strategy kya honi chahiye?"]
+};
+function aiFabContext(){
+  let chip=document.getElementById("aiFabLabel");
+  const btn=$("#aiChatBtn");
+  if(!btn||btn.classList.contains("hide")){if(chip)chip.remove();return;}
+  const ctx=AI_FAB_CTX[route];
+  if(!ctx){if(chip)chip.remove();return;}
+  if(!chip){
+    chip=el("button","ai-fab-label no-print");chip.id="aiFabLabel";chip.type="button";
+    chip.setAttribute("aria-label","Ask the AI mentor about this page");
+    document.body.appendChild(chip);
+  }
+  chip.textContent=ctx[0];
+  chip.onclick=()=>{try{$("#aiChatInput").value=ctx[1];aiChatOpen();aiChatSyncSend();}catch(e){aiChatOpen();}};
 }
 
 /* --------------------- SWIPE NAVIGATION (touch devices) -------------------
@@ -3350,32 +3438,37 @@ let plannerTab="schedule";
    drops anything. */
 /* COMPLETE syllabus — JEE Main + Advanced + Class 11/12 boards. Every NCERT
    chapter present; tuple = [name, difficulty 1-3, weightage 1-3]. */
+/* SYLLABUS SOURCE OF TRUTH — [name, difficulty 1-3, weightage 1-3, class 11|12].
+   The 4th element (class) fixes the "Class 11 chapters in a Class 12 board
+   plan" bug: board targets filter strictly by class; JEE targets use both
+   years (that IS the JEE syllabus). One structure feeds wizard, planner,
+   videos and prerequisites — never duplicated. */
 const JEE_TOPICS={
-  Physics:[["Units & Measurement",1,2],["Kinematics",2,2],["Laws of Motion",2,2],["Work, Energy & Power",2,2],
-    ["Circular Motion",2,2],["Centre of Mass & Collisions",2,2],["Rotational Motion",3,3],["Gravitation",2,2],
-    ["Mechanical Properties of Solids",1,1],["Fluid Mechanics",2,2],["Thermal Properties of Matter",1,2],
-    ["Thermodynamics",2,3],["Kinetic Theory of Gases",1,1],["Oscillations (SHM)",2,3],["Waves & Sound",2,2],
-    ["Electrostatics",3,3],["Capacitance",2,2],["Current Electricity",2,3],["Magnetic Effects of Current",3,3],
-    ["Magnetism & Matter",1,1],["EMI (Electromagnetic Induction)",3,3],["Alternating Current",2,2],
-    ["Electromagnetic Waves",1,2],["Ray Optics",2,3],["Wave Optics",2,2],["Dual Nature of Matter",1,2],
-    ["Atoms",1,2],["Nuclei",1,2],["Semiconductors & Electronics",1,3],["Experimental Physics & Errors",1,2]],
-  Chemistry:[["Some Basic Concepts (Mole Concept)",1,1],["Atomic Structure",2,2],["Chemical Bonding",3,3],
-    ["States of Matter (Gaseous & Liquid)",1,1],["Chemical Thermodynamics",2,2],["Equilibrium (Chemical & Ionic)",3,2],
-    ["Redox Reactions",1,2],["Solid State",1,1],["Solutions",2,2],["Electrochemistry",2,3],["Chemical Kinetics",2,2],
-    ["Surface Chemistry",1,1],["Classification & Periodicity",1,1],["Hydrogen & s-Block",1,1],["p-Block Elements",2,3],
-    ["d & f Block Elements",2,2],["Coordination Compounds",3,3],["Metallurgy (Isolation of Elements)",1,1],
-    ["General Organic Chemistry (GOC)",3,3],["Isomerism",2,2],["Hydrocarbons",2,2],["Haloalkanes & Haloarenes",2,2],
-    ["Alcohols, Phenols & Ethers",2,2],["Aldehydes, Ketones & Carboxylic Acids",3,3],["Amines & Diazonium Salts",2,2],
-    ["Biomolecules",1,2],["Polymers",1,1],["Chemistry in Everyday Life",1,1],["Environmental Chemistry",1,1],
-    ["Practical/Analytical Chemistry",1,2]],
-  Mathematics:[["Sets, Relations & Functions",1,2],["Complex Numbers",2,2],["Quadratic Equations",2,2],
-    ["Matrices & Determinants",2,3],["Permutations & Combinations",2,2],["Binomial Theorem",1,2],
-    ["Sequences & Series (AP/GP)",2,3],["Trigonometric Ratios & Identities",2,2],["Trigonometric Equations",2,1],
-    ["Inverse Trigonometric Functions",2,2],["Heights & Distances",1,1],["Straight Lines",2,2],["Circles",2,2],
-    ["Conic Sections (Parabola/Ellipse/Hyperbola)",3,3],["Limits, Continuity & Differentiability",3,3],
-    ["Differentiation (Methods)",2,2],["Applications of Derivatives",2,2],["Indefinite Integration",3,3],
-    ["Definite Integration & Area",3,3],["Differential Equations",2,2],["Vector Algebra",2,3],["3D Geometry",2,3],
-    ["Probability",2,2],["Statistics",1,2],["Mathematical Reasoning",1,1]]
+  Physics:[["Units & Measurement",1,2,11],["Kinematics",2,2,11],["Laws of Motion",2,2,11],["Work, Energy & Power",2,2,11],
+    ["Circular Motion",2,2,11],["Centre of Mass & Collisions",2,2,11],["Rotational Motion",3,3,11],["Gravitation",2,2,11],
+    ["Mechanical Properties of Solids",1,1,11],["Fluid Mechanics",2,2,11],["Thermal Properties of Matter",1,2,11],
+    ["Thermodynamics",2,3,11],["Kinetic Theory of Gases",1,1,11],["Oscillations (SHM)",2,3,11],["Waves & Sound",2,2,11],
+    ["Electrostatics",3,3,12],["Capacitance",2,2,12],["Current Electricity",2,3,12],["Magnetic Effects of Current",3,3,12],
+    ["Magnetism & Matter",1,1,12],["EMI (Electromagnetic Induction)",3,3,12],["Alternating Current",2,2,12],
+    ["Electromagnetic Waves",1,2,12],["Ray Optics",2,3,12],["Wave Optics",2,2,12],["Dual Nature of Matter",1,2,12],
+    ["Atoms",1,2,12],["Nuclei",1,2,12],["Semiconductors & Electronics",1,3,12],["Experimental Physics & Errors",1,2,11]],
+  Chemistry:[["Some Basic Concepts (Mole Concept)",1,1,11],["Atomic Structure",2,2,11],["Chemical Bonding",3,3,11],
+    ["States of Matter (Gaseous & Liquid)",1,1,11],["Chemical Thermodynamics",2,2,11],["Equilibrium (Chemical & Ionic)",3,2,11],
+    ["Redox Reactions",1,2,11],["Solid State",1,1,12],["Solutions",2,2,12],["Electrochemistry",2,3,12],["Chemical Kinetics",2,2,12],
+    ["Surface Chemistry",1,1,12],["Classification & Periodicity",1,1,11],["Hydrogen & s-Block",1,1,11],["p-Block Elements",2,3,12],
+    ["d & f Block Elements",2,2,12],["Coordination Compounds",3,3,12],["Metallurgy (Isolation of Elements)",1,1,12],
+    ["General Organic Chemistry (GOC)",3,3,11],["Isomerism",2,2,11],["Hydrocarbons",2,2,11],["Haloalkanes & Haloarenes",2,2,12],
+    ["Alcohols, Phenols & Ethers",2,2,12],["Aldehydes, Ketones & Carboxylic Acids",3,3,12],["Amines & Diazonium Salts",2,2,12],
+    ["Biomolecules",1,2,12],["Polymers",1,1,12],["Chemistry in Everyday Life",1,1,12],["Environmental Chemistry",1,1,11],
+    ["Practical/Analytical Chemistry",1,2,12]],
+  Mathematics:[["Sets, Relations & Functions",1,2,11],["Complex Numbers",2,2,11],["Quadratic Equations",2,2,11],
+    ["Matrices & Determinants",2,3,12],["Permutations & Combinations",2,2,11],["Binomial Theorem",1,2,11],
+    ["Sequences & Series (AP/GP)",2,3,11],["Trigonometric Ratios & Identities",2,2,11],["Trigonometric Equations",2,1,11],
+    ["Inverse Trigonometric Functions",2,2,12],["Heights & Distances",1,1,11],["Straight Lines",2,2,11],["Circles",2,2,11],
+    ["Conic Sections (Parabola/Ellipse/Hyperbola)",3,3,11],["Limits, Continuity & Differentiability",3,3,12],
+    ["Differentiation (Methods)",2,2,12],["Applications of Derivatives",2,2,12],["Indefinite Integration",3,3,12],
+    ["Definite Integration & Area",3,3,12],["Differential Equations",2,2,12],["Vector Algebra",2,3,12],["3D Geometry",2,3,12],
+    ["Probability",2,2,12],["Statistics",1,2,11],["Mathematical Reasoning",1,1,11]]
 };
 /* Board-only subject (planner-only — CBT test engine stays PCM):
    Class 12 CBSE English Core, complete. */
@@ -3396,13 +3489,39 @@ const ADV_EXTRA_TOPICS={
   Chemistry:[["Qualitative Salt Analysis",3,3],["Stereochemistry (Advanced)",3,2]],
   Mathematics:[["Functions & Functional Equations (Adv)",3,2],["Inequalities & Max-Min (Adv)",3,2]]
 };
-/** Chapters available for a given target — the SINGLE source the wizard uses. */
+/* PREREQUISITE MAP — Class 12 chapter → the Class 11 concept it leans on.
+   Used by PREREQUISITE MODE: board-12 plans stay pure Class 12, but when a
+   chapter has a known Class 11 dependency we surface a SHORT revision
+   suggestion instead of dumping whole Class 11 chapters into the plan. */
+const PREREQ_MAP={
+  "Electrostatics":"Vectors & Work-Energy basics (Class 11)",
+  "Current Electricity":"Ohm's law foundation from Class 11 Electricity intro",
+  "EMI (Electromagnetic Induction)":"Magnetic Effects concepts",
+  "Alternating Current":"Oscillations (SHM) — phasors ki soch wahi hai",
+  "Dual Nature of Matter":"Waves & Sound basics",
+  "Electrochemistry":"Redox Reactions (Class 11)",
+  "Chemical Kinetics":"Equilibrium basics (Class 11)",
+  "Haloalkanes & Haloarenes":"GOC (Class 11) — mechanism ki neev",
+  "Alcohols, Phenols & Ethers":"GOC + Hydrocarbons (Class 11)",
+  "Aldehydes, Ketones & Carboxylic Acids":"GOC (Class 11) — nucleophilic addition",
+  "Amines & Diazonium Salts":"GOC basics (Class 11)",
+  "Limits, Continuity & Differentiability":"Functions (Class 11 Sets & Functions)",
+  "Differentiation (Methods)":"Limits ki समझ",
+  "Indefinite Integration":"Differentiation ulta hai — pehle wo pakki karo",
+  "3D Geometry":"Vector Algebra ke saath padho",
+  "Inverse Trigonometric Functions":"Trigonometric Ratios (Class 11)"
+};
+/** Chapters available for a given target — the SINGLE source the wizard uses.
+ *  CLASS-AWARE FIX: board12 = ONLY class-12 chapters, board11 = ONLY class-11.
+ *  JEE targets keep both years because that IS the JEE syllabus. */
 function topicsForTarget(target){
-  const base=JSON.parse(JSON.stringify(JEE_TOPICS));
+  let base=JSON.parse(JSON.stringify(JEE_TOPICS));
   if(target==="jeeadv"){
     Object.keys(ADV_EXTRA_TOPICS).forEach(s=>{base[s]=base[s].concat(ADV_EXTRA_TOPICS[s]);});
   }
   if(target==="board12"||target==="board11"){
+    const cls=target==="board12"?12:11;
+    Object.keys(base).forEach(s=>{base[s]=base[s].filter(t=>(t[3]||12)===cls);});
     base.English=BOARD_EXTRA_TOPICS.English.slice();
   }
   return base;
@@ -3443,10 +3562,36 @@ const AIP_CHANNELS={ // popular free JEE educators on YouTube (Dream Team option
 let aiWiz=null; // wizard state while building a plan
 function aip(){return S.aiPlanner||null;}
 function aipSave(p){S.aiPlanner=p;save();}
+/* ═══ REALISTIC CAPACITY ENGINE ═══
+   "Planned 5h, actual 3h20m → stop planning 5.5h." Learns the student's
+   REAL daily completion (done-task minutes over the last 14 days) and,
+   when reality is clearly below the configured plan, the day-cap adapts
+   downward — fantasy schedules only create backlog and guilt. Fully
+   deterministic, explainable, and only kicks in with enough evidence. */
+function aipLearnedCapacity(){
+  const p=aip();if(!p||!p.tasks)return null;
+  const byDay={};
+  p.tasks.forEach(t=>{
+    if(t.status!=="done"||!t.completedAt)return;
+    if(Date.now()-t.completedAt>14*86400000)return;
+    const k=todayKey(t.completedAt);
+    byDay[k]=(byDay[k]||0)+aipEff(t.estMin||45,p.profile);
+  });
+  const days=Object.values(byDay);
+  if(days.length<5)return null;                 // not enough evidence yet
+  return Math.round(days.reduce((a,b)=>a+b,0)/days.length);
+}
 function aipDayCap(dateKey,prof){
   // PW JEE-360 model: student picks the completion window, we compute the
   // uniform daily minutes it requires (older saved plans keep working).
-  return prof.dailyMin||prof.weekdayMin||180;
+  const configured=prof.dailyMin||prof.weekdayMin||180;
+  // capacity adaptation: if the learned real pace is well below the plan
+  // (<70%), plan to ~115% of reality — gently stretching, never fantasy.
+  try{
+    const learned=aipLearnedCapacity();
+    if(learned&&learned<configured*0.7)return Math.max(60,Math.round(learned*1.15));
+  }catch(e){}
+  return configured;
 }
 function aipEff(min,prof){return Math.round(min/(prof.speed||1.25));} // effective watch minutes
 function aipAddDays(key,n){const d=new Date(key+"T00:00:00");d.setDate(d.getDate()+n);return todayKey(d.getTime());}
@@ -3573,9 +3718,14 @@ function aipHealth(){
   const due=p.tasks.filter(t=>t.date<=tk),done=p.tasks.filter(t=>t.status==="done");
   const dueDone=due.filter(t=>t.status==="done").length;
   const r=due.length?dueDone/due.length:1;
-  const label=r>=1.05?"Ahead":r>=0.9?"On Track":r>=0.7?"Slightly Behind":"At Risk";
+  // AUDIT FIX (P1): "Ahead" used r>=1.05 — but r=dueDone/due can NEVER
+  // exceed 1.0, so Ahead was mathematically unreachable and ahead-mode
+  // never fired. Ahead now means: all due work done AND future task(s)
+  // completed early (the actual definition of being ahead of schedule).
+  const futureDone=p.tasks.filter(t=>t.status==="done"&&t.date>tk).length;
+  const label=(r>=1&&futureDone>0)?"Ahead":r>=0.9?"On Track":r>=0.7?"Slightly Behind":"At Risk";
   const color=r>=0.9?"var(--green)":r>=0.7?"var(--amber)":"var(--red)";
-  return {label,color,pctDone:pct(done.length,p.tasks.length),ratio:Math.round(r*100),due:due.length,dueDone};
+  return {label,color,pctDone:pct(done.length,p.tasks.length),ratio:Math.round(r*100),due:due.length,dueDone,futureDone};
 }
 /** Fetch ranked YouTube lessons for a task (lazy, with in-plan duplicate avoidance). */
 async function aipFindVideo(t,cb){
@@ -3585,10 +3735,12 @@ async function aipFindVideo(t,cb){
     const r=await fetch("/api/public/study-planner",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({topic:t.topic,subject:t.subject,language:p.profile.language,
         kind:t.kind==="practice"?"practice":t.kind==="revision"?"revision":t.kind==="advanced"?"advanced":"learn",
-        depth:t.depth||"lecture",           // oneshot | lecture | detailed — changes the SEARCH itself
+        // LEARNED PREFERENCE: 3+ postponed long lectures → search one-shots
+        // and cap duration; the plan adapts to the student, not vice versa
+        depth:(p.profile.longPostpones||0)>=3&&t.kind==="learn"?"oneshot":(t.depth||"lecture"),
         target:p.profile.target||"jeemain", // jeemain | jeeadv | board12 | board11 — video level
         minMinutes:Math.round(t.estMin*0.4),
-        maxMinutes:Math.round(t.estMin*1.6),channel:prefCh})});
+        maxMinutes:(p.profile.longPostpones||0)>=3?Math.min(90,Math.round(t.estMin*1.2)):Math.round(t.estMin*1.6),channel:prefCh})});
     const data=await r.json().catch(()=>null);
     let items=(data&&data.items)||[];
     const used=new Set(p.tasks.map(x=>x.videoId).filter(Boolean));
@@ -3605,6 +3757,79 @@ async function aipFindVideo(t,cb){
     cb(fresh.length?fresh:items,!!(data&&data.fallback));
   }catch(e){cb([],true);}
 }
+/* ═══ PER-VIDEO WATCH TRACKING — the missing model ═══
+   ROOT CAUSE of "Video B shows Video A's time": there was NO per-video
+   record at all. Every watch session is now keyed by videoId:
+     S.videoLog[videoId] = {title,channel,subject,topic,durationSec,
+                            watchedSec,lastPosition,sessions,firstAt,
+                            lastAt,completedAt}
+   A session's seconds are credited ONLY to the video that was open, and
+   capped at that video's own duration — switching videos closes one
+   session and opens another. Without the YouTube IFrame API (no key,
+   privacy-first) position is an estimate from open-time; we label it
+   honestly and never claim "completed" below the 90% threshold. */
+function videoLog(){return S.videoLog||(S.videoLog={});}
+let _vwatch=null; // {id, startedAt, meta} — the ONE open session
+function vwStart(v,t){
+  vwEnd(); // close any previous video's session first — never mix time
+  if(!v||!v.id)return;
+  _vwatch={id:v.id,startedAt:Date.now(),
+    meta:{title:v.title||"",channel:v.channel||"",durationSec:v.durationSec||0,
+      subject:(t&&t.subject)||v.subject||"",topic:(t&&t.topic)||v.topic||""}};
+}
+function vwEnd(){
+  if(!_vwatch)return;
+  const sec=Math.round((Date.now()-_vwatch.startedAt)/1000);
+  const w=_vwatch;_vwatch=null;
+  if(sec<15)return;                       // opening & closing isn't watching
+  const log=videoLog();
+  const rec=log[w.id]=log[w.id]||{...w.meta,watchedSec:0,lastPosition:0,sessions:0,firstAt:Date.now()};
+  const cap=rec.durationSec||w.meta.durationSec||0;
+  const credit=cap?Math.min(sec,Math.max(0,cap-rec.watchedSec)):sec; // never exceed the video's own length
+  rec.watchedSec+=credit;
+  rec.lastPosition=cap?Math.min(rec.watchedSec,cap):rec.watchedSec; // estimate
+  rec.sessions++;rec.lastAt=Date.now();
+  if(cap&&rec.watchedSec>=cap*0.9&&!rec.completedAt){
+    rec.completedAt=Date.now(); // 90% rule — opened ≠ completed
+    // WATCH → PRACTICE BRIDGE: concept just landed — the highest-value next
+    // step is 5 quick questions on it, offered ONCE (never auto-forced).
+    if(rec.topic&&!rec.bridged){
+      rec.bridged=true;
+      const topic=rec.topic;
+      setTimeout(()=>{try{
+        const pool=[];const seen=new Set();
+        S.tests.forEach(t2=>t2.questions.forEach(q=>{
+          if(seen.has(q.id))return;
+          const ch=(q.chapter||"").toLowerCase(),tp=topic.toLowerCase();
+          if(ch&&(tp.includes(ch.slice(0,10))||ch.includes(tp.slice(0,10)))){seen.add(q.id);pool.push({q});}
+        }));
+        if(pool.length>=3)confirmBox("Video complete 🎉 — ab test karein?",
+          `"${esc(topic)}" ka concept abhi fresh hai. <b>5 quick questions</b> abhi karne se memory 3× tikti hai (research-backed). 2-3 minute lagenge.`,
+          ()=>startDrill(topic+" · Post-video check",pool.sort(()=>Math.random()-0.5).slice(0,5),90),
+          "Haan, 5 questions");
+      }catch(e){}},600);
+    }
+  }
+  // prune: keep the 80 most recent videos (storage hygiene)
+  const ids=Object.keys(log);
+  if(ids.length>80)ids.sort((a,b)=>(log[a].lastAt||0)-(log[b].lastAt||0)).slice(0,ids.length-80).forEach(id=>delete log[id]);
+  save();
+}
+// tab hidden / closed mid-video → bank the time honestly
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")vwEnd();});
+window.addEventListener("beforeunload",()=>{try{vwEnd();}catch(e){}});
+function vwProgress(id){
+  const r=videoLog()[id];if(!r)return null;
+  const pctW=r.durationSec?Math.min(100,Math.round(r.watchedSec/r.durationSec*100)):null;
+  return {...r,pct:pctW,done:!!r.completedAt};
+}
+/** Videos worth resuming: >=10% watched, <90%, newest first. */
+function continueWatching(){
+  const log=videoLog();
+  return Object.entries(log).map(([id,r])=>({id,...r}))
+    .filter(r=>r.durationSec&&!r.completedAt&&r.watchedSec>=r.durationSec*0.10&&r.watchedSec<r.durationSec*0.90)
+    .sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,6);
+}
 function aipOpenLesson(t){
   const m=el("div","modal");m.setAttribute("data-static","1");
   const p=aip();
@@ -3616,6 +3841,11 @@ function aipOpenLesson(t){
         <h3 style="margin:6px 0 2px">${esc(t.topic)}</h3>
         <div class="small muted">~${aipEff(t.estMin,p.profile)} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}</div></div>
       <button class="iconbtn" data-x>✕</button></div>
+    ${(()=>{ // PREREQUISITE MODE: board-12 plans stay pure class-12, but a
+      // known class-11 dependency gets a short revision suggestion here
+      const pre=PREREQ_MAP[t.topic];
+      return pre&&t.kind==="learn"?`<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--amber);border-radius:8px;color:var(--amber)">🧩 <b>Prerequisite:</b> Is chapter se pehle ${esc(pre)} ki 10-minute revision kaam degi — poora Class 11 chapter dobara padhne ki zaroorat NAHI.</div>`:"";
+    })()}
     <div data-player style="margin-top:10px"><div class="small muted">${ic("search")} Finding the best free lesson on YouTube…</div></div>
     <div data-alts></div>
     <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
@@ -3624,8 +3854,9 @@ function aipOpenLesson(t){
     </div>
     <div data-fb class="small muted" style="margin-top:10px"></div></div>`;
   document.body.appendChild(m);
-  m.querySelector("[data-x]").onclick=()=>m.remove();
+  m.querySelector("[data-x]").onclick=()=>{vwEnd();m.remove();};
   m.querySelector("[data-done]").onclick=()=>{
+    vwEnd(); // bank this video's watch-time before closing out
     t.status="done";t.completedAt=Date.now();aipSave(aip());
     const fb=m.querySelector("[data-fb]");
     fb.innerHTML=`How was this explanation? `+["Too easy","Just right","Too difficult","Not useful"].map(x=>`<button class="btn ghost sm" data-f="${x}" style="margin:4px 4px 0 0">${x}</button>`).join("");
@@ -3639,14 +3870,31 @@ function aipOpenLesson(t){
     });
     toast("Marked complete 🎉");if(route==="planner")setTimeout(()=>{if(route==="planner")render(0);},400);
   };
-  m.querySelector("[data-move]").onclick=()=>{t.date=aipAddDays(todayKey(Date.now()),1);aipSave(aip());m.remove();aipRebalance(true);if(route==="planner")render(0);toast("Moved to tomorrow — plan rebalanced");};
+  m.querySelector("[data-move]").onclick=()=>{
+    vwEnd();
+    const pp2=aip();
+    // LEARN FROM MANUAL CHANGES: repeated postponing of LONG learn tasks is
+    // a signal ("long passive sessions don't suit this student"). After 3
+    // such postpones, video search quietly prefers shorter formats.
+    if(t.kind==="learn"&&t.estMin>=90){
+      pp2.profile.longPostpones=(pp2.profile.longPostpones||0)+1;
+      if(pp2.profile.longPostpones===3)toast("📝 Noted: lambi lectures baar-baar postpone ho rahi hain — ab chhote/one-shot videos pehle dikhaunga",4500);
+    }
+    t.date=aipAddDays(todayKey(Date.now()),1);aipSave(pp2);m.remove();aipRebalance(true);if(route==="planner")render(0);toast("Moved to tomorrow — plan rebalanced");};
   const show=v=>{
     t.videoId=v.id;t.videoTitle=v.title;t.channel=v.channel;t.durationSec=v.durationSec;aipSave(aip());
+    // PER-VIDEO tracking: switching to this video closes the previous
+    // video's session — time is never credited to the wrong videoId.
+    vwStart(v,t);
+    const prog=vwProgress(v.id);
+    const resumeSec=prog&&!prog.done&&prog.lastPosition>60?prog.lastPosition:0;
     m.querySelector("[data-player]").innerHTML=`
       <div style="position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden">
-        <iframe src="https://www.youtube.com/embed/${esc(v.id)}" title="${esc(v.title)}" allowfullscreen
+        <iframe src="https://www.youtube.com/embed/${esc(v.id)}${resumeSec?"?start="+resumeSec:""}" title="${esc(v.title)}" allowfullscreen
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
+      ${resumeSec?`<div class="small" style="margin-top:6px;color:var(--green)">▶️ Pichhli baar ~${fmtTime(resumeSec)} tak dekha tha — wahin se shuru (estimate).</div>`:""}
+      ${prog&&prog.done?`<div class="small" style="margin-top:6px;color:var(--green)">✅ Ye video tum pehle poora dekh chuke ho — ab iski PRACTICE zyada kaam degi.</div>`:""}
       <div class="small" style="margin-top:8px"><b>${esc(v.title)}</b></div>
       <div class="small muted">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec/(aip().profile.speed||1.25)))} at ${aip().profile.speed}×)</div>
       ${v.why?`<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target||"")==="board12"?" · board-level fit":(p.profile.target||"")==="jeeadv"?" · Advanced-level fit":" · JEE Main-level fit"}</div>`:""}`;
@@ -3709,18 +3957,25 @@ function aipWizard(root){
       const isExtra=!w.subjects.includes(s);
       w.topics[s]=w.topics[s]||(isExtra?[]:SYL[s].slice());
       const sec=el("div");sec.style.marginTop="12px";
-      sec.innerHTML=`<b style="color:${SUBCOLOR[s]||"var(--accent-text)"}">${s}</b> <span class="small muted">(${w.topics[s].length}/${SYL[s].length} chapters${isExtra?" · optional":""})</span>`;
+      const cnt=el("span","small muted",`(${w.topics[s].length}/${SYL[s].length} chapters${isExtra?" · optional":""})`);
+      const hd=el("div");hd.innerHTML=`<b style="color:${SUBCOLOR[s]||"var(--accent-text)"}">${s}</b> `;hd.appendChild(cnt);
+      sec.appendChild(hd);
       const row=el("div","row");row.style.cssText="gap:6px;flex-wrap:wrap;margin-top:8px";
       SYL[s].forEach(([name,diff])=>{
-        const on=w.topics[s].some(x=>x[0]===name);
-        const b=el("button","btn sm"+(on?"":" ghost"),name+(diff===3?" ★":""));b.style.fontSize="12px";
+        const b=el("button","btn sm"+(w.topics[s].some(x=>x[0]===name)?"":" ghost"),name+(diff===3?" ★":""));b.style.fontSize="12px";
         b.onclick=()=>{
-          // toggle, preserving official syllabus order
-          const now=on?w.topics[s].filter(x=>x[0]!==name):w.topics[s].concat([[name,diff]]);
-          w.topics[s]=SYL[s].filter(x=>now.some(y=>y[0]===x[0]));
+          /* SCROLL-JUMP ROOT-CAUSE FIX: toggling a chapter used to rebuild
+             the ENTIRE page (render(0)) — DOM wiped, scroll lost, page
+             jumped to top. A toggle only changes THIS button and THIS
+             counter, so update exactly that, in place. No re-render. */
+          const isOn=w.topics[s].some(x=>x[0]===name);
+          const now=isOn?w.topics[s].filter(x=>x[0]!==name):w.topics[s].concat([[name,diff]]);
+          w.topics[s]=SYL[s].filter(x=>now.some(y=>y[0]===x[0])); // official order preserved
           if(w.topics[s].length&&!w.subjects.includes(s))w.subjects.push(s);
           if(!w.topics[s].length&&isExtra)w.subjects=w.subjects.filter(x=>x!==s);
-          render(0);};
+          b.className="btn sm"+(w.topics[s].some(x=>x[0]===name)?"":" ghost");
+          cnt.textContent=`(${w.topics[s].length}/${SYL[s].length} chapters${isExtra?" · optional":""})`;
+        };
         row.appendChild(b);
       });
       sec.appendChild(row);c.appendChild(sec);
@@ -3870,7 +4125,17 @@ function aipToday(root){
     const acts=el("div","row");acts.style.cssText="gap:6px;flex:none";
     if(t.status!=="done"){
       const wb=el("button","btn sm",ic("play")+" Watch");wb.onclick=()=>aipOpenLesson(t);
-      const db=el("button","btn green sm",ic("check"));db.title="Done";db.onclick=()=>{t.status="done";t.completedAt=Date.now();aipSave(p);render(0);toast("Done 🎉");};
+      const db=el("button","btn green sm",ic("check"));db.title="Done";db.onclick=()=>{
+        t.status="done";t.completedAt=Date.now();aipSave(p);
+        // EARLY-COMPLETION INTELLIGENCE: a FUTURE task finished early is
+        // recognized (no duplicate work) and the reward is consolidation,
+        // not auto-overload — pull-forward only happens if the student
+        // chooses to open the next task themselves.
+        const tk2=todayKey(Date.now());
+        if(t.date>tk2){
+          toast("🚀 Future task pehle hi complete — plan ne note kar liya, dobara nahi aayega");
+        }else toast("Done 🎉");
+        render(0);};
       const mb=el("button","btn ghost sm","Move");mb.onclick=()=>{t.date=aipAddDays(tk,1);aipSave(p);aipRebalance(true);render(0);toast("Moved to tomorrow — plan rebalanced");};
       acts.append(wb,db,mb);
     } else acts.appendChild(el("span","small",ic("check")+" Done"));
@@ -3879,7 +4144,9 @@ function aipToday(root){
   root.appendChild(list);
   // subject progress
   const sp=el("div","card");sp.innerHTML=`<h3>Your subjects</h3>`;
-  p.profile.subjects.forEach(s=>{
+  // resilience: an old/hand-edited saved plan may lack profile.subjects —
+  // derive from the tasks themselves rather than crashing the whole planner
+  (p.profile.subjects||[...new Set(p.tasks.map(t=>t.subject))]).forEach(s=>{
     const all=p.tasks.filter(t=>t.subject===s),dn=all.filter(t=>t.status==="done").length;
     const remH=Math.round(all.filter(t=>t.status==="todo").reduce((s2,t)=>s2+aipEff(t.estMin,p.profile),0)/60*10)/10;
     sp.innerHTML+=`<div class="time-row" style="margin-top:8px"><span style="color:${SUBCOLOR[s]}"><b>${s}</b></span>
@@ -3897,6 +4164,37 @@ function aipToday(root){
       ${dts.slice(0,4).map(t=>`<span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.topic.slice(0,26))}${t.kind!=="learn"?" ("+t.kind+")":""}</span>`).join(" ")}${dts.length>4?` <span class="muted">+${dts.length-4} more</span>`:""}</div>`;
   }
   root.appendChild(up);
+  // ── WHAT-IF SIMULATOR: study-hours ka asli asar dikhta hai ──
+  (()=>{
+    const base=whatIfPlanSim(3);if(!base)return;
+    const wi=el("div","card");
+    wi.innerHTML=`<div class="section-title"><span class="ico">${ic("crystal")}</span>
+      <div><h3 style="margin:0">🔮 What-If — agar main roz X ghante padhun?</h3>
+      <div class="small muted">Bache ${base.tasks} tasks (~${Math.round(base.totalMin/60)}h kaam) par seedha hisaab — koi jaadu nahi, sirf math.</div></div></div>
+      <div data-rows style="margin-top:10px"></div>`;
+    const rows=wi.querySelector("[data-rows]");
+    [2,3,4,6].forEach(h=>{
+      const sim=whatIfPlanSim(h);if(!sim)return;
+      const good=sim.vs&&sim.vs.margin>=10,bad=sim.vs&&sim.vs.margin<0;
+      rows.innerHTML+=`<div class="row" style="justify-content:space-between;margin-top:6px;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+        <b>${h} ghante/din</b>
+        <span class="small">syllabus ~<b>${sim.days} din</b> mein</span>
+        ${sim.vs?`<span class="pill ${bad?"r":good?"g":"a"}">${bad?`exam ke ${-sim.vs.margin} din BAAD ⚠️`:`${sim.vs.margin} din ka buffer`}</span>`:""}
+      </div>`;
+    });
+    if(base.vs)wi.innerHTML+=`<div class="small muted" style="margin-top:8px">Buffer = revision + mocks ka time. 10+ din ka buffer healthy hai.</div>`;
+    root.appendChild(wi);
+  })();
+  // learned capacity note (transparency: plan adapts to reality)
+  (()=>{
+    try{
+      const learned=aipLearnedCapacity();
+      const conf=p.profile.dailyMin||p.profile.weekdayMin||180;
+      if(learned&&learned<conf*0.7){
+        root.appendChild(el("div","card",`<div class="small" style="color:var(--amber)">📏 <b>Capacity check:</b> plan ${Math.round(conf/60)}h/din ka hai, lekin pichhle 2 hafte ki asli speed ~${Math.round(learned/60*10)/10}h/din hai. Maine aane wale din realistic bana diye hain (~${Math.round(learned*1.15)} min/din) — fantasy schedule sirf backlog banata hai. Zyada karna ho to roz ka target khud badha sakte ho.</div>`));
+      }
+    }catch(e){}
+  })();
   const foot=el("div","row");foot.style.cssText="justify-content:center;gap:8px;margin-top:4px";
   const rb=el("button","btn ghost sm",ic("refresh")+" Rebuild plan");
   rb.onclick=()=>confirmBox("Rebuild your plan?","Your completed tasks stay counted, but the schedule is regenerated from scratch with the wizard.",()=>{aiWiz=null;S.aiPlanner=null;save();render(0);},"Rebuild");
@@ -3974,7 +4272,8 @@ function pomoSyncUI(){
       document.body.appendChild(mini);
     }
     mini.innerHTML=`${POMO.running?"<i></i>":ic("pause")} ${POMO.mode==="focus"?ic("target"):ic("coffee")} ${fmtTime(POMO.left)}`;
-  }else if(mini)mini.remove();
+    document.body.classList.add("pomo-visible");   // AI label chip yields its slot
+  }else{if(mini)mini.remove();document.body.classList.remove("pomo-visible");}
 }
 function pomodoroCard(){
   const totalToday=pomoLog()[todayKey(Date.now())]||0;
@@ -4787,15 +5086,35 @@ function collectQuestions(kind){
 /** PERSONALIZED PRACTICE — one drill built from YOUR data:
  *  ~50% weakest chapters, ~30% due spaced-reviews, ~20% mistake-DNA subject.
  *  Every question has a reason to be there.                              */
+/* ADAPTIVE DIFFICULTY: recent form decides the mix. ≥75% accuracy in the
+   last 3 attempts → bias toward the questions this cohort finds HARD
+   (community difficulty from questionStats); <45% → bias EASY to rebuild
+   confidence before climbing back. Middle → natural mix. Deterministic. */
+function adaptiveDifficultyBias(){
+  const done=S.attempts.filter(a=>a.submittedAt).slice(-3);
+  if(done.length<2)return 0;
+  const acc=done.reduce((s2,a)=>s2+a.result.all.accuracy,0)/done.length;
+  return acc>=75?1:acc<45?-1:0;   // 1 = prefer hard, -1 = prefer easy
+}
 function smartPracticePool(){
   const seen=new Set(),out=[];
   const add=(items,why,cap)=>{let n=0;
     for(const x of items){if(n>=cap)break;const q=x.q||x;if(seen.has(q.id))continue;seen.add(q.id);out.push({q,why});n++;}};
-  // 1) weakest chapters (up to 8)
+  const bias=adaptiveDifficultyBias();
+  const diffSort=arr=>{
+    if(!bias)return arr.sort(()=>Math.random()-0.5);
+    const qst=questionStats();
+    return arr.slice().sort((a,b)=>{
+      const qa=qst[(a.q||a).id],qb=qst[(b.q||b).id];
+      const da=qa&&qa.n>=4?qa.c/qa.n:0.5, db=qb&&qb.n>=4?qb.c/qb.n:0.5;
+      return bias===1?da-db:db-da;   // hard-first or easy-first
+    });
+  };
+  // 1) weakest chapters (up to 8) — difficulty-adapted order
   try{
     const weak=chapterPriorities().slice(0,3).map(p=>p.name);
     const pool=[];S.tests.forEach(t=>t.questions.forEach(q=>{if(weak.includes(q.chapter||q.subject))pool.push({q});}));
-    add(pool.sort(()=>Math.random()-0.5),"weak chapter",8);
+    add(diffSort(pool),"weak chapter",8);
   }catch(e){}
   // 2) due reviews (up to 4)
   try{add(dueReviewQuestions(),"review due",4);}catch(e){}
@@ -4900,6 +5219,192 @@ function allUniqueQuestions(){
     if(seen.has(q.id))return;seen.add(q.id);out.push({t,q});
   }));
   return out;
+}
+/* ═══════════════════ ▶️ YOUTUBE — integrated study video hub ═══════════════════
+   One place for study videos WITHOUT leaving the app: personalized rows
+   (weak topics, today's plan, continue watching), search with exam/subject/
+   type filters, in-app player with PER-VIDEO watch tracking, and saved
+   videos. Uses the same /api/public/study-planner ranking engine (target-
+   aware, depth-aware, trusted-educator scoring) — one engine, no duplicate
+   logic. Official YouTube embeds only. */
+function ytSaved(){return S.ytSaved||(S.ytSaved=[]);}
+function ytPlay(v,ctx){
+  const m=el("div","modal");m.setAttribute("data-static","1");
+  const prog=vwProgress(v.id);
+  const resumeSec=prog&&!prog.done&&prog.lastPosition>60?prog.lastPosition:0;
+  vwStart(v,ctx||{});
+  const saved=ytSaved().some(x=>x.id===v.id);
+  m.innerHTML=`<div class="box" style="max-width:860px;max-height:92vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div style="min-width:0"><b>${esc(v.title)}</b>
+        <div class="small muted">${esc(v.channel||"")}${v.durationSec?" · "+fmtTime(v.durationSec):""}</div></div>
+      <button class="iconbtn" data-x>✕</button></div>
+    <div style="position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;margin-top:10px">
+      <iframe src="https://www.youtube.com/embed/${esc(v.id)}${resumeSec?"?start="+resumeSec:""}" title="${esc(v.title)}" allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
+    ${resumeSec?`<div class="small" style="margin-top:6px;color:var(--green)">▶️ ~${fmtTime(resumeSec)} se resume (estimate)</div>`:""}
+    ${v.why?`<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}</div>`:""}
+    <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost sm" data-save>${saved?"💔 Saved se hatao":"❤️ Save karo"}</button>
+      ${ctx&&ctx.topic?`<button class="btn sm" data-practice>✍️ Ab practice karo: ${esc(String(ctx.topic).slice(0,24))}</button>`:""}
+    </div>
+    <div class="small muted" style="margin-top:8px">⏱️ Watch-time is video ke naam par hi count hota hai — doosre video par kabhi nahi.</div></div>`;
+  document.body.appendChild(m);
+  m.querySelector("[data-x]").onclick=()=>{vwEnd();m.remove();if(route==="youtube")render(0);};
+  m.querySelector("[data-save]").onclick=e2=>{
+    const arr=ytSaved();const i=arr.findIndex(x=>x.id===v.id);
+    if(i>=0){arr.splice(i,1);e2.target.textContent="❤️ Save karo";}
+    else{arr.unshift({id:v.id,title:v.title,channel:v.channel||"",durationSec:v.durationSec||0,subject:ctx&&ctx.subject||v.subject||"",topic:ctx&&ctx.topic||v.topic||"",at:Date.now()});
+      if(arr.length>40)arr.length=40;e2.target.textContent="💔 Saved se hatao";}
+    save();
+  };
+  const pb=m.querySelector("[data-practice]");
+  if(pb)pb.onclick=()=>{
+    vwEnd();m.remove();
+    // video → practice connection: exposure ≠ mastery, questions decide
+    const pool=[];const seen=new Set();
+    S.tests.forEach(t2=>t2.questions.forEach(q=>{
+      if(seen.has(q.id))return;
+      const ch=(q.chapter||"").toLowerCase();
+      if(ch&&String(ctx.topic).toLowerCase().includes(ch.slice(0,10))||ch.includes(String(ctx.topic).toLowerCase().slice(0,10))){seen.add(q.id);pool.push({q});}
+    }));
+    if(pool.length>=3)startDrill(ctx.topic+" · After-video practice",pool.sort(()=>Math.random()-0.5).slice(0,10),100);
+    else{toast("Is topic ke questions abhi bank mein nahi — koi PYQ paper kholo");go("pyq");}
+  };
+}
+async function ytFetch(params){
+  try{
+    const r=await fetch("/api/public/study-planner",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(params)});
+    const data=await r.json().catch(()=>null);
+    return (data&&data.items)||[];
+  }catch(e){return [];}
+}
+function ytVideoRow(v,ctx){
+  const prog=vwProgress(v.id);
+  const b=el("button","optrow");b.style.cssText="width:100%;text-align:left;cursor:pointer;margin-top:8px";
+  b.innerHTML=`<img loading="lazy" src="https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg" alt="" style="width:96px;height:54px;border-radius:8px;object-fit:cover;flex:none;background:#000">
+    <div style="flex:1;min-width:0"><b style="font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title)}</b>
+      <div class="small muted">${esc(v.channel||"")}${v.durationSec?" · "+fmtTime(v.durationSec):""}${prog?(prog.done?" · ✅ dekha hua":prog.pct?` · ${prog.pct}% dekha`:""):""}</div>
+      ${prog&&prog.pct&&!prog.done?`<div class="progress" style="height:4px;margin-top:4px"><i style="width:${prog.pct}%"></i></div>`:""}</div>`;
+  b.onclick=()=>ytPlay(v,ctx);
+  return b;
+}
+function viewYouTube(root){
+  const p=aip();
+  const target=(p&&p.profile&&p.profile.target)||"jeemain";
+  const lang=(p&&p.profile&&p.profile.language)||"hinglish";
+  const targetLabel={jeemain:"JEE Main",jeeadv:"JEE Advanced",board12:"Class 12 Board",board11:"Class 11"}[target];
+  root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("play")}</span>
+    <div><h2 style="margin:0">▶️ YouTube — Study Hub</h2>
+    <div class="small muted">Padhai ke videos yahin, app ke andar — tumhare target (<b>${esc(targetLabel)}</b>) aur weak chapters ke hisaab se. Watch-time har video ka alag track hota hai.</div></div></div>`));
+
+  // ── SEARCH with filters ──
+  const sc=el("div","card");
+  sc.innerHTML=`<div class="section-title"><span class="ico">${ic("search")}</span><h3 style="margin:0">Search</h3></div>`;
+  const srow=el("div","row");srow.style.cssText="margin-top:10px;gap:8px;flex-wrap:wrap";
+  const q=el("input");q.type="text";q.placeholder="Topic ya chapter — e.g. Rotational Motion, GOC…";q.style.cssText="flex:1;min-width:200px";
+  const exSel=el("select");[["","Exam: "+targetLabel+" (default)"],["jeemain","JEE Main"],["jeeadv","JEE Advanced"],["board12","Board 12"],["board11","Class 11"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;exSel.appendChild(o);});
+  const subSel=el("select");[["","Subject: Auto"],...SUBJECTS.map(s=>[s,s])].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;subSel.appendChild(o);});
+  const kindSel=el("select");[["learn|lecture","Lecture"],["learn|oneshot","One Shot"],["revision|lecture","Revision"],["practice|lecture","PYQ / Problem Solving"],["advanced|detailed","Advanced Problems"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;kindSel.appendChild(o);});
+  const go2=el("button","btn sm",ic("search")+" Search");
+  srow.append(q,exSel,subSel,kindSel,go2);sc.appendChild(srow);
+  const sres=el("div");sc.appendChild(sres);root.appendChild(sc);
+  const runSearch=async()=>{
+    const term=q.value.trim();
+    if(!term){toast("Pehle topic likho");return;}
+    sres.innerHTML=`<div class="small muted" style="margin-top:10px">${ic("search")} YouTube par dhundh raha hun…</div>`;
+    const [kind,depth]=kindSel.value.split("|");
+    const items=await ytFetch({topic:term,subject:subSel.value||"Physics",language:lang,kind,depth,
+      target:exSel.value||target,minMinutes:5,maxMinutes:300,channel:""});
+    sres.innerHTML=items.length?"":`<div class="small muted" style="margin-top:10px">Kuch nahi mila — <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(term)}" target="_blank" rel="noopener">YouTube par kholo</a>.</div>`;
+    items.slice(0,6).forEach(v=>sres.appendChild(ytVideoRow(v,{topic:term,subject:subSel.value||v.subject})));
+  };
+  go2.onclick=runSearch;
+  q.onkeydown=e2=>{if(e2.key==="Enter")runSearch();};
+
+  // ── CONTINUE WATCHING (per-video honest progress) ──
+  const cw=continueWatching();
+  if(cw.length){
+    const c=el("div","card");
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("pause")}</span><h3 style="margin:0">⏯️ Continue Watching</h3>
+      <div class="small muted" style="margin-left:auto">position estimate hai</div></div>`;
+    cw.forEach(r=>c.appendChild(ytVideoRow({id:r.id,title:r.title,channel:r.channel,durationSec:r.durationSec},{topic:r.topic,subject:r.subject})));
+    root.appendChild(c);
+  }
+
+  // ── TODAY'S STUDY VIDEOS (from the planner — one tap to the lesson) ──
+  if(p&&p.tasks){
+    const tk=todayKey(Date.now());
+    const today=p.tasks.filter(t2=>t2.date===tk&&t2.status==="todo"&&t2.kind!=="revision").slice(0,3);
+    if(today.length){
+      const c=el("div","card");c.style.borderColor="var(--blue)";
+      c.innerHTML=`<div class="section-title"><span class="ico">${ic("calendar")}</span><h3 style="margin:0">📅 Aaj ke Study Videos</h3>
+        <div class="small muted" style="margin-left:auto">plan se</div></div>`;
+      today.forEach(t2=>{
+        const b=el("button","optrow");b.style.cssText="width:100%;text-align:left;cursor:pointer;margin-top:8px";
+        b.innerHTML=`<div style="font-size:20px;flex:none;width:32px;text-align:center">${t2.kind==="learn"?"📹":"✍️"}</div>
+          <div style="flex:1"><b style="font-size:14px">${esc(t2.topic)}</b><div class="small muted">${esc(t2.subject)} · ${t2.kind} · ~${aipEff(t2.estMin,p.profile)} min</div></div>
+          <span class="badge">OPEN →</span>`;
+        b.onclick=()=>aipOpenLesson(t2);
+        c.appendChild(b);
+      });
+      root.appendChild(c);
+    }
+  }
+
+  // ── YOUR WEAK TOPICS (async recommendations, reasons attached) ──
+  const wkC=el("div","card");
+  wkC.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">💪 Weak Topics ke Videos</h3>
+    <div class="small muted" style="margin-left:auto">tumhare test data se</div></div>
+    <div data-wk class="small muted" style="margin-top:8px">Analyse kar raha hun…</div>`;
+  root.appendChild(wkC);
+  (async()=>{
+    let weak=[];try{weak=chapterPriorities().slice(0,3);}catch(e){}
+    const slot=wkC.querySelector("[data-wk]");
+    if(!slot)return;
+    if(!weak.length){slot.innerHTML="Pehle 1-2 test do — phir yahan tumhare weakest chapters ke exact videos aayenge.";return;}
+    slot.innerHTML="";
+    for(const w2 of weak){
+      if(!wkC.isConnected)return;
+      const items=await ytFetch({topic:w2.name,subject:w2.sub||"Physics",language:lang,kind:"revision",depth:"lecture",
+        target,minMinutes:5,maxMinutes:90,channel:""});
+      if(items.length){
+        const v={...items[0],why:`${w2.name} mein ${w2.acc}% accuracy (${w2.n} questions) — pehle concept, phir drill`};
+        slot.appendChild(el("div","small",`<b style="color:${SUBCOLOR[w2.sub]||"var(--accent-text)"}">${esc(w2.name)}</b> · ${w2.acc}% acc`)).style.marginTop="8px";
+        slot.appendChild(ytVideoRow(v,{topic:w2.name,subject:w2.sub}));
+      }
+    }
+    if(!slot.children.length)slot.innerHTML="YouTube abhi reach nahi ho raha — thodi der baad try karo.";
+  })();
+
+  // ── SAVED VIDEOS ──
+  const sv=ytSaved();
+  if(sv.length){
+    const c=el("div","card");
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("bookmarkFill")}</span><h3 style="margin:0">❤️ Saved Videos</h3></div>`;
+    sv.slice(0,10).forEach(v=>c.appendChild(ytVideoRow(v,{topic:v.topic,subject:v.subject})));
+    root.appendChild(c);
+  }
+
+  // ── WATCH HISTORY (compact) ──
+  const hist=Object.entries(videoLog()).map(([id,r])=>({id,...r})).sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,8);
+  if(hist.length){
+    const c=el("div","card");
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("clock")}</span><h3 style="margin:0">🕘 Watch History</h3>
+      <div class="small muted" style="margin-left:auto">sirf is device par</div></div>`;
+    hist.forEach(r=>{
+      const mins=Math.round(r.watchedSec/60);
+      const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title||r.id)}</b>
+        <div class="small muted">${esc(r.channel||"")} · ${mins} min dekha${r.completedAt?" · ✅ complete":r.durationSec?` · ${Math.min(100,Math.round(r.watchedSec/r.durationSec*100))}%`:""}</div></div>
+        <button class="btn ghost sm" data-id="${esc(r.id)}">▶️</button>`;
+      row.querySelector("button").onclick=()=>ytPlay({id:r.id,title:r.title,channel:r.channel,durationSec:r.durationSec},{topic:r.topic,subject:r.subject});
+      c.appendChild(row);
+    });
+    root.appendChild(c);
+  }
 }
 /* ======================= LIVE CLASSES (free, YouTube) =======================
    The server (/api/public/live-classes) scans YouTube's public live-filtered
@@ -5378,13 +5883,11 @@ function viewSearch(root){
       names.forEach(ch=>{
         const items=chMap[ch];
         const rowEl=el("div","qbank-ch");
-        // per-chapter accuracy from history, if any
-        let c2=0,n2=0;
-        S.attempts.filter(a=>a.submittedAt).forEach(a=>{
-          const t2=testById(a.testId);if(!t2)return;
-          t2.questions.forEach(qq=>{if((qq.chapter||"General")!==ch||qq.subject!==s)return;
-            const r2=a.responses[qq.id];if(!r2||r2.ans==null||r2.ans==="")return;n2++;if(isRight(qq,r2.ans))c2++;});
-        });
+        // per-chapter accuracy from the memoized one-pass stats map —
+        // the old nested attempts×questions walk ran once PER CHAPTER
+        // and froze this page on big histories
+        const qst=questionStats();let c2=0,n2=0;
+        items.forEach(x=>{const st2=qst[x.q.id];if(st2){c2+=st2.c;n2+=st2.n;}});
         const acc=n2?pct(c2,n2):null;
         rowEl.innerHTML=`<div class="meta"><b>${esc(ch)}</b><span class="pill n">${items.length} Q</span>
           ${acc!=null?`<span class="pill ${acc<50?"r":acc<75?"a":"g"}">${acc}% acc</span>`:""}</div>
@@ -5983,6 +6486,30 @@ function viewResult(root){
   });
   root.appendChild(videoCard("Revision videos for this test","One-shot and short revision links for the chapters that cost you marks.",recVids));
 
+  // ── CONFIDENCE CHECK (calibration): one tap, once per attempt ──
+  // Overconfident (felt great, scored low) → slow down, verify steps.
+  // Underconfident (felt bad, scored well) → trust yourself, attempt more.
+  if(!a.confidence){
+    const cc=el("div","card");
+    cc.innerHTML=`<div class="small"><b>🎚️ Ek quick sawal:</b> paper dete waqt kaisa LAG raha tha?</div>`;
+    const crow=el("div","row");crow.style.cssText="margin-top:8px;gap:8px;flex-wrap:wrap";
+    [["high","😎 Confident tha"],["mid","😐 Theek-thaak"],["low","😰 Dar lag raha tha"]].forEach(([k,label])=>{
+      const b=el("button","btn ghost sm",label);
+      b.onclick=()=>{
+        a.confidence=k;save();
+        const acc2=r.all.accuracy;
+        let msg;
+        if(k==="high"&&acc2<55)msg="⚠️ Overconfidence pakdi gayi: confident feel + "+acc2+"% accuracy. Iska ilaaj: har answer lock karne se pehle ek baar verify karo — feel par nahi, checking par bharosa.";
+        else if(k==="low"&&acc2>=70)msg="💪 Underconfidence: dar lag raha tha lekin "+acc2+"% le aaye! Tumhari taiyari feel se behtar hai — agle paper mein zyada attempt karo.";
+        else if(k==="high"&&acc2>=70)msg="✅ Calibrated: confidence aur performance match — yehi exam temperament hai.";
+        else msg="📝 Noted — confidence data se aage ki practice aur sahi banegi.";
+        cc.innerHTML=`<div class="small">${msg}</div>`;
+      };
+      crow.appendChild(b);
+    });
+    cc.appendChild(crow);root.appendChild(cc);
+  }
+
   // ── ADAPTIVE NEXT STEP — the result decides what happens tomorrow ──
   // strong (≥75% acc): raise the challenge. weak (<45%): diagnose the
   // prerequisite instead of throwing harder questions (adaptive-testing rule).
@@ -6362,7 +6889,9 @@ function startExam(testId,resume){
   }
   const attempt=resume?resume.attempt:{id:uid(),testId,startedAt:Date.now(),responses:{},submittedAt:null,tabSwitches:0};
   t.questions.forEach(q=>attempt.responses[q.id]=attempt.responses[q.id]||{ans:null,status:"notvisited",time:0,changes:0});
-  EX={test:t,attempt,cur:resume?resume.cur:0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{},
+  // clamp the resume pointer — if the paper shrank between sessions an
+  // out-of-range `cur` made cq() undefined and drawQuestion crash-looped
+  EX={test:t,attempt,cur:resume?Math.min(Math.max(0,resume.cur||0),t.questions.length-1):0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{},
     strict:!!S.settings.strictMode&&!t.practice};
   if(!resume&&t.cloud)registerAttempt(t.id);
   examAutosave();
@@ -7076,15 +7605,29 @@ function weeklyRecap(){
 /* Per-question difficulty, derived from real attempt history across every
    test (not a manual tag) — a question only gets a level once at least 4
    people/attempts have answered it, otherwise it's shown as "Unrated". */
-function questionDifficulty(qid){
-  let c=0,n=0;
-  S.attempts.filter(a=>a.submittedAt).forEach(a=>{
-    const r=a.responses[qid];if(!r||r.ans==null||r.ans==="")return;
-    const t=testById(a.testId);const q=t&&t.questions.find(x=>x.id===qid);
-    if(!q)return; n++; if(isRight(q,r.ans))c++;
+/** One-pass per-question attempt stats {qid → {c,n}} — memoized. Replaces
+ *  the old per-question history walk (O(questions × attempts × questions))
+ *  that made the search difficulty filter and chapter bank crawl on large
+ *  histories. */
+function questionStats(){
+  return memoScan("qStats",()=>{
+    const map={};
+    S.attempts.filter(a=>a.submittedAt).forEach(a=>{
+      const t=testById(a.testId);if(!t)return;
+      t.questions.forEach(q=>{
+        const r=a.responses[q.id];if(!r||r.ans==null||r.ans==="")return;
+        const o=map[q.id]=map[q.id]||{c:0,n:0};
+        o.n++;if(isRight(q,r.ans))o.c++;
+      });
+    });
+    return map;
   });
+}
+function questionDifficulty(qid){
+  const s2=questionStats()[qid];
+  const n=s2?s2.n:0;
   if(n<4)return {label:"Unrated",acc:null,n};
-  const acc=pct(c,n);
+  const acc=pct(s2.c,n);
   return {label:acc>=70?"Easy":acc>=40?"Medium":"Hard",acc,n};
 }
 /* MASTERY MODEL v2 — accuracy alone lies. Real mastery must account for:
@@ -8101,6 +8644,9 @@ function intentionCards(root){
       if(plan.kind==="two")twoMinStart();
       else if(plan.kind==="daily10"){const p=daily10Pool();if(p.length)startDrill("Daily 10 · "+fmtDate(Date.now()),p.slice(0,10),90);}
       else if(plan.kind==="fix"){try{const o=errorLogStats().open;if(o.length)startDrill("Error Log Fix · "+fmtDate(Date.now()),o.slice(0,10),100);}catch(e){}}
+      else if(plan.kind==="plan"){ // end-of-day leftover → open that planner task
+        try{const p2=aip();const t2=p2&&p2.tasks?p2.tasks.find(x=>x.status==="todo"&&plan.label.startsWith(x.topic)):null;
+          if(t2)aipOpenLesson(t2);else go("planner");}catch(e){go("planner");}}
     };
     c.appendChild(b);root.appendChild(c);
   }
@@ -8219,7 +8765,10 @@ function nextBestAction(){
     if(w&&done.length>=2){
       const pool=[];const seen=new Set();
       S.tests.forEach(t2=>t2.questions.forEach(q=>{if(!seen.has(q.id)&&(q.chapter||q.subject)===w.name){seen.add(q.id);pool.push({q});}}));
-      if(pool.length>=5)cand.push({score:45+examBoost*2,ico:"💪",title:`Weak chapter: ${w.name}`,mins:25,
+      // AUDIT FIX: >=5 silently killed this branch on small question banks
+      // (weak chapter with 3-4 available Qs got NO action at all) — 3 is
+      // enough for a meaningful drill.
+      if(pool.length>=3)cand.push({score:45+examBoost*2,ico:"💪",title:`Weak chapter: ${w.name}`,mins:Math.min(25,pool.length*2),
         why:`${w.acc}% accuracy over ${w.n} questions — yahi chapter sabse zyada marks chhupa ke baitha hai.`,
         run:()=>startDrill("Weak Chapter Attack · "+fmtDate(Date.now()),pool.sort(()=>Math.random()-0.5).slice(0,15),100)});
     }
@@ -8230,6 +8779,25 @@ function nextBestAction(){
     if(dq<S.contract.daily)cand.push({score:35,ico:"🤝",title:`Contract: ${S.contract.daily-dq} questions aur`,mins:Math.min(30,(S.contract.daily-dq)*2),
       why:`Tumne khud se ${S.contract.daily}/din ka promise kiya tha — abhi ${dq} hue hain.`,run:twoMinStart});
   }
+  // 7b) AHEAD MODE: plan se aage ho → aur lectures NAHI, consolidation.
+  //     BEHIND (At Risk) => RECOVERY MODE: high-weightage weak chapters first.
+  try{
+    const h=aipHealth();
+    if(h&&h.label==="Ahead"&&done.length){
+      const due=wrongQuestions().filter(x=>{const sch=S.reviewSchedule[x.q.id];return !sch||sch.due<=Date.now();});
+      if(due.length>=3)cand.push({score:48+examBoost,ico:"🚀",title:"Ahead ho! Consolidate karo — "+due.length+" reviews",mins:20,
+        why:"Plan se aage chal rahe ho — naya lecture add karne se behtar hai jo padha use pakka karna. Ahead students revision se hi aage nikalte hain.",
+        run:()=>startDrill("Ahead-Mode Review · "+fmtDate(Date.now()),due.slice(0,12),100)});
+    }
+    if(h&&h.label==="At Risk"&&p&&p.tasks){
+      const tk2=todayKey(Date.now());
+      const backlog=p.tasks.filter(x=>x.status==="todo"&&x.date<tk2);
+      const hi=backlog.slice().sort((a2,b2)=>((b2.wt||2)-(a2.wt||2)))[0];
+      if(hi)cand.push({score:62+examBoost,ico:"🚑",title:"RECOVERY: "+hi.topic+" (high-weightage backlog)",mins:aipEff(hi.estMin,p.profile),
+        why:`Plan ${h.ratio}% par hai — recovery ka rule: sabse zyada marks wala backlog pehle, low-value tasks skip. Ye chapter weightage-${hi.wt||2} hai.`,
+        run:()=>aipOpenLesson(hi)});
+    }
+  }catch(e){}
   // 8) genuinely late + already studied → rest IS the right action
   if(hour>=23&&S.studyLog[tk])
     cand.push({score:80,ico:"😴",title:"Ab so jao — seriously",mins:0,rest:true,
@@ -8264,6 +8832,49 @@ function nextBestActionCard(){
    AI-planner tasks · Daily 10 · test-series ka aaj ka test · scheduled
    mocks · due spaced-reviews · Sunday review · contract gap · live classes
    (background fetch). Har item par TAP = seedha wahi kaam shuru.        */
+/* ═══ RISK RADAR — 🟢🟡🔴 preparation risk, reasons attached ═══
+   One deterministic state from four real signals (plan health, revision
+   debt, accuracy trend, consistency). No AI call — instant + explainable. */
+function riskRadar(){
+  const reasons=[];let score=0;
+  try{const h=aipHealth();
+    if(h&&h.label==="At Risk"){score+=3;reasons.push(`plan ${h.ratio}% par atka hai`);}
+    else if(h&&h.label==="Slightly Behind"){score+=1;reasons.push("plan thoda peechhe hai");}}catch(e){}
+  try{const rq=revisionQueue();
+    if(rq.filter(r=>r.revision==="urgent").length>=2){score+=2;reasons.push(`${rq.filter(r=>r.revision==="urgent").length} chapters 25+ din untouched`);}
+    else if(rq.length>=3){score+=1;reasons.push(`${rq.length} chapters ki revision due`);}}catch(e){}
+  try{
+    const done=S.attempts.filter(a=>a.submittedAt).slice(-6);
+    if(done.length>=4){
+      const half=Math.floor(done.length/2);
+      const a1=done.slice(0,half).reduce((s2,a)=>s2+a.result.all.accuracy,0)/half;
+      const a2=done.slice(half).reduce((s2,a)=>s2+a.result.all.accuracy,0)/(done.length-half);
+      if(a2<a1-8){score+=2;reasons.push(`accuracy gir rahi hai (${Math.round(a1)}%→${Math.round(a2)}%)`);}
+    }
+  }catch(e){}
+  try{
+    let active=0;for(let i=1;i<=7;i++){const d=new Date();d.setDate(d.getDate()-i);
+      if(S.studyLog[todayKey(d.getTime())]||S.dailyQuestions[todayKey(d.getTime())])active++;}
+    if(active<=2&&Object.keys(S.studyLog).length>3){score+=2;reasons.push(`pichhle 7 mein sirf ${active} din active`);}
+  }catch(e){}
+  const state=score>=4?"critical":score>=2?"warning":"ok";
+  return {state,icon:state==="critical"?"🔴":state==="warning"?"🟡":"🟢",
+    label:state==="critical"?"Critical":state==="warning"?"Warning":"On Track",reasons};
+}
+/* ═══ WHAT-IF SIMULATOR — study-hours planning (deterministic) ═══ */
+function whatIfPlanSim(hoursPerDay){
+  const p=aip();if(!p||!p.tasks)return null;
+  const todo=p.tasks.filter(t=>t.status==="todo");
+  if(!todo.length)return null;
+  const totalMin=todo.reduce((s2,t)=>s2+aipEff(t.estMin||45,p.profile),0);
+  const days=Math.ceil(totalMin/(hoursPerDay*60));
+  let vs=null;
+  if(S.settings.examDate){
+    const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);
+    if(dl>0)vs={examDays:dl,margin:dl-days};
+  }
+  return {tasks:todo.length,totalMin,days,vs};
+}
 function missionControlCard(){
   const tk=todayKey(Date.now()),tmr=tomorrowKey();
   const items=[],tomorrow=[];
@@ -8334,13 +8945,41 @@ function missionControlCard(){
   const c=el("div","card");c.style.borderColor="var(--blue)";
   const doneCount=(p&&p.tasks)?p.tasks.filter(t=>t.date===tk&&t.status==="done").length:0;
   const ps=prepScore();
+  const risk=riskRadar();
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span>
       <div style="flex:1"><h3 style="margin:0">🎛️ Mission Control — Aaj ka din</h3>
       <div class="small muted">${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})} · tap karo, shuru karo${doneCount?` · ${doneCount} ho gaye ✅`:""}</div></div>
       <div style="text-align:center;flex:none" title="${esc(ps.readinessLabel)} — Estimate: syllabus 30% + accuracy 30% + practice 20% + revision 10% + consistency 10%. Ye guarantee nahi, data-based andaza hai.">
         <b style="font-size:22px;color:${ps.score>=70?"var(--green)":ps.score>=45?"var(--amber)":"var(--red)"}">${ps.score}</b>
         <div class="small muted" style="font-size:10.5px">${esc(ps.readinessLabel.replace(/ readiness$/,""))}<br>readiness (est.)</div></div></div>
-    <div class="small muted" style="margin-top:4px">Sabse kamzor dimension: <b>${esc(ps.weakest)}</b> — score sirf chapters ticket karne se nahi, asli practice se badhta hai.</div>`;
+    ${risk.state!=="ok"?`<div class="small" style="margin-top:6px;padding:7px 10px;border-radius:8px;border:1px solid ${risk.state==="critical"?"var(--red)":"var(--amber)"};color:${risk.state==="critical"?"var(--red)":"var(--amber)"}">
+      ${risk.icon} <b>Preparation Risk: ${risk.label}</b> — ${risk.reasons.slice(0,2).map(esc).join("; ")}</div>`:""}
+    <div class="small muted" style="margin-top:4px">Sabse kamzor dimension: <b>${esc(ps.weakest)}</b> — score sirf chapters ticket karne se nahi, asli practice se badhta hai.
+      <span data-psx style="cursor:pointer;text-decoration:underline;margin-left:4px">breakdown dekho</span></div>
+    <div data-psbd class="small muted" style="display:none;margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">
+      📊 <b>${esc(ps.readinessLabel)} = ${ps.score}</b> kaise bana:<br>
+      Syllabus coverage: <b>${ps.parts.cov}%</b> (×30%) · Accuracy: <b>${ps.parts.acc}%</b> (×30%)<br>
+      Practice volume: <b>${ps.parts.prac}%</b> (×20%) · Revision: <b>${ps.parts.rev}%</b> (×10%) · Consistency: <b>${ps.parts.cons}%</b> (×10%)<br>
+      <i>Estimate hai, guarantee nahi — har dimension asli data se.</i></div>
+    ${(()=>{ // PREDICTIVE PACE WARNING: current pace vs exam date (deterministic, explainable)
+      try{
+        const p3=aip();if(!p3||!p3.tasks||!S.settings.examDate)return "";
+        const todo=p3.tasks.filter(t2=>t2.status==="todo").length;
+        const done14=p3.tasks.filter(t2=>t2.status==="done"&&(t2.completedAt||0)>Date.now()-14*86400000).length;
+        const rate=done14/14;
+        const daysLeft2=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);
+        if(daysLeft2<=0||todo===0)return "";
+        if(rate<0.1)return todo>daysLeft2?`<div class="small" style="margin-top:6px;color:var(--red)">⚠️ <b>Pace check:</b> pichhle 2 hafte mein plan almost ruka hua hai — is raftar se ${todo} tasks exam tak khatam nahi honge. Aaj ek task se restart karo.</div>`:"";
+        const needDays=Math.ceil(todo/rate);
+        if(needDays>daysLeft2+3)return `<div class="small" style="margin-top:6px;color:var(--amber)">⏱️ <b>Pace warning:</b> current speed (${(rate*7).toFixed(1)} tasks/hafta) se syllabus exam ke <b>~${needDays-daysLeft2} din BAAD</b> khatam hoga. Recovery: roz ${Math.ceil(todo/Math.max(1,daysLeft2))} tasks chahiye.</div>`;
+        if(needDays<daysLeft2-10)return `<div class="small" style="margin-top:6px;color:var(--green)">🚀 <b>Pace:</b> is speed par syllabus exam se ~${daysLeft2-needDays} din pehle complete — buffer revision aur mocks mein lagega.</div>`;
+        return "";
+      }catch(e){return "";}
+    })()}`;
+  // (breakdown toggle attaches after the card is fully built — innerHTML
+  //  appends below would otherwise wipe a live handler)
+  setTimeout(()=>{const x=c.querySelector("[data-psx]"),bd=c.querySelector("[data-psbd]");
+    if(x&&bd)x.onclick=()=>{bd.style.display=bd.style.display==="none"?"block":"none";};},0);
   if(!items.length){
     c.innerHTML+=`<div class="small" style="margin-top:10px;color:var(--green)">${ic("check")} Aaj ke sab planned kaam ho gaye! Aage badhna hai to Daily 10 dobara ya koi PYQ paper.</div>`;
   }
@@ -8361,11 +9000,26 @@ function missionControlCard(){
         body:JSON.stringify({level:"jee",subject:"all"})});
       const data=await r.json().catch(()=>null);
       if(data&&Array.isArray(data.items)&&data.items.length&&liveSlot.isConnected){
-        const v=data.items[0];
+        // RELEVANCE GATE: a live stream earns dashboard space ONLY if it
+        // matches the student's exam/subjects/weak chapters. A blank live
+        // slot is better than a random stream (master rule: no noise).
+        const p2=aip();
+        const target2=(p2&&p2.profile&&p2.profile.target)||"jeemain";
+        let weakNames=[];try{weakNames=chapterPriorities().slice(0,5).map(x=>x.name.toLowerCase());}catch(e){}
+        const mySubs=(p2&&p2.profile&&Object.keys(p2.profile.channels||{}).length?Object.keys(p2.profile.channels):SUBJECTS).map(s2=>s2.toLowerCase());
+        const relevant=data.items.find(v2=>{
+          const t2=(v2.title||"").toLowerCase();
+          const examOK=target2.startsWith("board")?/board|cbse|ncert|class 12|class 11/.test(t2):/jee|iit|mains|advanced/.test(t2);
+          const subOK=mySubs.some(s2=>t2.includes(s2.slice(0,5)))||/physics|chemistry|math/.test(t2);
+          const topicBoost=weakNames.some(w2=>t2.includes(w2.split(" ")[0].toLowerCase()));
+          return (examOK&&subOK)||topicBoost;
+        });
+        if(!relevant)return; // nothing relevant → show nothing
+        const v=relevant;
         liveSlot.innerHTML=`<div class="optrow" style="margin-top:8px;cursor:pointer;border-color:var(--red)">
           <div style="font-size:20px;flex:none;width:32px;text-align:center">🔴</div>
           <div style="flex:1;min-width:0"><b style="font-size:14px">LIVE abhi: ${esc(v.title.slice(0,60))}${v.title.length>60?"…":""}</b>
-            <div class="small muted">${esc(v.channel)} · ${esc(v.viewers||"")} — dekhna sahi rahega?</div></div>
+            <div class="small muted">${esc(v.channel)} · ${esc(v.viewers||"")} — tumhare exam se related hai</div></div>
           <span class="badge" style="color:var(--red)">WATCH</span></div>`;
         liveSlot.firstElementChild.onclick=()=>go("live");
       }
@@ -8575,8 +9229,12 @@ function launcherDock(){
   if(!isDefaultLauncher()){if(d)d.remove();return;}
   if(d)return;
   d=el("button",null,"📱");
-  d.id="launcherDock";d.title="Apps";
-  d.style.cssText="position:fixed;bottom:18px;right:16px;z-index:9000;width:52px;height:52px;border-radius:50%;"+
+  d.id="launcherDock";d.title="Apps";d.setAttribute("aria-label","Open app drawer");
+  /* SLOT FIX: the dock used to sit bottom-RIGHT at z-index 9000 — exactly
+     on top of the AI fab (bottom-right, z-55), hiding it completely in
+     launcher mode. The dock now owns the bottom-LEFT slot with a sane
+     z-index and safe-area support; the AI fab keeps bottom-right. */
+  d.style.cssText="position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:calc(16px + env(safe-area-inset-left,0px));z-index:54;width:52px;height:52px;border-radius:50%;"+
     "font-size:24px;border:1px solid var(--line);background:var(--panel);box-shadow:0 4px 16px rgba(0,0,0,.25);cursor:pointer";
   d.onclick=appDrawerOpen;
   document.body.appendChild(d);
@@ -8728,6 +9386,47 @@ function focusLockCard(){
   }
   return c;
 }
+/* ═══ END-OF-DAY REVIEW (evening feedback loop) ═══
+   After 20:00: planned vs actual, kya chhoota, kal ka adjustment — the
+   OBSERVE→MEASURE→ADAPT loop closing every single day. Data-only; no AI
+   call, no fake cheer. Renders nothing before evening or with no plan. */
+function endOfDayCard(){
+  const hr=new Date().getHours();
+  if(hr<20)return null;
+  const tk=todayKey(Date.now());
+  const p=aip();
+  const planned=p&&p.tasks?p.tasks.filter(t=>t.date===tk):[];
+  const doneT=planned.filter(t=>t.status==="done");
+  const missed=planned.filter(t=>t.status==="todo");
+  const q=S.dailyQuestions[tk]||0;
+  const tests=S.attempts.filter(a=>a.submittedAt&&todayKey(a.submittedAt)===tk);
+  if(!planned.length&&!q&&!tests.length)return null;   // nothing to review
+  const c=el("div","card");c.style.borderColor="var(--purple,#7a3ec8)";
+  const acc=tests.length?Math.round(tests.reduce((s2,a)=>s2+a.result.all.accuracy,0)/tests.length):null;
+  let adj="";
+  if(missed.length>=2)adj=`Kal ke liye: ${missed.length} bache tasks redistribute honge — kal par dher NahiN lagega, weak chapters pehle aayenge.`;
+  else if(missed.length===1)adj=`Bas 1 task bacha — kal subah sabse pehle wahi.`;
+  else if(planned.length&&doneT.length===planned.length)adj=`Sab planned kaam complete — kal plan thoda aage badhega. 🚀`;
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("moon")}</span>
+      <div><h3 style="margin:0">🌙 Aaj ka hisaab</h3>
+      <div class="small muted">Din khatam hone se pehle 2-minute ka honest review — yahi loop improvement banata hai.</div></div></div>
+    <div class="grid g3" style="margin-top:10px">
+      ${statCard("Planned",planned.length||"—")}
+      ${statCard("Complete",doneT.length+(planned.length?"/"+planned.length:""))}
+      ${statCard("Questions",q)}
+    </div>
+    ${acc!=null?`<div class="small" style="margin-top:8px">Aaj ke test(s): <b>${tests.length}</b> · accuracy <b>${acc}%</b></div>`:""}
+    ${missed.length?`<div class="small" style="margin-top:8px;color:var(--amber)"><b>Chhoota:</b> ${missed.slice(0,3).map(t=>esc(t.topic)).join(" · ")}${missed.length>3?` +${missed.length-3}`:""}</div>`:""}
+    ${adj?`<div class="small" style="margin-top:8px"><b>🔄 Kal ka adjustment:</b> ${esc(adj)}</div>`:""}`;
+  // one-tap: set tomorrow's first task intention from today's leftovers
+  if(missed.length){
+    const b=el("button","btn sm",ic("calendar")+" Kal subah isi se shuru karunga");
+    b.style.marginTop="10px";
+    b.onclick=()=>{S.intention={date:tomorrowKey(),kind:"plan",label:missed[0].topic+" ("+missed[0].kind+")",setAt:Date.now()};save();toast("Pakka 🤝 Kal dashboard par yahi sabse upar hoga");b.disabled=true;};
+    c.appendChild(b);
+  }
+  return c;
+}
 function weeklyReportCard(){
   const now=Date.now(), weekMs=7*86400000;
   const wk=S.attempts.filter(a=>a.submittedAt&&a.submittedAt>now-weekMs);
@@ -8802,9 +9501,12 @@ function viewDash(root){
   acts.append(two,qs,lb);hero.appendChild(acts);
   root.appendChild(hero);
   // ── launcher order: ONE next action → mentor → aaj ka mission ──
-  root.appendChild(nextBestActionCard());
-  root.appendChild(mentorPingCard());
-  root.appendChild(missionControlCard());
+  // ERROR ISOLATION (graceful degradation): one broken card must never
+  // blank the whole dashboard — the CBT/library below still work.
+  const safeCard=fn=>{try{const n=fn();if(n)root.appendChild(n);}catch(e){console.error("[dash-card]",e);}};
+  safeCard(nextBestActionCard);
+  safeCard(mentorPingCard);
+  safeCard(missionControlCard);
   // today's promise (implementation intention) — kept above everything
   intentionCards(root);
   // urgency order: an unfinished attempt outranks everything else on the page
@@ -8823,13 +9525,17 @@ function viewDash(root){
     statCard("Strong Subject",g.strong?g.strong.s:"—",g.strong?`<div class="small muted">${g.strong.acc}% accuracy</div>`:"")+
     statCard("Weak Subject",g.weak?g.weak.s:"—",g.weak?`<div class="small muted">${g.weak.acc}% accuracy</div>`:"")));
   const wr=weeklyReportCard(); if(wr)root.appendChild(wr);
+  const eod=endOfDayCard(); if(eod)root.appendChild(eod);
   // ---- motivation engine (the "mann nahi kar raha" toolkit) ----
   const gs=goalSetupCard(); if(gs)root.appendChild(gs);
   const mmGrid=el("div","grid g2");
   mmGrid.appendChild(momentumCard());
   mmGrid.appendChild(focusLockCard());
   root.appendChild(mmGrid);
-  root.appendChild(moodCard());
+  // DASHBOARD CLEANUP: the mood card is a "start somewhere" tool — once
+  // today's studying has clearly started it stops helping any decision,
+  // so it yields its space (clutter rule: every card must earn its place).
+  if(!S.studyLog[todayKey(Date.now())]&&(S.dailyQuestions[todayKey(Date.now())]||0)<5)root.appendChild(moodCard());
   // ---- consistency engine cluster (research-backed daily habits) ----
   const cb=comebackCard(); if(cb)root.appendChild(cb);
   const sr=sundayReviewCard(); if(sr)root.appendChild(sr);
@@ -9223,6 +9929,7 @@ function aiChatOpen(){
   const p=$("#aiChatPanel");if(!p)return;
   p.classList.remove("hide"); aiChatIsOpen=true;
   $("#aiChatBtn").classList.add("hide"); $("#aiChatBtn").classList.remove("pulse");
+  const _lbl=document.getElementById("aiFabLabel");if(_lbl)_lbl.remove(); // chip follows the fab
   document.body.style.overflow="hidden"; // lock background scroll behind the full-screen panel
   aiChatRenderMsgs(); aiChatRenderChips();
   // NOTE: deliberately not auto-focusing the input — on phones that pops the
@@ -9235,6 +9942,7 @@ function aiChatClose(){
   $("#aiChatBtn").classList.remove("hide");
   document.body.style.overflow="";
   $("#aiChatInput").blur();
+  try{aiFabContext();}catch(e){} // restore the contextual chip
 }
 /** Opens the chat prefilled with a question's full context — wired to the
  *  "Ask AI" buttons in the post-test review and mistake notebook. */
@@ -9299,6 +10007,18 @@ function buildStudentContext(){
     // THE MISSION — the mentor's north star (goal + urgency), even for new students
     if(S.goal&&S.goal.college)parts.push(`STUDENT'S DREAM: ${S.goal.college}${S.goal.why?` — reason: "${S.goal.why}"`:""}. This is YOUR mission too.`);
     if(S.settings.examDate){const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(dl>0)parts.push(`⏳ ONLY ${dl} days to JEE Main. Every reply should respect this urgency.`);}
+    // video exposure (last 7 days) — belongs BEFORE the new-student return:
+    // a student can watch lectures before ever taking a test, and the mentor
+    // must know (exposure ≠ mastery; push practice after watching)
+    try{
+      const wk2=Date.now()-7*86400000;
+      const vids=Object.values(videoLog()).filter(v=>(v.lastAt||0)>wk2);
+      if(vids.length){
+        const mins=Math.round(vids.reduce((s2,v)=>s2+v.watchedSec,0)/60);
+        const topics=[...new Set(vids.map(v=>v.topic).filter(Boolean))].slice(0,3);
+        parts.push(`Videos this week: ${vids.length} video(s), ${mins} min watched${topics.length?` (topics: ${topics.join(", ")})`:""} — watching alone isn't mastery, push questions on those topics.`);
+      }
+    }catch(e){}
     if(!done.length){parts.push("New student — no tests attempted yet. Encourage them to take their first mock from the Test Library.");return parts.join("\n");}
     const st=streakInfo();
     // accountability signals the mentor should PROACTIVELY raise
@@ -9339,6 +10059,17 @@ function buildStudentContext(){
     parts.push(`Streak: ${st.streak} day(s). Due spaced-review questions today: ${due}. Daily goal: ${S.settings.dailyGoal||20} questions.`);
     // chapter-level revision decay (smart revision)
     try{const rq=revisionQueue();if(rq.length)parts.push(`Chapters overdue for revision (memory decay): ${rq.slice(0,3).map(r=>`${r.name} (${r.idleDays}d untouched)`).join(", ")}.`);}catch(e){}
+
+    // confidence calibration (overconfidence is a mark-killer in JEE)
+    try{
+      const conf=done.slice(-5).filter(a=>a.confidence);
+      const over=conf.filter(a=>a.confidence==="high"&&a.result.all.accuracy<55).length;
+      const under=conf.filter(a=>a.confidence==="low"&&a.result.all.accuracy>=70).length;
+      if(over>=2)parts.push(`CALIBRATION ISSUE: overconfident in ${over} recent tests (felt sure, scored <55%) — coach them to verify answers before locking.`);
+      else if(under>=2)parts.push(`CALIBRATION: underconfident in ${under} recent tests (felt bad, scored ≥70%) — push them to attempt more questions.`);
+    }catch(e){}
+    // risk radar state — the mentor should lead with this when not green
+    try{const rr=riskRadar();if(rr.state!=="ok")parts.push(`PREPARATION RISK ${rr.state.toUpperCase()}: ${rr.reasons.join("; ")} — address this first.`);}catch(e){}
     // what the launcher is recommending right now — mentor should align with it
     try{const nba=nextBestAction();if(nba)parts.push(`App's current #1 recommended action: "${nba.title}" — reason: ${nba.why}`);}catch(e){}
     // trajectory + target
