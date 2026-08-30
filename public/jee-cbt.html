@@ -9863,12 +9863,21 @@ function weeklyReportCard(){
     .reduce((s2,[,v])=>s2+v,0);
   let focus="";try{const p=chapterPriorities()[0];if(p)focus=p.name+" ("+p.acc+"%)";}catch(e){}
   const c=el("div","card");
+  // cross-pillar week totals: focus minutes (distraction blocker) + videos
+  // watched (StudyTube) + questions — the "whole student" picture
+  let weekFocus=0;try{Object.entries(pomoLog()).forEach(([k,v])=>{if(new Date(k).getTime()>now-weekMs)weekFocus+=+v||0;});}catch(e){}
+  let weekVideos=0,weekVideoMin=0;try{Object.entries(videoLog()).forEach(([id,v])=>{if(v.lastAt&&v.lastAt>now-weekMs){weekVideos++;weekVideoMin+=Math.round((v.watchedSec||0)/60);}});}catch(e){}
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("news")}</span><h3 style="margin:0">Weekly Mentor Report</h3></div>
     <div class="grid g4" style="margin-top:10px">
       ${statCard("Tests taken",wk.length)}
       ${statCard("Avg marks",avg(wk)+(prev.length?` <span class="small ${dMarks>=0?"ok":"no"}" style="font-size:12px">${dMarks>=0?"+":""}${dMarks}</span>`:""))}
       ${statCard("Avg accuracy",acc(wk)+"%"+(prev.length?` <span class="small ${dAcc>=0?"ok":"no"}" style="font-size:12px">${dAcc>=0?"+":""}${dAcc}%</span>`:""))}
       ${statCard("Questions done",qDone)}
+    </div>
+    <div class="grid g3" style="margin-top:8px">
+      ${statCard("⏱️ Focus",weekFocus+" min")}
+      ${statCard("▶️ Videos",weekVideos+(weekVideoMin?` <span class="small muted" style="font-size:12px">${weekVideoMin}m</span>`:""))}
+      ${statCard("🎯 Ratio",(weekFocus||qDone)?Math.round(qDone/Math.max(1,weekFocus||0)*100)/100+" Q/min": "—")}
     </div>`;
   // full mentor-report lines: subjects, mistake pattern, backlog, revision, priorities
   const lines=[];
