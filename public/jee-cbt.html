@@ -5543,12 +5543,32 @@ function viewYouTube(root){
     if(!slot.children.length)slot.innerHTML="YouTube abhi reach nahi ho raha — thodi der baad try karo.";
   })();
 
-  // ── SAVED VIDEOS ──
+  // ── SAVED VIDEOS ── (subject-grouped playlists: organize, then watch)
   const sv=ytSaved();
   if(sv.length){
     const c=el("div","card");
-    c.innerHTML=`<div class="section-title"><span class="ico">${ic("bookmarkFill")}</span><h3 style="margin:0">❤️ Saved Videos</h3></div>`;
-    sv.slice(0,10).forEach(v=>c.appendChild(ytVideoRow(v,{topic:v.topic,subject:v.subject})));
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("bookmarkFill")}</span><h3 style="margin:0">❤️ Saved Videos</h3>
+      <div class="small muted" style="margin-left:auto">${sv.length} saved · apne playlists banao</div></div>`;
+    const subs=[...new Set(sv.map(v=>v.subject||"Other").filter(Boolean))];
+    const filts=subs.length>1?subs:[];
+    let curSub="All";
+    const listWrap=el("div");
+    const draw=()=>{
+      listWrap.innerHTML="";
+      const shown=curSub==="All"?sv:sv.filter(v=>(v.subject||"Other")===curSub);
+      if(!shown.length){listWrap.innerHTML=`<div class="small muted" style="margin-top:8px">Is subject mein abhi kuch save nahi.</div>`;return;}
+      shown.slice(0,10).forEach(v=>listWrap.appendChild(ytVideoRow(v,{topic:v.topic,subject:v.subject})));
+    };
+    if(filts.length){
+      const tb=el("div","row");tb.style.cssText="gap:6px;flex-wrap:wrap;margin-top:8px";
+      [["All","All subject"],...filts.map(s=>[s,s])].forEach(([k,label])=>{
+        const p=el("button","tagchip"+(k===curSub?" on":""),label);p.type="button";
+        p.onclick=()=>{curSub=k;tb.querySelectorAll(".tagchip").forEach(x=>x.classList.remove("on"));p.classList.add("on");draw();};
+        tb.appendChild(p);
+      });
+      c.appendChild(tb);
+    }
+    c.appendChild(listWrap);draw();
     root.appendChild(c);
   }
 
