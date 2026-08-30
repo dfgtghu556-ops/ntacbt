@@ -5476,6 +5476,16 @@ function allUniqueQuestions(){
    aware, depth-aware, trusted-educator scoring) — one engine, no duplicate
    logic. Official YouTube embeds only. */
 function ytSaved(){return S.ytSaved||(S.ytSaved=[]);}
+/* ═══ WATCH-LATER QUEUE ═══
+   A separate "saved but not yet watched" queue: quick tap in the player
+   to queue a video, distinct from Saved (which is for videos you want to
+   keep). Surfaced as its own card in the StudyTube view so a student's
+   "dekho baad me" pile is never buried. */
+function ytWatchLater(){return S.ytWatchLater||(S.ytWatchLater=[]);}
+function ytWatchLaterToggle(v,ctx){const q=ytWatchLater();const i=q.findIndex(x=>x.id===v.id);
+  if(i>=0){q.splice(i,1);return false;}
+  q.unshift({id:v.id,title:v.title||"",channel:v.channel||"",durationSec:v.durationSec||0,subject:ctx&&ctx.subject||v.subject||"",topic:ctx&&ctx.topic||v.topic||"",at:Date.now()});
+  if(q.length>60)q.length=60;return true;}
 /* ═══ NOTES-ON-VIDEO ═══
    In-app learning notes tied to a specific video (videoId → {text,title,
    channel,subject,topic,at,updated}). The student jots takeaways while the
@@ -5506,6 +5516,7 @@ function ytPlay(v,ctx){
     ${v.why?`<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}</div>`:""}
     <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
       <button class="btn ghost sm" data-save>${saved?"💔 Saved se hatao":"❤️ Save karo"}</button>
+      <button class="btn ghost sm" data-wl>${ytWatchLater().some(x=>x.id===v.id)?"⏳ Queue se hatao":"⏳ Watch later"}</button>
       ${ctx&&ctx.topic?`<button class="btn sm" data-practice>✍️ Ab practice karo: ${esc(String(ctx.topic).slice(0,24))}</button>`:""}
       <button class="btn ghost sm" data-note>📝 ${ytNotes()[v.id]&&String(ytNotes()[v.id].text||"").trim()?"Note karo / edit":"Note karo"}</button>
     </div>
@@ -5541,6 +5552,13 @@ function ytPlay(v,ctx){
     }));
     if(pool.length>=3)startDrill(ctx.topic+" · After-video practice",pool.sort(()=>Math.random()-0.5).slice(0,10),100);
     else{toast("Is topic ke questions abhi bank mein nahi — koi PYQ paper kholo");go("pyq");}
+  };
+  // watch-later queue wiring
+  const wlBtn=m.querySelector("[data-wl]");
+  if(wlBtn)wlBtn.onclick=e2=>{
+    const added=ytWatchLaterToggle(v,ctx||{});
+    e2.target.textContent=added?"⏳ Queue se hatao":"⏳ Watch later";
+    toast(added?"Watch Later mein add ho gaya":"Queue se hata diya");
   };
   // ── notes-on-video wiring ──
   const nbox=m.querySelector("[data-noteBox]"),nArea=m.querySelector("[data-noteArea]"),
@@ -5660,6 +5678,26 @@ function viewYouTube(root){
     }
     if(!slot.children.length)slot.innerHTML="YouTube abhi reach nahi ho raha — thodi der baad try karo.";
   })();
+
+  // ── WATCH LATER queue ── ("dekho baad me" pile, one tap to clear)
+  const wl=ytWatchLater();
+  if(wl.length){
+    const c=el("div","card");
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("clock")}</span><h3 style="margin:0">⏳ Watch Later</h3>
+      <div class="small muted" style="margin-left:auto">${wl.length} queue mein</div></div>`;
+    wl.slice(0,10).forEach(v=>{
+      const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title||v.id)}</b>
+        <div class="small muted">${esc(v.channel||"")}${v.durationSec?" · "+fmtTime(v.durationSec):""}</div></div>
+        <div style="flex:none;display:flex;gap:6px">
+          <button class="btn ghost sm" data-wlplay>▶️</button>
+          <button class="btn ghost sm" data-wlrm>✕</button></div>`;
+      row.querySelector("[data-wlplay]").onclick=()=>ytPlay(v,{topic:v.topic,subject:v.subject});
+      row.querySelector("[data-wlrm]").onclick=()=>{const q=ytWatchLater();const i=q.findIndex(x=>x.id===v.id);if(i>=0){q.splice(i,1);save();render(0);}};
+      c.appendChild(row);
+    });
+    root.appendChild(c);
+  }
 
   // ── SAVED VIDEOS ── (subject-grouped playlists: organize, then watch)
   const sv=ytSaved();
