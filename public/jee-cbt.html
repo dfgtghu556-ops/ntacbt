@@ -1318,6 +1318,7 @@ const ICONS={
   upload:'<path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/>',
   calendar:'<rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
   chart:'<path d="M3 3v18h18"/><path d="M7 15v-4M12 17V8M17 13v-3"/>',
+  gauge:'<path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 12l4-4"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
   notebook:'<rect x="5" y="3" width="15" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/>',
   formula:'<path d="M5 4h14M5 4l7 8-7 8M5 20h14"/>',
@@ -10232,6 +10233,44 @@ function viewDash(root){
     <div class="bar" style="margin-top:4px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
       <i style="display:block;height:100%;width:${focusPct}%;background:var(--green);border-radius:4px"></i></div>`;
   root.appendChild(dg);
+  // ── STUDY QUALITY SCORE: one honest 0-100 number for how you're studying ──
+  //     consistency (7-day questions) 40% · accuracy 25% · focus minutes 20% ·
+  //     revision adherence 15%. No competitor collapses 'how well am I
+  //     preparing' into a single honest number that rewards doing + focus +
+  //     review together, not just attempts.
+  try{
+    const now7=Date.now()-7*86400000;
+    let q7=0,activeDays7=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const k=todayKey(d);const n=S.dailyQuestions[k]||0;q7+=n;if(n>0)activeDays7++;}
+    const qGoal=Math.max(10,S.settings.dailyGoal||20);
+    const cons=Math.min(100,Math.round(q7/(qGoal*7)*100));
+    const acc=g.avgAcc!=null?Math.min(100,g.avgAcc):(g.total?Math.min(100,g.avgAcc):0);
+    const f7=Object.entries(pomoLog()).reduce((s,[k,v])=>(new Date(k).getTime()>now7?s+v:s),0);
+    const fGoal=Math.max(10,S.settings.focusGoal||100);
+    const focus=Math.min(100,Math.round(f7/(fGoal*7)*100));
+    let rev=0;try{const rq=revisionQueue();rev=Math.max(0,100-rq.length*8);}catch(e){rev=50;}
+    const qScore=Math.round(cons*0.4+acc*0.25+focus*0.20+rev*0.15);
+    const lvl=qScore>=85?["🔥","Elite prep","Zabardast — depth aur consistency dono. Bas yahi pace pakdo."]:
+      qScore>=70?["💪","Strong prep","Bahut achha! Ab weak chapters ko aur mark karo."]:
+      qScore>=50?["🌱","Building","Base solid hai — focus/consistency badhao, score upar jayega."]:
+      ["🚀","Starting up","Har din ka ek test + ek focus block pehla kadam hai."];
+    const sq=el("div","card");sq.style.cssText="border-color:color-mix(in srgb,var(--accent-text) 40%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent-text) 6%,var(--panel)),var(--panel))";
+    sq.innerHTML=`<div class="section-title"><span class="ico">${ic("gauge")}</span>
+      <div><h3 style="margin:0">📊 Study Quality Score</h3>
+      <div class="small muted">${lvl[1]} — consistency 40% · accuracy 25% · focus 20% · revision 15%</div></div></div>
+      <div class="row" style="align-items:center;gap:16px;margin-top:10px">
+        <div style="position:relative;width:84px;height:84px;flex:none">
+          <svg viewBox="0 0 36 36" style="width:84px;height:84px;transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--line)" stroke-width="3.6"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="${qScore>=70?"var(--green)":qScore>=50?"var(--amber)":"var(--red)"}" stroke-width="3.6"
+              stroke-dasharray="${qScore} 100" stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:grid;place-items:center"><b style="font-size:22px">${qScore}</b></div>
+        </div>
+        <div><div class="small" style="font-weight:700;font-size:16px">${lvl[0]} ${lvl[1]}</div>
+          <div class="small muted">${lvl[2]}</div>
+          <div class="small muted" style="margin-top:4px">Aaj tak: ${g.total} tests · ${q7} Q is hafte · ${Math.round(f7)} focus-min is hafte</div></div></div>`;
+    root.appendChild(sq);
+  }catch(e){}
   // ── Exam-day checklist — appears in the final window before the exam ──
   try{
     if(S.settings.examDate){
