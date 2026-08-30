@@ -9796,8 +9796,13 @@ function focusLockCard(){
       const ss=(S.focusSessions||[]).filter(s2=>s2.on===k);
       if(ss.length)out.days++;ss.forEach(s=>{out.mins+=s.mins||0;out.blocks+=s.distractions||0;});}
     return out;})();
+  // focus streak: consecutive days (from today) with a completed focus session
+  const focusStreak=(()=>{const fs=S.focusSessions||[];let n=0;const now=new Date();
+    for(let i=0;i<400;i++){const d=new Date(now);d.setDate(d.getDate()-i);const k=todayKey(d);
+      if(fs.some(s2=>s2.on===k)){n++;}else{if(i===0)continue;break;}}
+    return n;})();
   c.appendChild(el("div","row")).style.cssText="gap:8px;flex-wrap:wrap;margin-top:10px";
-  c.lastElementChild.innerHTML=`<span class="pill">🔥 ${wk.days}/7 din focused</span><span class="pill">⏱️ ${wk.mins} min is hafte</span><span class="pill n">🛡️ ${wk.blocks} distractions blocked</span>`;
+  c.lastElementChild.innerHTML=`<span class="pill">🔥 Focus streak: <b>${focusStreak}</b> din</span><span class="pill">⏱️ ${wk.mins} min is hafte</span><span class="pill n">🛡️ ${wk.blocks} distractions blocked</span>`;
   if(inApp&&!guardOn){
     const gb=el("button","btn sm",`⚙️ Focus Guard ON karo (1 baar)`);
     gb.style.marginTop="8px";
