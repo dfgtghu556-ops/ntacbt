@@ -6063,24 +6063,43 @@ function pyqChapterPool(){
   }));
   return byCh;
 }
+/* JEE-Main chapter weightage lookup (1-3) from the syllabus source of truth,
+ * so PYQ chapter practice surfaces "how many marks this chapter usually
+ * carries" — the same signal Mathongo shows as topic weightage. */
+function chapterWtName(subject,name){
+  const list=JEE_TOPICS[subject]||[];
+  for(const t of list){if(String(t[0]).toLowerCase()===String(name).toLowerCase())return t[2]||2;}
+  const sub=JEE_TOPICS[Object.keys(JEE_TOPICS)[0]]; // never throw
+  return sub&&sub[0]?2:2;
+}
+function wtStars(w){const n=Math.max(1,Math.min(3,w||2));return "★".repeat(n)+"☆".repeat(3-n);}
 function pyqPracticeCard(){
   const pool=pyqChapterPool();
-  const chapters=Object.entries(pool).sort((a,b)=>b[1].length-a[1].length);
+  // each chapter → subject (from its questions) so we can show JEE weightage
+  const chapters=Object.entries(pool).map(([name,qs])=>{
+    const subject=(qs[0]&&qs[0].subject)||"Physics";
+    return {name,subject,qs,wt:chapterWtName(subject,name)};
+  }).sort((a,b)=>(b.wt-a.wt)||(b.qs.length-a.qs.length));
   const c=el("div","card");
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">Chapter-wise PYQ Practice</h3></div>
-    <div class="small muted">The topper move: hammer one chapter's real past questions in a row. Questions come from the papers you've opened — start a few papers above to grow this bank (${chapters.reduce((s2,x)=>s2+x[1].length,0)} questions from ${chapters.length} chapters so far).</div>`;
+    <div class="small muted">The topper move: hammer one chapter's real past questions in a row. Questions come from the papers you've opened — start a few papers above to grow this bank (${chapters.reduce((s2,x)=>s2+x.qs.length,0)} questions from ${chapters.length} chapters so far).<br>
+    <span class="small" style="opacity:.85">${ic("star")} <b>Weightage</b> = kitne marks ki importance JEE Main mein (Mathongo-style): ★★★ sabse zyada.</span></div>`;
   if(chapters.length){
     const row=el("div","row");row.style.cssText="margin-top:12px;gap:8px";
     const sel=el("select");
-    chapters.forEach(([name,qs])=>{const o=el("option",null,`${name} (${qs.length} PYQs)`);o.value=name;sel.appendChild(o);});
+    chapters.forEach(({name,qs,wt})=>{const o=el("option",null,`${wtStars(wt)}  ${name}  (${qs.length} PYQs)`);o.value=name;sel.appendChild(o);});
     const n=el("select");
     [10,15,25].forEach(v=>{const o=el("option",null,v+" questions");o.value=v;n.appendChild(o);});
     const b=el("button","btn sm",ic("play")+" Start PYQ drill");
+    // live weightage line for the selected chapter (defaults to the first / highest)
+    const wtLine=el("div","small");wtLine.style.cssText="margin-top:8px;color:var(--accent-text)";
+    const showWt=()=>{const cur=chapters.find(x=>x.name===sel.value);if(cur)wtLine.innerHTML=`${ic("star")} <b>${esc(cur.name)}</b> — JEE weightage <b>${wtStars(cur.wt)}</b> (${cur.wt}/3) · ${cur.qs.length} PYQs is chapter ke`;};
+    sel.onchange=showWt;showWt();
     b.onclick=()=>{
       const qs=(pool[sel.value]||[]).slice().sort(()=>Math.random()-0.5).slice(0,+n.value);
       startDrill(sel.value+" · PYQ Drill",qs.map(q=>({q})),144); // 2.4 min/Q, exam pace
     };
-    row.append(sel,n,b);c.appendChild(row);
+    row.append(sel,n,b);c.appendChild(row);c.appendChild(wtLine);
   }
   return c;
 }
