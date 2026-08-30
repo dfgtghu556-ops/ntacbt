@@ -9785,6 +9785,14 @@ function focusLockCard(){
     row.appendChild(b);
   });
   c.appendChild(row);
+  // weekly focus summary — "did my blocking work?" (Forest/AppBlock style reward)
+  const wk=(()=>{const out={mins:0,blocks:0,days:0};const now=new Date();
+    for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()-i);const k=todayKey(d);
+      const ss=(S.focusSessions||[]).filter(s2=>s2.on===k);
+      if(ss.length)out.days++;ss.forEach(s=>{out.mins+=s.mins||0;out.blocks+=s.distractions||0;});}
+    return out;})();
+  c.appendChild(el("div","row")).style.cssText="gap:8px;flex-wrap:wrap;margin-top:10px";
+  c.lastElementChild.innerHTML=`<span class="pill">🔥 ${wk.days}/7 din focused</span><span class="pill">⏱️ ${wk.mins} min is hafte</span><span class="pill n">🛡️ ${wk.blocks} distractions blocked</span>`;
   if(inApp&&!guardOn){
     const gb=el("button","btn sm",`⚙️ Focus Guard ON karo (1 baar)`);
     gb.style.marginTop="8px";
