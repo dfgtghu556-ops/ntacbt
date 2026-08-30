@@ -5632,7 +5632,8 @@ function ytPlay(v,ctx){
         ${ytNotes()[v.id]&&String(ytNotes()[v.id].text||"").trim()?`<button class="btn ghost sm" data-noteDel>🗑️ Delete</button>`:""}
         <span class="small muted" data-noteOk style="margin-left:auto"></span>
       </div>
-    </div></div>`;
+    </div>
+    <div data-related style="margin-top:12px"></div></div>`;
   document.body.appendChild(m);
   m.querySelector("[data-x]").onclick=()=>{vwEnd();m.remove();if(route==="youtube")render(0);};
   m.querySelector("[data-save]").onclick=e2=>{
@@ -5674,6 +5675,28 @@ function ytPlay(v,ctx){
     setOk("✓ Note saved");
   };
   if(nDel)nDel.onclick=()=>{ytNoteDel(v.id);nArea.value="";setOk("Note delete ho gaya.");m.querySelector("[data-note]").textContent="📝 Note karo";};
+  // ── related videos: continue on the same topic after this lesson ──
+  const rel=m.querySelector("[data-related]");
+  if(rel&&(ctx&&ctx.topic||v.topic)){
+    const topic=ctx&&ctx.topic||v.topic,sub=ctx&&ctx.subject||v.subject||"";
+    const _p=aip()||{},_pl=_p.profile||{};
+    const _lang=_pl.language||"hinglish",_target=_pl.target||"jeemain";
+    rel.innerHTML=`<div class="section-title"><span class="ico">${ic("play")}</span><h3 style="margin:0;font-size:14px">🔁 Aur videos is topic par</h3></div>`;
+    const slot=el("div");rel.appendChild(slot);
+    (async()=>{
+      try{
+        const items=await ytFetch({topic,subject:sub||"Physics",language:_lang,
+          kind:"learn",depth:"lecture",target:_target,minMinutes:5,maxMinutes:300,channel:""});
+        // exclude the currently-playing video
+        const fresh=items.filter(x=>x.id!==v.id).slice(0,3);
+        if(fresh.length&&m.isConnected){
+          fresh.forEach(x=>slot.appendChild(ytVideoRow(x,{topic,subject:sub||x.subject})));
+        }else if(m.isConnected){
+          slot.innerHTML=`<div class="small muted" style="margin-top:6px">Kuch aur nahi mila is topic par — naya search try karo.</div>`;
+        }
+      }catch(e){}
+    })();
+  }
 }
 async function ytFetch(params){
   try{
