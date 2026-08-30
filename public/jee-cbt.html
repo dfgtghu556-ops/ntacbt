@@ -3673,6 +3673,29 @@ const ADV_EXTRA_TOPICS={
   Chemistry:[["Qualitative Salt Analysis",3,3],["Stereochemistry (Advanced)",3,2]],
   Mathematics:[["Functions & Functional Equations (Adv)",3,2],["Inequalities & Max-Min (Adv)",3,2]]
 };
+
+/* ===== CBSE 2027 (Session 2026-27) - OFFICIAL Class 12 syllabus =====
+   The CBSE-published rationalised chapter list for the 2026-27 session
+   (2027 Board exams). Distinct from the legacy board12 NCERT list - this
+   is the CURRENT official board curriculum. Tuples =
+   [name, difficulty 1-3, weightage 1-3, class]. PCM only (English is not
+   part of this board target - it stays exclusive to the legacy board12). */
+const CBSE27_TOPICS={
+  Physics:[["Electric Charges and Fields",2,3,12],["Electrostatic Potential and Capacitance",2,3,12],
+    ["Current Electricity",2,3,12],["Moving Charges and Magnetism",3,3,12],["Magnetism and Matter",1,1,12],
+    ["Electromagnetic Induction",3,3,12],["Alternating Current",2,2,12],["Electromagnetic Waves",1,2,12],
+    ["Ray Optics and Optical Instruments",2,3,12],["Wave Optics",2,2,12],["Dual Nature of Radiation and Matter",1,2,12],
+    ["Atoms",1,2,12],["Nuclei",1,2,12],["Semiconductor Electronics: Materials, Devices and Simple Circuits",1,3,12]],
+  Chemistry:[["Solutions",2,2,12],["Electrochemistry",2,3,12],["Chemical Kinetics",2,2,12],
+    ["The d- and f-Block Elements",2,2,12],["Coordination Compounds",3,3,12],["Haloalkanes and Haloarenes",2,2,12],
+    ["Alcohols, Phenols and Ethers",2,2,12],["Aldehydes, Ketones and Carboxylic Acids",3,3,12],
+    ["Amines",2,2,12],["Biomolecules",1,2,12]],
+  Mathematics:[["Relations and Functions",1,2,12],["Inverse Trigonometric Functions",2,2,12],
+    ["Matrices",2,3,12],["Determinants",2,3,12],["Continuity and Differentiability",3,3,12],
+    ["Applications of Derivatives",2,2,12],["Integrals",3,3,12],["Applications of the Integrals",2,1,12],
+    ["Differential Equations",2,2,12],["Vector Algebra",2,3,12],["Three Dimensional Geometry",2,3,12],
+    ["Linear Programming",2,1,12],["Probability",2,2,12]]
+};
 /* PREREQUISITE MAP — Class 12 chapter → the Class 11 concept it leans on.
    Used by PREREQUISITE MODE: board-12 plans stay pure Class 12, but when a
    chapter has a known Class 11 dependency we surface a SHORT revision
@@ -3699,6 +3722,7 @@ const PREREQ_MAP={
  *  CLASS-AWARE FIX: board12 = ONLY class-12 chapters, board11 = ONLY class-11.
  *  JEE targets keep both years because that IS the JEE syllabus. */
 function topicsForTarget(target){
+  if(target==="cbse27") return JSON.parse(JSON.stringify(CBSE27_TOPICS));
   let base=JSON.parse(JSON.stringify(JEE_TOPICS));
   if(target==="jeeadv"){
     Object.keys(ADV_EXTRA_TOPICS).forEach(s=>{base[s]=base[s].concat(ADV_EXTRA_TOPICS[s]);});
@@ -4081,7 +4105,7 @@ function aipOpenLesson(t){
       ${prog&&prog.done?`<div class="small" style="margin-top:6px;color:var(--green)">✅ Ye video tum pehle poora dekh chuke ho — ab iski PRACTICE zyada kaam degi.</div>`:""}
       <div class="small" style="margin-top:8px"><b>${esc(v.title)}</b></div>
       <div class="small muted">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec/(aip().profile.speed||1.25)))} at ${aip().profile.speed}×)</div>
-      ${v.why?`<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target||"")==="board12"?" · board-level fit":(p.profile.target||"")==="jeeadv"?" · Advanced-level fit":" · JEE Main-level fit"}</div>`:""}`;
+      ${v.why?`<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target||"")==="board12"||(p.profile.target||"")==="cbse27"?" · board-level fit":(p.profile.target||"")==="jeeadv"?" · Advanced-level fit":" · JEE Main-level fit"}</div>`:""}`;
   };
   aipFindVideo(t,(items,fallback)=>{
     if(!m.isConnected)return;
@@ -4109,7 +4133,8 @@ function aipWizard(root){
     // EXAM TARGET — decides video search style + which chapters get priority
     const tgt=el("div");tgt.style.marginTop="12px";tgt.appendChild(el("h4",null,"Target exam"));
     const tgrid=el("div","row");tgrid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:8px";
-    [["jeemain","🎯 JEE Main"],["jeeadv","🏔️ JEE Main + Advanced"],["board12","📚 Class 12 Boards"],["board11","📖 Class 11 (foundation)"]].forEach(([v,l])=>{
+    [["jeemain","🎯 JEE Main"],["jeeadv","🏔️ JEE Main + Advanced"],["board12","📚 Class 12 Boards"],["cbse27","📘 Class 12 · CBSE 2027"],["board11","📖 Class 11 (foundation)"]].forEach(([v,l])=>{
+
       const on=(w.target||"jeemain")===v;
       const b=el("button","btn sm"+(on?"":" ghost"),l);
       b.onclick=()=>{w.target=v;render(0);};
@@ -4120,7 +4145,7 @@ function aipWizard(root){
     // ── OFFICIAL SYLLABUS: see the real NTA/CBSE chapter list for the chosen
     //    target before you commit — the plan is built from exactly this. ──
     const cur=(w.target||"jeemain");
-    const tgtLabel={jeemain:"JEE Main (NTA official)",jeeadv:"JEE Main + Advanced (NTA + JEE Adv official)",board12:"Class 12 Boards (CBSE/NCERT official)",board11:"Class 11 (CBSE/NCERT official)"}[cur];
+    const tgtLabel={jeemain:"JEE Main (NTA official)",jeeadv:"JEE Main + Advanced (NTA + JEE Adv official)",board12:"Class 12 Boards (CBSE/NCERT official)",cbse27:"Class 12 Boards · CBSE 2027 (official 2026-27)",board11:"Class 11 (CBSE/NCERT official)"}[cur];
     const sylTog=el("button","btn ghost sm");sylTog.type="button";sylTog.style.cssText="margin-top:10px";
     sylTog.innerHTML=`${ic("book")} 📖 Official syllabus — ${tgtLabel} ▾`;
     let sylOpen=false;
@@ -4165,7 +4190,7 @@ function aipWizard(root){
     const subjList=w.subjects.slice();
     // board mode: English becomes selectable right here
     if((w.target==="board12"||w.target==="board11")&&SYL.English&&!subjList.includes("English"))subjList.push("English");
-    c.innerHTML=H("Choose your topics",(w.target==="jeeadv"?"JEE Advanced syllabus (extra advanced chapters included). ":w.target&&w.target.startsWith("board")?"Board syllabus — English bhi neeche mil jayegi. ":"")+"Full syllabus, or untick chapters you've already finished.");
+    c.innerHTML=H("Choose your topics",(w.target==="cbse27"?"CBSE 2027 official (2026-27) syllabus. ":(w.target==="jeeadv"?"JEE Advanced syllabus (extra advanced chapters included). ":w.target&&w.target.startsWith("board")?"Board syllabus — English bhi neeche mil jayegi. ":""))+"Full syllabus, or untick chapters you've already finished.");
     subjList.forEach(s=>{
       if(!SYL[s])return;
       const isExtra=!w.subjects.includes(s);
@@ -5816,7 +5841,7 @@ function viewYouTube(root){
   const p=aip();
   const target=(p&&p.profile&&p.profile.target)||"jeemain";
   const lang=(p&&p.profile&&p.profile.language)||"hinglish";
-  const targetLabel={jeemain:"JEE Main",jeeadv:"JEE Advanced",board12:"Class 12 Board",board11:"Class 11"}[target];
+  const targetLabel={jeemain:"JEE Main",jeeadv:"JEE Advanced",board12:"Class 12 Board",cbse27:"Class 12 · CBSE 2027",board11:"Class 11"}[target];
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("play")}</span>
     <div><h2 style="margin:0">▶️ YouTube — Study Hub</h2>
     <div class="small muted">Padhai ke videos yahin, app ke andar — tumhare target (<b>${esc(targetLabel)}</b>) aur weak chapters ke hisaab se. Watch-time har video ka alag track hota hai.</div></div></div>`));
@@ -5826,7 +5851,7 @@ function viewYouTube(root){
   sc.innerHTML=`<div class="section-title"><span class="ico">${ic("search")}</span><h3 style="margin:0">Search</h3></div>`;
   const srow=el("div","row");srow.style.cssText="margin-top:10px;gap:8px;flex-wrap:wrap";
   const q=el("input");q.type="text";q.placeholder="Topic ya chapter — e.g. Rotational Motion, GOC…";q.style.cssText="flex:1;min-width:200px";
-  const exSel=el("select");[["","Exam: "+targetLabel+" (default)"],["jeemain","JEE Main"],["jeeadv","JEE Advanced"],["board12","Board 12"],["board11","Class 11"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;exSel.appendChild(o);});
+  const exSel=el("select");[["","Exam: "+targetLabel+" (default)"],["jeemain","JEE Main"],["jeeadv","JEE Advanced"],["board12","Board 12"],["cbse27","Board CBSE 2027"],["board11","Class 11"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;exSel.appendChild(o);});
   const subSel=el("select");[["","Subject: Auto"],...SUBJECTS.map(s=>[s,s])].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;subSel.appendChild(o);});
   const kindSel=el("select");[["learn|lecture","Lecture"],["learn|oneshot","One Shot"],["revision|lecture","Revision"],["practice|lecture","PYQ / Problem Solving"],["advanced|detailed","Advanced Problems"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;kindSel.appendChild(o);});
   const go2=el("button","btn sm",ic("search")+" Search");
@@ -9452,7 +9477,7 @@ function prepScore(){
   // readiness is TARGET-specific: same data, but labeled for the exam the
   // student is actually preparing for (Board / JEE Main / JEE Advanced)
   const target=(p&&p.profile&&p.profile.target)||"jeemain";
-  const readinessLabel={jeemain:"JEE Main readiness",jeeadv:"JEE Advanced readiness",board12:"Board readiness",board11:"Class 11 readiness"}[target]||"Readiness";
+  const readinessLabel={jeemain:"JEE Main readiness",jeeadv:"JEE Advanced readiness",board12:"Board readiness",cbse27:"CBSE 2027 Board readiness",board11:"Class 11 readiness"}[target]||"Readiness";
   return {score,parts,weakest:weakest[0],target,readinessLabel};
 }
 /* ═════════ NEXT BEST ACTION — "abhi sabse zaroori kya hai" ═════════
@@ -9763,7 +9788,7 @@ function missionControlCard(){
         const mySubs=(p2&&p2.profile&&Object.keys(p2.profile.channels||{}).length?Object.keys(p2.profile.channels):SUBJECTS).map(s2=>s2.toLowerCase());
         const relevant=data.items.find(v2=>{
           const t2=(v2.title||"").toLowerCase();
-          const examOK=target2.startsWith("board")?/board|cbse|ncert|class 12|class 11/.test(t2):/jee|iit|mains|advanced/.test(t2);
+          const examOK=target2==="board12"||target2==="board11"||target2==="cbse27"?/board|cbse|ncert|class 12|class 11/.test(t2):/jee|iit|mains|advanced/.test(t2);
           const subOK=mySubs.some(s2=>t2.includes(s2.slice(0,5)))||/physics|chemistry|math/.test(t2);
           const topicBoost=weakNames.some(w2=>t2.includes(w2.split(" ")[0].toLowerCase()));
           return (examOK&&subOK)||topicBoost;

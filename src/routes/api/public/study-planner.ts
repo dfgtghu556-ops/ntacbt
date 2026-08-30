@@ -79,6 +79,7 @@ function parseDuration(s: string): number {
  *  videos depending on what the student is actually preparing for. */
 function targetWord(target: string): string {
   if (target === "board12") return " class 12 boards cbse";
+  if (target === "cbse27") return " class 12 boards cbse";
   if (target === "board11") return " class 11 cbse";
   if (target === "jeeadv") return " jee advanced";
   return " jee main";
@@ -89,7 +90,7 @@ function buildQueries(topic: string, subject: string, language: string, kind: st
     language === "hinglish" ? " hindi english" : "";
   const tw = targetWord(target);
   let kindWords: string[];
-  if (kind === "practice") kindWords = [`important questions practice${tw}`, target.startsWith("board") ? "board exam questions solved" : "pyq questions solved" + tw];
+  if (kind === "practice") kindWords = [`important questions practice${tw}`, (target.startsWith("board")||target==="cbse27") ? "board exam questions solved" : "pyq questions solved" + tw];
   else if (kind === "revision") kindWords = [`quick revision short notes${tw}`, "revision one shot mind map"];
   else if (kind === "advanced") kindWords = ["jee advanced level questions", "advanced problems tricky"];
   else if (depth === "oneshot") kindWords = [`one shot complete${tw}`, "one shot revision full chapter"];
@@ -224,7 +225,7 @@ function rank(raw: RawItem[], topic: string, language: string, kind: string, max
       if (depth === "oneshot" && v.durationSec > 12600) { score -= 15; why.push("too long for crash"); }
     }
     // exam-level fit — matched to the student's TARGET, not generic
-    if (target === "board12" || target === "board11") {
+    if (target === "board12" || target === "board11" || target === "cbse27") {
       if (/board|cbse|ncert|class 12|class 11/.test(tl)) { score += 12; why.push("board-level"); }
       if (/jee advanced|olympiad/.test(tl)) { score -= 10; why.push("too advanced for boards"); }
     } else if (target === "jeeadv") {
@@ -273,7 +274,7 @@ export const Route = createFileRoute("/api/public/study-planner")({
         const language = ["en", "hi", "hinglish"].includes(body.language || "") ? (body.language as string) : "en";
         const kind = ["learn", "practice", "revision", "advanced"].includes(body.kind || "") ? (body.kind as string) : "learn";
         const depth = ["oneshot", "lecture", "detailed"].includes(body.depth || "") ? (body.depth as string) : "lecture";
-        const target = ["jeemain", "jeeadv", "board12", "board11"].includes(body.target || "") ? (body.target as string) : "jeemain";
+        const target = ["jeemain", "jeeadv", "board12", "board11", "cbse27"].includes(body.target || "") ? (body.target as string) : "jeemain";
         const maxMinutes = Math.min(600, Math.max(10, Number(body.maxMinutes) || 180));
         const minMinutes = Math.min(300, Math.max(0, Number(body.minMinutes) || 0));
         const channel = String(body.channel || "").slice(0, 60).trim(); // Dream Team preference (optional)
