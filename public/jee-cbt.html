@@ -8613,6 +8613,24 @@ function viewNotebook(root){
   bar.firstElementChild.appendChild(el("div","row"));
   /* AI mistake analysis entry point (only when there are untagged mistakes) */
   bar.firstElementChild.lastElementChild.append(practice,practiceDue);
+  // drill by mistake type — attack ONE error-pattern at a time
+  const tagCounts={};MISTAKE_TAGS.forEach(([k])=>tagCounts[k]=0);
+  list.forEach(x=>{const t=S.qtags[x.q.id];if(t&&tagCounts[t]!=null)tagCounts[t]++;});
+  const tagDrills=Object.entries(tagCounts).filter(([,n])=>n>0);
+  if(tagDrills.length){
+    const trow=el("div","row");trow.style.cssText="gap:6px;flex-wrap:wrap;margin-top:8px";
+    trow.appendChild(el("span","small muted","Drill by mistake type:"));
+    tagDrills.forEach(([k,n])=>{
+      const lbl=(MISTAKE_TAG_LABEL[k]||k).replace(/^[^ ]+ /,"");
+      const b=el("button","tagchip",`${lbl} (${n})`);b.type="button";
+      b.onclick=()=>{
+        const pool=list.filter(x=>S.qtags[x.q.id]===k);
+        startDrill(lbl+" Fix · "+fmtDate(Date.now()),pool.slice(0,10),100);
+      };
+      trow.appendChild(b);
+    });
+    bar.appendChild(trow);
+  }
 
   // ---- filters: subject / chapter / tag / due + free-text search ----
   const NBF=viewNotebook._f||(viewNotebook._f={sub:"All",ch:"All",tag:"All",due:"All",q:""});
