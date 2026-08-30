@@ -9944,6 +9944,21 @@ function focusLockCard(){
     return n;})();
   c.appendChild(el("div","row")).style.cssText="gap:8px;flex-wrap:wrap;margin-top:10px";
   c.lastElementChild.innerHTML=`<span class="pill">🔥 Focus streak: <b>${focusStreak}</b> din</span><span class="pill">⏱️ ${wk.mins} min is hafte</span><span class="pill n">🛡️ ${wk.blocks} distractions blocked</span>`;
+  // ── Focus Grove (Forest-style gamification): coins per focus block, and a
+  //    growing grove of trees. Focus minutes → coins → trees, so every
+  //    completed block visibly grows something instead of vanishing. ──
+  const totalMin=(S.focusSessions||[]).reduce((s2,x)=>s2+(x.mins||0),0);
+  const coins=Math.floor(totalMin/25);            // 1 coin per full 25-min block
+  const trees=Math.floor(coins/3);                // 1 tree per 3 coins
+  const grove=el("div");grove.style.cssText="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)";
+  grove.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+      <div><span class="small" style="font-weight:800">🌳 Tumhara Focus Grove</span>
+        <div class="small muted" style="margin-top:2px">Har 25-min focus block = 1 🪙 · har 3 coins = 1 🌳</div></div>
+      <div style="text-align:right;white-space:nowrap"><span class="small" style="font-weight:800;color:var(--accent-text)">🪙 ${coins}</span>
+        <span class="small muted"> · </span><span class="small" style="font-weight:800;color:var(--green)">🌳 ${trees}</span></div></div>
+      <div class="small" style="margin-top:8px;font-size:20px;letter-spacing:2px">${"🌱".repeat(Math.min(8,coins%3))}${"🌿".repeat(Math.min(8,Math.floor(coins/3)))}\u2003${"🌳".repeat(Math.min(12,trees))}</div>
+      <div class="small muted" style="margin-top:6px">${coins>=30?"Kya bada jungle! 🎉 Consistent deep work hi selection layegi.":coins>=15?"Grove grow ho raha hai — aage badho, rukna mat!":"Pehle kuch trees ugao — har focus block count hota hai."}</div>`;
+  c.appendChild(grove);
   if(inApp&&!guardOn){
     const gb=el("button","btn sm",`⚙️ Focus Guard ON karo (1 baar)`);
     gb.style.marginTop="8px";
