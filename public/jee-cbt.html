@@ -5345,7 +5345,9 @@ function customMockCard(){
     w.appendChild(el("label","small muted",label));w.appendChild(node);return w;};
   const cnt=el("input");cnt.type="number";cnt.min=5;cnt.max=75;cnt.value=15;cnt.style.cssText="width:70px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)";
   const secQ=el("select");[["exam","Exam pace (2.4 min/Q)"],["easy","Easy (3 min/Q)"],["medium","Medium (2 min/Q)"],["hard","Hard (90 s/Q)"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;secQ.appendChild(o);});
-  ctrl.append(field("Questions",cnt),field("Pace",secQ));
+  // difficulty mix: choose chapters' difficulty weighting for this mock
+  const diffQ=el("select");[["balanced","Difficulty: Balanced"],["easy","Difficulty: Easy first"],["hard","Difficulty: Hard first"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;diffQ.appendChild(o);});
+  ctrl.append(field("Questions",cnt),field("Pace",secQ),field("Mix",diffQ));
   const b=el("button","btn",ic("play")+" Build & Start mock");
   const info=el("div","small muted");info.style.marginTop="8px";
   b.onclick=()=>{
@@ -5358,7 +5360,21 @@ function customMockCard(){
     if(!picked.length){toast("Kam se kam ek chapter select karo");return;}
     const n=Math.max(5,Math.min(75,+cnt.value||15));
     const secs={exam:144,easy:180,medium:120,hard:90}[secQ.value]||144;
-    const items=picked.slice().sort(()=>Math.random()-0.5).slice(0,n);
+    // difficulty mix: tag each picked question with its chapter's JEE
+    // difficulty (1-3), then bias the random pick toward easy/hard chapters.
+    const mix=diffQ.value||"balanced";
+    const tagged=picked.map(x=>{const s=x.q.subject||"Physics",ch=x.q.chapter||x.q.subject||"Misc";return {q:x.q,ch,sub:s,diff:chapterDiffName(s,ch)};});
+    let items;
+    if(mix==="easy"||mix==="hard"){
+      const want=mix==="easy"?1:3;
+      // two passes: desired-difficulty chapters first, then the rest
+      const wanted=tagged.filter(t=>t.diff===want).sort(()=>Math.random()-0.5);
+      const others=tagged.filter(t=>t.diff!==want).sort(()=>Math.random()-0.5);
+      items=[...wanted,...others].slice(0,n).map(t=>{return {q:t.q};});
+      if(items.length<n){items=tagged.sort(()=>Math.random()-0.5).slice(0,n).map(t=>({q:t.q}));}
+    }else{
+      items=picked.slice().sort(()=>Math.random()-0.5).slice(0,n);
+    }
     const name="Custom Mock · "+items.reduce((m,x)=>m+((x.q.subject||"")[0]||""),"")+" · "+fmtDate(Date.now());
     startDrill(name,items,secs);
   };
@@ -6202,6 +6218,13 @@ function chapterWtName(subject,name){
   return sub&&sub[0]?2:2;
 }
 function wtStars(w){const n=Math.max(1,Math.min(3,w||2));return "★".repeat(n)+"☆".repeat(3-n);}
+/* Chapter difficulty lookup (1-3) from the syllabus source of truth — used
+ * to mix a custom mock's difficulty from the difficulty of its chapters. */
+function chapterDiffName(subject,name){
+  const list=JEE_TOPICS[subject]||[];
+  for(const t of list){if(String(t[0]).toLowerCase()===String(name).toLowerCase())return t[1]||2;}
+  return 2;
+}
 function pyqPracticeCard(){
   const pool=pyqChapterPool();
   // each chapter → subject (from its questions) so we can show JEE weightage
