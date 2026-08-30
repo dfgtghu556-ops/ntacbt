@@ -4339,6 +4339,23 @@ function aipToday(root){
   up.innerHTML=`<div class="section-title"><span class="ico">${ic("calendar")}</span>
     <div><h3 style="margin:0">Aage ke 7 din — aage badho 🚀</h3>
     <div class="small muted">${todayLeft===0?"Aaj ka sab ho gaya! Kal ka kaam AAJ karke lead banao — har task khul sakta hai.":"Kisi bhi din ka task pehle karna ho to yahin se kholo."}</div></div></div>`;
+  // ── weekly load bars: aatne wale 7 din ka study load ek nazar mein ──
+  (()=>{
+    const days7=[];let maxEff=1;
+    for(let i=0;i<7;i++){const dk=aipAddDays(tk,i);const ds=p.tasks.filter(t=>t.date===dk&&t.status==="todo");
+      const eff=ds.reduce((s2,t)=>s2+aipEff(t.estMin,p.profile),0);days7.push({dk,eff,done:p.tasks.filter(t=>t.date===dk&&t.status==="done").length});if(eff>maxEff)maxEff=eff;}
+    const wl=el("div");wl.style.cssText="margin-top:10px";
+    wl.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-end;gap:6px">${
+      days7.map((d,i)=>{
+        const lbl=i===0?"Aaj":i===1?"Kal":["S","M","T","W","T","F","S"][new Date(d.dk+"T00:00:00").getDay()];
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span class="small muted" style="font-size:10.5px">${d.eff?Math.round(d.eff/60):""}</span>
+          <div style="width:100%;height:46px;background:var(--line);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden">
+            <div style="width:100%;height:${d.eff?Math.max(8,pct(d.eff,maxEff)):0}%;background:${d.done&&!d.eff?"var(--green)":"linear-gradient(180deg,var(--blue-l),var(--purple))"};border-radius:4px"></div></div>
+          <b class="small muted" style="font-size:10.5px;font-weight:${i===0||i===1?"800":"600"};color:${i===0?"var(--accent-text)":"var(--muted)"}">${lbl}</b></div>`;}).join("")}</div>`;
+    wl.appendChild(el("div","small muted",`Har bar = us din ka total study load (ghante). ${days7.reduce((s,d)=>s+d.eff,0)?Math.round(days7.reduce((s,d)=>s+d.eff,0)/60)+" ghante total in 7 din":"— is week ke plan mein abhi load nahi."}`));
+    up.appendChild(wl);
+  })();
   let firstExpanded=false;
   for(let i=1;i<=7;i++){
     const dk=aipAddDays(tk,i),dts=p.tasks.filter(t=>t.date===dk&&t.status==="todo");
