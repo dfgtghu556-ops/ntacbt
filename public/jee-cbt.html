@@ -5382,9 +5382,29 @@ function customMockCard(){
   });
   const c=el("div","card");c.style.borderColor="var(--blue)";
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("settings")}</span>
-    <div><h3 style="margin:0">🧪 Custom Mock Builder</h3>
-    <div class="small muted">Apni question bank se apna khud ka timed paper banao — chapters chuno, count/time set karo, exam engine mein chalao. ${bank.length} questions available.</div></div></div>`;
+    <div><h3 style="margin:0">🧪 Mock Builder</h3>
+    <div class="small muted">Apni question bank se timed paper banao — NTA-ratio full mock ya apna custom (chapters, count, difficulty, pace). ${bank.length} questions available.</div></div></div>`;
+  // ── Full-Syllabus NTA Mock: one tap, real NTA 75-Q ratio ──
+  const nta=el("div","card");nta.style.cssText="margin:0 0 10px;border-color:color-mix(in srgb,var(--green) 40%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--green) 7%,var(--panel)),var(--panel))";
+  const hasSubs=SUBJECTS.filter(s=>Object.keys(bySub[s]||{}).length);
+  const ntaOK=hasSubs.length>0;
+  nta.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+      <div><b>🎯 Full-Syllabus NTA Mock</b>
+        <div class="small muted">Real JEE Main pattern: 25 Q per subject (75 total), 3 hours, +4/−1, numerical no-negative — from YOUR bank.</div></div></div>
+      ${ntaOK?`<button class="btn green sm" data-nta style="margin-top:8px">${ic("play")} Build full NTA mock (75 Q)</button>`:`<div class="small muted" style="margin-top:6px">Pehle kisi subject ke questions bank mein chahiye.</div>`}`;
+  if(ntaOK)nta.querySelector("[data-nta]").onclick=()=>{
+    const secs=144; // 2.4 min/Q = 180 min for 75 Q
+    const picked=[];const seen=new Set();
+    SUBJECTS.forEach(s=>{
+      const pool=bank.filter(({q})=>(q.subject||"Physics")===s).map(({q})=>({q}));
+      pool.sort(()=>Math.random()-0.5);
+      let n2=0;for(const x of pool){if(n2>=25)break;if(seen.has(x.q.id))continue;seen.add(x.q.id);picked.push(x);n2++;}
+    });
+    if(picked.length<15){toast("Kam se kam 15 questions bank mein chahiye");return;}
+    startDrill("Full NTA Mock · "+fmtDate(Date.now()),picked.slice(0,75),secs);
+  };
   const wrap=el("div");wrap.style.marginTop="12px";
+  wrap.appendChild(nta);
   const avail=bank.length?Object.keys(bySub).length:0;
   if(!bank.length){
     wrap.appendChild(el("div","small muted",`Pehle koi test kholo ya PDF upload karo — phir yahan apna custom mock banao.`));
