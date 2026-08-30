@@ -56,6 +56,9 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(140deg,var(--blue-l),var(--blue-d));color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;font-family:var(--font-display);box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .topbar .spacer{flex:1}
 .iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;padding:7px 11px;cursor:pointer;transition:.18s}
+.iconbtn.on{background:var(--accent-text);color:#fff}
+.ai-chat-socline{margin:0 16px;padding:6px 10px;border-radius:8px;background:rgba(255,183,0,.14);border:1px solid rgba(255,183,0,.35);color:var(--ink);font-size:12.5px;line-height:1.5}
+.ai-chat-socline.hide{display:none}
 .iconbtn:hover{background:rgba(255,255,255,.28)}
 .iconbtn.offline-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:7px 12px}
 .iconbtn.offline-btn.busy{background:rgba(255,255,255,.28);cursor:progress}
@@ -1191,8 +1194,10 @@ img,video{max-width:100%;height:auto}
         <div class="ai-chat-sub"><span class="ai-dot"></span>Your personal AI mentor — knows your scores, weak chapters &amp; schedule</div>
       </div>
     </div>
+    <button id="aiChatSocratic" class="iconbtn" type="button" title="Socratic mentor mode: guided hints, not full answers" aria-label="Toggle Socratic mentor mode"><span data-ic="bulb"></span></button>
     <button id="aiChatReset" class="iconbtn" type="button" title="Start a new conversation" aria-label="Clear chat"><span data-ic="trash"></span></button>
   </div>
+  <div id="aiChatSocLine" class="ai-chat-socline hide"></div>
   <div id="aiChatMsgs" class="ai-chat-msgs"></div>
   <div id="aiChatChips" class="ai-chat-chips"></div>
   <div id="aiChatImgPrev" class="ai-chat-imgprev hide"></div>
@@ -10435,6 +10440,11 @@ function aiChatRenderChips(){
   });
 }
 let aiChatIsOpen=false;
+/* Socratic mentor mode (Khanmigo-style): when on, Saarthi guides with
+   hints and questions instead of giving the answer outright. Persisted so
+   a student's chosen learning style carries across sessions. */
+let aiSocratic=!!(S.settings&&S.settings.aiSocratic);
+const AI_SOCRATIC_INSTR="You are in SOCRATIC MENTOR MODE. Do NOT give the final answer directly. Instead: (1) ask what the student thinks, (2) give ONE small hint at a time, (3) if they are stuck, walk them one guided step forward, (4) only reveal the solution after they have shown a genuine attempt or explicitly ask for the full answer. Keep hints in simple Hinglish. If the question is not a learning/doubt question, answer normally.";
 function aiChatOpen(){
   const p=$("#aiChatPanel");if(!p)return;
   p.classList.remove("hide"); aiChatIsOpen=true;
@@ -10621,7 +10631,7 @@ async function aiChatSend(){
     const payloadMsgs=aiChatHistory.filter(m=>!m.pending).slice(-16).map(m=>({role:m.role,text:m.text}));
     if(file) payloadMsgs[payloadMsgs.length-1].image={mimeType:file.mimeType,data:file.data};
     const r=await fetch("/api/public/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({messages:payloadMsgs,studentContext:buildStudentContext()})});
+      body:JSON.stringify({messages:payloadMsgs,studentContext:buildStudentContext(),systemHint:aiSocratic?AI_SOCRATIC_INSTR:""})});
     const data=await r.json().catch(()=>null);
     if(r.ok&&data&&data.reply){
       aiChatSend._busy=false;
@@ -10640,12 +10650,23 @@ async function aiChatSend(){
 }
 (function initAiChat(){
   const btn=$("#aiChatBtn"), closeBtn=$("#aiChatClose"), resetBtn=$("#aiChatReset"),
-        sendBtn=$("#aiChatSend"), input=$("#aiChatInput"), attachBtn=$("#aiChatAttach"), fileInp=$("#aiChatFile"), micBtn=$("#aiChatMic");
+        sendBtn=$("#aiChatSend"), input=$("#aiChatInput"), attachBtn=$("#aiChatAttach"), fileInp=$("#aiChatFile"), micBtn=$("#aiChatMic"),
+        socBtn=$("#aiChatSocratic"), socLine=$("#aiChatSocLine");
   if(!btn) return;
   if(aiChatHistory.length) btn.classList.remove("pulse"); // returning user — skip the "look here" cue
   btn.onclick=aiChatOpen;
   closeBtn.onclick=aiChatClose;
   resetBtn.onclick=()=>{aiChatHistory=[];save_aiChatHistory();aiChatRenderMsgs();$("#aiChatChips").innerHTML="";};
+  // Socratic mentor toggle
+  const socSync=()=>{
+    if(!socBtn||!socLine)return;
+    socBtn.classList.toggle("on",!!aiSocratic);
+    socBtn.title=aiSocratic?"Socratic mode ON — guided hints":"Socratic mentor mode: guided hints, not full answers";
+    socLine.classList.toggle("hide",!aiSocratic);
+    if(aiSocratic)socLine.innerHTML=`${ic("bulb")} Socratic mode ON — Saarthi hint se guide karega, seedha answer nahi. Saath solve karo.`;
+  };
+  if(socBtn)socBtn.onclick=()=>{aiSocratic=!aiSocratic;if(S.settings)S.settings.aiSocratic=aiSocratic;save();socSync();};
+  socSync();
   sendBtn.onclick=aiChatSend;
   attachBtn.onclick=()=>fileInp.click();
   fileInp.onchange=()=>{if(fileInp.files&&fileInp.files[0])aiChatSetFile(fileInp.files[0]);fileInp.value="";};
