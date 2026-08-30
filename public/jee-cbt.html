@@ -6240,6 +6240,13 @@ async function pyqStart(meta,btn){
     if(btn){btn.disabled=false;btn.innerHTML=ic("play")+" Start paper";}
   }
 }
+function attemptedPyqCount(){
+  let n=0;const seen=new Set();
+  S.tests.filter(t=>t.pyqId).forEach(t=>{
+    if(attemptsOf(t.id).some(a=>a.submittedAt)){seen.add(t.pyqId);}
+  });
+  return seen.size;
+}
 function pyqBestScore(meta){
   const t=S.tests.find(x=>x.pyqId===meta.id);if(!t)return null;
   let best=null;
@@ -6261,7 +6268,10 @@ function viewPyq(root){
       <div><b>${idx.length}</b><span>Papers</span></div>
       <div><b>${years.length}</b><span>Years (${Math.min(...years)}–${Math.max(...years)})</span></div>
       <div><b>${totalQ.toLocaleString("en-IN")}</b><span>Real questions</span></div>
-    </div>`:""}</div>`;
+      <div><b>${attemptedPyqCount()}</b><span>Attempted by you</span></div>
+    </div>
+    <div style="margin-top:12px;max-width:420px"><div class="progress" style="background:rgba(255,255,255,.2);height:8px"><i style="width:${pct(attemptedPyqCount(),idx.length)}%;background:#fff"></i></div>
+      <div class="small" style="margin-top:4px;color:rgba(255,255,255,.85)">${attemptedPyqCount()?`${idx.length-attemptedPyqCount()} papers baaki — har paper attempt karne par real exam speed + pattern pakka hota hai.`:"Abhi tak koi paper attempt nahi kiya — pehla paper kholo!"}</div></div>`:""}</div>`;
   root.appendChild(hero);
   if(pyqState.loading&&!idx.length){
     const g=el("div","pyq-grid");
