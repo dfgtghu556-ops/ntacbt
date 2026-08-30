@@ -1321,6 +1321,7 @@ const ICONS={
   gauge:'<path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 12l4-4"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
   notebook:'<rect x="5" y="3" width="15" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   formula:'<path d="M5 4h14M5 4l7 8-7 8M5 20h14"/>',
   pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L8 20l-5 1 1-5z"/>',
   repeat:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
@@ -4116,6 +4117,36 @@ function aipWizard(root){
     });
     tgt.appendChild(tgrid);
     c.appendChild(tgt);
+    // ── OFFICIAL SYLLABUS: see the real NTA/CBSE chapter list for the chosen
+    //    target before you commit — the plan is built from exactly this. ──
+    const cur=(w.target||"jeemain");
+    const tgtLabel={jeemain:"JEE Main (NTA official)",jeeadv:"JEE Main + Advanced (NTA + JEE Adv official)",board12:"Class 12 Boards (CBSE/NCERT official)",board11:"Class 11 (CBSE/NCERT official)"}[cur];
+    const sylTog=el("button","btn ghost sm");sylTog.type="button";sylTog.style.cssText="margin-top:10px";
+    sylTog.innerHTML=`${ic("book")} 📖 Official syllabus — ${tgtLabel} ▾`;
+    let sylOpen=false;
+    const sylBox=el("div");sylBox.style.cssText="display:none;margin-top:10px";
+    const renderSyl=()=>{
+      try{
+        const syl=topicsForTarget(cur);
+        sylBox.innerHTML="";
+        SUBJECTS.concat(cur==="board12"||cur==="board11"?["English"]:[]).forEach(s=>{
+          const list=syl[s]||[];
+          if(!list.length)return;
+          const block=el("div","card");block.style.cssText="margin:0 0 8px;padding:10px 12px";
+          block.innerHTML=`<b style="color:${SUBCOLOR[s]||"var(--ink)"}">${s} — ${list.length} topics</b>
+            <div class="small muted" style="margin-top:5px;line-height:1.7">${list.map(t=>esc(t[0])).join(" · ")}</div>`;
+          sylBox.appendChild(block);
+        });
+        if(!sylBox.children.length)sylBox.innerHTML=`<div class="small muted">Syllabus load nahi ho paya — continue karo, plan official chapter list se bana hai.</div>`;
+      }catch(e){sylBox.innerHTML=`<div class="small muted">Syllabus render nahi ho paya.</div>`;}
+    };
+    sylTog.onclick=()=>{
+      sylOpen=!sylOpen;
+      sylTog.innerHTML=`${ic("book")} 📖 Official syllabus — ${tgtLabel} ${sylOpen?"▴":"▾"}`;
+      sylBox.style.display=sylOpen?"block":"none";
+      if(sylOpen)renderSyl();
+    };
+    c.appendChild(sylTog);c.appendChild(sylBox);
     c.appendChild(el("div","h4spacer")).style.marginTop="14px";
     c.appendChild(el("h4",null,"Subjects"));
     const grid=el("div","row");grid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:8px";
