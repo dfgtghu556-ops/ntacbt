@@ -3098,14 +3098,20 @@ function go(r,arg,dir){
   // PERF: instant jump, not behavior:"smooth" — a smooth scroll animation
   // running at the same time as the page slide transition made every
   // navigation feel laggy (two competing animations per frame).
-  route=r;routeArg=arg||null;render(dir);window.scrollTo(0,0);
+  route=r;routeArg=arg||null;_nav=true;render(dir);window.scrollTo(0,0);
 }
 window.addEventListener("popstate",e=>{
   if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
   const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
   route=({dash:1,library:1,pyq:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,live:1,search:1,settings:1,result:1}[r])?r:"dash";
-  routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
+  routeArg=st.arg||null;_nav=true;render(-1);window.scrollTo({top:0});
 });
+/* _nav marks a REAL section navigation (go/popstate). render() only
+   preserves scroll position for in-place updates — sub-tab switches,
+   mark-done, settings changes — so switching planner tabs or any
+   section's tabs never yanks the page back to the top. Real navigation
+   scrolls to top as before. */
+let _nav=false;
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
   ROUTES.forEach(([k,l,ico])=>{const b=el("button",route===k?"active":"",`<span class="nico" aria-hidden="true">${ic(ico)}</span>${l}`);
@@ -3120,6 +3126,8 @@ function renderNav(){
 /* (The section tab bars now scroll away with the page — the sticky-offset
    measuring machinery is gone with them. Only the main nav stays sticky.) */
 function render(dir=0){
+  const _isNav=_nav;_nav=false;
+  const _sy=window.scrollY, _prevH=document.documentElement.scrollHeight;
   renderNav();
   const a=$("#app"); a.innerHTML="";
   a.classList.remove("slide-in-right","slide-in-left");
@@ -3148,6 +3156,16 @@ function render(dir=0){
     const rel=el("button","btn ghost sm","🔄 Page reload karo");rel.onclick=()=>location.reload();
     row.append(home,rel);c.appendChild(row);
     a.appendChild(c);
+  }
+  // Preserve the user's scroll for in-place updates (sub-tabs, mark-done,
+  // settings changes) so the page never yanks back to the top. Real
+  // navigation is excluded (_isNav) — go()/popstate handle their own scroll.
+  if(!_isNav&&_sy>0){
+    requestAnimationFrame(()=>{
+      const _max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+      const _target=Math.min(_sy,Math.max(0,_max));
+      if(_target!==window.scrollY)window.scrollTo(0,_target);
+    });
   }
   try{launcherDock();}catch(e){} // study-launcher app dock (APK v3.1+ only)
   try{aiFabContext();}catch(e){} // contextual AI label ("Optimize Plan" on planner, etc.)
