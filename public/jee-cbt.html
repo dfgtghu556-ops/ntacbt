@@ -10209,6 +10209,29 @@ function viewDash(root){
     <div class="bar" style="margin-top:4px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
       <i style="display:block;height:100%;width:${focusPct}%;background:var(--green);border-radius:4px"></i></div>`;
   root.appendChild(dg);
+  // ── Exam-day checklist — appears in the final window before the exam ──
+  try{
+    if(S.settings.examDate){
+      const daysTo=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);
+      if(daysTo>=0&&daysTo<=7){
+        const items=[
+          daysTo<=1?["🎒","Admit card + photo ID ready","Aaj raat hi pack kar lo — subah bhaag mat."]:null,
+          daysTo<=1?["⏰","Alarm set (2 hours pehle)","Test centre se mile duration + 1.5 hr buffer."]:null,
+          ["📑","Rough paper + pen + transparent water bottle","NTA ke allowed items — page 3 par print hai."],
+          ["🧠","Mock revision nahi — bas quick formula sheet","Ab naya kuch mat seekho, jo aata hai pakka karo."],
+          ["😴","7-8 ghante neend aaj raat","Exam se ek raat pehle overstudy = worst mistake."],
+          ["🧘","Ek subah ki light walk / breathing","Nerves down, focus up."]
+        ].filter(Boolean);
+        const ec=el("div","card");ec.style.cssText="border-color:color-mix(in srgb,var(--purple) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--purple) 7%,var(--panel)),var(--panel))";
+        ec.innerHTML=`<div class="section-title"><span class="ico">${ic("flag")}</span>
+          <div><h3 style="margin:0">🎒 Exam day — ${daysTo===0?"AAJ hai!":daysTo===1?"Kal hai":`${daysTo} din baaki`}</h3>
+          <div class="small muted">${daysTo===0?"Tumne poori mehnat ki — ab relax. Checklist:":daysTo<=1?"Last-day checklist — ek-ek item par tick karo.":"Final-window checklist — raat ko ek baar padh lo."}</div></div></div>
+          <div style="margin-top:8px">${items.map((it,i)=>`<label class="row" style="justify-content:flex-start;gap:10px;padding:6px 0;cursor:pointer">
+            <input type="checkbox" data-cb="${i}" style="width:17px;height:17px"><span>${it[0]} <b>${it[1]}</b></span><span class="small muted" style="margin-left:auto;text-align:right">${it[2]}</span></label>`).join("")}</div>`;
+        root.appendChild(ec);
+      }
+    }
+  }catch(e){}
 
   // ---- Next scheduled mock (from the Planner) ----
   const nextSched=schedules().filter(s=>s.when>Date.now()).sort((a,b)=>a.when-b.when)[0];
