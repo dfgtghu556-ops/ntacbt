@@ -38,16 +38,55 @@ const ROWS_API =
 const SK_COMMIT = "4d5a80388c3a86fd278f0a581e0de069e5dfae34";
 const SK_RAW =
   `https://raw.githubusercontent.com/Samkarya/online-exam-questions/${SK_COMMIT}/India/undergraduate/JEEMains/`;
+const SK_TREE_API =
+  `https://api.github.com/repos/Samkarya/online-exam-questions/git/trees/${SK_COMMIT}?recursive=1`;
+// Baseline: the exact machine-readable 2025/2026 papers known to exist at
+// the pinned commit. Every remaining 2025/2026 shift is published only as
+// an NTA PDF, so today this is genuinely all there is.
 const SK_FILES = [
   "jeeMain_2025_22Jan_shift1.json",
   "jeeMain_2025_22Jan_shift2.json",
   "jeeMain_2026_02April_shift1.json",
   "jeeMain_2026_02April_shift2.json",
   "jeeMain_2026_04April_shift1.json",
-  // (Only these 2025/2026 shift files exist in machine-readable form today.
-  // The remaining 2025 shifts are published only as PDFs; when a clean
-  // source appears we add its file name here and move the pin.)
 ];
+
+/** File name must map to a paper via skPaperId() — keeps junk/partial files out. */
+const SK_NAME_RE = /^jeeMain_\d{4}_\d{1,2}[A-Za-z]+_shift\d\.json$/;
+
+/**
+ * Discover every machine-readable JEEMains paper at the pinned commit.
+ * This is the "coverage keeps growing" mechanism: the moment the pinned
+ * source repo adds a new 2025/2026 shift file, this build picks it up
+ * automatically — no code change needed. It's still a FROZEN snapshot
+ * (the pinned commit's tree, never anyone's future pushes).
+ * Falls back to SK_FILES if the tree API is unreachable so a network
+ * hiccup can never reduce coverage below the known baseline.
+ */
+async function discoverSkFiles() {
+  try {
+    const r = await fetch(SK_TREE_API, {
+      signal: AbortSignal.timeout(30_000),
+      headers: { accept: "application/vnd.github+json", "user-agent": "jee-cbt build" },
+    });
+    if (!r.ok) throw new Error("tree http " + r.status);
+    const tree = await r.json();
+    const found = (tree.tree || [])
+      .map((t) => t.path || "")
+      .filter((p) => /^India\/undergraduate\/JEEMains\/[^/]+\.json$/.test(p))
+      .map((p) => p.slice("India/undergraduate/JEEMains/".length))
+      .filter((n) => SK_NAME_RE.test(n))
+      .sort();
+    if (found.length) {
+      const added = found.filter((n) => !SK_FILES.includes(n));
+      if (added.length) console.log(`[pyq] discovered ${added.length} new machine-readable paper(s): ${added.join(", ")}`);
+      return found;
+    }
+  } catch (e) {
+    console.warn("[pyq] paper discovery unavailable (" + e.message + ") — using the pinned baseline list.");
+  }
+  return SK_FILES;
+}
 
 const SUBJ = { physics: "Physics", chemistry: "Chemistry", maths: "Mathematics", mathematics: "Mathematics" };
 const pretty = (s) => String(s || "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
@@ -256,9 +295,9 @@ function skPaperId(name) {
   return { id: `jee-main-${m[1]}-online-${m[2]}-${month.toLowerCase()}-${m[4] === "1" ? "morning" : "evening"}-shift`,
     year: +m[1], month, label: `${m[2]} ${month.slice(0, 3)} · ${m[4] === "1" ? "Morning" : "Evening"} Shift` };
 }
-async function fromLatestJson() {
+async function fromLatestJson(files) {
   const out = { rowsByPaper: new Map(), metas: [] };
-  for (const name of SK_FILES) {
+  for (const name of files || SK_FILES) {
     const meta = skPaperId(name);
     if (!meta) continue;
     try {
@@ -311,8 +350,11 @@ async function main() {
     try { rows = await fromRowsApi(); console.log(`[pyq] rows API: ${rows.length} rows`); }
     catch (e2) { console.warn("[pyq] snapshot dataset unavailable (" + e2.message + ")"); }
   }
-  // Source 2: latest sessions (2025/2026 …) from plain-JSON papers
-  const latest = await fromLatestJson();
+  // Source 2: latest sessions (2025/2026 …) from plain-JSON papers.
+  // Auto-discover the pinned source's current machine-readable papers so
+  // coverage expands as the source repo adds new shifts.
+  const skFiles = await discoverSkFiles();
+  const latest = await fromLatestJson(skFiles);
   if (latest.metas.length) console.log(`[pyq] latest-session source: ${latest.metas.length} paper(s) (${latest.metas.map((m) => m.year).join(", ")})`);
 
   if (!rows && !latest.metas.length) {
