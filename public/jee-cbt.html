@@ -6308,16 +6308,30 @@ function pyqPracticeCard(){
     chapters.forEach(({name,qs,wt})=>{const o=el("option",null,`${wtStars(wt)}  ${name}  (${qs.length} PYQs)`);o.value=name;sel.appendChild(o);});
     const n=el("select");
     [10,15,25].forEach(v=>{const o=el("option",null,v+" questions");o.value=v;n.appendChild(o);});
+    const topicSel=el("select");topicSel.hidden=true; // appears when the chapter has sub-topics
     const b=el("button","btn sm",ic("play")+" Start PYQ drill");
     // live weightage line for the selected chapter (defaults to the first / highest)
     const wtLine=el("div","small");wtLine.style.cssText="margin-top:8px;color:var(--accent-text)";
-    const showWt=()=>{const cur=chapters.find(x=>x.name===sel.value);if(cur)wtLine.innerHTML=`${ic("star")} <b>${esc(cur.name)}</b> — JEE weightage <b>${wtStars(cur.wt)}</b> (${cur.wt}/3) · ${cur.qs.length} PYQs is chapter ke`;};
+    // topic-wise (sub-chapter) filter — MathonGo/ExamSIDE style, only when topics exist
+    const showWt=()=>{
+      const cur=chapters.find(x=>x.name===sel.value);if(!cur)return;
+      wtLine.innerHTML=`${ic("star")} <b>${esc(cur.name)}</b> — JEE weightage <b>${wtStars(cur.wt)}</b> (${cur.wt}/3) · ${cur.qs.length} PYQs is chapter ke`;
+      const topics=[...new Set(cur.qs.map(q=>q.topic||q.q&&q.q.topic).filter(Boolean))].slice(0,14);
+      if(topics.length>1){
+        topicSel.hidden=false;topicSel.innerHTML="";
+        topicSel.appendChild(el("option",null,"Sab topics"));
+        topics.forEach(t2=>{const o=el("option",null,t2);o.value=t2;topicSel.appendChild(o);});
+      }else{topicSel.hidden=true;topicSel.innerHTML="";}
+    };
     sel.onchange=showWt;showWt();
     b.onclick=()=>{
-      const qs=(pool[sel.value]||[]).slice().sort(()=>Math.random()-0.5).slice(0,+n.value);
-      startDrill(sel.value+" · PYQ Drill",qs.map(q=>({q})),144); // 2.4 min/Q, exam pace
+      let src=(pool[sel.value]||[]);
+      if(!topicSel.hidden&&topicSel.value){const tv=topicSel.value;src=src.filter(q=>(q.topic||q.q&&q.q.topic)===tv);}
+      if(!src.length){toast("Is topic ke questions nahi mile");return;}
+      const qs=src.slice().sort(()=>Math.random()-0.5).slice(0,+n.value);
+      startDrill(sel.value+(topicSel.hidden?"":" · "+topicSel.value)+" · PYQ Drill",qs.map(q=>({q})),144); // 2.4 min/Q, exam pace
     };
-    row.append(sel,n,b);c.appendChild(row);c.appendChild(wtLine);
+    row.append(sel,topicSel,n,b);c.appendChild(row);c.appendChild(wtLine);
     // ── PYQ topic-frequency chart: which chapters appear most in your bank ──
     const freq=el("div");freq.style.cssText="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)";
     freq.innerHTML=`<div class="small" style="font-weight:700">📊 PYQ frequency — kitne real questions per chapter</div>
