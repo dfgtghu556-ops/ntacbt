@@ -10695,6 +10695,10 @@ function aiChatRenderChips(){
     const b=el("button",null,c);b.type="button";b.onclick=()=>{$("#aiChatInput").value=c;aiChatSend();};
     box.appendChild(b);
   });
+  // weekly mentor deep-dive: synthesize the whole week across every pillar
+  const wd=el("button",null,ic("news")+" Weekly deep-dive");wd.type="button";
+  wd.onclick=()=>{$("#aiChatInput").value="Mentor, is hafte ka full review do: meri tests, accuracy, weak chapters, focus minutes, videos dekhe, streak aur plan health — sab dekh ke batana main kahan achha kar raha hun, kahan dikkat hai, aur is aane wale hafte ke liye top 3 actions kya hain. Seedha aur practical raho.";aiChatSend();};
+  box.appendChild(wd);
 }
 let aiChatIsOpen=false;
 /* Socratic mentor mode (Khanmigo-style): when on, Saarthi guides with
