@@ -4505,6 +4505,11 @@ function pomodoroCard(){
       </div>
       <div class="progress" style="margin-top:8px;height:8px"><i data-fgBar style="width:${Math.min(100,pct(totalToday,S.settings.focusGoal||100))}%;background:var(--green)"></i></div>
       <div class="small muted" style="margin-top:5px" data-fgMsg></div>
+      <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin-top:10px">
+        <span class="small" style="font-weight:700">📅 Hafta goal</span>
+        <span class="small muted" data-fgWeek></span>
+      </div>
+      <div class="progress" style="margin-top:6px;height:8px"><i data-fgWBar style="width:0%;background:linear-gradient(90deg,var(--blue),var(--purple))"></i></div>
     </div>`;
   const ctr=c.querySelector(".pomo-controls");
   const startB=el("button","btn sm",POMO.running?ic("pause")+" Pause":ic("play")+" Start focus");startB.id="pomoStartBtn";
@@ -4515,12 +4520,19 @@ function pomodoroCard(){
   ctr.append(startB,resetB,modeB);
   // ── daily focus-goal progress ── (Regain/Reclaim-style: set it, watch it fill)
   const fgWrap=c.querySelector("[data-focusGoal]"),fgGoalIn=c.querySelector("[data-fgGoal]"),fgBar=c.querySelector("[data-fgBar]"),fgMsg=c.querySelector("[data-fgMsg]");
+  const fgWBar=c.querySelector("[data-fgWBar]"),fgWeek=c.querySelector("[data-fgWeek]");
   const fgRefresh=()=>{
     const goal=Math.max(10,S.settings.focusGoal||100);
     const t=pomoLog()[todayKey(Date.now())]||0;
     fgBar.style.width=Math.min(100,pct(t,goal))+"%";
     fgMsg.textContent=t>=goal?`Goal done! ${t} min — aaj ka deep focus poora 🎉`
       :`${goal-t} min aur to hit ${goal} min. Streak ka sath isi se banta hai.`;
+    // weekly focus total (Reclaim-style weekly goal) vs dailyGoal*7
+    let wTot=0;const now=new Date();
+    for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()-i);wTot+=(pomoLog()[todayKey(d)]||0);}
+    const wGoal=goal*7;
+    if(fgWBar)fgWBar.style.width=Math.min(100,pct(wTot,wGoal))+"%";
+    if(fgWeek)fgWeek.textContent=`${wTot} / ${wGoal} min is hafte (${pct(wTot,wGoal)}%)`;
   };
   fgGoalIn.addEventListener("change",()=>{S.settings.focusGoal=Math.max(10,Math.min(600,+fgGoalIn.value||100));save();fgRefresh();});
   fgRefresh();
