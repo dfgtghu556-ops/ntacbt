@@ -10008,11 +10008,16 @@ function viewDash(root){
   const goal=S.settings.dailyGoal||20, doneToday=S.dailyQuestions[todayKey(Date.now())]||0;
   const goalPct=Math.min(100,Math.round(doneToday/goal*100));
   const dg=el("div","card");
+  // cross-pillar daily goal: questions (existing) + focus minutes (distraction blocker)
+  const focusToday=pomoLog()[todayKey(Date.now())]||0, focusGoal=Math.max(10,S.settings.focusGoal||100);
+  const focusPct=Math.min(100,Math.round(focusToday/focusGoal*100));
   dg.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
-    <div><b>${ic("target")} Today's goal</b><div class="small muted">${doneToday} / ${goal} questions attempted today</div></div>
-    <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:20px;color:var(--accent-text)">${goalPct}%</div></div>
+    <div><b>${ic("target")} Today's goals</b><div class="small muted">✍️ ${doneToday} / ${goal} questions · 🔒 ${focusToday} / ${focusGoal} focus-min</div></div>
+    <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:20px;color:var(--accent-text)">${Math.round((goalPct+focusPct)/2)}%</div></div>
     <div class="bar" style="margin-top:10px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
-      <i style="display:block;height:100%;width:${goalPct}%;background:var(--blue);border-radius:4px"></i></div>`;
+      <i style="display:block;height:100%;width:${goalPct}%;background:var(--blue);border-radius:4px"></i></div>
+    <div class="bar" style="margin-top:4px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+      <i style="display:block;height:100%;width:${focusPct}%;background:var(--green);border-radius:4px"></i></div>`;
   root.appendChild(dg);
 
   // ---- Next scheduled mock (from the Planner) ----
