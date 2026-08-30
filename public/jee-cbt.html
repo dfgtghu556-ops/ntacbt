@@ -59,6 +59,8 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .iconbtn.on{background:var(--accent-text);color:#fff}
 .ai-chat-socline{margin:0 16px;padding:6px 10px;border-radius:8px;background:rgba(255,183,0,.14);border:1px solid rgba(255,183,0,.35);color:var(--ink);font-size:12.5px;line-height:1.5}
 .ai-chat-socline.hide{display:none}
+.ai-chat-memlist{margin:0 16px;padding:8px 12px;border-radius:10px;background:rgba(99,102,241,.08);border:1px dashed rgba(99,102,241,.35)}
+.ai-chat-memlist.hide{display:none}
 .iconbtn:hover{background:rgba(255,255,255,.28)}
 .iconbtn.offline-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:7px 12px}
 .iconbtn.offline-btn.busy{background:rgba(255,255,255,.28);cursor:progress}
@@ -1200,6 +1202,7 @@ img,video{max-width:100%;height:auto}
   <div id="aiChatSocLine" class="ai-chat-socline hide"></div>
   <div id="aiChatMsgs" class="ai-chat-msgs"></div>
   <div id="aiChatChips" class="ai-chat-chips"></div>
+  <div id="aiChatMemBar" class="ai-chat-memlist hide"></div>
   <div id="aiChatImgPrev" class="ai-chat-imgprev hide"></div>
   <div class="ai-chat-inputrow"><div class="ai-chat-inputrow-inner">
     <input id="aiChatFile" type="file" accept="image/*,application/pdf,.pdf" class="hide">
@@ -10527,6 +10530,28 @@ function aiChatTypeOut(modelMsg,fullText){
   };
   tick();
 }
+function aiChatRenderMem(){
+  const bar=$("#aiChatMemBar");if(!bar)return;
+  const mem=aiMemory();
+  const lastModel=aiChatHistory.length?[...aiChatHistory].reverse().find(m=>m.role==="model"&&m.text&&!m.pending):null;
+  let html="";
+  if(lastModel){
+    html+=`<button class="btn ghost sm" data-memAdd style="margin-top:8px">📌 ${mem.length?"Ye bhi yaad rakho":"Advice yaad rakho (saath rakhega)"}</button>`;
+  }
+  if(mem.length){
+    html+=`<div class="small muted" style="margin-top:8px">🧠 Saarthi yaad rakhta hai (har session mein):</div>`;
+    mem.slice(0,6).forEach((m,i)=>{
+      html+=`<div class="row" style="align-items:flex-start;gap:6px;margin-top:5px">
+        <span style="flex:1;font-size:12.5px">${esc(String(m.text).slice(0,90))}</span>
+        <button class="btn ghost sm" data-memDel="${i}" style="padding:2px 6px;font-size:11px">✕</button></div>`;
+    });
+  }
+  bar.innerHTML=html;
+  bar.classList.toggle("hide",!html);
+  const add=bar.querySelector("[data-memAdd]");
+  if(add)add.onclick=()=>{if(lastModel)aiMemoryAdd(lastModel.text.replace(/<[^>]+>/g,"").trim());aiChatRenderMem();toast("Saarthi ab ye aage bhi yaad rakhega");};
+  bar.querySelectorAll("[data-memDel]").forEach(b2=>b2.onclick=()=>{aiMemoryDel(+b2.getAttribute("data-memDel"));aiChatRenderMem();});
+}
 function aiChatRenderChips(){
   const box=$("#aiChatChips"); if(!box)return; box.innerHTML="";
   const last=aiChatHistory[aiChatHistory.length-1];
@@ -10548,7 +10573,7 @@ function aiChatOpen(){
   $("#aiChatBtn").classList.add("hide"); $("#aiChatBtn").classList.remove("pulse");
   const _lbl=document.getElementById("aiFabLabel");if(_lbl)_lbl.remove(); // chip follows the fab
   document.body.style.overflow="hidden"; // lock background scroll behind the full-screen panel
-  aiChatRenderMsgs(); aiChatRenderChips();
+  aiChatRenderMsgs(); aiChatRenderChips(); aiChatRenderMem();
   // NOTE: deliberately not auto-focusing the input — on phones that pops the
   // keyboard immediately, and the first tap on Close then just dismisses the
   // keyboard instead of registering, making the panel feel "stuck open".
@@ -10617,10 +10642,23 @@ function aiChatSetFile(file){
  * test?" with their actual numbers instead of generic advice.
  * Everything is computed from local data already on the device;
  * bounded to ~2KB so it never bloats requests. */
+/* Long-form mentor memory: key advice/conclusions the student chooses to
+   keep (or that are worth carrying over), persisted across chat sessions
+   and chat resets. Prepend to student context so Saarthi remembers. */
+function aiMemory(){return S.aiMemory||(S.aiMemory=[]);}
+function aiMemoryAdd(text){if(!text)return;const m=aiMemory();
+  m.unshift({text:String(text).slice(0,500),at:Date.now()});
+  if(m.length>20)m.length=20;save();}
+function aiMemoryDel(i){const m=aiMemory();if(m[i]!=null){m.splice(i,1);save();}}
 function buildStudentContext(){
   try{
     const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
     const parts=[];
+    // LONG-FORM MEMORY — what the student chose to remember across sessions
+    try{
+      const mem=aiMemory().slice(0,6).map(m=>String(m.text||"").slice(0,120)).filter(Boolean);
+      if(mem.length)parts.push("PERSISTENT MENTOR MEMORY (student kept these — respect and build on them):\n- "+mem.join("\n- "));
+    }catch(e){}
     // THE MISSION — the mentor's north star (goal + urgency), even for new students
     if(S.goal&&S.goal.college)parts.push(`STUDENT'S DREAM: ${S.goal.college}${S.goal.why?` — reason: "${S.goal.why}"`:""}. This is YOUR mission too.`);
     if(S.settings.examDate){const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(dl>0)parts.push(`⏳ ONLY ${dl} days to JEE Main. Every reply should respect this urgency.`);}
@@ -10743,7 +10781,7 @@ async function aiChatSend(){
   }
   aiChatSend._busy=false;
   modelMsg.pending=false;
-  aiChatRenderMsgs(); aiChatRenderChips(); save_aiChatHistory();
+  aiChatRenderMsgs(); aiChatRenderChips(); aiChatRenderMem(); save_aiChatHistory();
 }
 (function initAiChat(){
   const btn=$("#aiChatBtn"), closeBtn=$("#aiChatClose"), resetBtn=$("#aiChatReset"),
