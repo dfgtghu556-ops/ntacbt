@@ -5282,6 +5282,77 @@ function smartPracticePool(){
   }catch(e){}
   return out;
 }
+/* ── Custom Mock Builder ─────────────────────────────────────────────
+   Testbook-style: assemble a timed paper from YOUR OWN question bank
+   (uploaded papers + opened PYQ papers). Pick subjects, chapters, the
+   number of questions and seconds-per-question, and it launches in the
+   same NTA CBT engine. This is the "mock test creator" pillar on the
+   practice side — the PDF creator makes new tests, this builds custom
+   ones from what you already have. */
+function customMockCard(){
+  const bank=allUniqueQuestions();
+  // available chapters grouped by subject (only chapters with questions)
+  const bySub={};
+  bank.forEach(({q})=>{
+    const s=q.subject||"Physics",ch=q.chapter||q.subject||"Misc";
+    (bySub[s]=bySub[s]||{})[ch]=(bySub[s][ch]||0)+1;
+  });
+  const c=el("div","card");c.style.borderColor="var(--blue)";
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("settings")}</span>
+    <div><h3 style="margin:0">🧪 Custom Mock Builder</h3>
+    <div class="small muted">Apni question bank se apna khud ka timed paper banao — chapters chuno, count/time set karo, exam engine mein chalao. ${bank.length} questions available.</div></div></div>`;
+  const wrap=el("div");wrap.style.marginTop="12px";
+  const avail=bank.length?Object.keys(bySub).length:0;
+  if(!bank.length){
+    wrap.appendChild(el("div","small muted",`Pehle koi test kholo ya PDF upload karo — phir yahan apna custom mock banao.`));
+    c.appendChild(wrap);return c;
+  }
+  // per-subject chapter multi-selects
+  const selBySub={};
+  const chRow=el("div","grid g3");
+  SUBJECTS.forEach(s=>{
+    const chs=Object.keys(bySub[s]||{}).sort((a,b)=>(bySub[s][b]-bySub[s][a]));
+    const d=el("div","card");d.style.margin="0";
+    d.innerHTML=`<h4 style="color:${SUBCOLOR[s]}">${s}</h4><div class="small muted">${(bySub[s]?Object.values(bySub[s]).reduce((x,y)=>x+y,0):0)} questions</div>`;
+    const sel=el("select");sel.size=Math.min(5,Math.max(2,chs.length));
+    if(chs.length){chs.forEach(ch=>{const o=el("option",null,`${ch} (${bySub[s][ch]})`);o.value=ch;sel.appendChild(o);});}
+    else{const o=el("option",null,"— koi question nahi —");o.disabled=true;o.selected=true;sel.appendChild(o);}
+    const dSel=el("div");dSel.style.cssText="display:flex;flex-direction:column;gap:4px;margin-top:6px";
+    dSel.appendChild(sel);
+    selBySub[s]=sel;d.appendChild(dSel);chRow.appendChild(d);
+  });
+  wrap.appendChild(chRow);
+  // controls row
+  const ctrl=el("div","row");ctrl.style.cssText="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:flex-end";
+  const field=(label,node)=>{const w=el("div");w.style.display="grid";w.style.gap="4px";
+    w.appendChild(el("label","small muted",label));w.appendChild(node);return w;};
+  const cnt=el("input");cnt.type="number";cnt.min=5;cnt.max=75;cnt.value=15;cnt.style.cssText="width:70px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)";
+  const secQ=el("select");[["exam","Exam pace (2.4 min/Q)"],["easy","Easy (3 min/Q)"],["medium","Medium (2 min/Q)"],["hard","Hard (90 s/Q)"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;secQ.appendChild(o);});
+  ctrl.append(field("Questions",cnt),field("Pace",secQ));
+  const b=el("button","btn",ic("play")+" Build & Start mock");
+  const info=el("div","small muted");info.style.marginTop="8px";
+  b.onclick=()=>{
+    const picked=[];
+    SUBJECTS.forEach(s=>{
+      const sel=selBySub[s];if(!sel)return;
+      const ch=sel.value;if(!ch)return;
+      bank.forEach(({q})=>{if((q.subject||"Physics")===s&&(q.chapter||q.subject||"Misc")===ch)picked.push({q});});
+    });
+    if(!picked.length){toast("Kam se kam ek chapter select karo");return;}
+    const n=Math.max(5,Math.min(75,+cnt.value||15));
+    const secs={exam:144,easy:180,medium:120,hard:90}[secQ.value]||144;
+    const items=picked.slice().sort(()=>Math.random()-0.5).slice(0,n);
+    const name="Custom Mock · "+items.reduce((m,x)=>m+((x.q.subject||"")[0]||""),"")+" · "+fmtDate(Date.now());
+    startDrill(name,items,secs);
+  };
+  ctrl.appendChild(b);wrap.appendChild(ctrl);
+  // chapter total counter
+  const selCount=()=>{let n=0;SUBJECTS.forEach(s=>{const sel=selBySub[s];if(sel&&sel.value)n+=(bySub[s]?bySub[s][sel.value]||0:0);});info.textContent=`Selected chapters hold ${n} questions — mock will pick ${Math.max(5,Math.min(75,+cnt.value||15))} of them randomly.`;};
+  SUBJECTS.forEach(s=>{const sel=selBySub[s];if(sel)sel.onchange=selCount;});
+  wrap.appendChild(info);selCount();
+  c.appendChild(wrap);
+  return c;
+}
 function viewPractice(root){
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("pencil")}</span><h2 style="margin:0">Practice Mode</h2></div>
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`));
@@ -5320,6 +5391,9 @@ function viewPractice(root){
     d.appendChild(b);secRow.appendChild(d);
   });
   sec.appendChild(secRow);root.appendChild(sec);
+  // ── Custom Mock Builder (Testbook-style): pick chapters + count + time,
+  //    and assemble a timed paper from YOUR own question bank. ──
+  root.appendChild(customMockCard());
 
   // ---- AI question generator: fresh questions for your weakest chapters ----
   const weakChaps=chapterMastery().filter(c=>c.acc<70).slice(0,3);
