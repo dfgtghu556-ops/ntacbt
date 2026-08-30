@@ -60,7 +60,7 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .iconbtn.offline-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:7px 12px}
 .iconbtn.offline-btn.busy{background:rgba(255,255,255,.28);cursor:progress}
 .iconbtn.offline-btn.ready{background:rgba(30,158,87,.35)}
-.nav{display:flex;gap:4px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;position:sticky;top:50px;z-index:35}
+.nav{display:flex;gap:4px;flex-wrap:wrap;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;position:sticky;top:50px;z-index:35}
 .nav button{background:transparent;border:0;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:700;font-size:13.5px;transition:.18s}
 .nav button.active{background:var(--blue);color:#fff;box-shadow:0 4px 12px -4px color-mix(in srgb,var(--blue) 60%,transparent)}
 .nav button:hover:not(.active){background:var(--blue-soft);color:var(--accent-text)}
@@ -658,6 +658,17 @@ body{font-feature-settings:"cv02","cv03","cv04";text-rendering:optimizeLegibilit
 .nav button.active{background:linear-gradient(135deg,var(--blue-l),var(--blue-d));
   box-shadow:0 6px 16px -6px color-mix(in srgb,var(--blue) 70%,transparent)}
 .nav button:active{transform:scale(.96)}
+/* "More" overflow — the secondary navigation group unfolds below the spine.
+   Default collapsed to a single row height; opening adds the secondary chips.
+   The spine (primary 5 + More) stays in the sticky bar; the overflow row
+   scrolls with it on desktop and wraps as a chip cloud on phones. */
+.nav{position:relative;flex-wrap:wrap;row-gap:6px}
+.navmore{display:none;width:100%;flex-wrap:wrap;gap:4px;padding:2px 2px 6px}
+.nav.__more-open{flex-wrap:wrap;align-items:flex-start}
+.nav.__more-open .navmore{display:flex}
+.navmore .navmore-item{background:var(--blue-soft);border-radius:999px;color:var(--accent-text);font-size:13px;padding:7px 12px}
+.navmore .navmore-item:hover{background:color-mix(in srgb,var(--blue) 16%,var(--panel))}
+.navmore .navmore-item.active{background:var(--blue);color:#fff}
 /* focus rings — professional keyboard UX */
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
   outline:2px solid var(--blue-l);outline-offset:2px;border-radius:8px}
@@ -3021,6 +3032,22 @@ const ROUTES=[["dash","Dashboard","home"],["library","Test Library","library"],[
   ["practice","Practice","pencil"],["review","Review","repeat"],["notebook","Mistake Notebook","notebook"],["mastery","Mastery","target"],
   ["formulas","Formulas","formula"],["live","Live Classes","wave"],["analytics","Analytics","chart"],
   ["upload","Upload PDFs","upload"],["search","Search","search"],["settings","Settings","settings"]];
+/* ═══ INFORMATION ARCHITECTURE — primary journeys vs everything else ═══
+   The old top nav showed all 15 sections as equal pills — "15 equally
+   important buttons". That made the app feel like a menu of features instead
+   of a product. The new model mirrors the five core journeys a student has:
+     Home      → "What should I do right now?"
+     Plan      → "What should I study today / this week?"
+     StudyTube → "What should I watch / learn?"
+     Practice  → "How should I practice?"
+     Progress  → "How am I improving?"
+   Every other section stays fully reachable (routing untouched) but lives in
+   a single "More" overflow, so nothing competes with the five journeys. */
+const NAV_PRIMARY=[["dash","Home","home"],["planner","Plan","calendar"],["youtube","StudyTube","play"],
+  ["practice","Practice","pencil"],["analytics","Progress","chart"]];
+const NAV_MORE=[["library","Test Library","library"],["pyq","PYQ Papers","bank"],["upload","Upload PDFs","upload"],
+  ["review","Review","repeat"],["notebook","Mistake Notebook","notebook"],["mastery","Mastery","target"],
+  ["formulas","Formulas","formula"],["live","Live Classes","wave"],["search","Search","search"],["settings","Settings","settings"]];
 let route="dash", routeArg=null;
 /** Navigate. dir: 1 = slide in from right, -1 = from left, 0 = plain fade. */
 function go(r,arg,dir){
@@ -3043,13 +3070,39 @@ window.addEventListener("popstate",e=>{
 });
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
-  ROUTES.forEach(([k,l,ico])=>{const b=el("button",route===k?"active":"",`<span class="nico" aria-hidden="true">${ic(ico)}</span>${l}`);
+  // Keep the active section reachable: if the current route lives in the
+  // overflow, the primary row must still surface it (pinned as a chip in the
+  // More menu), but the five journeys stay the fixed spine.
+  const build=(k,l,ico)=>{
+    const b=el("button",route===k?"active":"",`<span class="nico" aria-hidden="true">${ic(ico)}</span>${l}`);
     b.type="button";b.setAttribute("aria-current",route===k?"page":"false");
-    b.setAttribute("aria-label",l);b.onclick=()=>go(k);n.appendChild(b);});
+    b.setAttribute("aria-label",l);b.onclick=()=>go(k);return b;
+  };
+  NAV_PRIMARY.forEach(([k,l,ico])=>n.appendChild(build(k,l,ico)));
+  // "More" overflow — the last primary pill. Toggles the secondary group
+  // (the group scrolls with the bar; on touch it wraps as a chip cloud).
+  const more=build("__more__","More","menu");
+  more.classList.toggle("active",!!n.querySelector(".__more-open"));
+  more.setAttribute("aria-haspopup","true");more.setAttribute("aria-expanded","false");
+  more.addEventListener("click",()=>{
+    const open=more.classList.toggle("active");
+    more.setAttribute("aria-expanded",String(open));
+    n.classList.toggle("__more-open",open);
+    n.dispatchEvent(new CustomEvent("navmore",{detail:{open}}));
+  });
+  n.appendChild(more);
+  const moreRow=el("div","navmore");
+  NAV_MORE.forEach(([k,l,ico])=>{
+    const b=build(k,l,ico);
+    b.classList.add("navmore-item");
+    b.addEventListener("click",()=>{n.classList.remove("__more-open");more.classList.remove("active");more.setAttribute("aria-expanded","false");});
+    moreRow.appendChild(b);
+  });
+  n.appendChild(moreRow);
   // keep the active tab visible in the scrollable pill row
   // PERF: "instant" not "smooth" — this ran on every render and its
   // animation overlapped the page transition, compounding the lag.
-  const act=n.querySelector("button.active");
+  const act=n.querySelector("button.active:not(.navmore-item)");
   if(act&&act.scrollIntoView)act.scrollIntoView({block:"nearest",inline:"center",behavior:"instant"});
 }
 /* (The section tab bars now scroll away with the page — the sticky-offset
@@ -9690,7 +9743,6 @@ function weeklyReportCard(){
 function viewDash(root){
   const g=globalStats(), st=streakInfo();
   const resume=pendingResume();
-  const upcoming=cloudTests.filter(t=>!attemptsOf(t.id).some(a=>a.submittedAt));
   const hero=el("div","card hero-card");
   const insight=!g.total?"Upload your first paper and publish it to the public library.":
     g.avgAcc>=80?"Outstanding accuracy — push your attempt count higher now.":
@@ -9703,8 +9755,17 @@ function viewDash(root){
     if(S.settings.examDate){const d2=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(d2>0)days=` · ${d2} din baaki`;}
     return `<div class="pill" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3);margin-left:6px">🎯 ${esc(S.goal.college)}${days}</div>`;
   })();
-  // LAUNCHER v2 hero: compact greeting + streak + goal. Stats moved out of
-  // the hero (the NBA card is the star; hero sirf context deta hai).
+  // ── TODAY SCREEN order: ONE dominant Next Best Action FIRST (above the
+  // fold, before any greeting), then a compact greeting strip, then mentor
+  // + the day's mission. The NBA is the star — hero sirf context deta hai.
+  // ERROR ISOLATION (graceful degradation): one broken card must never
+  // blank the whole dashboard — the CBT/library below still work.
+  const safeCard=fn=>{try{const n=fn();if(n)root.appendChild(n);}catch(e){console.error("[dash-card]",e);}};
+  safeCard(nextBestActionCard);
+  // compact greeting strip — greeting + streak + goal pill. The competing
+  // quick-action buttons (Bas 2 Minute / Quick Test / Library) were removed
+  // from here: the NBA below is THE single primary action, and redundant
+  // shortcuts just split attention (Apple-test: one obvious action).
   const hr2=new Date().getHours();
   const greet=hr2<5?"Raat ko bhi lage ho":hr2<12?"Good morning":hr2<17?"Good afternoon":hr2<21?"Good evening":"Der raat ki padhai";
   const todayQ2=S.dailyQuestions[todayKey(Date.now())]||0;
@@ -9716,17 +9777,7 @@ function viewDash(root){
     <h2 style="margin-top:12px">${greet}, ${esc((S.settings.candidate||"Candidate").split(" ")[0])} 👋</h2>
     <div class="muted" style="max-width:520px">${esc(insight)}${S.goal&&S.goal.why?` <i style="opacity:.85">— "${esc(S.goal.why)}"</i>`:""}</div>
     <div class="streak">${st.days.map(d=>`<i class="${d.on?"on":""}">${d.label}</i>`).join("")}</div></div>`;
-  const acts=el("div","row");acts.style.cssText="margin-top:14px;position:relative";
-  const two=el("button","btn",ic("zap")+" Bas 2 Minute");two.title="Mann nahi kar raha? Ek question — bas itna.";two.onclick=twoMinStart;
-  const qs=el("button","btn ghost",ic("play")+" Quick Test");qs.onclick=()=>{const t=upcoming[0]||cloudTests[0];t?startExam(t.id):go("library");};
-  const lb=el("button","btn ghost",ic("library")+" Library");lb.onclick=()=>go("library");
-  acts.append(two,qs,lb);hero.appendChild(acts);
   root.appendChild(hero);
-  // ── launcher order: ONE next action → mentor → aaj ka mission ──
-  // ERROR ISOLATION (graceful degradation): one broken card must never
-  // blank the whole dashboard — the CBT/library below still work.
-  const safeCard=fn=>{try{const n=fn();if(n)root.appendChild(n);}catch(e){console.error("[dash-card]",e);}};
-  safeCard(nextBestActionCard);
   safeCard(mentorPingCard);
   safeCard(missionControlCard);
   // today's promise (implementation intention) — kept above everything
