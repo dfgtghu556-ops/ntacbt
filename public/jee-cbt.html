@@ -4226,12 +4226,24 @@ function aipToday(root){
   root.appendChild(head);
   const list=el("div","card");list.innerHTML=`<h3>Today's tasks</h3>`;
   if(!today.length)list.innerHTML+=`<div class="empty"><div class="big">${ic("party")}</div>Nothing scheduled today — get ahead from Upcoming, or rest. Both are strategy.</div>`;
+  // Reclaim-style auto time-blocks: assign each unfinished task a sequential
+  // block + estimated window based on real study pace, so today reads as a
+  // timetable you can follow, not just a to-do list.
+  const blockStart=new Date();blockStart.setMinutes(blockStart.getMinutes()+10);
+  let running=0;
   today.forEach(t=>{
+    const mins=aipEff(t.estMin,p.profile);
+    const blockNo=today.filter(x=>x.status!=="done").findIndex(x=>x===t)+1;
+    const startsAt=new Date(blockStart.getTime()+running*60000);
+    const endsAt=new Date(startsAt.getTime()+mins*60000);
+    const tFmt=d=>d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+    running+=mins;
     const row=el("div","optrow");row.style.cssText="cursor:default;margin-top:8px"+(t.status==="done"?";opacity:.55":"");
     row.innerHTML=`<div style="flex:1"><span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
         <span class="badge">${t.kind.toUpperCase()}</span>${t.catchup?` <span class="badge" style="color:var(--amber)">CATCH-UP</span>`:""}
+        ${t.status==="todo"?`<span class="pill" style="margin-left:4px">⏱️ ${blockNo===1?"Abhi":tFmt(startsAt)}–${tFmt(endsAt)}</span>`:""}
         <div style="margin-top:4px"><b>${esc(t.topic)}</b></div>
-        <div class="small muted">YouTube lesson · ~${aipEff(t.estMin,p.profile)} min at ${p.profile.speed}×${t.videoTitle?` · ${esc(t.videoTitle.slice(0,44))}…`:""}</div></div>`;
+        <div class="small muted">YouTube lesson · ~${mins} min at ${p.profile.speed}×${t.videoTitle?` · ${esc(t.videoTitle.slice(0,44))}…`:""}</div></div>`;
     const acts=el("div","row");acts.style.cssText="gap:6px;flex:none";
     if(t.status!=="done"){
       const wb=el("button","btn sm",ic("play")+" Watch");wb.onclick=()=>aipOpenLesson(t);
