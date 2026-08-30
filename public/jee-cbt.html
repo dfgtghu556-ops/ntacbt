@@ -5358,6 +5358,17 @@ function allUniqueQuestions(){
    aware, depth-aware, trusted-educator scoring) — one engine, no duplicate
    logic. Official YouTube embeds only. */
 function ytSaved(){return S.ytSaved||(S.ytSaved=[]);}
+/* ═══ NOTES-ON-VIDEO ═══
+   In-app learning notes tied to a specific video (videoId → {text,title,
+   channel,subject,topic,at,updated}). The student jots takeaways while the
+   lesson plays; notes persist on-device and resurface beside the video and
+   in a dedicated list. No competitor's YouTube hub lets you keep study
+   notes INSIDE the app, attached to the exact lesson you watched. */
+function ytNotes(){return S.ytNotes||(S.ytNotes={});}
+function ytNoteSet(id,data){const n=ytNotes();n[id]=data;save();}
+function ytNoteDel(id){const n=ytNotes();if(n[id]){delete n[id];save();}}
+function ytNoteList(){return Object.entries(ytNotes()).map(([id,r])=>({id,...r}))
+  .filter(r=>r&&String(r.text||"").trim()).sort((a,b)=>(b.updated||b.at||0)-(a.updated||a.at||0));}
 function ytPlay(v,ctx){
   const m=el("div","modal");m.setAttribute("data-static","1");
   const prog=vwProgress(v.id);
@@ -5378,8 +5389,19 @@ function ytPlay(v,ctx){
     <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
       <button class="btn ghost sm" data-save>${saved?"💔 Saved se hatao":"❤️ Save karo"}</button>
       ${ctx&&ctx.topic?`<button class="btn sm" data-practice>✍️ Ab practice karo: ${esc(String(ctx.topic).slice(0,24))}</button>`:""}
+      <button class="btn ghost sm" data-note>📝 ${ytNotes()[v.id]&&String(ytNotes()[v.id].text||"").trim()?"Note karo / edit":"Note karo"}</button>
     </div>
-    <div class="small muted" style="margin-top:8px">⏱️ Watch-time is video ke naam par hi count hota hai — doosre video par kabhi nahi.</div></div>`;
+    <div class="small muted" style="margin-top:8px">⏱️ Watch-time is video ke naam par hi count hota hai — doosre video par kabhi nahi.</div>
+    <div data-noteBox hidden style="margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
+      <div class="small" style="font-weight:700">📝 Is lesson ke takeaways likho</div>
+      <div class="small muted" style="margin:2px 0 8px">Auto-save hota hai — agla baar is video par wapas aaoge to yahi milega.</div>
+      <textarea data-noteArea style="width:100%;box-sizing:border-box;min-height:70px" placeholder="e.g. Torque = I×α ka intuition; rotational KE formulas note kar liya…">${esc(ytNotes()[v.id]?String(ytNotes()[v.id].text||""):"")}</textarea>
+      <div class="row" style="margin-top:6px;gap:8px">
+        <button class="btn sm" data-noteSave>✓ Save note</button>
+        ${ytNotes()[v.id]&&String(ytNotes()[v.id].text||"").trim()?`<button class="btn ghost sm" data-noteDel>🗑️ Delete</button>`:""}
+        <span class="small muted" data-noteOk style="margin-left:auto"></span>
+      </div>
+    </div></div>`;
   document.body.appendChild(m);
   m.querySelector("[data-x]").onclick=()=>{vwEnd();m.remove();if(route==="youtube")render(0);};
   m.querySelector("[data-save]").onclick=e2=>{
@@ -5402,6 +5424,18 @@ function ytPlay(v,ctx){
     if(pool.length>=3)startDrill(ctx.topic+" · After-video practice",pool.sort(()=>Math.random()-0.5).slice(0,10),100);
     else{toast("Is topic ke questions abhi bank mein nahi — koi PYQ paper kholo");go("pyq");}
   };
+  // ── notes-on-video wiring ──
+  const nbox=m.querySelector("[data-noteBox]"),nArea=m.querySelector("[data-noteArea]"),
+        nSave=m.querySelector("[data-noteSave]"),nDel=m.querySelector("[data-noteDel]"),nOk=m.querySelector("[data-noteOk]");
+  m.querySelector("[data-note]").onclick=()=>{nbox.hidden=!nbox.hidden;if(!nbox.hidden){nArea.focus();}};
+  const setOk=t=>{nOk.textContent=t;clearTimeout(nOk._t);nOk._t=setTimeout(()=>{nOk.textContent="";},1600);};
+  nSave.onclick=()=>{
+    const text=nArea.value.trim();
+    if(!text){ytNoteDel(v.id);setOk("Note khali kiya.");return;}
+    ytNoteSet(v.id,{text,videoTitle:v.title||"",channel:v.channel||"",subject:ctx&&ctx.subject||v.subject||"",topic:ctx&&ctx.topic||v.topic||"",at:Date.now(),updated:Date.now()});
+    setOk("✓ Note saved");
+  };
+  if(nDel)nDel.onclick=()=>{ytNoteDel(v.id);nArea.value="";setOk("Note delete ho gaya.");m.querySelector("[data-note]").textContent="📝 Note karo";};
 }
 async function ytFetch(params){
   try{
@@ -5518,6 +5552,27 @@ function viewYouTube(root){
     root.appendChild(c);
   }
 
+  // ── MY VIDEO NOTES (notes-on-video: takeaways kept with the exact lesson) ──
+  const notes=ytNoteList();
+  if(notes.length){
+    const c=el("div","card");c.style.borderColor="var(--amber)";
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("notebook")}</span><h3 style="margin:0">📝 Meri Video Notes</h3>
+      <div class="small muted" style="margin-left:auto">${notes.length} lesson${notes.length>1?"s":""} · is device par</div></div>`;
+    notes.slice(0,8).forEach(n=>{
+      const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.videoTitle||n.topic||n.id)}</b>
+        <div class="small" style="color:var(--muted);white-space:pre-wrap">${esc(n.text)}</div>
+        <div class="small muted">${esc(n.channel||"")}${n.subject?` · ${esc(n.subject)}`:""} · ${n.updated?fmtDate(n.updated):""}</div></div>
+        <div style="flex:none;display:flex;gap:6px;flex-direction:column">
+          <button class="btn ghost sm" data-open>▶️</button>
+          <button class="btn ghost sm" data-del>🗑️</button></div>`;
+      row.querySelector("[data-open]").onclick=()=>ytPlay({id:n.id,title:n.videoTitle||n.topic||n.id,channel:n.channel||"",subject:n.subject||""},{topic:n.topic,subject:n.subject});
+      row.querySelector("[data-del]").onclick=()=>{ytNoteDel(n.id);render(0);};
+      c.appendChild(row);
+    });
+    root.appendChild(c);
+  }
+
   // ── WATCH HISTORY (compact) ──
   const hist=Object.entries(videoLog()).map(([id,r])=>({id,...r})).sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,8);
   if(hist.length){
@@ -5526,8 +5581,9 @@ function viewYouTube(root){
       <div class="small muted" style="margin-left:auto">sirf is device par</div></div>`;
     hist.forEach(r=>{
       const mins=Math.round(r.watchedSec/60);
+      const hasNote=ytNotes()[r.id]&&String(ytNotes()[r.id].text||"").trim();
       const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
-      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title||r.id)}</b>
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title||r.id)}${hasNote?" <span title=\"note save hai\">📝</span>":""}</b>
         <div class="small muted">${esc(r.channel||"")} · ${mins} min dekha${r.completedAt?" · ✅ complete":r.durationSec?` · ${Math.min(100,Math.round(r.watchedSec/r.durationSec*100))}%`:""}</div></div>
         <button class="btn ghost sm" data-id="${esc(r.id)}">▶️</button>`;
       row.querySelector("button").onclick=()=>ytPlay({id:r.id,title:r.title,channel:r.channel,durationSec:r.durationSec},{topic:r.topic,subject:r.subject});
