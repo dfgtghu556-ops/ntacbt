@@ -254,6 +254,8 @@ body.pomo-visible .ai-fab-label{display:none} /* pomodoro pill owns that slot wh
   color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
 .ai-iconbtn:hover{border-color:var(--accent-text);color:var(--blue-d)}
 .ai-iconbtn svg{width:18px;height:18px}
+.ai-iconbtn.recording{color:#fff;background:var(--red);border-color:var(--red);animation:micPulse 1s ease-in-out infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,0,0,.35)}50%{box-shadow:0 0 0 6px rgba(255,0,0,0)}}
 .ai-chat-inputrow textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;
   padding:10px 14px;background:var(--bg);color:inherit;font:inherit;font-size:14.5px;max-height:120px;line-height:1.4}
 .ai-chat-inputrow textarea:focus{outline:none;border-color:var(--accent-text);box-shadow:0 0 0 3px var(--blue-soft)}
@@ -1198,6 +1200,9 @@ img,video{max-width:100%;height:auto}
     <input id="aiChatFile" type="file" accept="image/*,application/pdf,.pdf" class="hide">
     <button id="aiChatAttach" class="ai-iconbtn" type="button" title="Attach a photo or PDF of the question" aria-label="Attach a file">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+    <button id="aiChatMic" class="ai-iconbtn" type="button" title="Bolo — apna doubt bol ke bhejo (voice to text)" aria-label="Speak your doubt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
     </button>
     <textarea id="aiChatInput" rows="1" placeholder="Ask Saarthi a doubt — physics, chem, maths…" aria-label="Type your question"></textarea>
     <button id="aiChatSend" class="ai-send-btn" type="button" aria-label="Send message" disabled>
@@ -10503,7 +10508,7 @@ async function aiChatSend(){
 }
 (function initAiChat(){
   const btn=$("#aiChatBtn"), closeBtn=$("#aiChatClose"), resetBtn=$("#aiChatReset"),
-        sendBtn=$("#aiChatSend"), input=$("#aiChatInput"), attachBtn=$("#aiChatAttach"), fileInp=$("#aiChatFile");
+        sendBtn=$("#aiChatSend"), input=$("#aiChatInput"), attachBtn=$("#aiChatAttach"), fileInp=$("#aiChatFile"), micBtn=$("#aiChatMic");
   if(!btn) return;
   if(aiChatHistory.length) btn.classList.remove("pulse"); // returning user — skip the "look here" cue
   btn.onclick=aiChatOpen;
@@ -10512,6 +10517,27 @@ async function aiChatSend(){
   sendBtn.onclick=aiChatSend;
   attachBtn.onclick=()=>fileInp.click();
   fileInp.onchange=()=>{if(fileInp.files&&fileInp.files[0])aiChatSetFile(fileInp.files[0]);fileInp.value="";};
+  // Voice-to-text: bolo apna doubt. Optional Web Speech API — hidden on
+  // browsers that don't support it, so unsupported devices just don't show it.
+  if(micBtn){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){micBtn.classList.add("hide");}
+    else{
+      const rec=new SR();rec.lang="en-IN";rec.interimResults=true;rec.continuous=false;
+      let listening=false;
+      micBtn.onclick=()=>{
+        if(listening){try{rec.stop();}catch(e){}return;}
+        try{listening=true;micBtn.classList.add("recording");toast("Suna raha hun… bolna shuru karo");rec.start();}
+        catch(e){listening=false;micBtn.classList.remove("recording");toast("Mic shuru nahi ho paya — permission check karo");}
+      };
+      rec.onresult=e=>{
+        let txt="";for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript;
+        input.value=txt;input.dispatchEvent(new Event("input"));
+      };
+      const stopRec=()=>{if(listening){listening=false;micBtn.classList.remove("recording");aiChatSyncSend();}};
+      rec.onend=stopRec;rec.onerror=e=>{if(e.error==="not-allowed")toast("Mic ki permission nahi mili");stopRec();};
+    }
+  }
   input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();aiChatSend();}});
   input.addEventListener("input",()=>{input.style.height="";input.style.height=Math.min(120,input.scrollHeight)+"px";aiChatSyncSend();});
   // Escape closes the panel from anywhere — a second, always-reliable way out
