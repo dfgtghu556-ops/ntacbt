@@ -5494,6 +5494,35 @@ function viewPractice(root){
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("pencil")}</span><h2 style="margin:0">Practice Mode</h2></div>
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`));
 
+  // ── Target-marks planner: kitne questions attempt karne hain target hits ──
+  (()=>{
+    const tc=el("div","card");
+    tc.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">🎯 Target-marks planner</h3>
+      <div class="small muted" style="margin-left:auto">jeetna kitne sahi sawal = target marks</div></div>
+      <div class="row" style="margin-top:10px;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="display:grid;gap:4px"><label class="small muted">Mera target marks (JEE Main, 300)</label>
+          <input data-tm type="number" min="0" max="300" value="${S.settings.targetMarks||180}" style="width:120px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
+        <div style="display:grid;gap:4px"><label class="small muted">Meri accuracy (%)</label>
+          <input data-ta type="number" min="0" max="100" value="${Math.max(50,Math.round(g.avgAcc||70))}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
+        <div class="small muted" data-tmOut></div>
+      </div>
+      <div class="small muted" style="margin-top:8px">Numerical (no negative) +4, MCQ +4/−1. Ye ek estimate hai — accuracy jitni zyada, utne kam attempts.</div>`;
+    const tmIn=tc.querySelector("[data-tm]"),taIn=tc.querySelector("[data-ta]"),tmOut=tc.querySelector("[data-tmOut]");
+    const calc=()=>{
+      const target=Math.max(0,Math.min(300,+tmIn.value||0));
+      const acc=Math.max(1,Math.min(100,+taIn.value||70))/100;
+      const netPerQ=4*acc-1*(1-acc); // expected net marks per attempted MCQ
+      const numPerQ=4; // numerical: no negative
+      // solve attempts for a mix: assume ~80% MCQ / 20% numerical
+      const mcq=Math.max(0,Math.round(target/(netPerQ*0.8+4*0.2)));
+      const neededMCQ=Math.ceil(mcq*0.8),neededNum=Math.floor(mcq*0.2);
+      tmOut.innerHTML=`${ic("target")} Target <b>${target}</b> marks par ~<b>${mcq}</b> attempts chahiye (≈ ${neededMCQ} MCQ + ${neededNum} numerical) — ${acc>=0.85?"zabardast accuracy, kam attempts mein ho jayega.":acc>=0.7?"solid accuracy, achievable.":"accuracy badhaoge to attempts ghatega — pehle verify karo."}`;
+      S.settings.targetMarks=target;save();
+    };
+    tmIn.oninput=calc;taIn.oninput=calc;calc();
+    root.appendChild(tc);
+  })();
+
   // ---- Smart Practice: the personalized daily mix ----
   const spPool=smartPracticePool();
   if(spPool.length>=5){
