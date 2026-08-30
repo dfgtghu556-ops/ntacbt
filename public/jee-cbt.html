@@ -121,6 +121,30 @@ input:focus,select:focus{border-color:var(--accent-text)}
 .drop.busy{border-color:var(--accent-text)}
 /* ---------- exam shell ---------- */
 #examView{position:fixed;inset:0;background:var(--bg);z-index:60;display:flex;flex-direction:column}
+/* ---------- on-screen calculator (NTA 2026 style) ---------- */
+.exam-calc{position:absolute;right:14px;top:74px;z-index:12;width:252px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px -12px rgba(20,10,40,.35);
+  padding:10px;animation:calcIn .18s ease}
+@keyframes calcIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.exam-calc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.exam-calc-head button{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px}
+.exam-calc-head button:hover{color:var(--ink)}
+.exam-calc-display{background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:22px;font-weight:700;
+  text-align:right;padding:12px 14px;margin-bottom:8px;overflow-x:auto;white-space:nowrap;
+  min-height:48px;color:var(--ink)}
+.exam-calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.exam-calc-keys button{height:42px;border:1px solid var(--line);border-radius:9px;background:var(--bg);
+  color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;transition:.12s}
+.exam-calc-keys button:hover{background:var(--blue-soft);border-color:var(--accent-text)}
+.exam-calc-keys button.op{background:var(--blue-soft);color:var(--accent-text)}
+.exam-calc-keys button.act{background:var(--red);color:#fff;border-color:transparent}
+.exam-calc-keys button.eq{background:var(--green);color:#fff;border-color:transparent}
+.exam-calc-insert{width:100%;margin-top:8px;background:var(--blue);color:#fff;border:0;border-radius:10px;
+  padding:10px;font-weight:700;cursor:pointer;transition:.15s}
+.exam-calc-insert:hover{background:var(--blue-l)}
+.exam-calc-insert:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:560px){.exam-calc{right:8px;top:64px;left:8px;width:auto}}
 /* ============ Saarthi — AI doubt-solving chat widget ============
    Sits at z-index 55 — automatically covered by #examView (z-index 60)
    during a live timed test, with no extra JS needed, so it can't be used
@@ -296,6 +320,24 @@ html.dark .qtext-mode{background:color-mix(in srgb,var(--blue) 10%,var(--panel))
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;z-index:200;box-shadow:var(--shadow);animation:fade .25s}
 .modal{position:fixed;inset:0;background:rgba(5,15,30,.6);display:grid;place-items:center;z-index:150;padding:16px}
 .modal .box{background:var(--panel);border-radius:var(--radius);padding:20px;max-width:520px;width:100%;box-shadow:var(--shadow);animation:fade .25s}
+/* ---------- first-run "Getting Started" onboarding ---------- */
+.onb-modal .box{max-width:620px;overflow:hidden;padding:0}
+.onb-hero{padding:26px 24px 18px;color:#fff;background:linear-gradient(125deg,var(--ink-nav-a),var(--ink-nav-b));position:relative;overflow:hidden}
+.onb-hero:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:color-mix(in srgb,var(--blue) 55%,transparent);filter:blur(60px);top:-90px;right:-60px}
+.onb-hero .muted{color:rgba(255,255,255,.78)}
+.onb-hero h2{color:#fff;margin:8px 0 4px;font-size:24px}
+.onb-body{padding:18px 22px 22px}
+.onb-step{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;
+  border:1px solid var(--line);border-radius:13px;padding:11px 13px;margin:8px 0;background:var(--panel);transition:.15s}
+.onb-step:hover{border-color:var(--accent-text);background:var(--blue-soft);transform:translateX(2px)}
+.onb-num{width:32px;height:32px;border-radius:50%;background:var(--blue-soft);color:var(--blue-d);
+  display:grid;place-items:center;font-weight:800;font-size:14px;flex:0 0 auto}
+.onb-step b{font-size:14px}
+.onb-step .s{font-size:12.5px;color:var(--muted);line-height:1.45}
+.onb-go{white-space:nowrap}
+.onb-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);
+  padding:14px 22px;background:color-mix(in srgb,var(--panel) 96%,var(--blue-soft))}
+.onb-foot .muted{font-size:12.5px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .cal .cell{min-height:52px;padding:4px;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
 .cal .cell.has{background:var(--blue-soft);font-weight:700;cursor:pointer}
@@ -1106,11 +1148,27 @@ img,video{max-width:100%;height:auto}
     <span class="timer" id="exTimer">03:00:00</span>
     <button class="iconbtn" id="fsBtn" title="Fullscreen" aria-label="Toggle fullscreen"><span data-ic="fullscreen"></span></button>
     <button class="iconbtn" id="palBtn" title="Question palette" aria-label="Toggle question palette"><span data-ic="grid"></span></button>
+    <button class="iconbtn" id="exCalcBtn" title="On-screen calculator (as in the real NTA 2026 console)" aria-label="Toggle on-screen calculator">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="8" y1="11" y2="11"/><line x1="12" x2="12" y1="11" y2="11"/><line x1="16" x2="16" y1="11" y2="11"/><line x1="8" x2="8" y1="15" y2="15"/><line x1="12" x2="12" y1="15" y2="15"/><line x1="16" x2="16" y1="15" y2="15"/><line x1="8" x2="8" y1="19" y2="19"/><line x1="12" x2="12" y1="19" y2="19"/><line x1="16" x2="16" y1="19" y2="19"/></svg>
+    </button>
   </div>
   <div class="subtabs" id="exSubs"></div>
   <div class="exam-body">
     <div class="qpane" id="exQ"></div>
     <div class="palette" id="exPal"></div>
+  </div>
+  <!-- On-screen calculator — mirrors the basic standard calculator NTA
+       introduced in the JEE Main 2026 CBT console. Toggled from the header;
+       "Insert" writes the result straight into the active numerical answer. -->
+  <div id="exCalc" class="exam-calc hide" role="dialog" aria-label="On-screen calculator">
+    <div class="exam-calc-head">
+      <b>Calculator</b>
+      <span class="small muted" style="flex:1">Standard · as in the NTA console</span>
+      <button type="button" id="exCalcClose" aria-label="Close calculator">✕</button>
+    </div>
+    <div class="exam-calc-display" id="exCalcDisp">0</div>
+    <div class="exam-calc-keys" id="exCalcKeys"></div>
+    <button type="button" class="exam-calc-insert" id="exCalcInsert">Insert into answer</button>
   </div>
   <div class="exam-foot" id="exFoot"></div>
 </div>
@@ -2630,7 +2688,14 @@ function evaluate(test,resp){
     const t=r.time||0; p.time+=t; all.time+=t;
     if(r.ans==null||r.ans===""){p.skipped++;all.skipped++;}
     else if(isRight(q,r.ans)){p.correct++;all.correct++;p.marks+=MARK_C;all.marks+=MARK_C;}
-    else {p.wrong++;all.wrong++;p.marks+=markW;all.marks+=markW;all.neg+=Math.abs(markW);}
+    else {
+      // OFFICIAL JEE MAIN 2026 MARKING (research-verified): Section B
+      // numerical/integer questions carry NO negative marking (−0), only
+      // MCQs are penalised (−1). Previously every wrong answer lost a mark,
+      // which under-scored honest attempts on numerical questions.
+      const penalty = q.type==="integer" ? 0 : markW;
+      p.wrong++;all.wrong++;p.marks+=penalty;all.marks+=penalty;all.neg+=Math.abs(penalty);
+    }
   });
   const attempted=all.correct+all.wrong;
   all.accuracy=pct(all.correct,attempted);
@@ -6959,6 +7024,8 @@ function startExam(testId,resume){
   EX={test:t,attempt,cur:resume?Math.min(Math.max(0,resume.cur||0),t.questions.length-1):0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{},
     strict:!!S.settings.strictMode&&!t.practice};
   if(!resume&&t.cloud)registerAttempt(t.id);
+  // fresh exam → close & reset the on-screen calculator (no leftover state)
+  try{calcToggle(false);_calc={disp:"0",acc:0,op:null,justEq:false};}catch(e){}
   examAutosave();
   $("#examView").classList.remove("hide");
   // APK: screen stays awake for the whole exam (native superpower)
@@ -7049,7 +7116,9 @@ function drawQuestion(){
   EX.lastTick=Date.now();
   const p=$("#exQ");p.innerHTML="";
   const head=el("div","row");head.style.justifyContent="space-between";
-  const negTxt=S.settings.negMarking===false?"+4 / 0":"+4 / -1";
+  // JEE Main 2026: MCQs penalise −1, numerical/integer questions do NOT.
+  const isNum=q.type!=="mcq";
+  const negTxt=isNum?"+4 / 0":(S.settings.negMarking===false?"+4 / 0":"+4 / -1");
   const diff=questionDifficulty(q.id);
   const diffColor={Easy:"var(--green)",Medium:"var(--amber)",Hard:"var(--red)",Unrated:"var(--muted)"}[diff.label];
   const diffBg={Easy:"rgba(30,158,87,.15)",Medium:"rgba(224,161,6,.16)",Hard:"rgba(211,59,59,.15)",Unrated:"rgba(107,107,133,.14)"}[diff.label];
@@ -7266,6 +7335,89 @@ $("#fsBig").onclick=()=>bumpExamFont(0.1);
   },{passive:true});
 })();
 $("#palBtn").onclick=()=>$("#exPal").classList.toggle("collapsed");
+/* ═══ ON-SCREEN CALCULATOR (NTA 2026) ═════════════════════════════════
+   A basic standard calculator inside the exam console — the same feature
+   NTA shipped in the real 2026 CBT. Toggle from the header; "Insert into
+   answer" writes the result into the active numerical answer box (and
+   records it as the student's typed answer). Fully offline, zero deps. */
+function buildCalcKeys(){
+  const k=$("#exCalcKeys"); if(!k||k.childElementCount)return;
+  const rows=[
+    ["C","act"],["±",""],["%",""],["÷","op"],
+    ["7",""],["8",""],["9",""],["×","op"],
+    ["4",""],["5",""],["6",""],["−","op"],
+    ["1",""],["2",""],["3",""],["+","op"],
+    ["0",""],[".",""],["⌫",""],["=","eq"]
+  ];
+  rows.forEach(([lab,cls])=>{
+    const b=el("button",cls,lab);b.type="button";b.setAttribute("aria-label","Calculator "+lab);
+    b.onclick=()=>calcKey(lab);k.appendChild(b);
+  });
+}
+let _calc={disp:"0",acc:0,op:null,justEq:false};
+function calcRender(){
+  const d=$("#exCalcDisp"); if(d)d.textContent=_calc.disp;
+  const ins=$("#exCalcInsert");
+  if(ins){
+    const q=EX&&EX.test?EX.test.questions[EX.cur]:null;
+    const onNum=!!q&&q.type!=="mcq";
+    ins.disabled=!onNum;
+    ins.textContent=onNum?"Insert into answer":"Insert into answer (open a numerical question)";
+  }
+}
+function calcKey(k){
+  if(k==="C"){_calc={disp:"0",acc:0,op:null,justEq:false};calcRender();return;}
+  if(k==="⌫"){_calc.disp=_calc.disp.length>1?_calc.disp.slice(0,-1):"0";_calc.justEq=false;calcRender();return;}
+  if(k==="±"){_calc.disp=_calc.disp.startsWith("-")?_calc.disp.slice(1):("-"+_calc.disp);calcRender();return;}
+  if(k==="%"){_calc.disp=String(parseFloat(_calc.disp)/100||0);calcRender();return;}
+  if(/^\d$/.test(k)||k==="."){
+    if(_calc.justEq){_calc.disp="0";_calc.justEq=false;}
+    if(k==="."){ if(!_calc.disp.includes("."))_calc.disp+="."; }
+    else _calc.disp=_calc.disp==="0"?k:_calc.disp+k;
+    calcRender();return;
+  }
+  if(k==="="){
+    if(_calc.op!=null){_calc.disp=calcApply(_calc.acc,parseFloat(_calc.disp),_calc.op);_calc.acc=0;_calc.op=null;}
+    _calc.justEq=true;calcRender();return;
+  }
+  // operator
+  if(_calc.op!=null&&!_calc.justEq)_calc.disp=calcApply(_calc.acc,parseFloat(_calc.disp),_calc.op);
+  _calc.acc=parseFloat(_calc.disp)||0;_calc.op=k;_calc.disp="0";_calc.justEq=false;calcRender();
+}
+function calcApply(a,b,op){
+  const r=op==="+"?a+b:op==="−"?a-b:op==="×"?a*b:op==="÷"?(b===0?NaN:a/b):b;
+  return Number.isFinite(r)?String(+r.toPrecision(12)):"Error";
+}
+function calcInsert(){
+  const q=EX&&EX.test?EX.test.questions[EX.cur]:null;
+  if(!q||q.type==="mcq")return;
+  const v=_calc.disp==="Error"?"":_calc.disp;
+  const inp=$("#exQ input[type=text]");
+  if(inp){inp.value=v;inp.dispatchEvent(new Event("input",{bubbles:true}));}
+  const r=EX.attempt.responses[q.id]; if(r)r.ans=v||null;
+  toast("Inserted "+v);
+}
+function calcToggle(force){
+  const p=$("#exCalc"); if(!p)return;
+  const open=force!=null?force:p.classList.contains("hide");
+  p.classList.toggle("hide",!open);
+  if(open)buildCalcKeys();
+  calcRender();
+}
+$("#exCalcBtn").onclick=()=>calcToggle();
+$("#exCalcClose").onclick=()=>calcToggle(false);
+$("#exCalcInsert").onclick=calcInsert;
+// keyboard support while the calculator is open (digits/ops/=; Esc closes)
+document.addEventListener("keydown",e=>{
+  const p=$("#exCalc"); if(!p||p.classList.contains("hide"))return;
+  const m=/^[\d.\+\-*/%]$/.test(e.key);
+  if(m){e.preventDefault();calcKey(e.key==="*"?"×":e.key==="/"?"÷":e.key==="-"?"−":e.key);}
+  else if(e.key==="Enter"){e.preventDefault();calcKey("=");}
+  else if(e.key==="Backspace"){e.preventDefault();calcKey("⌫");}
+  else if(e.key==="Escape"){e.preventDefault();calcToggle(false);}
+});
+// The calculator is reset & hidden inside startExam() itself (see below).
+
 // Mobile polish: start with the palette hidden on small screens so the
 // question gets the full viewport; the palette button opens it as a slide-up sheet.
 if(matchMedia&&matchMedia("(max-width:860px)").matches)$("#exPal").classList.add("collapsed");
@@ -7393,6 +7545,9 @@ function viewSettings(root){
   const nameIn=el("input");nameIn.type="text";nameIn.value=st.candidate||"Candidate";nameIn.style.maxWidth="320px";
   nameIn.oninput=()=>{st.candidate=nameIn.value||"Candidate";clearTimeout(nameIn._t);nameIn._t=setTimeout(save,500);}; // debounced — full-state save per keystroke froze typing
   c.appendChild(block("Candidate name",nameIn,"Shown on the exam header, exactly like the NTA console."));
+  const gs=el("button","btn ghost sm",ic("rocket")+" Show Getting Started guide");
+  gs.onclick=showOnboarding;gs.style.marginTop="8px";
+  c.appendChild(block("Beginner?",gs,"See the 5-step orientation again — helpful any time, not just on day one."));
   root.appendChild(c);
 
   const eb=el("div","card");
@@ -9743,6 +9898,78 @@ function viewDash(root){
 
   countUpStats(root); // animate the headline numbers in
 }
+
+/* ═══ FIRST-RUN "GETTING STARTED" — beginner→advanced in 5 taps ═══════
+   Shown once on first launch (dismissed permanently via localStorage,
+   re-openable from Settings). Gives a brand-new student a clear, honest
+   orientation instead of a wall of features: lock your goal, build a plan,
+   add your papers, take a test, review mistakes. Advanced users dismiss it
+   once and never see it again. No clutter rule — it earns its one shot.  */
+const ONB_LS="jeecbt.onboarded.v1";
+/* Expose the key + a shared localStorage reference on window so the
+   handlers below always resolve them the same way (robust whether the
+   function is invoked from this script's scope or re-entered by a
+   test runner / console). */
+window.__ONB_LS=ONB_LS;
+window.__onbDone=()=>{try{window.localStorage.setItem(window.__ONB_LS,"1");}catch(e){}};
+function showOnboarding(){
+  const m=el("div","modal onb-modal");m.setAttribute("data-static","1");
+  m.innerHTML=`<div class="box"><div class="onb-hero">
+      <div class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:800">Welcome aboard</div>
+      <h2>Apna JEE Main companion ready 🎯</h2>
+      <div class="muted" style="font-size:13.5px;line-height:1.6">Har level ke liye bana hai — beginner se advanced. Sirf 5 cheezein jaan lo, baaki app khud sambhal legi.</div>
+    </div>
+    <div class="onb-body"></div>
+    <div class="onb-foot">
+      <button class="btn" data-done>${ic("check")} Got it — let's start</button>
+      <button class="btn ghost" data-done-later>Later</button>
+      <span class="muted">Tumhara data sirf isi device par hai — kabhi bhi Backup kar sakte ho.</span>
+    </div></div>`;
+  const body=m.querySelector(".onb-body");
+  const steps=[
+    ["🎯","Apna sapna lock karo","Dream college + reason — mentor aur dashboard har roz yaad dilayenge. (2 sec)",
+      ()=>{go("dash");setTimeout(()=>{const b=[...document.querySelectorAll("#app input[type=text]")].find(x=>/college|NIT|IIT/i.test(x.placeholder||""));if(b){b.focus();b.scrollIntoView({block:"center"});}},250);}],
+    ["🗓️","Personalised study plan","Apna exam, apne teachers, apne weak chapters — 60 second ka wizard. Videos + daily tasks.",
+      ()=>{go("planner");setTimeout(()=>{const b=[...document.querySelectorAll("#app button")].find(x=>/Build|Plan|plan/i.test(x.textContent||"")&&x.classList.contains("btn"));if(b)b.click();},250);}],
+    ["📚","Pehla test lao","Upload Physics + Chemistry + Maths PDFs → 75-question CBT ban jata hai, ya public library/PYQ se seedha attempt karo.",
+      ()=>{go("upload");}],
+    ["✍️","Test do — NTA style","Timer, palette, mark-for-review, auto-submit. Real CBT jaisa hi. Numerical questions mein ab NTA-2026 ke hisaab se NO negative marking.",
+      ()=>{const t=cloudTests[0];if(t){const b=el("button","btn","Start now");b.onclick=()=>startExam(t.id);document.body.appendChild(b);b.click();b.remove();}else go("library");}],
+    ["🔍","Galtiyon se seekho","Result → AI analysis → mistake notebook → spaced review. Yehi loop marks badhata hai.",
+      ()=>{go("result");}]
+  ];
+  steps.forEach(([em,title,sub,run],i)=>{
+    const r=el("button","onb-step");r.type="button";
+    r.innerHTML=`<div style="font-size:22px;flex:none">${em}</div>
+      <div><b>${esc(title)}</b><div class="s">${esc(sub)}</div></div>
+      <span class="badge onb-go">Open →</span>`;
+    r.onclick=()=>{window.__onbDone();m.remove();run();};
+    body.appendChild(r);
+  });
+  m.querySelector("[data-done]").onclick=()=>{window.__onbDone();m.remove();};
+  m.querySelector("[data-done-later]").onclick=()=>m.remove();
+  document.body.appendChild(m);
+  setTimeout(()=>{if(m.isConnected){const b=m.querySelector("[data-done]");if(b)b.focus();}},50);
+}
+/* The auto-show hook, factored out so it's callable (Settings re-open and
+   the boot path both use it) and so it can be exercised by the robot test.
+   It re-checks the flag every time it runs — a visitor who dismissed the
+   guide (or opened it from Settings) is never auto-nagged again. */
+function maybeOnboard(){
+  try{ if(window.localStorage.getItem(window.__ONB_LS)) return; }catch(e){ return; }
+  // Only interrupt a brand-new visitor, shortly after first paint, and not
+  // mid-exam / mid-chat. Advanced users who dismissed it won't be nagged.
+  setTimeout(()=>{
+    // Re-check the flag INSIDE the timer: a brand-new visitor may dismiss
+    // the guide (or open it from Settings) within the 900ms delay — don't
+    // nag them again just because the boot-time check predated their action.
+    try{ if(window.localStorage.getItem(window.__ONB_LS)) return; }catch(e){}
+    if(typeof EX!=="undefined"&&EX&&!$("#examView").classList.contains("hide"))return;
+    if(typeof aiChatIsOpen!=="undefined"&&aiChatIsOpen)return;
+    showOnboarding();
+  },900);
+}
+maybeOnboard(); // first-run auto-show on load
 
 /* -------------------------------- BOOT ----------------------------------- */
 /* Offline mode: register the generated worker only in a real published tab.
