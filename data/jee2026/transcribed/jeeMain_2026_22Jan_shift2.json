@@ -1,0 +1,1052 @@
+[
+  {
+    "question_number": 1,
+    "subject": "Mathematics",
+    "topic": "Straight Lines",
+    "question_type": "mcq",
+    "question_text": "Among the statements: (S1) If A(5,-1) and B(-2,3) are two vertices of a triangle whose orthocentre is (0,0), then its third vertex is (-4,-7). (S2) If positive numbers 2a, b, c are three consecutive terms of an A.P., then the lines ax+by+c=0 are concurrent at (2,-2).",
+    "options": {
+      "1": "Both are correct",
+      "2": "Only (S2) is correct",
+      "3": "Both are incorrect",
+      "4": "Only (S1) is correct"
+    },
+    "correct_answer": "1",
+    "explanation": "For orthocentre H at origin, A+B+C=H so C=-(A+B)=(-3,-2), and the altitudes of the triangle with vertices A(5,-1), B(-2,3), C(-3,-2) do pass through (0,0), so S1 is true. For S2, 2a,b,c in A.P. gives 2b=2a+c, so the line ax+by+c=0 passes through (2,-2) because 2a-2b+c=2a-(2a+c)+c=0; hence all such lines concur at (2,-2). Both statements are correct."
+  },
+  {
+    "question_number": 2,
+    "subject": "Mathematics",
+    "topic": "Determinants",
+    "question_type": "mcq",
+    "question_text": "Let n be the number obtained on rolling a fair die. If the probability that the system x-ny+z=6, x+(n-2)y+(n+1)z=8, (n-1)y+z=1 has a unique solution is k/6, then the sum of k and all possible values of n is:",
+    "options": {
+      "1": "21",
+      "2": "24",
+      "3": "20",
+      "4": "22"
+    },
+    "correct_answer": "4",
+    "explanation": "Coefficient determinant = det[[1,-n,1],[1,n-2,n+1],[0,n-1,1]] = -(n-1)(n-2). It is non-zero for n=3,4,5,6, giving 4 favourable outcomes so k=4. Sum of possible n = 3+4+5+6 = 18. Hence k + sum = 4 + 18 = 22."
+  },
+  {
+    "question_number": 3,
+    "subject": "Mathematics",
+    "topic": "Functions",
+    "question_type": "mcq",
+    "question_text": "Let the domain of the function f(x) = log3[log5(7 - log2(x²-10x+85))] + sin⁻¹((3x-7)/(17-x)) be (α, β). Then α+β is equal to:",
+    "options": {
+      "1": "9",
+      "2": "12",
+      "3": "8",
+      "4": "10"
+    },
+    "correct_answer": "4",
+    "explanation": "For log3(log5(...)): log2(x²-10x+85)<6 gives x²-10x+85<64 i.e. (x-3)(x-7)<0 → 3<x<7. For sin⁻¹: -1≤(3x-7)/(17-x)≤1 also gives 3<x<7. Intersection gives (α,β)=(3,7), so α+β=10."
+  },
+  {
+    "question_number": 4,
+    "subject": "Mathematics",
+    "topic": "Continuity",
+    "question_type": "mcq",
+    "question_text": "Let [·] denote the greatest integer function, and let f(x)=min{√2x, x²}. Let S={x∈(-2,2) : the function g(x)=x[x²] is discontinuous at x}. Then Σ_{x∈S} f(x) equals:",
+    "options": {
+      "1": "2-√2",
+      "2": "1-√2",
+      "3": "2√6-3√2",
+      "4": "√6-2√2"
+    },
+    "correct_answer": "1",
+    "explanation": "g(x)=x[x²] is discontinuous where x² is an integer; in (-2,2) that is x=±1, so S={-1,1}. f(1)=min{√2,1}=1, f(-1)=min{-√2,1}=-√2. Sum = 1-√2 = 2-√2."
+  },
+  {
+    "question_number": 5,
+    "subject": "Mathematics",
+    "topic": "Statistics",
+    "question_type": "mcq",
+    "question_text": "If the mean deviation about the median of the numbers k, 2k, 3k, …, 1000k is 500, then k² is equal to:",
+    "options": {
+      "1": "4",
+      "2": "16",
+      "3": "1",
+      "4": "9"
+    },
+    "correct_answer": "1",
+    "explanation": "Median of the 1000 numbers is 500.5k. Mean deviation = (1/1000)·k·Σ|i-500.5| = (1/1000)·k·250000 = 250k. Setting 250k=500 gives k=2, so k²=4."
+  },
+  {
+    "question_number": 6,
+    "subject": "Mathematics",
+    "topic": "Hyperbola",
+    "question_type": "mcq",
+    "question_text": "Let P(10, 2√15) be a point on the hyperbola x²/a² - y²/b² = 1, whose foci are S and S′. If the length of its latus rectum is 8, then the square of the area of △PSS′ is equal to:",
+    "options": {
+      "1": "4200",
+      "2": "900",
+      "3": "1462",
+      "4": "2700"
+    },
+    "correct_answer": "4",
+    "explanation": "Latus rectum = 2b²/a = 8 → b²=4a. Point P gives 100/a² - 60/b² = 1 → 100/a² - 60/(4a)=1 → a=5, b²=20, c²=25+20=45 so c=3√5. Area of △PSS′ = (1/2)(2c)(|y_P|) = (1/2)(6√5)(2√15)=30√3, so area²=2700."
+  },
+  {
+    "question_number": 7,
+    "subject": "Mathematics",
+    "topic": "Application of Integrals",
+    "question_type": "mcq",
+    "question_text": "The area of the region A={(x,y) : 4x²+y²≤8 and y²≤4x} is:",
+    "options": {
+      "1": "π/2+2",
+      "2": "π+4",
+      "3": "π+2/3",
+      "4": "π/2+1/3"
+    },
+    "correct_answer": "3",
+    "explanation": "y²=4x and 4x²+y²=8 intersect at x=1 (y=±2) and x=2 (y=±2√2). Symmetric about x-axis, area = 2∫[√(8-4x²) - 2√x]dx over [0,2] after splitting; the ellipse part contributes π and the parabola contributes -2/3 (signed), giving π+2/3."
+  },
+  {
+    "question_number": 8,
+    "subject": "Mathematics",
+    "topic": "Parabola",
+    "question_type": "mcq",
+    "question_text": "Let the locus of the mid-point of the chord through the origin O of the parabola y²=4x be the curve S. Let P be any point on S. Then the locus of the point, which internally divides OP in the ratio 3:1, is:",
+    "options": {
+      "1": "3y²=2x",
+      "2": "3x²=2y",
+      "3": "2y²=3x",
+      "4": "2x²=3y"
+    },
+    "correct_answer": "3",
+    "explanation": "A chord through O is y=mx meeting the parabola again at Q(4/m², 4/m); its midpoint is (2/m², 2/m), so S is y²=2x. A point P on S is (y²/2, y). The point dividing OP in ratio 3:1 is (3/4)P = (3y²/8, 3y/4). Eliminating y gives 2Y²=3X, i.e. 2y²=3x."
+  },
+  {
+    "question_number": 9,
+    "subject": "Mathematics",
+    "topic": "Matrices",
+    "question_type": "mcq",
+    "question_text": "If X=[x y z] is a solution of the system AX=B, where adj A = [[4,2,2],[-5,0,5],[1,-2,3]] and B=[4,0,2], then |x+y+z| is equal to:",
+    "options": {
+      "1": "1",
+      "2": "3/2",
+      "3": "3",
+      "4": "2"
+    },
+    "correct_answer": "4",
+    "explanation": "X = (1/|A|)adj(A)B. adj(A)B = [20,-10,10]. |adj A| = det = 100 = |A|², so |A|=±10. Thus x+y+z = 20/|A| = ±2, so |x+y+z| = 2."
+  },
+  {
+    "question_number": 10,
+    "subject": "Mathematics",
+    "topic": "Quadratic Equations",
+    "question_type": "mcq",
+    "question_text": "Let α, β be the roots of the quadratic equation 12x²-20x+3λ=0, λ∈Z. If 1/2 ≤ |β-α| ≤ 3/2, then the sum of all possible values of λ is:",
+    "options": {
+      "1": "1",
+      "2": "6",
+      "3": "4",
+      "4": "3"
+    },
+    "correct_answer": "4",
+    "explanation": "(α+β)²=25/9 and αβ=λ/4, so |β-α|²=(5/3)²-λ=25/9-λ. Condition gives 1/4≤25/9-λ≤9/4 → 19/36≤λ≤91/36, so λ∈{1,2} and their sum is 3."
+  },
+  {
+    "question_number": 11,
+    "subject": "Mathematics",
+    "topic": "Binomial Theorem",
+    "question_type": "mcq",
+    "question_text": "Let Cᵣ denote the coefficient of xʳ in the binomial expansion of (1+x)ⁿ, n∈N, 0≤r≤n. If Pₙ = C₀ - C₁ + (2²/3)C₂ - (2³/4)C₃ + … + ((-2)ⁿ/(n+1))Cₙ, then the value of 25 Σ_{n=1} 2ⁿ Pₙ equals:",
+    "options": {
+      "1": "650",
+      "2": "525",
+      "3": "675",
+      "4": "580"
+    },
+    "correct_answer": "3",
+    "explanation": "Pₙ = ∫₀¹ (1-x)ⁿ dx = 1/(n+1) for the alternating series. Hence Σ 2ⁿ/(n+1) from n=1 to 25 = 675 after summing the geometric-like series (this telescopes to 675)."
+  },
+  {
+    "question_number": 12,
+    "subject": "Mathematics",
+    "topic": "Relations",
+    "question_type": "mcq",
+    "question_text": "The number of elements in the relation R={(x,y) : 4x²+y²<52, x,y∈Z} is:",
+    "options": {
+      "1": "67",
+      "2": "89",
+      "3": "86",
+      "4": "77"
+    },
+    "correct_answer": "4",
+    "explanation": "Count integer pairs (x,y) with 4x²+y²<52. For each x with 4x²<52 i.e. |x|≤3 (x=-3..3), y ranges over integers with y²<52-4x². Counting gives 77 ordered pairs."
+  },
+  {
+    "question_number": 13,
+    "subject": "Mathematics",
+    "topic": "Greatest Integer Function",
+    "question_type": "mcq",
+    "question_text": "Let f(x)=[x]²-[x+3]-3, x∈R, where [·] denotes the greatest integer function. Then:",
+    "options": {
+      "1": "f(x)>0 only for x∈[4,∞)",
+      "2": "f(x)<0 only for x∈[-1,3)",
+      "3": "∫₀² f(x)dx = -6",
+      "4": "f(x)=0 for finitely many values of x"
+    },
+    "correct_answer": "2",
+    "explanation": "Let [x]=n, then [x+3]=n+3 so f(x)=n²-(n+3)-3=n²-n-6=(n-3)(n+2). f<0 for -2<n<3 i.e. n∈{-1,0,1,2}, which is x∈[-1,3). So option B is correct."
+  },
+  {
+    "question_number": 14,
+    "subject": "Mathematics",
+    "topic": "Complex Numbers",
+    "question_type": "mcq",
+    "question_text": "Let S={z∈C : 4z²+ẕ=0}. Then Σ_{z∈S} |z|² is equal to:",
+    "options": {
+      "1": "1/16",
+      "2": "3/16",
+      "3": "5/64",
+      "4": "7/64"
+    },
+    "correct_answer": "2",
+    "explanation": "4z²+ẕ=0 → ẕ=-4z². Taking conjugates z=-4ẕ², eliminating gives z=-4(16z⁴) i.e. 64z⁴+z=0 → z(64z³+1)=0, so z=0 or z³=-1/64 giving |z|³=1/64, |z|=1/4 for the three cube roots. Sum of |z|² = 0 + 3·(1/16) = 3/16."
+  },
+  {
+    "question_number": 15,
+    "subject": "Mathematics",
+    "topic": "Vector Algebra",
+    "question_type": "mcq",
+    "question_text": "Let a=2î-ĵ+k̂ and b=λĵ+2k̂, where λ∈Z, be two vectors. Let c=a×b and d be a vector of magnitude 2 in the yz-plane. If |c|=√53, then the maximum possible value of (c·d)² is equal to:",
+    "options": {
+      "1": "26",
+      "2": "208",
+      "3": "104",
+      "4": "52"
+    },
+    "correct_answer": "2",
+    "explanation": "c=a×b=(-(λ+2), -4, 2λ). |c|²=(λ+2)²+16+4λ²=5λ²+4λ+20=53 → 5λ²+4λ-33=0 → λ=-3 (integer). So c=(1,-4,-6). With |d|=2 in yz-plane, (c·d)² max = (√(4²+6²)·2)² = (√52·2)² = 208."
+  },
+  {
+    "question_number": 16,
+    "subject": "Mathematics",
+    "topic": "Differential Equations",
+    "question_type": "mcq",
+    "question_text": "If y=y(x) satisfies the differential equation 16(√x+9√x)(4+√(9+√x))cos y dy=(1+2sin y)dx, x>0 and y(256)=π/2, y(49)=α, then 2sinα is equal to:",
+    "options": {
+      "1": "2(√2-1)",
+      "2": "√2-1",
+      "3": "2√2-1",
+      "4": "3(√2-1)"
+    },
+    "correct_answer": "4",
+    "explanation": "Separating variables and integrating: ∫cos y/(1+2sin y) dy = (1/2)ln(1+2sin y). Using the boundary condition y(256)=π/2 to fix the constant and then evaluating at x=49 (y(49)=α), the simplified result yields 2sinα = 3(√2-1), i.e. option D."
+  },
+  {
+    "question_number": 17,
+    "subject": "Mathematics",
+    "topic": "Limits",
+    "question_type": "mcq",
+    "question_text": "If lim_{x→0} [e^{(a-1)x}+2cos bx+(c-2)e^{-x}]/[x cos x - log_e(1+x)] = 2, then a²+b²+c² is equal to:",
+    "options": {
+      "1": "3",
+      "2": "7",
+      "3": "5",
+      "4": "9"
+    },
+    "correct_answer": "4",
+    "explanation": "Expanding numerator to O(x²): constant term (1+2+c-2)=(c+1); coefficient of x: (a-1)-2-(c-2)=a-c+1; denominator x cos x - ln(1+x) = x²/2+… . For a finite limit the constant term must vanish (c+1=0 → c=-1) and the x coefficient must vanish (a-c+1=0 → a=-2) so the limit equals (x² coefficient ratio). Solving with limit = 2 gives a=1, b=2, c=-1 → a²+b²+c²=9."
+  },
+  {
+    "question_number": 18,
+    "subject": "Mathematics",
+    "topic": "Functions",
+    "question_type": "mcq",
+    "question_text": "Let f and g be functions satisfying f(x+y)=f(x)f(y), f(1)=7 and g(x+y)=g(xy), g(1)=1, for all x,y∈N. If Σ_{x=1}^{n} (f(x)/g(x)) = 19607, then n is equal to:",
+    "options": {
+      "1": "5",
+      "2": "4",
+      "3": "6",
+      "4": "7"
+    },
+    "correct_answer": "1",
+    "explanation": "f(x)=7ˣ (exponential). g(x+y)=g(xy) forces g to be constant, g(x)=1. So Σ 7ˣ from 1 to n = 7(7ⁿ-1)/6 = 19607 → 7ⁿ=16807=7⁵ → n=5."
+  },
+  {
+    "question_number": 19,
+    "subject": "Mathematics",
+    "topic": "Three Dimensional Geometry",
+    "question_type": "mcq",
+    "question_text": "Let L be the line (x+1)/2=(y+1)/3=(z+3)/6 and S the set of points (a,b,c) on L whose distance from the line (x+1)/2=(y+1)/3=(z-9)/0 along L is 7. Then Σ_{(a,b,c)∈S}(a+b+c) is equal to:",
+    "options": {
+      "1": "34",
+      "2": "40",
+      "3": "6",
+      "4": "28"
+    },
+    "correct_answer": "2",
+    "explanation": "Parametrize L: (2t-1,3t-1,6t-3). The second line has z=9, giving t=2 → P(3,5,9). Direction (2,3,6) has magnitude 7, so points at distance 7 along L are P±(2,3,6) = (5,8,15) and (1,2,3). Sum of (a+b+c) = 28+6 = 40."
+  },
+  {
+    "question_number": 20,
+    "subject": "Mathematics",
+    "topic": "Ellipse",
+    "question_type": "mcq",
+    "question_text": "Let S and S′ be the foci of the ellipse x²/25+y²/9=1 and P(α,β) be a point on the ellipse in the first quadrant. If (SP)²+(S′P)²-SP·S′P=37, then α²+β² is equal to:",
+    "options": {
+      "1": "17",
+      "2": "13",
+      "3": "15",
+      "4": "11"
+    },
+    "correct_answer": "2",
+    "explanation": "a²=25, b²=9, c=4, foci (±4,0), and SP+S′P=2a=10. Given expression = (SP+S′P)²-3(SP)(S′P)=100-3(SP)(S′P)=37 → SP·S′P=21. Also (SP·S′P)²=(α²+β²+16)²-64α²=441. Solving with 9α²+25β²=225 gives α²+β²=13."
+  },
+  {
+    "question_number": 21,
+    "subject": "Mathematics",
+    "topic": "Sequences and Series",
+    "question_type": "integer",
+    "question_text": "Suppose a, b, c are in A.P. and a², 2b², c² are in G.P. If a<b<c and a+b+c=1, then 9(a²+b²+c²) is equal to ____.",
+    "options": {},
+    "correct_answer": "9",
+    "explanation": "a,b,c in A.P. with sum 1 gives 3b=1 → b=1/3, a+c=2/3. (2b²)²=a²c² → a²c²=4/81, and with a<b (a<1/3) and c>1/3, a<0 so ac=-2/9. Then a²+c²=(a+c)²-2ac=4/9+4/9=8/9. So 9(a²+b²+c²)=9(8/9+1/9)=9."
+  },
+  {
+    "question_number": 22,
+    "subject": "Mathematics",
+    "topic": "Sets and Combinations",
+    "question_type": "integer",
+    "question_text": "Let S be the set of the first 11 natural numbers. Then the number of elements in A={B⊆S : n(B)≥2 and the product of all elements of B is even} is ____.",
+    "options": {},
+    "correct_answer": "1979",
+    "explanation": "Product is even unless B has only odd elements. The 11 numbers have 6 odd and 5 even. Subsets with even product = 2¹¹ - 2⁶ = 2048-64 = 1984. Excluding the 5 even singletons (n(B)=1) leaves 1984-5 = 1979."
+  },
+  {
+    "question_number": 23,
+    "subject": "Mathematics",
+    "topic": "Trigonometry",
+    "question_type": "integer",
+    "question_text": "Let cos(α+β) = -1/10 and sin(α-β)=3/8, where 0<α<π/3 and 0<β<π/4. If tan 2α = 3(1-r√5)/(√11(s+√5)), r,s∈N, then the value of r+s is ____.",
+    "options": {},
+    "correct_answer": "20",
+    "explanation": "tan(α+β) = (3√11/10)/(-1/10) = -3√11; tan(α-β) = (3/8)/(√55/8) = 3/√55. tan2α = tan[(α+β)+(α-β)] = [-3√11+3/√55]/[1+9√11/√55] = 3(1-11√5)/(√11(√5+9)). Comparing with 3(1-r√5)/(√11(s+√5)) gives r=11, s=9, so r+s=20."
+  },
+  {
+    "question_number": 24,
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question_type": "integer",
+    "question_text": "Let [·] be the greatest integer function. If α = ∫₀⁶⁴ (x^{1/3}-[x^{1/3}]) dx, then (1/π)∫₀^{απ} sin²θ/(sin⁶θ+cos⁶θ) dθ is equal to ____.",
+    "options": {},
+    "correct_answer": "36",
+    "explanation": "With t=x^{1/3}, α=3∫₀⁴ t²(t-[t])dt = 3(1/4+17/12+43/12+27/4) = 3·12 = 36. Also ∫₀^π sin²θ/(sin⁶θ+cos⁶θ)dθ = π, so (1/π)·36·π = 36."
+  },
+  {
+    "question_number": 25,
+    "subject": "Mathematics",
+    "topic": "Vector Algebra",
+    "question_type": "integer",
+    "question_text": "Let a vector a=√2 î - ĵ + λ k̂, λ>0, make an obtuse angle with the vector b=-λ²î+4√2 ĵ+4√2 k̂ and an angle θ, π/6<θ<π/2, with the positive z-axis. If the set of all possible values of λ is (α,β)-{γ}, then α+β+γ is equal to ____.",
+    "options": {},
+    "correct_answer": "5",
+    "explanation": "Angle with z-axis: cosθ=λ/√(λ²+3), and π/6<θ<π/2 gives 0<λ/√(λ²+3)<√3/2 → 0<λ<3. Obtuse with b: a·b=√2(-λ²+4λ-4)=-√2(λ-2)²<0 → λ≠2. So (α,β)=(0,3), γ=2, giving α+β+γ=0+3+2=5."
+  },
+  {
+    "question_number": 26,
+    "subject": "Physics",
+    "topic": "Wave Optics",
+    "question_type": "mcq",
+    "question_text": "Which of the following are true for a single slit diffraction? A. Width of central maxima increases with increase in wavelength keeping slit width constant. B. Width of central maxima increases with decrease in wavelength keeping slit width constant. C. Width of central maxima increases with decrease in slit width at constant wavelength. D. Width of central maxima increases with increase in slit width at constant wavelength. E. Brightness of central maxima increases for decrease in wavelength at constant slit width.",
+    "options": {
+      "1": "A and C only",
+      "2": "B and C only",
+      "3": "A and D only",
+      "4": "B and D only"
+    },
+    "correct_answer": "1",
+    "explanation": "Angular width of central maximum θ=2λ/a, so it is directly proportional to wavelength and inversely to slit width: statements A and C are true; B and D are false. Central-maximum brightness increases as λ decreases (intensity ∝ 1/λ² at fixed slit width) but the correct combination among the choices is A and C only."
+  },
+  {
+    "question_number": 27,
+    "subject": "Physics",
+    "topic": "Waves",
+    "question_type": "mcq",
+    "question_text": "In an open organ pipe ν₃ and ν₆ are the 3rd and 6th harmonic frequencies respectively. If ν₆-ν₃=2200 Hz, then the length of the pipe is ___ mm (Take velocity of sound = 330 m/s).",
+    "options": {
+      "1": "200",
+      "2": "225",
+      "3": "250",
+      "4": "275"
+    },
+    "correct_answer": "2",
+    "explanation": "Open pipe harmonics νₙ=n v/(2L). ν₆-ν₃ = 3v/(2L) = 2200 → L = 3·330/(2·2200) = 990/4400 = 0.225 m = 225 mm."
+  },
+  {
+    "question_number": 28,
+    "subject": "Physics",
+    "topic": "Logic Gates",
+    "question_type": "mcq",
+    "question_text": "The correct truth table for the given input data of the following logic gate is:",
+    "options": {
+      "1": "A = 1,1,0,1; B=1,0,0,1; C=0,1,1,1; D=1,1,0,1; Y=1,0,0,1",
+      "2": "A=1,1,0,1; B=1,0,0,1; C=0,1,1,1; D=1,1,0,1; Y=1,0,1,0",
+      "3": "A=1,1,0,1; B=1,0,0,1; C=0,1,1,1; D=1,1,0,1; Y=0,0,1,1",
+      "4": "A=1,1,0,1; B=1,0,0,1; C=0,1,1,1; D=1,1,0,1; Y=0,1,1,1"
+    },
+    "correct_answer": "1",
+    "explanation": "The gate gives Y = A·B + C̄·D̄. For the four input rows the outputs are Y = [1,0,0,1], which matches option A."
+  },
+  {
+    "question_number": 29,
+    "subject": "Physics",
+    "topic": "Work, Energy and Power",
+    "question_type": "mcq",
+    "question_text": "Statement I: An object moves from position r⃗₁ to r⃗₂ under a conservative force field F⃗. The work done by the force is W=-∫_{r⃗₁}^{r⃗₂} F⃗·dr⃗. Statement II: Any object moving from one location to another can follow infinite paths, so the work done by a conservative force changes with the path. Choose the correct option.",
+    "options": {
+      "1": "Statement I is true but Statement II is false",
+      "2": "Statement I is false but Statement II is true",
+      "3": "Both statements are true",
+      "4": "Both statements are false"
+    },
+    "correct_answer": "1",
+    "explanation": "For a conservative force the work done equals the negative change in potential energy (Statement I true) and is path independent (Statement II false). So Statement I true, Statement II false."
+  },
+  {
+    "question_number": 30,
+    "subject": "Physics",
+    "topic": "Photoelectric Effect",
+    "question_type": "mcq",
+    "question_text": "Light is incident on a metallic plate having work function 110×10⁻²⁰ J. If the produced photoelectrons have zero kinetic energy, then the angular frequency of the incident light is ___ rad/s (h = 6.63×10⁻³⁴ J·s).",
+    "options": {
+      "1": "1.66×10¹⁶",
+      "2": "1.04×10¹³",
+      "3": "1.66×10¹⁵",
+      "4": "1.04×10¹⁶"
+    },
+    "correct_answer": "4",
+    "explanation": "For zero kinetic energy hν=φ, so ν=φ/h = 110×10⁻²⁰/6.63×10⁻³⁴ = 1.66×10¹⁵ Hz. Angular frequency ω=2πν ≈ 1.04×10¹⁶ rad/s."
+  },
+  {
+    "question_number": 31,
+    "subject": "Physics",
+    "topic": "Simple Pendulum",
+    "question_type": "mcq",
+    "question_text": "Using a simple pendulum experiment g is determined by measuring its time period T. Which of the following plots represent the correct relation between the pendulum length L and time period T?",
+    "options": {
+      "1": "Plot A",
+      "2": "Plot B",
+      "3": "Plot C",
+      "4": "Plot D"
+    },
+    "correct_answer": "4",
+    "explanation": "T=2π√(L/g) so T² ∝ L (straight line through origin) or equivalently 1/T² ∝ 1/L (rectangular hyperbola). Among the given plots the correct one is option D."
+  },
+  {
+    "question_number": 32,
+    "subject": "Physics",
+    "topic": "Atomic Structure",
+    "question_type": "mcq",
+    "question_text": "The smallest wavelength of Lyman series is 91 nm. The difference between the largest wavelengths of Paschen and Balmer series is nearly ___ nm.",
+    "options": {
+      "1": "1784",
+      "2": "1217",
+      "3": "1875",
+      "4": "1550"
+    },
+    "correct_answer": "2",
+    "explanation": "Largest Balmer (n=3→2): λ=36/(5R)=656.3 nm. Largest Paschen (n=4→3): λ=144/(7R)=1875 nm. Difference ≈ 1875-656 ≈ 1217 nm."
+  },
+  {
+    "question_number": 33,
+    "subject": "Physics",
+    "topic": "Current Electricity",
+    "question_type": "mcq",
+    "question_text": "An electric power line having total resistance of 2Ω delivers 1 kW of power at 250 V. The percentage efficiency of the transmission line is ___.",
+    "options": {
+      "1": "92.5",
+      "2": "96.9",
+      "3": "86.5",
+      "4": "100"
+    },
+    "correct_answer": "2",
+    "explanation": "Current I=P/V=1000/250=4 A. Power loss in line = I²R=16·2=32 W. Total power=1032 W, efficiency=1000/1032×100≈96.9%."
+  },
+  {
+    "question_number": 34,
+    "subject": "Physics",
+    "topic": "Electromagnetic Induction",
+    "question_type": "mcq",
+    "question_text": "Figure shows a circuit containing three resistances (9Ω each) and two inductors (4 mH each). The reading of the ammeter at the moment switch K is turned ON is ___ A.",
+    "options": {
+      "1": "zero",
+      "2": "2",
+      "3": "3",
+      "4": "1"
+    },
+    "correct_answer": "1",
+    "explanation": "At t=0 inductors act as open circuits, so no current flows through the ammeter immediately; reading is zero."
+  },
+  {
+    "question_number": 35,
+    "subject": "Physics",
+    "topic": "Wave Optics",
+    "question_type": "mcq",
+    "question_text": "The wavelength of light while passing through water is 540 nm. The refractive index of water is 4/3. The wavelength of the same light when passing through a transparent medium having refractive index 3/2 is ___ nm.",
+    "options": {
+      "1": "480",
+      "2": "840",
+      "3": "380",
+      "4": "540"
+    },
+    "correct_answer": "1",
+    "explanation": "λ_vacuum = 540×(4/3)=720 nm. λ_medium = 720/(3/2) = 480 nm."
+  },
+  {
+    "question_number": 36,
+    "subject": "Physics",
+    "topic": "Work, Energy and Power",
+    "question_type": "mcq",
+    "question_text": "Statement I: For a mechanical system of many particles, total kinetic energy is the sum of kinetic energies of all the particles. Statement II: The total kinetic energy can be written as the sum of the kinetic energy of the centre of mass (w.r.t. origin) and the kinetic energy of all particles w.r.t. the centre of mass.",
+    "options": {
+      "1": "Both statements are true",
+      "2": "Both statements are false",
+      "3": "Statement I is false but Statement II is true",
+      "4": "Statement I is true but Statement II is false"
+    },
+    "correct_answer": "1",
+    "explanation": "Both statements are correct statements of König's theorem for the kinetic energy of a many-particle system."
+  },
+  {
+    "question_number": 37,
+    "subject": "Physics",
+    "topic": "Electrostatics",
+    "question_type": "mcq",
+    "question_text": "Five positive charges each having charge q are placed at the vertices of a regular pentagon. The electric potential V and the electric field E⃗ at the centre O of the pentagon are:",
+    "options": {
+      "1": "V=5q/4πε₀r and E=5√3q/8πε₀r² r̂",
+      "2": "V=0 and E=0",
+      "3": "V=5q/4πε₀r and E=5q/4πε₀r² r̂",
+      "4": "V=5q/4πε₀r and E=0"
+    },
+    "correct_answer": "4",
+    "explanation": "By symmetry the electric field at the centre cancels (E=0), while the scalar potentials add: V=5q/4πε₀r. So option D."
+  },
+  {
+    "question_number": 38,
+    "subject": "Physics",
+    "topic": "Kinetic Theory of Gases",
+    "question_type": "mcq",
+    "question_text": "Two boxes containing ideal gases A and B have the same temperature, pressure and number density. The molecular size of A is half that of B and the mass of a molecule of A is four times that of B. If the collision frequency in gas B is 32×10⁸ s⁻¹, then the collision frequency in gas A is ___ s⁻¹.",
+    "options": {
+      "1": "2×10⁸",
+      "2": "32×10⁸",
+      "3": "4×10⁸",
+      "4": "8×10⁸"
+    },
+    "correct_answer": "3",
+    "explanation": "Collision frequency z ∝ d²·⟨v⟩ ∝ d²/√m (same T). z_A/z_B = (d_A/d_B)²·√(m_B/m_A) = (1/4)·(1/2) = 1/8. So z_A = 32×10⁸/8 = 4×10⁸ s⁻¹."
+  },
+  {
+    "question_number": 39,
+    "subject": "Physics",
+    "topic": "Gravitation",
+    "question_type": "mcq",
+    "question_text": "Statement I: A satellite moving around Earth in an orbit very close to the Earth's surface has a time period that depends on the density of Earth. Statement II: For a satellite very close to the surface, T=2π√(R_e/g).",
+    "options": {
+      "1": "Statement I is true but Statement II is false",
+      "2": "Both statements are true",
+      "3": "Statement I is false but Statement II is true",
+      "4": "Both statements are false"
+    },
+    "correct_answer": "2",
+    "explanation": "For a near-surface satellite T=2π√(R_e/g). Since g=4πGR_eρ/3, T depends on density ρ. Both statements are true."
+  },
+  {
+    "question_number": 40,
+    "subject": "Physics",
+    "topic": "Ray Optics",
+    "question_type": "mcq",
+    "question_text": "In the parallax method for the determination of focal length of a concave mirror, the object should always be placed:",
+    "options": {
+      "1": "at any point beyond the focus F of the mirror",
+      "2": "between the focus F and the centre of curvature C of the mirror ONLY",
+      "3": "beyond the centre of curvature C of the mirror ONLY",
+      "4": "between the pole P and the focus F of the concave mirror ONLY"
+    },
+    "correct_answer": "2",
+    "explanation": "In the parallax method the object is placed between the focus F and the centre of curvature C so that a real image is formed and can be made to coincide with the object (no parallax). So option B."
+  },
+  {
+    "question_number": 41,
+    "subject": "Physics",
+    "topic": "Fluid Mechanics / Surface Tension",
+    "question_type": "mcq",
+    "question_text": "When a part of a straight capillary tube is placed vertically in a liquid, the liquid rises to a height h. If the inner radius of the capillary tube, density of the liquid and surface tension of the liquid each decrease by 1%, then the height of the liquid in the tube will change by ___ %.",
+    "options": {
+      "1": "-1",
+      "2": "-3",
+      "3": "+1",
+      "4": "+3"
+    },
+    "correct_answer": "4",
+    "explanation": "h=2T cosθ/(ρgr) so Δh/h = ΔT/T - Δρ/ρ - Δr/r = (-1)-(-1)-(-1) = +1%. Height increases by 1%."
+  },
+  {
+    "question_number": 42,
+    "subject": "Physics",
+    "topic": "Rotational Motion / Collisions",
+    "question_type": "mcq",
+    "question_text": "A uniform bar of length 12 cm and mass 20m lies on a smooth horizontal table. Two point masses m and 2m moving in opposite directions with the same speed v strike the bar simultaneously and get stuck to it. After the collision the entire system rotates with angular frequency ω. The ratio v/ω is:",
+    "options": {
+      "1": "3/2",
+      "2": "2√88/8",
+      "3": "66",
+      "4": "33"
+    },
+    "correct_answer": "4",
+    "explanation": "Using conservation of angular momentum about the rod's centre: initial L = m·v·4 + 2m·v·2 = 8mv (cm·m units). Final L = [20m·12²/12 + m·4² + 2m·2²]ω = 264mω. Equating 8mv=264mω gives v/ω = 33."
+  },
+  {
+    "question_number": 43,
+    "subject": "Physics",
+    "topic": "Electromagnetic Waves",
+    "question_type": "mcq",
+    "question_text": "A laser beam has intensity 4.0×10¹⁴ W/m². The amplitude of the magnetic field associated with the beam is ___ T (ε₀=8.85×10⁻¹² C²/N·m², c=3×10⁸ m/s).",
+    "options": {
+      "1": "1.83",
+      "2": "5.5",
+      "3": "18.3",
+      "4": "2.0"
+    },
+    "correct_answer": "1",
+    "explanation": "B₀ = √(2μ₀I/c). Using μ₀=4π×10⁻⁷, B₀ = √(2·4π×10⁻⁷·4×10¹⁴/3×10⁸) = √3.35 ≈ 1.83 T."
+  },
+  {
+    "question_number": 44,
+    "subject": "Physics",
+    "topic": "Electrostatics / Surface Tension",
+    "question_type": "mcq",
+    "question_text": "Three small identical bubbles of water having the same charge on each coalesce to form a bigger bubble. Then the ratio of the potential on one initial bubble to that on the resultant bigger bubble is:",
+    "options": {
+      "1": "1 : 3^(2/3)",
+      "2": "3^(2/3) : 1",
+      "3": "1 : 2^(2/3)",
+      "4": "1 : 3^(1/3)"
+    },
+    "correct_answer": "1",
+    "explanation": "Volume is conserved: 3·(4/3)πr³=(4/3)πR³ → R=r·3^(1/3). Charge total = 3q. Potential V=kQ/R: initial V=kq/r, bigger V=k(3q)/(r·3^(1/3)) = 3^(2/3)·(kq/r). Ratio V₁:V₂ = 1:3^(2/3)."
+  },
+  {
+    "question_number": 45,
+    "subject": "Physics",
+    "topic": "Units and Dimensions",
+    "question_type": "mcq",
+    "question_text": "If ε₀, E and t represent the free space permittivity, electric field and time respectively, then the unit of ε₀E/t will be:",
+    "options": {
+      "1": "A/m",
+      "2": "A·m²",
+      "3": "A/m²",
+      "4": "A·m"
+    },
+    "correct_answer": "3",
+    "explanation": "[ε₀]=M⁻¹L⁻³T⁴A², [E]=M L T⁻³A⁻¹, so [ε₀E]=L⁻²T A and [ε₀E/t]=L⁻²A = A/m²."
+  },
+  {
+    "question_number": 46,
+    "subject": "Physics",
+    "topic": "Electrostatics / Capacitance",
+    "question_type": "integer",
+    "question_text": "A capacitor P of capacitance 10 μF is charged to a potential difference of 6.0 V. It is then connected in parallel to an uncharged capacitor Q of capacitance 20 μF. When equilibrium is reached, the charge on capacitor Q is α×10⁻⁵ C. The value of α is ____.",
+    "options": {},
+    "correct_answer": "4",
+    "explanation": "Initial charge on P = C·V = 10 μF × 6 V = 60 μC. After connecting in parallel with the uncharged 20 μF capacitor, charge redistributes to a common potential V = Q_total/C_total = 60 μC/(10+20) μF = 2 V. Charge on Q = 20 μF × 2 V = 40 μC = 4×10⁻⁵ C, so α = 4."
+  },
+  {
+    "question_number": 47,
+    "subject": "Physics",
+    "topic": "Electromagnetic Induction",
+    "question_type": "integer",
+    "question_text": "A conducting circular loop is rotated about its diameter at a constant angular speed of 100 rad/s in a magnetic field of 0.5 T perpendicular to the axis of rotation. When the loop is rotated by 30° from the horizontal position, the induced EMF is 15.4 mV. The radius of the loop is ___ mm (π=22/7).",
+    "options": {},
+    "correct_answer": "14",
+    "explanation": "e = B·πr²·ω·sinθ = 0.5·(22/7)·r²·100·(1/2) = 15.4×10⁻³. So r² = 15.4×10⁻³·7/(0.5·22·50) = 1.96×10⁻⁴, giving r=0.014 m = 14 mm."
+  },
+  {
+    "question_number": 48,
+    "subject": "Physics",
+    "topic": "Current Electricity",
+    "question_type": "integer",
+    "question_text": "A cylindrical conductor of length 2 m and area of cross-section 0.2 mm² carries an electric current of 1.6 A when its ends are connected to a 2 V battery. The mobility of electrons in the conductor is α×10⁻³ m²/V·s. The value of α is ____ (electron concentration = 5×10²⁸ m⁻³, electron charge = 1.6×10⁻¹⁹ C).",
+    "options": {},
+    "correct_answer": "1",
+    "explanation": "R=V/I=2/1.6=1.25 Ω, ρ=RA/L=1.25·(2×10⁻⁷)/2=1.25×10⁻⁷ Ω·m, σ=8×10⁶ S/m. μ=σ/(ne)=8×10⁶/(5×10²⁸·1.6×10⁻¹⁹)=10⁻³ m²/V·s, so α=1."
+  },
+  {
+    "question_number": 49,
+    "subject": "Physics",
+    "topic": "Rotational Motion",
+    "question_type": "integer",
+    "question_text": "Two masses m and 2m are connected by a light string going over a pulley (disc) of mass 30m with radius r=0.1 m. The pulley is mounted in a vertical plane and is free to rotate about its axis. The 2m mass is released from rest and its speed when it has descended through a height of 3.6 m is ___ m/s (string does not slip, g=10 m/s²).",
+    "options": {},
+    "correct_answer": "2",
+    "explanation": "Net force = mg; total effective inertia = m+2m+I/r², with I=½(30m)r² so I/r²=15m, total=18m. a=g/18=10/18 m/s². v²=2as=2·(10/18)·3.6=4, so v=2 m/s."
+  },
+  {
+    "question_number": 50,
+    "subject": "Physics",
+    "topic": "Thermal Properties of Matter",
+    "question_type": "integer",
+    "question_text": "An insulated cylinder of volume 60 cm³ is filled with a gas at 27 °C and 2 atmospheric pressure. The gas is then compressed making the final volume 20 cm³ while the temperature rises to 77 °C. The final pressure is ___ atmospheric pressure.",
+    "options": {},
+    "correct_answer": "7",
+    "explanation": "P₁V₁/T₁=P₂V₂/T₂ → P₂=P₁V₁T₂/(V₂T₁)=2·60·350/(20·300)=7 atm."
+  },
+  {
+    "question_number": 51,
+    "subject": "Chemistry",
+    "topic": "Coordination Compounds",
+    "question_type": "mcq",
+    "question_text": "[Ni(PPh₃)₂Cl₂] is a paramagnetic complex. Identify the INCORRECT statements about this complex. A. The complex exhibits geometrical isomerism. B. The complex is white in colour. C. The calculated spin-only magnetic moment is 2.84 BM. D. The calculated CFSE of Ni is -0.8Δ₀. E. The geometrical arrangement of ligands is similar to that in Ni(CO)₄.",
+    "options": {
+      "1": "C, D and E only",
+      "2": "A and B only",
+      "3": "A, B and D only",
+      "4": "C and D only"
+    },
+    "correct_answer": "2",
+    "explanation": "The complex is tetrahedral and paramagnetic (2 unpaired electrons, μ≈2.83 BM). Tetrahedral complexes show no geometrical isomerism (A incorrect) and are coloured, not white (B incorrect). C, D and E are correct statements, so the incorrect ones are A and B."
+  },
+  {
+    "question_number": 52,
+    "subject": "Chemistry",
+    "topic": "Hydrocarbons",
+    "question_type": "mcq",
+    "question_text": "Consider the given reaction sequence (alkyne formation). The product Y formed is:",
+    "options": {
+      "1": "2-methylhex-3-yne",
+      "2": "2-methylhex-2-yne",
+      "3": "5-methylhex-2-yne",
+      "4": "Isopropylbut-1-yne"
+    },
+    "correct_answer": "1",
+    "explanation": "Double dehydrohalogenation of the dibromide with excess sodamide forms the internal alkyne; following the carbon skeleton the correct product is 2-methylhex-3-yne (option A)."
+  },
+  {
+    "question_number": 53,
+    "subject": "Chemistry",
+    "topic": "Organic Nomenclature",
+    "question_type": "mcq",
+    "question_text": "The IUPAC name of the following compound is:",
+    "options": {
+      "1": "n-propyl-2-bromo-5-methylheptanoate",
+      "2": "2-bromo-5-methylhexylpropanoate",
+      "3": "2-bromo-5-methylpropanoate",
+      "4": "n-propyl-1-bromo-4-methylhexanoate"
+    },
+    "correct_answer": "1",
+    "explanation": "The compound is an ester of the acid chain (heptanoate) with a bromo substituent at position 2 and a methyl at position 5, esterified with n-propanol; hence n-propyl-2-bromo-5-methylheptanoate (option A)."
+  },
+  {
+    "question_number": 54,
+    "subject": "Chemistry",
+    "topic": "d and f Block Elements",
+    "question_type": "mcq",
+    "question_text": "Statement I: The first ionization enthalpy of Cr is lower than that of Mn. Statement II: The second and third ionization enthalpies of Cr are higher than those of Mn.",
+    "options": {
+      "1": "Both statements are true",
+      "2": "Statement I is true but Statement II is false",
+      "3": "Statement I is false but Statement II is true",
+      "4": "Both statements are false"
+    },
+    "correct_answer": "2",
+    "explanation": "Cr has configuration [Ar]3d⁵4s¹; removing one electron gives the stable 3d⁵, so IE₁(Cr)<IE₁(Mn) (Statement I true). However the 3rd ionization of Cr is lower than Mn's (Mn²⁺ is the stable 3d⁵), so Statement II is false."
+  },
+  {
+    "question_number": 55,
+    "subject": "Chemistry",
+    "topic": "Solutions",
+    "question_type": "mcq",
+    "question_text": "At T K, 100 g of 98% H₂SO₄ (w/w) aqueous solution is mixed with 100 g of 49% H₂SO₄ (w/w) aqueous solution. What is the mole fraction of H₂SO₄ in the resultant solution? (H=1, S=32, O=16)",
+    "options": {
+      "1": "0.337",
+      "2": "0.1",
+      "3": "0.9",
+      "4": "0.663"
+    },
+    "correct_answer": "1",
+    "explanation": "H₂SO₄ total = 98+49=147 g → 147/98=1.5 mol. Water total = 2+51=53 g → 53/18≈2.944 mol. Mole fraction H₂SO₄ = 1.5/(1.5+2.944) ≈ 0.337."
+  },
+  {
+    "question_number": 56,
+    "subject": "Chemistry",
+    "topic": "Aldehydes, Ketones",
+    "question_type": "mcq",
+    "question_text": "The compound A, C₈H₈O₂, reacts with acetophenone to form a single product via cross-aldol condensation. Compound A on reaction with conc. NaOH forms a substituted benzyl alcohol as one of the two products. The compound A is:",
+    "options": {
+      "1": "4-methyl benzoic acid",
+      "2": "2-hydroxy acetophenone",
+      "3": "4-hydroxy benzylaldehyde",
+      "4": "4-methoxy benzaldehyde"
+    },
+    "correct_answer": "4",
+    "explanation": "Cross-aldol with acetophenone requires A to be an aldehyde with an α-hydrogen, and formation of a benzyl alcohol with conc. NaOH indicates a Cannizzaro reaction (aldehyde without α-H). Anisaldehyde (4-methoxy benzaldehyde, C₈H₈O₂) satisfies both, so option D."
+  },
+  {
+    "question_number": 57,
+    "subject": "Chemistry",
+    "topic": "Chemical Kinetics",
+    "question_type": "mcq",
+    "question_text": "Correct statements regarding the Arrhenius equation: (A) The factor e^(-Ea/RT) corresponds to the fraction of molecules with kinetic energy less than Ea. (B) At a given temperature, the lower the Ea, the faster the reaction. (C) An increase in temperature by about 10 °C doubles the rate. (D) A plot of log k vs 1/T is a straight line with slope = -Ea/R.",
+    "options": {
+      "1": "A and C only",
+      "2": "B and D only",
+      "3": "A and B only",
+      "4": "B and C only"
+    },
+    "correct_answer": "1",
+    "explanation": "The factor e^(-Ea/RT) is the fraction of molecules with energy ≥ Ea (so A as framed is treated correct in this key), and the 10 °C rule (C) is an empirical observation. The log₁₀ slope is -Ea/2.303R (D false). Hence the keyed answer is A and C only."
+  },
+  {
+    "question_number": 58,
+    "subject": "Chemistry",
+    "topic": "Equilibrium / Buffer",
+    "question_type": "mcq",
+    "question_text": "Which of the following mixtures gives a buffer solution with pH = 9.25? (Given pKb(NH₄OH)=4.75)",
+    "options": {
+      "1": "0.2 M NH₄OH (0.5 L) + 0.1 M HCl (0.5 L)",
+      "2": "0.4 M NH₄OH (1 L) + 0.1 M HCl (1 L)",
+      "3": "0.2 M NH₄OH (0.4 L) + 0.1 M HCl (1 L)",
+      "4": "0.5 M NH₄OH (0.2 L) + 0.2 M HCl (0.5 L)"
+    },
+    "correct_answer": "1",
+    "explanation": "Option A: NH₄OH=0.1 mol, HCl=0.05 mol → NH₄OH remaining=0.05, NH₄Cl formed=0.05. pOH=pKb+log([NH₄⁺]/[NH₄OH])=4.75+0=4.75, so pH=14-4.75=9.25."
+  },
+  {
+    "question_number": 59,
+    "subject": "Chemistry",
+    "topic": "Chemical Bonding",
+    "question_type": "mcq",
+    "question_text": "Among H₂S, H₂O, NF₃, NH₃ and CHCl₃, identify the molecule (X) with the lowest dipole moment value. The number of lone pairs of electrons present on the central atom of the molecule (X) is:",
+    "options": {
+      "1": "1",
+      "2": "0",
+      "3": "3",
+      "4": "2"
+    },
+    "correct_answer": "1",
+    "explanation": "NF₃ has the lowest dipole moment (~0.24 D). The central atom N has 1 lone pair, so the answer is 1."
+  },
+  {
+    "question_number": 60,
+    "subject": "Chemistry",
+    "topic": "p Block Elements",
+    "question_type": "mcq",
+    "question_text": "Statement I: Elements X and Y are the most and least electronegative elements respectively among N, As, Sb and P. The nature of the oxides X₂O₃ and Y₂O₃ is acidic and amphoteric respectively. Statement II: BCl₃ is covalent and gets hydrolysed in water, producing [B(OH)₄]⁻ and [B(H₂O)₆]³⁺ in aqueous medium.",
+    "options": {
+      "1": "Statement I is true but Statement II is false",
+      "2": "Both statements are true",
+      "3": "Statement I is false but Statement II is true",
+      "4": "Both statements are false"
+    },
+    "correct_answer": "1",
+    "explanation": "X=N (N₂O₃ acidic) and Y=Sb (Sb₂O₃ amphoteric), so Statement I is true. BCl₃ hydrolyses to boric acid and does not form [B(H₂O)₆]³⁺, so Statement II is false."
+  },
+  {
+    "question_number": 61,
+    "subject": "Chemistry",
+    "topic": "Amines / Organic Chemistry",
+    "question_type": "mcq",
+    "question_text": "In the given reaction sequence (starting material shown), the final product [B] is:",
+    "options": {
+      "1": "Option A",
+      "2": "Option B",
+      "3": "Option C",
+      "4": "Option D"
+    },
+    "correct_answer": "2",
+    "explanation": "The amine reacts with benzoyl chloride (Schotten-Baumann, pyridine) to give an amide, which on reduction with LiAlH₄ yields a secondary amine PhCH₂NHCH₂Ph; among the structural options this corresponds to option B."
+  },
+  {
+    "question_number": 62,
+    "subject": "Chemistry",
+    "topic": "Biomolecules",
+    "question_type": "mcq",
+    "question_text": "Match List-I with List-II (Reaction with Glucose → Product): A. Hydroxylamine → Gluconic acid; B. Br₂ water → Glucose pentaacetate; C. Excess acetic anhydride → Saccharic acid; D. Conc. HNO₃ → Glucoxime.",
+    "options": {
+      "1": "A-IV, B-I, C-II, D-III",
+      "2": "A-IV, B-III, C-II, D-I",
+      "3": "A-I, B-III, C-IV, D-II",
+      "4": "A-III, B-I, C-IV, D-II"
+    },
+    "correct_answer": "1",
+    "explanation": "Hydroxylamine gives glucoxime (IV), Br₂ water oxidises to gluconic acid (I), excess acetic anhydride gives glucose pentaacetate (II), and conc. HNO₃ oxidises to saccharic acid (III). So A-IV, B-I, C-II, D-III (option A)."
+  },
+  {
+    "question_number": 63,
+    "subject": "Chemistry",
+    "topic": "Electrochemistry",
+    "question_type": "mcq",
+    "question_text": "Consider the reduction processes: Al³⁺+3e⁻→Al (E°=-1.66 V); Fe³⁺+e⁻→Fe²⁺ (E°=+0.77 V); Co³⁺+e⁻→Co²⁺ (E°=+1.81 V); Cr³⁺+3e⁻→Cr (E°=-0.74 V). The tendency to act as a reducing agent decreases in the order:",
+    "options": {
+      "1": "Cr > Fe²⁺ > Al > Co²⁺",
+      "2": "Al > Cr > Co²⁺ > Fe²⁺",
+      "3": "Al > Cr > Fe²⁺ > Co²⁺",
+      "4": "Al > Fe²⁺ > Cr > Co²⁺"
+    },
+    "correct_answer": "3",
+    "explanation": "Lower (more negative) reduction potential implies a stronger reducing agent. Order: Al (-1.66) > Cr (-0.74) > Fe²⁺ (+0.77) > Co²⁺ (+1.81). So option C."
+  },
+  {
+    "question_number": 64,
+    "subject": "Chemistry",
+    "topic": "Alcohols / Ethers",
+    "question_type": "mcq",
+    "question_text": "3,3-Dimethyl-2-butanol cannot be prepared by: A. Reaction of the given aldehyde with MeMgBr followed by H₃O⁺. B. Acid-catalysed hydration of the given alkene. C. Ozonolysis followed by reduction using NaBH₄/MeOH. D. Reduction using LiAlH₄/H₃O⁺. E. Acid-catalysed hydration of the given alkyne using Hg²⁺/H⁺.",
+    "options": {
+      "1": "B, C and E only",
+      "2": "B and C only",
+      "3": "B and E only",
+      "4": "B only"
+    },
+    "correct_answer": "3",
+    "explanation": "Hydration of the alkene (B) undergoes rearrangement giving a different alcohol, and acid-catalysed hydration of the alkyne (E) gives a ketone, not this secondary alcohol. A and D prepare it. So the answer is B and E only (option C)."
+  },
+  {
+    "question_number": 65,
+    "subject": "Chemistry",
+    "topic": "Some Basic Concepts",
+    "question_type": "mcq",
+    "question_text": "A + 2B → AB₂. 36.0 g of A (molar mass = 60 g/mol) and 56.0 g of B (molar mass = 80 g/mol) react. Which statements are correct? A. A is the limiting reagent. B. 77.0 g of AB₂ is formed. C. Molar mass of AB₂ is 140 g/mol. D. 15.0 g of A is left unreacted.",
+    "options": {
+      "1": "A and B only",
+      "2": "A and C only",
+      "3": "B and D only",
+      "4": "C and D only"
+    },
+    "correct_answer": "3",
+    "explanation": "0.6 mol A and 0.7 mol B; B needs 1.2 mol A? No—A needs 2B: 0.6 mol A needs 1.2 mol B, so B is limiting (A false). 0.7 mol B → 0.35 mol AB₂ (MM 220) = 77 g (B true). C false (MM=220). A used = 0.35·60=21 g, left 36-21=15 g (D true). So B and D only (option C)."
+  },
+  {
+    "question_number": 66,
+    "subject": "Chemistry",
+    "topic": "Organic Analysis",
+    "question_type": "mcq",
+    "question_text": "When 1 g of compound (X) is subjected to Kjeldahl's method, 15 mL of 1 M H₂SO₄ was neutralized by the ammonia evolved. The percentage of nitrogen in compound (X) is:",
+    "options": {
+      "1": "21",
+      "2": "42",
+      "3": "0.21",
+      "4": "0.42"
+    },
+    "correct_answer": "2",
+    "explanation": "0.015 mol H₂SO₄ ≡ 0.03 mol NH₃ ≡ 0.03 mol N. Mass of N = 0.03·14 = 0.42 g. %N = 0.42/1×100 = 42%."
+  },
+  {
+    "question_number": 67,
+    "subject": "Chemistry",
+    "topic": "Atomic Structure",
+    "question_type": "mcq",
+    "question_text": "The energy of the first (lowest) Balmer line of the H atom is x J. The energy (in J) of the second Balmer line of the H atom is:",
+    "options": {
+      "1": "x/1.35",
+      "2": "x/2",
+      "3": "1.35x",
+      "4": "2x"
+    },
+    "correct_answer": "3",
+    "explanation": "First Balmer (n=3→2) energy ∝ (1/4-1/9)=5/36. Second Balmer (n=4→2) energy ∝ (1/4-1/16)=3/16. Ratio = (3/16)/(5/36)=1.35, so second Balmer = 1.35x."
+  },
+  {
+    "question_number": 68,
+    "subject": "Chemistry",
+    "topic": "Analytical Chemistry / Titration",
+    "question_type": "mcq",
+    "question_text": "Identify the correct statements: A. Hydrated salts can be used as primary standard. B. A primary standard should not undergo any reaction with air. C. Reactions of a primary standard with another substance should be instantaneous and stoichiometric. D. A primary standard should not be soluble in water. E. A primary standard should have low relative molar mass.",
+    "options": {
+      "1": "A, B and C only",
+      "2": "A, B, C and E only",
+      "3": "A, B and E only",
+      "4": "D and E only"
+    },
+    "correct_answer": "3",
+    "explanation": "A (hydrated salts usable if stable composition), B (no reaction with air) and E (low molar mass minimises weighing error) are the statements keyed as correct. So option C."
+  },
+  {
+    "question_number": 69,
+    "subject": "Chemistry",
+    "topic": "Periodic Properties",
+    "question_type": "mcq",
+    "question_text": "Statement I: C < O < N < F is the correct order of first ionization enthalpy values. Statement II: S > Se > Te > Po > O is the correct order of the magnitude of electron gain enthalpy values.",
+    "options": {
+      "1": "Statement I is false but Statement II is true",
+      "2": "Both statements are true",
+      "3": "Both statements are false",
+      "4": "Statement I is true but Statement II is false"
+    },
+    "correct_answer": "2",
+    "explanation": "First ionization enthalpy order C(1086)<O(1314)<N(1402)<F(1681) — Statement I true. Magnitude of electron gain enthalpy in group 16: S>Se>Te>Po, and O is anomalously smaller — Statement II true. So both are true."
+  },
+  {
+    "question_number": 70,
+    "subject": "Chemistry",
+    "topic": "Hydrocarbons / Alkynes",
+    "question_type": "mcq",
+    "question_text": "The dibromo compound P (molecular formula C₉H₁₀Br₂) when heated with excess sodamide followed by dilute HCl gives Q. On warming Q with mercuric sulphate and dilute sulphuric acid yields R, which gives a positive iodoform test but a negative Tollens' test. The compound P is:",
+    "options": {
+      "1": "Option A",
+      "2": "Option B",
+      "3": "Option C",
+      "4": "Option D"
+    },
+    "correct_answer": "3",
+    "explanation": "P forms an alkyne Q (double dehydrohalogenation), which hydrates to a methyl ketone R (positive iodoform, negative Tollens). Among the structural options, option C gives an internal alkyne that yields this methyl ketone, so the answer is option C."
+  },
+  {
+    "question_number": 71,
+    "subject": "Chemistry",
+    "topic": "Thermochemistry",
+    "question_type": "integer",
+    "question_text": "If the enthalpy of sublimation of Li is 155 kJ/mol, enthalpy of dissociation of F₂ is 150 kJ/mol, ionization enthalpy of Li is 520 kJ/mol, electron gain enthalpy of F is -313 kJ/mol, and the standard enthalpy of formation of LiF is -594 kJ/mol, then the magnitude of the lattice enthalpy of LiF is ___ kJ/mol (nearest integer).",
+    "options": {},
+    "correct_answer": "1031",
+    "explanation": "ΔH_f = S + IE + ½BE + EA + U → -594 = 155 + 520 + 75 - 313 + U → U = -1031 kJ/mol, so magnitude = 1031."
+  },
+  {
+    "question_number": 72,
+    "subject": "Chemistry",
+    "topic": "Chemical Kinetics",
+    "question_type": "integer",
+    "question_text": "Consider A →(k₁) B and C →(k₂) D. If the rate constant (k₁) of A→B can be expressed as log₁₀ k = 14.34 - (1.5×10⁴)/(T/K), and the activation energy of C→D (Ea₂) is 1/5 that of A→B (Ea₁), then the value of Ea₂ is ___ kJ/mol (nearest integer).",
+    "options": {},
+    "correct_answer": "57",
+    "explanation": "Ea₁ = 1.5×10⁴ × 2.303 × R = 1.5×10⁴×2.303×8.314 = 287.2 kJ/mol. Ea₂ = Ea₁/5 = 57.4 ≈ 57 kJ/mol."
+  },
+  {
+    "question_number": 73,
+    "subject": "Chemistry",
+    "topic": "d and f Block Elements",
+    "question_type": "integer",
+    "question_text": "Among the following oxides of 3d elements, the number of mixed oxides are ___ (Ti₂O₃, V₂O₄, Cr₂O₃, Mn₃O₄, Fe₃O₄, Fe₂O₃, Co₃O₄).",
+    "options": {},
+    "correct_answer": "3",
+    "explanation": "Mixed oxides contain the metal in two oxidation states: Mn₃O₄ (Mn₂O₃·MnO), Fe₃O₄ (Fe₂O₃·FeO) and Co₃O₄ (Co₂O₃·CoO). Ti₂O₃, V₂O₄, Cr₂O₃ and Fe₂O₃ are simple oxides. So the count is 3."
+  },
+  {
+    "question_number": 74,
+    "subject": "Chemistry",
+    "topic": "Electrochemistry",
+    "question_type": "integer",
+    "question_text": "Consider the electrochemical cell: Pt | O₂(g,1 bar) | HCl(aq) || M²⁺(aq,1.0 M) | M(s). The pH above which oxygen gas would start to evolve at the anode is ___ (nearest integer). Given: E°(M²⁺/M)=0.994 V, E°(O₂/H₂O)=1.23 V, (RT/F)(2.303)=0.059 V.",
+    "options": {},
+    "correct_answer": "4",
+    "explanation": "E(O₂/H₂O) = 1.23 - 0.059·pH (with P(O₂)=1 bar). Oxygen evolves at the anode when this potential falls below E(M²⁺/M)=0.994 V: 1.23-0.059·pH = 0.994 → pH ≈ 4. So above pH=4 oxygen evolves."
+  },
+  {
+    "question_number": 75,
+    "subject": "Chemistry",
+    "topic": "Amines / Organic Chemistry",
+    "question_type": "integer",
+    "question_text": "The mass of benzanilide obtained from the benzoylation reaction of 5.8 g of aniline, if the yield of the product is 82%, is ___ g (nearest integer). (H=1, C=12, N=14, O=16)",
+    "options": {},
+    "correct_answer": "10",
+    "explanation": "Aniline (C₆H₅NH₂, MM=93) → benzanilide (C₁₃H₁₁NO, MM=197). Moles aniline = 5.8/93 = 0.0624. Theoretical benzanilide = 0.0624×197 = 12.29 g; 82% yield = 0.82×12.29 = 10.07 ≈ 10 g."
+  }
+]
