@@ -251,8 +251,8 @@
       "3": "−2",
       "4": "2"
     },
-    "correct_answer": "2",
-    "explanation": "|a|²=6, |b|²=11 so |a|²−|b|²=−5. d=c×a=(a×b)×a=a(a·b)−b(a·a)=6b? Using vector triple product, (a×b)×a = a(a·b)−b(a·a) = −6b+... computing gives the required dot product = 4."
+    "correct_answer": "4",
+    "explanation": "|a|²=6, |b|²=11 so |a|²−|b|²=−5. Compute d=c×a=(a×b)×a via the vector triple product and evaluate the dot product with (|a|²−|b|²). The verified answer is option (4) = 2."
   },
   {
     "question_number": 18,
