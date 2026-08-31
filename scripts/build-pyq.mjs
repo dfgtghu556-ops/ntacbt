@@ -312,6 +312,33 @@ async function fromLatestJson(files) {
   return out;
 }
 
+/* ---- Source 3: JEE Main 2026 papers transcribed from the user's own
+   scanned PDFs (the "Question Paper with Solutions" scans under
+   data/jee2026). These are committed, hand-verified examify JSON files
+   under data/jee2026/transcribed/. They read from local disk only — no
+   network — so they bake offline and never fabricate (they are the user's
+   own papers). File names follow the same jeeMain_..._shiftN.json scheme,
+   so skPaperId()/skTransform() reuse applies unchanged. */
+import { readdir, readFile } from "node:fs/promises";
+const LOCAL_PYQ_DIR = join(root, "data", "jee2026", "transcribed");
+async function fromLocalJson() {
+  const out = { rowsByPaper: new Map(), metas: [] };
+  let names = [];
+  try { names = (await readdir(LOCAL_PYQ_DIR)).filter((n) => n.endsWith(".json")).sort(); }
+  catch { return out; } // dir absent → nothing to add (safe)
+  for (const name of names) {
+    const meta = skPaperId(name);
+    if (!meta) continue;
+    try {
+      const rows = JSON.parse(await readFile(join(LOCAL_PYQ_DIR, name), "utf8"));
+      if (!Array.isArray(rows) || rows.length < 10) continue;
+      const qs = skTransform(rows, meta.id);
+      if (qs.length >= 10) { out.rowsByPaper.set(meta.id, qs); out.metas.push(meta); }
+    } catch { /* skip one bad file, keep the rest */ }
+  }
+  return out;
+}
+
 async function fromRowsApi() {
   const first = await fetch(`${ROWS_API}&offset=0&length=100`, { signal: AbortSignal.timeout(30_000) });
   if (!first.ok) throw new Error("rows http " + first.status);
@@ -356,25 +383,33 @@ async function main() {
   const skFiles = await discoverSkFiles();
   const latest = await fromLatestJson(skFiles);
   if (latest.metas.length) console.log(`[pyq] latest-session source: ${latest.metas.length} paper(s) (${latest.metas.map((m) => m.year).join(", ")})`);
+  // Source 3: user-transcribed JEE 2026 papers (offline, committed).
+  const local = await fromLocalJson();
+  if (local.metas.length) console.log(`[pyq] user-transcribed source: ${local.metas.length} paper(s)`);
 
-  if (!rows && !latest.metas.length) {
+  if (!rows && !latest.metas.length && !local.metas.length) {
     console.warn("[pyq] WARNING: no source reachable. Site still builds; the PYQ tab will use the API fallback until the next build.");
     return; // never break the build
   }
 
   const { papers, index } = rows ? buildDataset(rows) : { papers: {}, index: [] };
-  // merge latest-session papers (they win on id collision — newer data)
-  for (const meta of latest.metas) {
-    const qs = latest.rowsByPaper.get(meta.id);
-    qs.sort((a, b) => SUBJECT_ORDER[a.subject] - SUBJECT_ORDER[b.subject] || (a.type === b.type ? 0 : a.type === "mcq" ? -1 : 1));
-    const counts = { Physics: 0, Chemistry: 0, Mathematics: 0 };
-    let mcq = 0, integer = 0;
-    qs.forEach((q, i) => { q.no = i + 1; counts[q.subject]++; q.type === "mcq" ? mcq++ : integer++; });
-    papers[meta.id] = qs.map(({ paperId, ...rest }) => rest);
-    const entry = { id: meta.id, year: meta.year, month: meta.month, label: meta.label, total: qs.length, counts, mcq, integer };
-    const at = index.findIndex((p) => p.id === meta.id);
-    if (at >= 0) index[at] = entry; else index.push(entry);
-  }
+  // merge a given source's papers (they win on id collision — newer data)
+  const mergePapers = (src, metas) => {
+    for (const meta of metas) {
+      const qs = src.rowsByPaper.get(meta.id);
+      qs.sort((a, b) => SUBJECT_ORDER[a.subject] - SUBJECT_ORDER[b.subject] || (a.type === b.type ? 0 : a.type === "mcq" ? -1 : 1));
+      const counts = { Physics: 0, Chemistry: 0, Mathematics: 0 };
+      let mcq = 0, integer = 0;
+      qs.forEach((q, i) => { q.no = i + 1; counts[q.subject]++; q.type === "mcq" ? mcq++ : integer++; });
+      papers[meta.id] = qs.map(({ paperId, ...rest }) => rest);
+      const entry = { id: meta.id, year: meta.year, month: meta.month, label: meta.label, total: qs.length, counts, mcq, integer };
+      const at = index.findIndex((p) => p.id === meta.id);
+      if (at >= 0) index[at] = entry; else index.push(entry);
+    }
+  };
+  // merge latest-session papers, then user-transcribed papers
+  mergePapers(latest, latest.metas);
+  mergePapers(local, local.metas);
   index.sort((a, b) => b.year - a.year || a.id.localeCompare(b.id));
   await mkdir(OUT, { recursive: true });
   await writeFile(join(OUT, "index.json"), JSON.stringify({ v: 1, builtAt: Date.now(), papers: index }));
