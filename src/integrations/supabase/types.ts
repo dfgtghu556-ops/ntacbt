@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -110,12 +110,51 @@ export type Database = {
         }
         Relationships: []
       }
+      test_scores: {
+        Row: {
+          accuracy: number
+          created_at: string
+          id: string
+          marks: number
+          max_marks: number
+          test_id: string
+        }
+        Insert: {
+          accuracy?: number
+          created_at?: string
+          id?: string
+          marks: number
+          max_marks?: number
+          test_id: string
+        }
+        Update: {
+          accuracy?: number
+          created_at?: string
+          id?: string
+          marks?: number
+          max_marks?: number
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_scores_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "public_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       register_test_attempt: { Args: { _test_id: string }; Returns: number }
+      test_score_stats: {
+        Args: { _marks?: number; _test_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
