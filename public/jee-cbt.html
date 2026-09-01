@@ -56,6 +56,11 @@ h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.25;font-family:var(--font-display);le
 .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(140deg,var(--blue-l),var(--blue-d));color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;font-family:var(--font-display);box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .topbar .spacer{flex:1}
 .iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;padding:7px 11px;cursor:pointer;transition:.18s}
+.iconbtn.on{background:var(--accent-text);color:#fff}
+.ai-chat-socline{margin:0 16px;padding:6px 10px;border-radius:8px;background:rgba(255,183,0,.14);border:1px solid rgba(255,183,0,.35);color:var(--ink);font-size:12.5px;line-height:1.5}
+.ai-chat-socline.hide{display:none}
+.ai-chat-memlist{margin:0 16px;padding:8px 12px;border-radius:10px;background:rgba(99,102,241,.08);border:1px dashed rgba(99,102,241,.35)}
+.ai-chat-memlist.hide{display:none}
 .iconbtn:hover{background:rgba(255,255,255,.28)}
 .iconbtn.offline-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:7px 12px}
 .iconbtn.offline-btn.busy{background:rgba(255,255,255,.28);cursor:progress}
@@ -121,6 +126,30 @@ input:focus,select:focus{border-color:var(--accent-text)}
 .drop.busy{border-color:var(--accent-text)}
 /* ---------- exam shell ---------- */
 #examView{position:fixed;inset:0;background:var(--bg);z-index:60;display:flex;flex-direction:column}
+/* ---------- on-screen calculator (NTA 2026 style) ---------- */
+.exam-calc{position:absolute;right:14px;top:74px;z-index:12;width:252px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px -12px rgba(20,10,40,.35);
+  padding:10px;animation:calcIn .18s ease}
+@keyframes calcIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.exam-calc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.exam-calc-head button{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px}
+.exam-calc-head button:hover{color:var(--ink)}
+.exam-calc-display{background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:22px;font-weight:700;
+  text-align:right;padding:12px 14px;margin-bottom:8px;overflow-x:auto;white-space:nowrap;
+  min-height:48px;color:var(--ink)}
+.exam-calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.exam-calc-keys button{height:42px;border:1px solid var(--line);border-radius:9px;background:var(--bg);
+  color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;transition:.12s}
+.exam-calc-keys button:hover{background:var(--blue-soft);border-color:var(--accent-text)}
+.exam-calc-keys button.op{background:var(--blue-soft);color:var(--accent-text)}
+.exam-calc-keys button.act{background:var(--red);color:#fff;border-color:transparent}
+.exam-calc-keys button.eq{background:var(--green);color:#fff;border-color:transparent}
+.exam-calc-insert{width:100%;margin-top:8px;background:var(--blue);color:#fff;border:0;border-radius:10px;
+  padding:10px;font-weight:700;cursor:pointer;transition:.15s}
+.exam-calc-insert:hover{background:var(--blue-l)}
+.exam-calc-insert:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:560px){.exam-calc{right:8px;top:64px;left:8px;width:auto}}
 /* ============ Saarthi — AI doubt-solving chat widget ============
    Sits at z-index 55 — automatically covered by #examView (z-index 60)
    during a live timed test, with no extra JS needed, so it can't be used
@@ -230,6 +259,8 @@ body.pomo-visible .ai-fab-label{display:none} /* pomodoro pill owns that slot wh
   color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
 .ai-iconbtn:hover{border-color:var(--accent-text);color:var(--blue-d)}
 .ai-iconbtn svg{width:18px;height:18px}
+.ai-iconbtn.recording{color:#fff;background:var(--red);border-color:var(--red);animation:micPulse 1s ease-in-out infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,0,0,.35)}50%{box-shadow:0 0 0 6px rgba(255,0,0,0)}}
 .ai-chat-inputrow textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;
   padding:10px 14px;background:var(--bg);color:inherit;font:inherit;font-size:14.5px;max-height:120px;line-height:1.4}
 .ai-chat-inputrow textarea:focus{outline:none;border-color:var(--accent-text);box-shadow:0 0 0 3px var(--blue-soft)}
@@ -296,6 +327,24 @@ html.dark .qtext-mode{background:color-mix(in srgb,var(--blue) 10%,var(--panel))
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;z-index:200;box-shadow:var(--shadow);animation:fade .25s}
 .modal{position:fixed;inset:0;background:rgba(5,15,30,.6);display:grid;place-items:center;z-index:150;padding:16px}
 .modal .box{background:var(--panel);border-radius:var(--radius);padding:20px;max-width:520px;width:100%;box-shadow:var(--shadow);animation:fade .25s}
+/* ---------- first-run "Getting Started" onboarding ---------- */
+.onb-modal .box{max-width:620px;overflow:hidden;padding:0}
+.onb-hero{padding:26px 24px 18px;color:#fff;background:linear-gradient(125deg,var(--ink-nav-a),var(--ink-nav-b));position:relative;overflow:hidden}
+.onb-hero:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:color-mix(in srgb,var(--blue) 55%,transparent);filter:blur(60px);top:-90px;right:-60px}
+.onb-hero .muted{color:rgba(255,255,255,.78)}
+.onb-hero h2{color:#fff;margin:8px 0 4px;font-size:24px}
+.onb-body{padding:18px 22px 22px}
+.onb-step{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;
+  border:1px solid var(--line);border-radius:13px;padding:11px 13px;margin:8px 0;background:var(--panel);transition:.15s}
+.onb-step:hover{border-color:var(--accent-text);background:var(--blue-soft);transform:translateX(2px)}
+.onb-num{width:32px;height:32px;border-radius:50%;background:var(--blue-soft);color:var(--blue-d);
+  display:grid;place-items:center;font-weight:800;font-size:14px;flex:0 0 auto}
+.onb-step b{font-size:14px}
+.onb-step .s{font-size:12.5px;color:var(--muted);line-height:1.45}
+.onb-go{white-space:nowrap}
+.onb-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);
+  padding:14px 22px;background:color-mix(in srgb,var(--panel) 96%,var(--blue-soft))}
+.onb-foot .muted{font-size:12.5px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .cal .cell{min-height:52px;padding:4px;border:1px solid var(--line);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative}
 .cal .cell.has{background:var(--blue-soft);font-weight:700;cursor:pointer}
@@ -1067,9 +1116,60 @@ img,video{max-width:100%;height:auto}
 }
 /* 10. Large desktop screens: use the room — wider content column */
 @media(min-width:1600px){.wrap{max-width:1320px}}
+
+/* ════════════════════════════════════════════════════════════════════
+   MODERN UI ENHANCEMENTS — visual depth & polish (structure unchanged)
+   ════════════════════════════════════════════════════════════════════ */
+/* page background: soft brand-tinted gradient wash instead of flat */
+body{background:linear-gradient(180deg,#fdf9f5 0%,#f6efe8 55%,#f1e7de 100%) fixed}
+html.dark body{background:linear-gradient(180deg,#161320 0%,#12101b 55%,#100e18 100%) fixed}
+
+/* cards: gentle lift + accent tint on hover */
+.card{position:relative}
+.card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent-text) 28%,var(--line));
+  box-shadow:0 20px 44px -22px rgba(20,10,40,.30)}
+
+/* section titles: small gradient accent bar for a modern, structured feel */
+.section-title{position:relative;padding-left:14px}
+.section-title:before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:4px;border-radius:4px;
+  background:linear-gradient(180deg,var(--blue-l),var(--purple))}
+.section-title>.ico{filter:drop-shadow(0 2px 3px rgba(20,10,40,.18))}
+
+/* primary buttons: brand gradient + soft glow (coloured variants preserved) */
+.btn{background:linear-gradient(135deg,var(--blue-l),var(--blue-d));
+  box-shadow:0 6px 16px -8px color-mix(in srgb,var(--blue) 65%,transparent)}
+.btn:hover{background:linear-gradient(135deg,var(--blue-l),var(--blue));filter:saturate(1.05)}
+.btn.ghost{background:transparent;box-shadow:none;filter:none}
+.btn.green{background:linear-gradient(135deg,#2ab86a,#148a4b)} .btn.green:hover{background:#1e9e57}
+.btn.red{background:linear-gradient(135deg,#e95454,#c22c2c)} .btn.red:hover{background:#d33b3b}
+.btn.purple{background:linear-gradient(135deg,#9a5ae6,#6d2fc4)} .btn.purple:hover{background:#7a3ec8}
+.btn.sm,.btn.ghost{transform:none}
+.btn.sm:hover,.btn.ghost:hover{transform:translateY(-1px)}
+
+/* stat cards: lift + accent glow */
+.stat{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.stat:hover{transform:translateY(-2px);box-shadow:0 16px 34px -20px rgba(20,10,40,.30)}
+
+/* logo: glossy app-badge look */
+.logo{background:linear-gradient(135deg,var(--blue-l),var(--purple));box-shadow:0 6px 14px -6px color-mix(in srgb,var(--purple) 60%,transparent)}
+
+/* topbar: subtle animated brand shimmer (respects reduced motion below) */
+.topbar{background:linear-gradient(115deg,var(--ink-nav-a) 0%,var(--ink-nav-b) 55%,color-mix(in srgb,var(--ink-nav-b) 70%,var(--blue)) 100%);background-size:220% 220%;animation:brandShift 14s ease infinite}
+@keyframes brandShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* text selection: brand-tinted */
+::selection{background:color-mix(in srgb,var(--blue) 28%,transparent)}
+
+/* nicer scrollbars (WebKit) */
+.wrap::-webkit-scrollbar{width:10px}.wrap::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 40%,transparent);border-radius:8px}
+body::-webkit-scrollbar{width:10px}body::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 38%,transparent);border-radius:8px}
+
+/* display headings: brand font, tighter, modern */
+h1,h2,h3{font-family:var(--font-display,"Manrope",sans-serif);letter-spacing:-.01em}
+
 /* respect users who prefer less motion */
 @media (prefers-reduced-motion:reduce){
-  #app.slide-in-right,#app.slide-in-left,.logo:after,.btn:after,.swipe-hint .arr,.fc-card{animation:none !important;transition:none !important}
+  #app.slide-in-right,#app.slide-in-left,.logo:after,.btn:after,.swipe-hint .arr,.fc-card,.topbar{animation:none !important;transition:none !important}
   html{scroll-behavior:auto}
 }
 </style>
@@ -1106,11 +1206,27 @@ img,video{max-width:100%;height:auto}
     <span class="timer" id="exTimer">03:00:00</span>
     <button class="iconbtn" id="fsBtn" title="Fullscreen" aria-label="Toggle fullscreen"><span data-ic="fullscreen"></span></button>
     <button class="iconbtn" id="palBtn" title="Question palette" aria-label="Toggle question palette"><span data-ic="grid"></span></button>
+    <button class="iconbtn" id="exCalcBtn" title="On-screen calculator (as in the real NTA 2026 console)" aria-label="Toggle on-screen calculator">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="8" y1="11" y2="11"/><line x1="12" x2="12" y1="11" y2="11"/><line x1="16" x2="16" y1="11" y2="11"/><line x1="8" x2="8" y1="15" y2="15"/><line x1="12" x2="12" y1="15" y2="15"/><line x1="16" x2="16" y1="15" y2="15"/><line x1="8" x2="8" y1="19" y2="19"/><line x1="12" x2="12" y1="19" y2="19"/><line x1="16" x2="16" y1="19" y2="19"/></svg>
+    </button>
   </div>
   <div class="subtabs" id="exSubs"></div>
   <div class="exam-body">
     <div class="qpane" id="exQ"></div>
     <div class="palette" id="exPal"></div>
+  </div>
+  <!-- On-screen calculator — mirrors the basic standard calculator NTA
+       introduced in the JEE Main 2026 CBT console. Toggled from the header;
+       "Insert" writes the result straight into the active numerical answer. -->
+  <div id="exCalc" class="exam-calc hide" role="dialog" aria-label="On-screen calculator">
+    <div class="exam-calc-head">
+      <b>Calculator</b>
+      <span class="small muted" style="flex:1">Standard · as in the NTA console</span>
+      <button type="button" id="exCalcClose" aria-label="Close calculator">✕</button>
+    </div>
+    <div class="exam-calc-display" id="exCalcDisp">0</div>
+    <div class="exam-calc-keys" id="exCalcKeys"></div>
+    <button type="button" class="exam-calc-insert" id="exCalcInsert">Insert into answer</button>
   </div>
   <div class="exam-foot" id="exFoot"></div>
 </div>
@@ -1131,15 +1247,21 @@ img,video{max-width:100%;height:auto}
         <div class="ai-chat-sub"><span class="ai-dot"></span>Your personal AI mentor — knows your scores, weak chapters &amp; schedule</div>
       </div>
     </div>
+    <button id="aiChatSocratic" class="iconbtn" type="button" title="Socratic mentor mode: guided hints, not full answers" aria-label="Toggle Socratic mentor mode"><span data-ic="bulb"></span></button>
     <button id="aiChatReset" class="iconbtn" type="button" title="Start a new conversation" aria-label="Clear chat"><span data-ic="trash"></span></button>
   </div>
+  <div id="aiChatSocLine" class="ai-chat-socline hide"></div>
   <div id="aiChatMsgs" class="ai-chat-msgs"></div>
   <div id="aiChatChips" class="ai-chat-chips"></div>
+  <div id="aiChatMemBar" class="ai-chat-memlist hide"></div>
   <div id="aiChatImgPrev" class="ai-chat-imgprev hide"></div>
   <div class="ai-chat-inputrow"><div class="ai-chat-inputrow-inner">
     <input id="aiChatFile" type="file" accept="image/*,application/pdf,.pdf" class="hide">
     <button id="aiChatAttach" class="ai-iconbtn" type="button" title="Attach a photo or PDF of the question" aria-label="Attach a file">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+    <button id="aiChatMic" class="ai-iconbtn" type="button" title="Bolo — apna doubt bol ke bhejo (voice to text)" aria-label="Speak your doubt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
     </button>
     <textarea id="aiChatInput" rows="1" placeholder="Ask Saarthi a doubt — physics, chem, maths…" aria-label="Type your question"></textarea>
     <button id="aiChatSend" class="ai-send-btn" type="button" aria-label="Send message" disabled>
@@ -1196,8 +1318,10 @@ const ICONS={
   upload:'<path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/>',
   calendar:'<rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
   chart:'<path d="M3 3v18h18"/><path d="M7 15v-4M12 17V8M17 13v-3"/>',
+  gauge:'<path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 12l4-4"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
   notebook:'<rect x="5" y="3" width="15" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   formula:'<path d="M5 4h14M5 4l7 8-7 8M5 20h14"/>',
   pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L8 20l-5 1 1-5z"/>',
   repeat:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
@@ -1520,7 +1644,7 @@ function memoScan(key,fn){
 const DEFAULT={tests:[],attempts:[],bookmarks:[],planner:[],plannerDone:{},notes:{},studyLog:{},dailyQuestions:{},reviewSchedule:{},
   qtags:{},   // per-question mistake tags: {qid:"guessed"|"silly"|"concept"}
   settings:{theme:"system",accent:"orange",density:"comfortable",fontSize:"md",cards:"elevated",anim:"on",candidate:"Candidate",
-    negMarking:true,randomizeOrder:false,dailyGoal:20,examDate:"",dailyReminder:false,
+    negMarking:true,randomizeOrder:false,dailyGoal:20,examDate:"",dailyReminder:false,focusGoal:100,
     strictMode:false,targetPercentile:null,examFontScale:1,questionDisplay:"image"}};
 let S = load();
 /* MULTI-TAB SAFETY (data-loss fix): with two tabs open, the tab that saved
@@ -2630,7 +2754,14 @@ function evaluate(test,resp){
     const t=r.time||0; p.time+=t; all.time+=t;
     if(r.ans==null||r.ans===""){p.skipped++;all.skipped++;}
     else if(isRight(q,r.ans)){p.correct++;all.correct++;p.marks+=MARK_C;all.marks+=MARK_C;}
-    else {p.wrong++;all.wrong++;p.marks+=markW;all.marks+=markW;all.neg+=Math.abs(markW);}
+    else {
+      // OFFICIAL JEE MAIN 2026 MARKING (research-verified): Section B
+      // numerical/integer questions carry NO negative marking (−0), only
+      // MCQs are penalised (−1). Previously every wrong answer lost a mark,
+      // which under-scored honest attempts on numerical questions.
+      const penalty = q.type==="integer" ? 0 : markW;
+      p.wrong++;all.wrong++;p.marks+=penalty;all.marks+=penalty;all.neg+=Math.abs(penalty);
+    }
   });
   const attempted=all.correct+all.wrong;
   all.accuracy=pct(all.correct,attempted);
@@ -2968,14 +3099,20 @@ function go(r,arg,dir){
   // PERF: instant jump, not behavior:"smooth" — a smooth scroll animation
   // running at the same time as the page slide transition made every
   // navigation feel laggy (two competing animations per frame).
-  route=r;routeArg=arg||null;render(dir);window.scrollTo(0,0);
+  route=r;routeArg=arg||null;_nav=true;render(dir);window.scrollTo(0,0);
 }
 window.addEventListener("popstate",e=>{
   if(EX&&!$("#examView").classList.contains("hide"))return; // never during a test
   const st=e.state||{}; const r=st.route&&ROUTES.some(x=>x[0]===st.route)?st.route:(st.route||"dash");
   route=({dash:1,library:1,pyq:1,upload:1,planner:1,analytics:1,mastery:1,notebook:1,formulas:1,practice:1,review:1,live:1,search:1,settings:1,result:1}[r])?r:"dash";
-  routeArg=st.arg||null;render(-1);window.scrollTo({top:0});
+  routeArg=st.arg||null;_nav=true;render(-1);window.scrollTo({top:0});
 });
+/* _nav marks a REAL section navigation (go/popstate). render() only
+   preserves scroll position for in-place updates — sub-tab switches,
+   mark-done, settings changes — so switching planner tabs or any
+   section's tabs never yanks the page back to the top. Real navigation
+   scrolls to top as before. */
+let _nav=false;
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
   ROUTES.forEach(([k,l,ico])=>{const b=el("button",route===k?"active":"",`<span class="nico" aria-hidden="true">${ic(ico)}</span>${l}`);
@@ -2990,6 +3127,8 @@ function renderNav(){
 /* (The section tab bars now scroll away with the page — the sticky-offset
    measuring machinery is gone with them. Only the main nav stays sticky.) */
 function render(dir=0){
+  const _isNav=_nav;_nav=false;
+  const _sy=window.scrollY, _prevH=document.documentElement.scrollHeight;
   renderNav();
   const a=$("#app"); a.innerHTML="";
   a.classList.remove("slide-in-right","slide-in-left");
@@ -3018,6 +3157,16 @@ function render(dir=0){
     const rel=el("button","btn ghost sm","🔄 Page reload karo");rel.onclick=()=>location.reload();
     row.append(home,rel);c.appendChild(row);
     a.appendChild(c);
+  }
+  // Preserve the user's scroll for in-place updates (sub-tabs, mark-done,
+  // settings changes) so the page never yanks back to the top. Real
+  // navigation is excluded (_isNav) — go()/popstate handle their own scroll.
+  if(!_isNav&&_sy>0){
+    requestAnimationFrame(()=>{
+      const _max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+      const _target=Math.min(_sy,Math.max(0,_max));
+      if(_target!==window.scrollY)window.scrollTo(0,_target);
+    });
   }
   try{launcherDock();}catch(e){} // study-launcher app dock (APK v3.1+ only)
   try{aiFabContext();}catch(e){} // contextual AI label ("Optimize Plan" on planner, etc.)
@@ -3285,6 +3434,23 @@ function viewUpload(root){
    even scanned pages. Standard-format papers are parsed instantly with pixel-perfect question images; anything else is
    read page-by-page by AI (questions, options and answer keys, in any numbering style). Always check
    <b>Preview &amp; fix</b> before publishing.</p>`;
+  // ---- destination: public Test Library (cloud) vs PYQ (this device) ----
+  let uploadDest="library"; // "library" | "pyq"
+  const destBox=el("div","card");destBox.style.marginTop="14px";
+  destBox.innerHTML=`<div class="section-title"><span class="ico">${ic("tag")}</span><h3 style="margin:0">Where should this paper go?</h3></div>
+    <div class="small muted" style="margin-bottom:10px">Pick a destination once below — it applies to both the 3-subject and single-PDF uploads.</div>`;
+  const destRow=el("div","seg");destRow.style.cssText="flex-wrap:wrap";
+  const destOpt=(id,title,desc)=>{
+    const b=el("button",uploadDest===id?"on":"",`${title}<span class="small" style="opacity:.85"> — ${desc}</span>`);
+    b.type="button";b.onclick=()=>{uploadDest=id;destRow.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+      destHint.textContent=id==="pyq"?"Papers are saved and served on this device and added to the PYQ section — they are NOT uploaded to the cloud library.":"Papers are uploaded to the public cloud Test Library for everyone to attempt.";};
+    return b;
+  };
+  destRow.append(destOpt("library","Test Library (cloud)","shared with everyone"),
+                 destOpt("pyq","PYQ section (this device)","in-app, no cloud"));
+  const destHint=el("div","small muted");destHint.style.cssText="margin-top:8px";
+  destHint.textContent="Papers are uploaded to the public cloud Test Library for everyone to attempt.";
+  destBox.appendChild(destRow);destBox.appendChild(destHint);c.appendChild(destBox);
   const grid=el("div","grid g3");
   SUBJECTS.forEach(sub=>{
     const d=el("div","drop");
@@ -3406,10 +3572,19 @@ function viewUpload(root){
     t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
     const meta={year:+year.value||new Date().getFullYear(),difficulty:diff.value,type:type.value,subjectChapters:t.chapter};
     try{
-      const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m,meta);
-      cloudTests.unshift(published);S.tests.push(published);
-      SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
-      toast("Public test created · "+published.testId);go("library");
+      if(uploadDest==="pyq"){
+        const paper=saveLocalPyq(t,{...meta,label:name.value.trim()||"Untitled Test"});
+        S.tests.push(paper.test);
+        if(pyqState.index)pyqState.index=pyqState.index.filter(p=>p.id!==paper.meta.id).concat([paper.meta]);
+        SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
+        toast("PYQ paper saved to this device · "+paper.meta.label);
+        pyqState.year=paper.meta.year;go("pyq");
+      }else{
+        const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m,meta);
+        cloudTests.unshift(published);S.tests.push(published);
+        SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
+        toast("Public test created · "+published.testId);go("library");
+      }
     }catch(e){toast("Publish failed: "+e.message,5000);mk.disabled=false;status.textContent="Upload failed. Your local PDFs were not removed — try again.";}
   });
   root.appendChild(c);
@@ -3448,9 +3623,17 @@ function viewUpload(root){
       t.questions.forEach(q=>q.chapter=q.chapter||"Full Syllabus — "+q.subject);
       const meta={year:+fsYear.value||new Date().getFullYear(),difficulty:fsDiff.value,
         type:"Full Syllabus",subjectChapters:t.chapter};
-      const published=await publishPublicTest(t,{Physics:f,Chemistry:f,Mathematics:f},m=>fsSt.textContent=m,meta);
-      cloudTests.unshift(published);S.tests.push(published);
-      toast("Full syllabus mock published · "+published.testId);go("library");
+      if(uploadDest==="pyq"){
+        const paper=saveLocalPyq(t,{...meta,label:fsName.value.trim()||"Full Syllabus Mock Test"});
+        S.tests.push(paper.test);
+        if(pyqState.index)pyqState.index=pyqState.index.filter(p=>p.id!==paper.meta.id).concat([paper.meta]);
+        toast("PYQ paper saved to this device · "+paper.meta.label);
+        pyqState.year=paper.meta.year;go("pyq");
+      }else{
+        const published=await publishPublicTest(t,{Physics:f,Chemistry:f,Mathematics:f},m=>fsSt.textContent=m,meta);
+        cloudTests.unshift(published);S.tests.push(published);
+        toast("Full syllabus mock published · "+published.testId);go("library");
+      }
     }catch(e){fsSt.textContent="Failed: "+e.message;toast("Publish failed: "+e.message,4500);}
     fsBtn.disabled=false;fsIn.value="";
   };
@@ -3524,6 +3707,29 @@ const ADV_EXTRA_TOPICS={
   Chemistry:[["Qualitative Salt Analysis",3,3],["Stereochemistry (Advanced)",3,2]],
   Mathematics:[["Functions & Functional Equations (Adv)",3,2],["Inequalities & Max-Min (Adv)",3,2]]
 };
+
+/* ===== CBSE 2027 (Session 2026-27) - OFFICIAL Class 12 syllabus =====
+   The CBSE-published rationalised chapter list for the 2026-27 session
+   (2027 Board exams). Distinct from the legacy board12 NCERT list - this
+   is the CURRENT official board curriculum. Tuples =
+   [name, difficulty 1-3, weightage 1-3, class]. PCM only (English is not
+   part of this board target - it stays exclusive to the legacy board12). */
+const CBSE27_TOPICS={
+  Physics:[["Electric Charges and Fields",2,3,12],["Electrostatic Potential and Capacitance",2,3,12],
+    ["Current Electricity",2,3,12],["Moving Charges and Magnetism",3,3,12],["Magnetism and Matter",1,1,12],
+    ["Electromagnetic Induction",3,3,12],["Alternating Current",2,2,12],["Electromagnetic Waves",1,2,12],
+    ["Ray Optics and Optical Instruments",2,3,12],["Wave Optics",2,2,12],["Dual Nature of Radiation and Matter",1,2,12],
+    ["Atoms",1,2,12],["Nuclei",1,2,12],["Semiconductor Electronics: Materials, Devices and Simple Circuits",1,3,12]],
+  Chemistry:[["Solutions",2,2,12],["Electrochemistry",2,3,12],["Chemical Kinetics",2,2,12],
+    ["The d- and f-Block Elements",2,2,12],["Coordination Compounds",3,3,12],["Haloalkanes and Haloarenes",2,2,12],
+    ["Alcohols, Phenols and Ethers",2,2,12],["Aldehydes, Ketones and Carboxylic Acids",3,3,12],
+    ["Amines",2,2,12],["Biomolecules",1,2,12]],
+  Mathematics:[["Relations and Functions",1,2,12],["Inverse Trigonometric Functions",2,2,12],
+    ["Matrices",2,3,12],["Determinants",2,3,12],["Continuity and Differentiability",3,3,12],
+    ["Applications of Derivatives",2,2,12],["Integrals",3,3,12],["Applications of the Integrals",2,1,12],
+    ["Differential Equations",2,2,12],["Vector Algebra",2,3,12],["Three Dimensional Geometry",2,3,12],
+    ["Linear Programming",2,1,12],["Probability",2,2,12]]
+};
 /* PREREQUISITE MAP — Class 12 chapter → the Class 11 concept it leans on.
    Used by PREREQUISITE MODE: board-12 plans stay pure Class 12, but when a
    chapter has a known Class 11 dependency we surface a SHORT revision
@@ -3550,6 +3756,7 @@ const PREREQ_MAP={
  *  CLASS-AWARE FIX: board12 = ONLY class-12 chapters, board11 = ONLY class-11.
  *  JEE targets keep both years because that IS the JEE syllabus. */
 function topicsForTarget(target){
+  if(target==="cbse27") return JSON.parse(JSON.stringify(CBSE27_TOPICS));
   let base=JSON.parse(JSON.stringify(JEE_TOPICS));
   if(target==="jeeadv"){
     Object.keys(ADV_EXTRA_TOPICS).forEach(s=>{base[s]=base[s].concat(ADV_EXTRA_TOPICS[s]);});
@@ -3932,7 +4139,7 @@ function aipOpenLesson(t){
       ${prog&&prog.done?`<div class="small" style="margin-top:6px;color:var(--green)">✅ Ye video tum pehle poora dekh chuke ho — ab iski PRACTICE zyada kaam degi.</div>`:""}
       <div class="small" style="margin-top:8px"><b>${esc(v.title)}</b></div>
       <div class="small muted">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec/(aip().profile.speed||1.25)))} at ${aip().profile.speed}×)</div>
-      ${v.why?`<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target||"")==="board12"?" · board-level fit":(p.profile.target||"")==="jeeadv"?" · Advanced-level fit":" · JEE Main-level fit"}</div>`:""}`;
+      ${v.why?`<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target||"")==="board12"||(p.profile.target||"")==="cbse27"?" · board-level fit":(p.profile.target||"")==="jeeadv"?" · Advanced-level fit":" · JEE Main-level fit"}</div>`:""}`;
   };
   aipFindVideo(t,(items,fallback)=>{
     if(!m.isConnected)return;
@@ -3960,7 +4167,8 @@ function aipWizard(root){
     // EXAM TARGET — decides video search style + which chapters get priority
     const tgt=el("div");tgt.style.marginTop="12px";tgt.appendChild(el("h4",null,"Target exam"));
     const tgrid=el("div","row");tgrid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:8px";
-    [["jeemain","🎯 JEE Main"],["jeeadv","🏔️ JEE Main + Advanced"],["board12","📚 Class 12 Boards"],["board11","📖 Class 11 (foundation)"]].forEach(([v,l])=>{
+    [["jeemain","🎯 JEE Main"],["jeeadv","🏔️ JEE Main + Advanced"],["board12","📚 Class 12 Boards"],["cbse27","📘 Class 12 · CBSE 2027"],["board11","📖 Class 11 (foundation)"]].forEach(([v,l])=>{
+
       const on=(w.target||"jeemain")===v;
       const b=el("button","btn sm"+(on?"":" ghost"),l);
       b.onclick=()=>{w.target=v;render(0);};
@@ -3968,6 +4176,36 @@ function aipWizard(root){
     });
     tgt.appendChild(tgrid);
     c.appendChild(tgt);
+    // ── OFFICIAL SYLLABUS: see the real NTA/CBSE chapter list for the chosen
+    //    target before you commit — the plan is built from exactly this. ──
+    const cur=(w.target||"jeemain");
+    const tgtLabel={jeemain:"JEE Main (NTA official)",jeeadv:"JEE Main + Advanced (NTA + JEE Adv official)",board12:"Class 12 Boards (CBSE/NCERT official)",cbse27:"Class 12 Boards · CBSE 2027 (official 2026-27)",board11:"Class 11 (CBSE/NCERT official)"}[cur];
+    const sylTog=el("button","btn ghost sm");sylTog.type="button";sylTog.style.cssText="margin-top:10px";
+    sylTog.innerHTML=`${ic("book")} 📖 Official syllabus — ${tgtLabel} ▾`;
+    let sylOpen=false;
+    const sylBox=el("div");sylBox.style.cssText="display:none;margin-top:10px";
+    const renderSyl=()=>{
+      try{
+        const syl=topicsForTarget(cur);
+        sylBox.innerHTML="";
+        SUBJECTS.concat(cur==="board12"||cur==="board11"?["English"]:[]).forEach(s=>{
+          const list=syl[s]||[];
+          if(!list.length)return;
+          const block=el("div","card");block.style.cssText="margin:0 0 8px;padding:10px 12px";
+          block.innerHTML=`<b style="color:${SUBCOLOR[s]||"var(--ink)"}">${s} — ${list.length} topics</b>
+            <div class="small muted" style="margin-top:5px;line-height:1.7">${list.map(t=>esc(t[0])).join(" · ")}</div>`;
+          sylBox.appendChild(block);
+        });
+        if(!sylBox.children.length)sylBox.innerHTML=`<div class="small muted">Syllabus load nahi ho paya — continue karo, plan official chapter list se bana hai.</div>`;
+      }catch(e){sylBox.innerHTML=`<div class="small muted">Syllabus render nahi ho paya.</div>`;}
+    };
+    sylTog.onclick=()=>{
+      sylOpen=!sylOpen;
+      sylTog.innerHTML=`${ic("book")} 📖 Official syllabus — ${tgtLabel} ${sylOpen?"▴":"▾"}`;
+      sylBox.style.display=sylOpen?"block":"none";
+      if(sylOpen)renderSyl();
+    };
+    c.appendChild(sylTog);c.appendChild(sylBox);
     c.appendChild(el("div","h4spacer")).style.marginTop="14px";
     c.appendChild(el("h4",null,"Subjects"));
     const grid=el("div","row");grid.style.cssText="gap:8px;flex-wrap:wrap;margin-top:8px";
@@ -3986,7 +4224,7 @@ function aipWizard(root){
     const subjList=w.subjects.slice();
     // board mode: English becomes selectable right here
     if((w.target==="board12"||w.target==="board11")&&SYL.English&&!subjList.includes("English"))subjList.push("English");
-    c.innerHTML=H("Choose your topics",(w.target==="jeeadv"?"JEE Advanced syllabus (extra advanced chapters included). ":w.target&&w.target.startsWith("board")?"Board syllabus — English bhi neeche mil jayegi. ":"")+"Full syllabus, or untick chapters you've already finished.");
+    c.innerHTML=H("Choose your topics",(w.target==="cbse27"?"CBSE 2027 official (2026-27) syllabus. ":(w.target==="jeeadv"?"JEE Advanced syllabus (extra advanced chapters included). ":w.target&&w.target.startsWith("board")?"Board syllabus — English bhi neeche mil jayegi. ":""))+"Full syllabus, or untick chapters you've already finished.");
     subjList.forEach(s=>{
       if(!SYL[s])return;
       const isExtra=!w.subjects.includes(s);
@@ -4151,12 +4389,24 @@ function aipToday(root){
   root.appendChild(head);
   const list=el("div","card");list.innerHTML=`<h3>Today's tasks</h3>`;
   if(!today.length)list.innerHTML+=`<div class="empty"><div class="big">${ic("party")}</div>Nothing scheduled today — get ahead from Upcoming, or rest. Both are strategy.</div>`;
+  // Reclaim-style auto time-blocks: assign each unfinished task a sequential
+  // block + estimated window based on real study pace, so today reads as a
+  // timetable you can follow, not just a to-do list.
+  const blockStart=new Date();blockStart.setMinutes(blockStart.getMinutes()+10);
+  let running=0;
   today.forEach(t=>{
+    const mins=aipEff(t.estMin,p.profile);
+    const blockNo=today.filter(x=>x.status!=="done").findIndex(x=>x===t)+1;
+    const startsAt=new Date(blockStart.getTime()+running*60000);
+    const endsAt=new Date(startsAt.getTime()+mins*60000);
+    const tFmt=d=>d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+    running+=mins;
     const row=el("div","optrow");row.style.cssText="cursor:default;margin-top:8px"+(t.status==="done"?";opacity:.55":"");
     row.innerHTML=`<div style="flex:1"><span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
         <span class="badge">${t.kind.toUpperCase()}</span>${t.catchup?` <span class="badge" style="color:var(--amber)">CATCH-UP</span>`:""}
+        ${t.status==="todo"?`<span class="pill" style="margin-left:4px">⏱️ ${blockNo===1?"Abhi":tFmt(startsAt)}–${tFmt(endsAt)}</span>`:""}
         <div style="margin-top:4px"><b>${esc(t.topic)}</b></div>
-        <div class="small muted">YouTube lesson · ~${aipEff(t.estMin,p.profile)} min at ${p.profile.speed}×${t.videoTitle?` · ${esc(t.videoTitle.slice(0,44))}…`:""}</div></div>`;
+        <div class="small muted">YouTube lesson · ~${mins} min at ${p.profile.speed}×${t.videoTitle?` · ${esc(t.videoTitle.slice(0,44))}…`:""}</div></div>`;
     const acts=el("div","row");acts.style.cssText="gap:6px;flex:none";
     if(t.status!=="done"){
       const wb=el("button","btn sm",ic("play")+" Watch");wb.onclick=()=>aipOpenLesson(t);
@@ -4197,6 +4447,23 @@ function aipToday(root){
   up.innerHTML=`<div class="section-title"><span class="ico">${ic("calendar")}</span>
     <div><h3 style="margin:0">Aage ke 7 din — aage badho 🚀</h3>
     <div class="small muted">${todayLeft===0?"Aaj ka sab ho gaya! Kal ka kaam AAJ karke lead banao — har task khul sakta hai.":"Kisi bhi din ka task pehle karna ho to yahin se kholo."}</div></div></div>`;
+  // ── weekly load bars: aatne wale 7 din ka study load ek nazar mein ──
+  (()=>{
+    const days7=[];let maxEff=1;
+    for(let i=0;i<7;i++){const dk=aipAddDays(tk,i);const ds=p.tasks.filter(t=>t.date===dk&&t.status==="todo");
+      const eff=ds.reduce((s2,t)=>s2+aipEff(t.estMin,p.profile),0);days7.push({dk,eff,done:p.tasks.filter(t=>t.date===dk&&t.status==="done").length});if(eff>maxEff)maxEff=eff;}
+    const wl=el("div");wl.style.cssText="margin-top:10px";
+    wl.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-end;gap:6px">${
+      days7.map((d,i)=>{
+        const lbl=i===0?"Aaj":i===1?"Kal":["S","M","T","W","T","F","S"][new Date(d.dk+"T00:00:00").getDay()];
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span class="small muted" style="font-size:10.5px">${d.eff?Math.round(d.eff/60):""}</span>
+          <div style="width:100%;height:46px;background:var(--line);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden">
+            <div style="width:100%;height:${d.eff?Math.max(8,pct(d.eff,maxEff)):0}%;background:${d.done&&!d.eff?"var(--green)":"linear-gradient(180deg,var(--blue-l),var(--purple))"};border-radius:4px"></div></div>
+          <b class="small muted" style="font-size:10.5px;font-weight:${i===0||i===1?"800":"600"};color:${i===0?"var(--accent-text)":"var(--muted)"}">${lbl}</b></div>`;}).join("")}</div>`;
+    wl.appendChild(el("div","small muted",`Har bar = us din ka total study load (ghante). ${days7.reduce((s,d)=>s+d.eff,0)?Math.round(days7.reduce((s,d)=>s+d.eff,0)/60)+" ghante total in 7 din":"— is week ke plan mein abhi load nahi."}`));
+    up.appendChild(wl);
+  })();
   let firstExpanded=false;
   for(let i=1;i<=7;i++){
     const dk=aipAddDays(tk,i),dts=p.tasks.filter(t=>t.date===dk&&t.status==="todo");
@@ -4353,7 +4620,23 @@ function pomodoroCard(){
       <div class="lbl"><b id="pomoTime">${fmtTime(POMO.left)}</b><span id="pomoState">${POMO.mode==="focus"?"FOCUS":"BREAK"}</span></div>
     </div>
     <div class="pomo-controls"></div>
-    <div class="small muted" style="text-align:center;margin-top:10px">Today: <b>${totalToday} min</b> of deep focus${totalToday>=100?" — outstanding!":totalToday>=50?" — great pace!":""}</div>`;
+    <div class="small muted" style="text-align:center;margin-top:10px">Today: <b>${totalToday} min</b> of deep focus${totalToday>=100?" — outstanding!":totalToday>=50?" — great pace!":""}</div>
+    <div data-focusGoal style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
+      <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+        <span class="small" style="font-weight:700">🎯 Aaj ka focus goal</span>
+        <span class="row" style="gap:6px;align-items:center">
+          <input data-fgGoal type="number" min="10" max="600" step="10" value="${S.settings.focusGoal||100}" style="width:64px;padding:3px 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);text-align:center" aria-label="Daily focus minutes goal">
+          <span class="small muted">min</span>
+        </span>
+      </div>
+      <div class="progress" style="margin-top:8px;height:8px"><i data-fgBar style="width:${Math.min(100,pct(totalToday,S.settings.focusGoal||100))}%;background:var(--green)"></i></div>
+      <div class="small muted" style="margin-top:5px" data-fgMsg></div>
+      <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin-top:10px">
+        <span class="small" style="font-weight:700">📅 Hafta goal</span>
+        <span class="small muted" data-fgWeek></span>
+      </div>
+      <div class="progress" style="margin-top:6px;height:8px"><i data-fgWBar style="width:0%;background:linear-gradient(90deg,var(--blue),var(--purple))"></i></div>
+    </div>`;
   const ctr=c.querySelector(".pomo-controls");
   const startB=el("button","btn sm",POMO.running?ic("pause")+" Pause":ic("play")+" Start focus");startB.id="pomoStartBtn";
   startB.onclick=()=>{POMO.running?pomoPause():pomoStart();};
@@ -4361,6 +4644,24 @@ function pomodoroCard(){
   const modeB=el("button","btn sm ghost",POMO.mode==="focus"?ic("coffee")+" Switch to break":ic("target")+" Switch to focus");
   modeB.onclick=()=>{pomoReset(POMO.mode==="focus"?"break":"focus");modeB.innerHTML=POMO.mode==="focus"?ic("coffee")+" Switch to break":ic("target")+" Switch to focus";};
   ctr.append(startB,resetB,modeB);
+  // ── daily focus-goal progress ── (Regain/Reclaim-style: set it, watch it fill)
+  const fgWrap=c.querySelector("[data-focusGoal]"),fgGoalIn=c.querySelector("[data-fgGoal]"),fgBar=c.querySelector("[data-fgBar]"),fgMsg=c.querySelector("[data-fgMsg]");
+  const fgWBar=c.querySelector("[data-fgWBar]"),fgWeek=c.querySelector("[data-fgWeek]");
+  const fgRefresh=()=>{
+    const goal=Math.max(10,S.settings.focusGoal||100);
+    const t=pomoLog()[todayKey(Date.now())]||0;
+    fgBar.style.width=Math.min(100,pct(t,goal))+"%";
+    fgMsg.textContent=t>=goal?`Goal done! ${t} min — aaj ka deep focus poora 🎉`
+      :`${goal-t} min aur to hit ${goal} min. Streak ka sath isi se banta hai.`;
+    // weekly focus total (Reclaim-style weekly goal) vs dailyGoal*7
+    let wTot=0;const now=new Date();
+    for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()-i);wTot+=(pomoLog()[todayKey(d)]||0);}
+    const wGoal=goal*7;
+    if(fgWBar)fgWBar.style.width=Math.min(100,pct(wTot,wGoal))+"%";
+    if(fgWeek)fgWeek.textContent=`${wTot} / ${wGoal} min is hafte (${pct(wTot,wGoal)}%)`;
+  };
+  fgGoalIn.addEventListener("change",()=>{S.settings.focusGoal=Math.max(10,Math.min(600,+fgGoalIn.value||100));save();fgRefresh();});
+  fgRefresh();
   setTimeout(pomoSyncUI,0);
   return c;
 }
@@ -5190,9 +5491,145 @@ function smartPracticePool(){
   }catch(e){}
   return out;
 }
+/* ── Custom Mock Builder ─────────────────────────────────────────────
+   Testbook-style: assemble a timed paper from YOUR OWN question bank
+   (uploaded papers + opened PYQ papers). Pick subjects, chapters, the
+   number of questions and seconds-per-question, and it launches in the
+   same NTA CBT engine. This is the "mock test creator" pillar on the
+   practice side — the PDF creator makes new tests, this builds custom
+   ones from what you already have. */
+function customMockCard(){
+  const bank=allUniqueQuestions();
+  // available chapters grouped by subject (only chapters with questions)
+  const bySub={};
+  bank.forEach(({q})=>{
+    const s=q.subject||"Physics",ch=q.chapter||q.subject||"Misc";
+    (bySub[s]=bySub[s]||{})[ch]=(bySub[s][ch]||0)+1;
+  });
+  const c=el("div","card");c.style.borderColor="var(--blue)";
+  c.innerHTML=`<div class="section-title"><span class="ico">${ic("settings")}</span>
+    <div><h3 style="margin:0">🧪 Mock Builder</h3>
+    <div class="small muted">Apni question bank se timed paper banao — NTA-ratio full mock ya apna custom (chapters, count, difficulty, pace). ${bank.length} questions available.</div></div></div>`;
+  // ── Full-Syllabus NTA Mock: one tap, real NTA 75-Q ratio ──
+  const nta=el("div","card");nta.style.cssText="margin:0 0 10px;border-color:color-mix(in srgb,var(--green) 40%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--green) 7%,var(--panel)),var(--panel))";
+  const hasSubs=SUBJECTS.filter(s=>Object.keys(bySub[s]||{}).length);
+  const ntaOK=hasSubs.length>0;
+  nta.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+      <div><b>🎯 Full-Syllabus NTA Mock</b>
+        <div class="small muted">Real JEE Main pattern: 25 Q per subject (75 total), 3 hours, +4/−1, numerical no-negative — from YOUR bank.</div></div></div>
+      ${ntaOK?`<button class="btn green sm" data-nta style="margin-top:8px">${ic("play")} Build full NTA mock (75 Q)</button>`:`<div class="small muted" style="margin-top:6px">Pehle kisi subject ke questions bank mein chahiye.</div>`}`;
+  if(ntaOK)nta.querySelector("[data-nta]").onclick=()=>{
+    const secs=144; // 2.4 min/Q = 180 min for 75 Q
+    const picked=[];const seen=new Set();
+    SUBJECTS.forEach(s=>{
+      const pool=bank.filter(({q})=>(q.subject||"Physics")===s).map(({q})=>({q}));
+      pool.sort(()=>Math.random()-0.5);
+      let n2=0;for(const x of pool){if(n2>=25)break;if(seen.has(x.q.id))continue;seen.add(x.q.id);picked.push(x);n2++;}
+    });
+    if(picked.length<15){toast("Kam se kam 15 questions bank mein chahiye");return;}
+    startDrill("Full NTA Mock · "+fmtDate(Date.now()),picked.slice(0,75),secs);
+  };
+  const wrap=el("div");wrap.style.marginTop="12px";
+  wrap.appendChild(nta);
+  const avail=bank.length?Object.keys(bySub).length:0;
+  if(!bank.length){
+    wrap.appendChild(el("div","small muted",`Pehle koi test kholo ya PDF upload karo — phir yahan apna custom mock banao.`));
+    c.appendChild(wrap);return c;
+  }
+  // per-subject chapter multi-selects
+  const selBySub={};
+  const chRow=el("div","grid g3");
+  SUBJECTS.forEach(s=>{
+    const chs=Object.keys(bySub[s]||{}).sort((a,b)=>(bySub[s][b]-bySub[s][a]));
+    const d=el("div","card");d.style.margin="0";
+    d.innerHTML=`<h4 style="color:${SUBCOLOR[s]}">${s}</h4><div class="small muted">${(bySub[s]?Object.values(bySub[s]).reduce((x,y)=>x+y,0):0)} questions</div>`;
+    const sel=el("select");sel.size=Math.min(5,Math.max(2,chs.length));
+    if(chs.length){chs.forEach(ch=>{const o=el("option",null,`${ch} (${bySub[s][ch]})`);o.value=ch;sel.appendChild(o);});}
+    else{const o=el("option",null,"— koi question nahi —");o.disabled=true;o.selected=true;sel.appendChild(o);}
+    const dSel=el("div");dSel.style.cssText="display:flex;flex-direction:column;gap:4px;margin-top:6px";
+    dSel.appendChild(sel);
+    selBySub[s]=sel;d.appendChild(dSel);chRow.appendChild(d);
+  });
+  wrap.appendChild(chRow);
+  // controls row
+  const ctrl=el("div","row");ctrl.style.cssText="margin-top:14px;gap:10px;flex-wrap:wrap;align-items:flex-end";
+  const field=(label,node)=>{const w=el("div");w.style.display="grid";w.style.gap="4px";
+    w.appendChild(el("label","small muted",label));w.appendChild(node);return w;};
+  const cnt=el("input");cnt.type="number";cnt.min=5;cnt.max=75;cnt.value=15;cnt.style.cssText="width:70px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)";
+  const secQ=el("select");[["exam","Exam pace (2.4 min/Q)"],["easy","Easy (3 min/Q)"],["medium","Medium (2 min/Q)"],["hard","Hard (90 s/Q)"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;secQ.appendChild(o);});
+  // difficulty mix: choose chapters' difficulty weighting for this mock
+  const diffQ=el("select");[["balanced","Difficulty: Balanced"],["easy","Difficulty: Easy first"],["hard","Difficulty: Hard first"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;diffQ.appendChild(o);});
+  ctrl.append(field("Questions",cnt),field("Pace",secQ),field("Mix",diffQ));
+  const b=el("button","btn",ic("play")+" Build & Start mock");
+  const info=el("div","small muted");info.style.marginTop="8px";
+  b.onclick=()=>{
+    const picked=[];
+    SUBJECTS.forEach(s=>{
+      const sel=selBySub[s];if(!sel)return;
+      const ch=sel.value;if(!ch)return;
+      bank.forEach(({q})=>{if((q.subject||"Physics")===s&&(q.chapter||q.subject||"Misc")===ch)picked.push({q});});
+    });
+    if(!picked.length){toast("Kam se kam ek chapter select karo");return;}
+    const n=Math.max(5,Math.min(75,+cnt.value||15));
+    const secs={exam:144,easy:180,medium:120,hard:90}[secQ.value]||144;
+    // difficulty mix: tag each picked question with its chapter's JEE
+    // difficulty (1-3), then bias the random pick toward easy/hard chapters.
+    const mix=diffQ.value||"balanced";
+    const tagged=picked.map(x=>{const s=x.q.subject||"Physics",ch=x.q.chapter||x.q.subject||"Misc";return {q:x.q,ch,sub:s,diff:chapterDiffName(s,ch)};});
+    let items;
+    if(mix==="easy"||mix==="hard"){
+      const want=mix==="easy"?1:3;
+      // two passes: desired-difficulty chapters first, then the rest
+      const wanted=tagged.filter(t=>t.diff===want).sort(()=>Math.random()-0.5);
+      const others=tagged.filter(t=>t.diff!==want).sort(()=>Math.random()-0.5);
+      items=[...wanted,...others].slice(0,n).map(t=>{return {q:t.q};});
+      if(items.length<n){items=tagged.sort(()=>Math.random()-0.5).slice(0,n).map(t=>({q:t.q}));}
+    }else{
+      items=picked.slice().sort(()=>Math.random()-0.5).slice(0,n);
+    }
+    const name="Custom Mock · "+items.reduce((m,x)=>m+((x.q.subject||"")[0]||""),"")+" · "+fmtDate(Date.now());
+    startDrill(name,items,secs);
+  };
+  ctrl.appendChild(b);wrap.appendChild(ctrl);
+  // chapter total counter
+  const selCount=()=>{let n=0;SUBJECTS.forEach(s=>{const sel=selBySub[s];if(sel&&sel.value)n+=(bySub[s]?bySub[s][sel.value]||0:0);});info.textContent=`Selected chapters hold ${n} questions — mock will pick ${Math.max(5,Math.min(75,+cnt.value||15))} of them randomly.`;};
+  SUBJECTS.forEach(s=>{const sel=selBySub[s];if(sel)sel.onchange=selCount;});
+  wrap.appendChild(info);selCount();
+  c.appendChild(wrap);
+  return c;
+}
 function viewPractice(root){
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("pencil")}</span><h2 style="margin:0">Practice Mode</h2></div>
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`));
+
+  // ── Target-marks planner: kitne questions attempt karne hain target hits ──
+  (()=>{
+    const tc=el("div","card");
+    tc.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">🎯 Target-marks planner</h3>
+      <div class="small muted" style="margin-left:auto">jeetna kitne sahi sawal = target marks</div></div>
+      <div class="row" style="margin-top:10px;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="display:grid;gap:4px"><label class="small muted">Mera target marks (JEE Main, 300)</label>
+          <input data-tm type="number" min="0" max="300" value="${S.settings.targetMarks||180}" style="width:120px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
+        <div style="display:grid;gap:4px"><label class="small muted">Meri accuracy (%)</label>
+          <input data-ta type="number" min="0" max="100" value="${Math.max(50,Math.round(g.avgAcc||70))}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
+        <div class="small muted" data-tmOut></div>
+      </div>
+      <div class="small muted" style="margin-top:8px">Numerical (no negative) +4, MCQ +4/−1. Ye ek estimate hai — accuracy jitni zyada, utne kam attempts.</div>`;
+    const tmIn=tc.querySelector("[data-tm]"),taIn=tc.querySelector("[data-ta]"),tmOut=tc.querySelector("[data-tmOut]");
+    const calc=()=>{
+      const target=Math.max(0,Math.min(300,+tmIn.value||0));
+      const acc=Math.max(1,Math.min(100,+taIn.value||70))/100;
+      const netPerQ=4*acc-1*(1-acc); // expected net marks per attempted MCQ
+      const numPerQ=4; // numerical: no negative
+      // solve attempts for a mix: assume ~80% MCQ / 20% numerical
+      const mcq=Math.max(0,Math.round(target/(netPerQ*0.8+4*0.2)));
+      const neededMCQ=Math.ceil(mcq*0.8),neededNum=Math.floor(mcq*0.2);
+      tmOut.innerHTML=`${ic("target")} Target <b>${target}</b> marks par ~<b>${mcq}</b> attempts chahiye (≈ ${neededMCQ} MCQ + ${neededNum} numerical) — ${acc>=0.85?"zabardast accuracy, kam attempts mein ho jayega.":acc>=0.7?"solid accuracy, achievable.":"accuracy badhaoge to attempts ghatega — pehle verify karo."}`;
+      S.settings.targetMarks=target;save();
+    };
+    tmIn.oninput=calc;taIn.oninput=calc;calc();
+    root.appendChild(tc);
+  })();
 
   // ---- Smart Practice: the personalized daily mix ----
   const spPool=smartPracticePool();
@@ -5228,6 +5665,9 @@ function viewPractice(root){
     d.appendChild(b);secRow.appendChild(d);
   });
   sec.appendChild(secRow);root.appendChild(sec);
+  // ── Custom Mock Builder (Testbook-style): pick chapters + count + time,
+  //    and assemble a timed paper from YOUR own question bank. ──
+  root.appendChild(customMockCard());
 
   // ---- AI question generator: fresh questions for your weakest chapters ----
   const weakChaps=chapterMastery().filter(c=>c.acc<70).slice(0,3);
@@ -5293,6 +5733,27 @@ function allUniqueQuestions(){
    aware, depth-aware, trusted-educator scoring) — one engine, no duplicate
    logic. Official YouTube embeds only. */
 function ytSaved(){return S.ytSaved||(S.ytSaved=[]);}
+/* ═══ WATCH-LATER QUEUE ═══
+   A separate "saved but not yet watched" queue: quick tap in the player
+   to queue a video, distinct from Saved (which is for videos you want to
+   keep). Surfaced as its own card in the StudyTube view so a student's
+   "dekho baad me" pile is never buried. */
+function ytWatchLater(){return S.ytWatchLater||(S.ytWatchLater=[]);}
+function ytWatchLaterToggle(v,ctx){const q=ytWatchLater();const i=q.findIndex(x=>x.id===v.id);
+  if(i>=0){q.splice(i,1);return false;}
+  q.unshift({id:v.id,title:v.title||"",channel:v.channel||"",durationSec:v.durationSec||0,subject:ctx&&ctx.subject||v.subject||"",topic:ctx&&ctx.topic||v.topic||"",at:Date.now()});
+  if(q.length>60)q.length=60;return true;}
+/* ═══ NOTES-ON-VIDEO ═══
+   In-app learning notes tied to a specific video (videoId → {text,title,
+   channel,subject,topic,at,updated}). The student jots takeaways while the
+   lesson plays; notes persist on-device and resurface beside the video and
+   in a dedicated list. No competitor's YouTube hub lets you keep study
+   notes INSIDE the app, attached to the exact lesson you watched. */
+function ytNotes(){return S.ytNotes||(S.ytNotes={});}
+function ytNoteSet(id,data){const n=ytNotes();n[id]=data;save();}
+function ytNoteDel(id){const n=ytNotes();if(n[id]){delete n[id];save();}}
+function ytNoteList(){return Object.entries(ytNotes()).map(([id,r])=>({id,...r}))
+  .filter(r=>r&&String(r.text||"").trim()).sort((a,b)=>(b.updated||b.at||0)-(a.updated||a.at||0));}
 function ytPlay(v,ctx){
   const m=el("div","modal");m.setAttribute("data-static","1");
   const prog=vwProgress(v.id);
@@ -5312,9 +5773,22 @@ function ytPlay(v,ctx){
     ${v.why?`<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}</div>`:""}
     <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
       <button class="btn ghost sm" data-save>${saved?"💔 Saved se hatao":"❤️ Save karo"}</button>
+      <button class="btn ghost sm" data-wl>${ytWatchLater().some(x=>x.id===v.id)?"⏳ Queue se hatao":"⏳ Watch later"}</button>
       ${ctx&&ctx.topic?`<button class="btn sm" data-practice>✍️ Ab practice karo: ${esc(String(ctx.topic).slice(0,24))}</button>`:""}
+      <button class="btn ghost sm" data-note>📝 ${ytNotes()[v.id]&&String(ytNotes()[v.id].text||"").trim()?"Note karo / edit":"Note karo"}</button>
     </div>
-    <div class="small muted" style="margin-top:8px">⏱️ Watch-time is video ke naam par hi count hota hai — doosre video par kabhi nahi.</div></div>`;
+    <div class="small muted" style="margin-top:8px">⏱️ Watch-time is video ke naam par hi count hota hai — doosre video par kabhi nahi.</div>
+    <div data-noteBox hidden style="margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
+      <div class="small" style="font-weight:700">📝 Is lesson ke takeaways likho</div>
+      <div class="small muted" style="margin:2px 0 8px">Auto-save hota hai — agla baar is video par wapas aaoge to yahi milega.</div>
+      <textarea data-noteArea style="width:100%;box-sizing:border-box;min-height:70px" placeholder="e.g. Torque = I×α ka intuition; rotational KE formulas note kar liya…">${esc(ytNotes()[v.id]?String(ytNotes()[v.id].text||""):"")}</textarea>
+      <div class="row" style="margin-top:6px;gap:8px">
+        <button class="btn sm" data-noteSave>✓ Save note</button>
+        ${ytNotes()[v.id]&&String(ytNotes()[v.id].text||"").trim()?`<button class="btn ghost sm" data-noteDel>🗑️ Delete</button>`:""}
+        <span class="small muted" data-noteOk style="margin-left:auto"></span>
+      </div>
+    </div>
+    <div data-related style="margin-top:12px"></div></div>`;
   document.body.appendChild(m);
   m.querySelector("[data-x]").onclick=()=>{vwEnd();m.remove();if(route==="youtube")render(0);};
   m.querySelector("[data-save]").onclick=e2=>{
@@ -5337,6 +5811,47 @@ function ytPlay(v,ctx){
     if(pool.length>=3)startDrill(ctx.topic+" · After-video practice",pool.sort(()=>Math.random()-0.5).slice(0,10),100);
     else{toast("Is topic ke questions abhi bank mein nahi — koi PYQ paper kholo");go("pyq");}
   };
+  // watch-later queue wiring
+  const wlBtn=m.querySelector("[data-wl]");
+  if(wlBtn)wlBtn.onclick=e2=>{
+    const added=ytWatchLaterToggle(v,ctx||{});
+    e2.target.textContent=added?"⏳ Queue se hatao":"⏳ Watch later";
+    toast(added?"Watch Later mein add ho gaya":"Queue se hata diya");
+  };
+  // ── notes-on-video wiring ──
+  const nbox=m.querySelector("[data-noteBox]"),nArea=m.querySelector("[data-noteArea]"),
+        nSave=m.querySelector("[data-noteSave]"),nDel=m.querySelector("[data-noteDel]"),nOk=m.querySelector("[data-noteOk]");
+  m.querySelector("[data-note]").onclick=()=>{nbox.hidden=!nbox.hidden;if(!nbox.hidden){nArea.focus();}};
+  const setOk=t=>{nOk.textContent=t;clearTimeout(nOk._t);nOk._t=setTimeout(()=>{nOk.textContent="";},1600);};
+  nSave.onclick=()=>{
+    const text=nArea.value.trim();
+    if(!text){ytNoteDel(v.id);setOk("Note khali kiya.");return;}
+    ytNoteSet(v.id,{text,videoTitle:v.title||"",channel:v.channel||"",subject:ctx&&ctx.subject||v.subject||"",topic:ctx&&ctx.topic||v.topic||"",at:Date.now(),updated:Date.now()});
+    setOk("✓ Note saved");
+  };
+  if(nDel)nDel.onclick=()=>{ytNoteDel(v.id);nArea.value="";setOk("Note delete ho gaya.");m.querySelector("[data-note]").textContent="📝 Note karo";};
+  // ── related videos: continue on the same topic after this lesson ──
+  const rel=m.querySelector("[data-related]");
+  if(rel&&(ctx&&ctx.topic||v.topic)){
+    const topic=ctx&&ctx.topic||v.topic,sub=ctx&&ctx.subject||v.subject||"";
+    const _p=aip()||{},_pl=_p.profile||{};
+    const _lang=_pl.language||"hinglish",_target=_pl.target||"jeemain";
+    rel.innerHTML=`<div class="section-title"><span class="ico">${ic("play")}</span><h3 style="margin:0;font-size:14px">🔁 Aur videos is topic par</h3></div>`;
+    const slot=el("div");rel.appendChild(slot);
+    (async()=>{
+      try{
+        const items=await ytFetch({topic,subject:sub||"Physics",language:_lang,
+          kind:"learn",depth:"lecture",target:_target,minMinutes:5,maxMinutes:300,channel:""});
+        // exclude the currently-playing video
+        const fresh=items.filter(x=>x.id!==v.id).slice(0,3);
+        if(fresh.length&&m.isConnected){
+          fresh.forEach(x=>slot.appendChild(ytVideoRow(x,{topic,subject:sub||x.subject})));
+        }else if(m.isConnected){
+          slot.innerHTML=`<div class="small muted" style="margin-top:6px">Kuch aur nahi mila is topic par — naya search try karo.</div>`;
+        }
+      }catch(e){}
+    })();
+  }
 }
 async function ytFetch(params){
   try{
@@ -5360,7 +5875,7 @@ function viewYouTube(root){
   const p=aip();
   const target=(p&&p.profile&&p.profile.target)||"jeemain";
   const lang=(p&&p.profile&&p.profile.language)||"hinglish";
-  const targetLabel={jeemain:"JEE Main",jeeadv:"JEE Advanced",board12:"Class 12 Board",board11:"Class 11"}[target];
+  const targetLabel={jeemain:"JEE Main",jeeadv:"JEE Advanced",board12:"Class 12 Board",cbse27:"Class 12 · CBSE 2027",board11:"Class 11"}[target];
   root.appendChild(el("div","card",`<div class="section-title"><span class="ico">${ic("play")}</span>
     <div><h2 style="margin:0">▶️ YouTube — Study Hub</h2>
     <div class="small muted">Padhai ke videos yahin, app ke andar — tumhare target (<b>${esc(targetLabel)}</b>) aur weak chapters ke hisaab se. Watch-time har video ka alag track hota hai.</div></div></div>`));
@@ -5370,7 +5885,7 @@ function viewYouTube(root){
   sc.innerHTML=`<div class="section-title"><span class="ico">${ic("search")}</span><h3 style="margin:0">Search</h3></div>`;
   const srow=el("div","row");srow.style.cssText="margin-top:10px;gap:8px;flex-wrap:wrap";
   const q=el("input");q.type="text";q.placeholder="Topic ya chapter — e.g. Rotational Motion, GOC…";q.style.cssText="flex:1;min-width:200px";
-  const exSel=el("select");[["","Exam: "+targetLabel+" (default)"],["jeemain","JEE Main"],["jeeadv","JEE Advanced"],["board12","Board 12"],["board11","Class 11"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;exSel.appendChild(o);});
+  const exSel=el("select");[["","Exam: "+targetLabel+" (default)"],["jeemain","JEE Main"],["jeeadv","JEE Advanced"],["board12","Board 12"],["cbse27","Board CBSE 2027"],["board11","Class 11"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;exSel.appendChild(o);});
   const subSel=el("select");[["","Subject: Auto"],...SUBJECTS.map(s=>[s,s])].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;subSel.appendChild(o);});
   const kindSel=el("select");[["learn|lecture","Lecture"],["learn|oneshot","One Shot"],["revision|lecture","Revision"],["practice|lecture","PYQ / Problem Solving"],["advanced|detailed","Advanced Problems"]].forEach(([v,l])=>{const o=el("option",null,l);o.value=v;kindSel.appendChild(o);});
   const go2=el("button","btn sm",ic("search")+" Search");
@@ -5444,12 +5959,73 @@ function viewYouTube(root){
     if(!slot.children.length)slot.innerHTML="YouTube abhi reach nahi ho raha — thodi der baad try karo.";
   })();
 
-  // ── SAVED VIDEOS ──
+  // ── WATCH LATER queue ── ("dekho baad me" pile, one tap to clear)
+  const wl=ytWatchLater();
+  if(wl.length){
+    const c=el("div","card");
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("clock")}</span><h3 style="margin:0">⏳ Watch Later</h3>
+      <div class="small muted" style="margin-left:auto">${wl.length} queue mein</div></div>`;
+    wl.slice(0,10).forEach(v=>{
+      const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title||v.id)}</b>
+        <div class="small muted">${esc(v.channel||"")}${v.durationSec?" · "+fmtTime(v.durationSec):""}</div></div>
+        <div style="flex:none;display:flex;gap:6px">
+          <button class="btn ghost sm" data-wlplay>▶️</button>
+          <button class="btn ghost sm" data-wlrm>✕</button></div>`;
+      row.querySelector("[data-wlplay]").onclick=()=>ytPlay(v,{topic:v.topic,subject:v.subject});
+      row.querySelector("[data-wlrm]").onclick=()=>{const q=ytWatchLater();const i=q.findIndex(x=>x.id===v.id);if(i>=0){q.splice(i,1);save();render(0);}};
+      c.appendChild(row);
+    });
+    root.appendChild(c);
+  }
+
+  // ── SAVED VIDEOS ── (subject-grouped playlists: organize, then watch)
   const sv=ytSaved();
   if(sv.length){
     const c=el("div","card");
-    c.innerHTML=`<div class="section-title"><span class="ico">${ic("bookmarkFill")}</span><h3 style="margin:0">❤️ Saved Videos</h3></div>`;
-    sv.slice(0,10).forEach(v=>c.appendChild(ytVideoRow(v,{topic:v.topic,subject:v.subject})));
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("bookmarkFill")}</span><h3 style="margin:0">❤️ Saved Videos</h3>
+      <div class="small muted" style="margin-left:auto">${sv.length} saved · apne playlists banao</div></div>`;
+    const subs=[...new Set(sv.map(v=>v.subject||"Other").filter(Boolean))];
+    const filts=subs.length>1?subs:[];
+    let curSub="All";
+    const listWrap=el("div");
+    const draw=()=>{
+      listWrap.innerHTML="";
+      const shown=curSub==="All"?sv:sv.filter(v=>(v.subject||"Other")===curSub);
+      if(!shown.length){listWrap.innerHTML=`<div class="small muted" style="margin-top:8px">Is subject mein abhi kuch save nahi.</div>`;return;}
+      shown.slice(0,10).forEach(v=>listWrap.appendChild(ytVideoRow(v,{topic:v.topic,subject:v.subject})));
+    };
+    if(filts.length){
+      const tb=el("div","row");tb.style.cssText="gap:6px;flex-wrap:wrap;margin-top:8px";
+      [["All","All subject"],...filts.map(s=>[s,s])].forEach(([k,label])=>{
+        const p=el("button","tagchip"+(k===curSub?" on":""),label);p.type="button";
+        p.onclick=()=>{curSub=k;tb.querySelectorAll(".tagchip").forEach(x=>x.classList.remove("on"));p.classList.add("on");draw();};
+        tb.appendChild(p);
+      });
+      c.appendChild(tb);
+    }
+    c.appendChild(listWrap);draw();
+    root.appendChild(c);
+  }
+
+  // ── MY VIDEO NOTES (notes-on-video: takeaways kept with the exact lesson) ──
+  const notes=ytNoteList();
+  if(notes.length){
+    const c=el("div","card");c.style.borderColor="var(--amber)";
+    c.innerHTML=`<div class="section-title"><span class="ico">${ic("notebook")}</span><h3 style="margin:0">📝 Meri Video Notes</h3>
+      <div class="small muted" style="margin-left:auto">${notes.length} lesson${notes.length>1?"s":""} · is device par</div></div>`;
+    notes.slice(0,8).forEach(n=>{
+      const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.videoTitle||n.topic||n.id)}</b>
+        <div class="small" style="color:var(--muted);white-space:pre-wrap">${esc(n.text)}</div>
+        <div class="small muted">${esc(n.channel||"")}${n.subject?` · ${esc(n.subject)}`:""} · ${n.updated?fmtDate(n.updated):""}</div></div>
+        <div style="flex:none;display:flex;gap:6px;flex-direction:column">
+          <button class="btn ghost sm" data-open>▶️</button>
+          <button class="btn ghost sm" data-del>🗑️</button></div>`;
+      row.querySelector("[data-open]").onclick=()=>ytPlay({id:n.id,title:n.videoTitle||n.topic||n.id,channel:n.channel||"",subject:n.subject||""},{topic:n.topic,subject:n.subject});
+      row.querySelector("[data-del]").onclick=()=>{ytNoteDel(n.id);render(0);};
+      c.appendChild(row);
+    });
     root.appendChild(c);
   }
 
@@ -5461,8 +6037,9 @@ function viewYouTube(root){
       <div class="small muted" style="margin-left:auto">sirf is device par</div></div>`;
     hist.forEach(r=>{
       const mins=Math.round(r.watchedSec/60);
+      const hasNote=ytNotes()[r.id]&&String(ytNotes()[r.id].text||"").trim();
       const row=el("div","row");row.style.cssText="justify-content:space-between;margin-top:8px;gap:8px";
-      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title||r.id)}</b>
+      row.innerHTML=`<div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title||r.id)}${hasNote?" <span title=\"note save hai\">📝</span>":""}</b>
         <div class="small muted">${esc(r.channel||"")} · ${mins} min dekha${r.completedAt?" · ✅ complete":r.durationSec?` · ${Math.min(100,Math.round(r.watchedSec/r.durationSec*100))}%`:""}</div></div>
         <button class="btn ghost sm" data-id="${esc(r.id)}">▶️</button>`;
       row.querySelector("button").onclick=()=>ytPlay({id:r.id,title:r.title,channel:r.channel,durationSec:r.durationSec},{topic:r.topic,subject:r.subject});
@@ -5713,7 +6290,44 @@ function viewLive(root){
    else: full timer, palette, marking scheme, analytics, percentile,
    mistake notebook — everything just works. */
 let pyqState={index:null,loading:false,error:null,year:null};
-const PYQ_MONTH_ORDER=["January","February","March","April","June","July","August","September","Offline","AIEEE"];
+const PYQ_MONTH_ORDER=["My Papers","January","February","March","April","June","July","August","September","Offline","AIEEE"];
+/* ---- USER-UPLOADED PYQ PAPERS -------------------------------------
+   When a user uploads a paper and picks the PYQ destination, the paper is
+   saved ON THIS DEVICE only (localStorage, key jeecbt.userPyq) and served
+   from the app itself — it is NEVER pushed to Supabase. It shows up in the
+   PYQ section right beside the baked official papers and runs in the same
+   CBT engine. Storage is bounded: ~1MB per paper keeps a healthy headroom
+   under the 5MB localStorage cap. */
+const USER_PYQ_KEY="jeecbt.userPyq";
+function userPyqStore(){
+  try{const d=JSON.parse(localStorage.getItem(USER_PYQ_KEY)||"null");
+    if(d&&Array.isArray(d.papers))return d.papers;}catch(e){}
+  return [];
+}
+function saveUserPyqStore(papers){
+  // storage hygiene: keep at most 8 user papers so we never approach the cap
+  if(papers.length>8)papers=papers.slice(papers.length-8);
+  try{localStorage.setItem(USER_PYQ_KEY,JSON.stringify({papers}));return true;}
+  catch(e){toast("Could not save the PYQ paper — device storage is full.");return false;}
+}
+function userPyqMetas(){return userPyqStore().map(p=>p.meta);}
+/** Persist a built test as a user PYQ paper and return {meta, test}. */
+function saveLocalPyq(test,meta){
+  const counts={Physics:0,Chemistry:0,Mathematics:0};
+  let mcq=0,integer=0;
+  (test.questions||[]).forEach(q=>{
+    if(counts[q.subject]!=null)counts[q.subject]++;
+    if(q.type==="integer")integer++;else mcq++;
+  });
+  const id="user-pyq-"+crypto.randomUUID();
+  test.pyq=true;test.pyqId=id;
+  const paper={meta:{id,year:meta.year||new Date().getFullYear(),month:"My Papers",
+    label:meta.label||test.name,total:test.questions.length,counts,mcq,integer,user:true},test};
+  const store=userPyqStore();
+  store.push(paper);
+  saveUserPyqStore(store);
+  return paper;
+}
 async function pyqLoadIndex(force){
   if(pyqState.loading)return;
   if(!force&&pyqState.index)return;
@@ -5757,6 +6371,21 @@ async function pyqLoadIndex(force){
 async function pyqStart(meta,btn){
   const existing=S.tests.find(t=>t.pyqId===meta.id);
   if(existing){startExam(existing.id);return;}
+  // User-uploaded PYQ papers live on THIS device — serve them straight from
+  // the app, no network, no Supabase. (If pruned for storage, rebuild from
+  // the store so they still open in one tap.)
+  if(meta.id&&meta.user){
+    const store=userPyqStore().find(p=>p.meta.id===meta.id);
+    if(store&&store.test){
+      if(btn){btn.disabled=true;btn.innerHTML=ic("clock")+" Loading…";}
+      ensureKatex();
+      const t=store.test;
+      S.tests.push(t);save();
+      startExam(t.id);
+      if(btn)btn.disabled=false;
+      return;
+    }
+  }
   if(btn){btn.disabled=true;btn.innerHTML=ic("clock")+" Loading…";}
   try{
     // static file on our own site first; API fallback second
@@ -5800,6 +6429,13 @@ async function pyqStart(meta,btn){
     if(btn){btn.disabled=false;btn.innerHTML=ic("play")+" Start paper";}
   }
 }
+function attemptedPyqCount(){
+  let n=0;const seen=new Set();
+  S.tests.filter(t=>t.pyqId).forEach(t=>{
+    if(attemptsOf(t.id).some(a=>a.submittedAt)){seen.add(t.pyqId);}
+  });
+  return seen.size;
+}
 function pyqBestScore(meta){
   const t=S.tests.find(x=>x.pyqId===meta.id);if(!t)return null;
   let best=null;
@@ -5810,7 +6446,10 @@ function pyqBestScore(meta){
 }
 function viewPyq(root){
   const hero=el("div","card pyq-hero");
-  const idx=pyqState.index||[];
+  // merge the user's on-device PYQ papers in with the baked official ones
+  const allIdx=(pyqState.index||[]).concat(userPyqMetas());
+  const seen=new Set(),idx=[];
+  allIdx.forEach(p=>{if(!p||!p.id||seen.has(p.id))return;seen.add(p.id);idx.push(p);});
   const years=[...new Set(idx.map(p=>p.year))].sort((a,b)=>b-a);
   const totalQ=idx.reduce((s,p)=>s+p.total,0);
   hero.innerHTML=`<div style="position:relative">
@@ -5821,7 +6460,10 @@ function viewPyq(root){
       <div><b>${idx.length}</b><span>Papers</span></div>
       <div><b>${years.length}</b><span>Years (${Math.min(...years)}–${Math.max(...years)})</span></div>
       <div><b>${totalQ.toLocaleString("en-IN")}</b><span>Real questions</span></div>
-    </div>`:""}</div>`;
+      <div><b>${attemptedPyqCount()}</b><span>Attempted by you</span></div>
+    </div>
+    <div style="margin-top:12px;max-width:420px"><div class="progress" style="background:rgba(255,255,255,.2);height:8px"><i style="width:${pct(attemptedPyqCount(),idx.length)}%;background:#fff"></i></div>
+      <div class="small" style="margin-top:4px;color:rgba(255,255,255,.85)">${attemptedPyqCount()?`${idx.length-attemptedPyqCount()} papers baaki — har paper attempt karne par real exam speed + pattern pakka hota hai.`:"Abhi tak koi paper attempt nahi kiya — pehla paper kholo!"}</div></div>`:""}</div>`;
   root.appendChild(hero);
   if(pyqState.loading&&!idx.length){
     const g=el("div","pyq-grid");
@@ -5857,7 +6499,7 @@ function viewPyq(root){
   sessions.forEach(mon=>{
     const papers=inYear.filter(p=>p.month===mon);
     const sec=el("div","pyq-session");
-    const label=mon==="Offline"?"Offline Paper":mon==="AIEEE"?"AIEEE Era":mon+" Session";
+    const label=mon==="Offline"?"Offline Paper":mon==="AIEEE"?"AIEEE Era":mon==="My Papers"?"My Papers":mon+" Session";
     sec.innerHTML=`<h3>${esc(label)}<span class="small muted">${papers.length} paper${papers.length>1?"s":""}</span></h3>`;
     const g=el("div","pyq-grid");
     papers.forEach(meta=>{
@@ -5895,24 +6537,78 @@ function pyqChapterPool(){
   }));
   return byCh;
 }
+/* JEE-Main chapter weightage lookup (1-3) from the syllabus source of truth,
+ * so PYQ chapter practice surfaces "how many marks this chapter usually
+ * carries" — the same signal Mathongo shows as topic weightage. */
+function chapterWtName(subject,name){
+  const list=JEE_TOPICS[subject]||[];
+  for(const t of list){if(String(t[0]).toLowerCase()===String(name).toLowerCase())return t[2]||2;}
+  const sub=JEE_TOPICS[Object.keys(JEE_TOPICS)[0]]; // never throw
+  return sub&&sub[0]?2:2;
+}
+function wtStars(w){const n=Math.max(1,Math.min(3,w||2));return "★".repeat(n)+"☆".repeat(3-n);}
+/* Chapter difficulty lookup (1-3) from the syllabus source of truth — used
+ * to mix a custom mock's difficulty from the difficulty of its chapters. */
+function chapterDiffName(subject,name){
+  const list=JEE_TOPICS[subject]||[];
+  for(const t of list){if(String(t[0]).toLowerCase()===String(name).toLowerCase())return t[1]||2;}
+  return 2;
+}
 function pyqPracticeCard(){
   const pool=pyqChapterPool();
-  const chapters=Object.entries(pool).sort((a,b)=>b[1].length-a[1].length);
+  // each chapter → subject (from its questions) so we can show JEE weightage
+  const chapters=Object.entries(pool).map(([name,qs])=>{
+    const subject=(qs[0]&&qs[0].subject)||"Physics";
+    return {name,subject,qs,wt:chapterWtName(subject,name)};
+  }).sort((a,b)=>(b.wt-a.wt)||(b.qs.length-a.qs.length));
   const c=el("div","card");
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">Chapter-wise PYQ Practice</h3></div>
-    <div class="small muted">The topper move: hammer one chapter's real past questions in a row. Questions come from the papers you've opened — start a few papers above to grow this bank (${chapters.reduce((s2,x)=>s2+x[1].length,0)} questions from ${chapters.length} chapters so far).</div>`;
+    <div class="small muted">The topper move: hammer one chapter's real past questions in a row. Questions come from the papers you've opened — start a few papers above to grow this bank (${chapters.reduce((s2,x)=>s2+x.qs.length,0)} questions from ${chapters.length} chapters so far).<br>
+    <span class="small" style="opacity:.85">${ic("star")} <b>Weightage</b> = kitne marks ki importance JEE Main mein (Mathongo-style): ★★★ sabse zyada.</span></div>`;
   if(chapters.length){
     const row=el("div","row");row.style.cssText="margin-top:12px;gap:8px";
     const sel=el("select");
-    chapters.forEach(([name,qs])=>{const o=el("option",null,`${name} (${qs.length} PYQs)`);o.value=name;sel.appendChild(o);});
+    chapters.forEach(({name,qs,wt})=>{const o=el("option",null,`${wtStars(wt)}  ${name}  (${qs.length} PYQs)`);o.value=name;sel.appendChild(o);});
     const n=el("select");
     [10,15,25].forEach(v=>{const o=el("option",null,v+" questions");o.value=v;n.appendChild(o);});
+    const topicSel=el("select");topicSel.hidden=true; // appears when the chapter has sub-topics
     const b=el("button","btn sm",ic("play")+" Start PYQ drill");
-    b.onclick=()=>{
-      const qs=(pool[sel.value]||[]).slice().sort(()=>Math.random()-0.5).slice(0,+n.value);
-      startDrill(sel.value+" · PYQ Drill",qs.map(q=>({q})),144); // 2.4 min/Q, exam pace
+    // live weightage line for the selected chapter (defaults to the first / highest)
+    const wtLine=el("div","small");wtLine.style.cssText="margin-top:8px;color:var(--accent-text)";
+    // topic-wise (sub-chapter) filter — MathonGo/ExamSIDE style, only when topics exist
+    const showWt=()=>{
+      const cur=chapters.find(x=>x.name===sel.value);if(!cur)return;
+      wtLine.innerHTML=`${ic("star")} <b>${esc(cur.name)}</b> — JEE weightage <b>${wtStars(cur.wt)}</b> (${cur.wt}/3) · ${cur.qs.length} PYQs is chapter ke`;
+      const topics=[...new Set(cur.qs.map(q=>q.topic||q.q&&q.q.topic).filter(Boolean))].slice(0,14);
+      if(topics.length>1){
+        topicSel.hidden=false;topicSel.innerHTML="";
+        topicSel.appendChild(el("option",null,"Sab topics"));
+        topics.forEach(t2=>{const o=el("option",null,t2);o.value=t2;topicSel.appendChild(o);});
+      }else{topicSel.hidden=true;topicSel.innerHTML="";}
     };
-    row.append(sel,n,b);c.appendChild(row);
+    sel.onchange=showWt;showWt();
+    b.onclick=()=>{
+      let src=(pool[sel.value]||[]);
+      if(!topicSel.hidden&&topicSel.value){const tv=topicSel.value;src=src.filter(q=>(q.topic||q.q&&q.q.topic)===tv);}
+      if(!src.length){toast("Is topic ke questions nahi mile");return;}
+      const qs=src.slice().sort(()=>Math.random()-0.5).slice(0,+n.value);
+      startDrill(sel.value+(topicSel.hidden?"":" · "+topicSel.value)+" · PYQ Drill",qs.map(q=>({q})),144); // 2.4 min/Q, exam pace
+    };
+    row.append(sel,topicSel,n,b);c.appendChild(row);c.appendChild(wtLine);
+    // ── PYQ topic-frequency chart: which chapters appear most in your bank ──
+    const freq=el("div");freq.style.cssText="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)";
+    freq.innerHTML=`<div class="small" style="font-weight:700">📊 PYQ frequency — kitne real questions per chapter</div>
+      <div class="small muted" style="margin-bottom:6px">Sabse zyada baar aane wale chapters pehle. Count = tumhare opened papers se.</div>`;
+    const top=chapters.slice().sort((a,b)=>b.qs.length-a.qs.length).slice(0,8);
+    const mx=top[0]?top[0].qs.length:1;
+    top.forEach(({name,qs,subject,wt})=>{
+      const r=el("div","row");r.style.cssText="align-items:center;gap:8px;margin-top:5px";
+      r.innerHTML=`<span class="small" style="flex:0 0 34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${SUBCOLOR[subject]||"var(--ink)"}">${esc(name)} ${wt===3?"★★★":wt===2?"★★":"★"}</span>
+        <div style="flex:1;height:12px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.max(4,pct(qs.length,mx))}%;background:${SUBCOLOR[subject]||"var(--blue)"}"></i></div>
+        <b class="small" style="flex:none;width:26px;text-align:right">${qs.length}</b>`;
+      freq.appendChild(r);
+    });
+    c.appendChild(freq);
   }
   return c;
 }
@@ -6959,6 +7655,8 @@ function startExam(testId,resume){
   EX={test:t,attempt,cur:resume?Math.min(Math.max(0,resume.cur||0),t.questions.length-1):0,left:resume?resume.left:t.duration,lastTick:Date.now(),warned:{},
     strict:!!S.settings.strictMode&&!t.practice};
   if(!resume&&t.cloud)registerAttempt(t.id);
+  // fresh exam → close & reset the on-screen calculator (no leftover state)
+  try{calcToggle(false);_calc={disp:"0",acc:0,op:null,justEq:false};}catch(e){}
   examAutosave();
   $("#examView").classList.remove("hide");
   // APK: screen stays awake for the whole exam (native superpower)
@@ -7049,7 +7747,9 @@ function drawQuestion(){
   EX.lastTick=Date.now();
   const p=$("#exQ");p.innerHTML="";
   const head=el("div","row");head.style.justifyContent="space-between";
-  const negTxt=S.settings.negMarking===false?"+4 / 0":"+4 / -1";
+  // JEE Main 2026: MCQs penalise −1, numerical/integer questions do NOT.
+  const isNum=q.type!=="mcq";
+  const negTxt=isNum?"+4 / 0":(S.settings.negMarking===false?"+4 / 0":"+4 / -1");
   const diff=questionDifficulty(q.id);
   const diffColor={Easy:"var(--green)",Medium:"var(--amber)",Hard:"var(--red)",Unrated:"var(--muted)"}[diff.label];
   const diffBg={Easy:"rgba(30,158,87,.15)",Medium:"rgba(224,161,6,.16)",Hard:"rgba(211,59,59,.15)",Unrated:"rgba(107,107,133,.14)"}[diff.label];
@@ -7266,6 +7966,89 @@ $("#fsBig").onclick=()=>bumpExamFont(0.1);
   },{passive:true});
 })();
 $("#palBtn").onclick=()=>$("#exPal").classList.toggle("collapsed");
+/* ═══ ON-SCREEN CALCULATOR (NTA 2026) ═════════════════════════════════
+   A basic standard calculator inside the exam console — the same feature
+   NTA shipped in the real 2026 CBT. Toggle from the header; "Insert into
+   answer" writes the result into the active numerical answer box (and
+   records it as the student's typed answer). Fully offline, zero deps. */
+function buildCalcKeys(){
+  const k=$("#exCalcKeys"); if(!k||k.childElementCount)return;
+  const rows=[
+    ["C","act"],["±",""],["%",""],["÷","op"],
+    ["7",""],["8",""],["9",""],["×","op"],
+    ["4",""],["5",""],["6",""],["−","op"],
+    ["1",""],["2",""],["3",""],["+","op"],
+    ["0",""],[".",""],["⌫",""],["=","eq"]
+  ];
+  rows.forEach(([lab,cls])=>{
+    const b=el("button",cls,lab);b.type="button";b.setAttribute("aria-label","Calculator "+lab);
+    b.onclick=()=>calcKey(lab);k.appendChild(b);
+  });
+}
+let _calc={disp:"0",acc:0,op:null,justEq:false};
+function calcRender(){
+  const d=$("#exCalcDisp"); if(d)d.textContent=_calc.disp;
+  const ins=$("#exCalcInsert");
+  if(ins){
+    const q=EX&&EX.test?EX.test.questions[EX.cur]:null;
+    const onNum=!!q&&q.type!=="mcq";
+    ins.disabled=!onNum;
+    ins.textContent=onNum?"Insert into answer":"Insert into answer (open a numerical question)";
+  }
+}
+function calcKey(k){
+  if(k==="C"){_calc={disp:"0",acc:0,op:null,justEq:false};calcRender();return;}
+  if(k==="⌫"){_calc.disp=_calc.disp.length>1?_calc.disp.slice(0,-1):"0";_calc.justEq=false;calcRender();return;}
+  if(k==="±"){_calc.disp=_calc.disp.startsWith("-")?_calc.disp.slice(1):("-"+_calc.disp);calcRender();return;}
+  if(k==="%"){_calc.disp=String(parseFloat(_calc.disp)/100||0);calcRender();return;}
+  if(/^\d$/.test(k)||k==="."){
+    if(_calc.justEq){_calc.disp="0";_calc.justEq=false;}
+    if(k==="."){ if(!_calc.disp.includes("."))_calc.disp+="."; }
+    else _calc.disp=_calc.disp==="0"?k:_calc.disp+k;
+    calcRender();return;
+  }
+  if(k==="="){
+    if(_calc.op!=null){_calc.disp=calcApply(_calc.acc,parseFloat(_calc.disp),_calc.op);_calc.acc=0;_calc.op=null;}
+    _calc.justEq=true;calcRender();return;
+  }
+  // operator
+  if(_calc.op!=null&&!_calc.justEq)_calc.disp=calcApply(_calc.acc,parseFloat(_calc.disp),_calc.op);
+  _calc.acc=parseFloat(_calc.disp)||0;_calc.op=k;_calc.disp="0";_calc.justEq=false;calcRender();
+}
+function calcApply(a,b,op){
+  const r=op==="+"?a+b:op==="−"?a-b:op==="×"?a*b:op==="÷"?(b===0?NaN:a/b):b;
+  return Number.isFinite(r)?String(+r.toPrecision(12)):"Error";
+}
+function calcInsert(){
+  const q=EX&&EX.test?EX.test.questions[EX.cur]:null;
+  if(!q||q.type==="mcq")return;
+  const v=_calc.disp==="Error"?"":_calc.disp;
+  const inp=$("#exQ input[type=text]");
+  if(inp){inp.value=v;inp.dispatchEvent(new Event("input",{bubbles:true}));}
+  const r=EX.attempt.responses[q.id]; if(r)r.ans=v||null;
+  toast("Inserted "+v);
+}
+function calcToggle(force){
+  const p=$("#exCalc"); if(!p)return;
+  const open=force!=null?force:p.classList.contains("hide");
+  p.classList.toggle("hide",!open);
+  if(open)buildCalcKeys();
+  calcRender();
+}
+$("#exCalcBtn").onclick=()=>calcToggle();
+$("#exCalcClose").onclick=()=>calcToggle(false);
+$("#exCalcInsert").onclick=calcInsert;
+// keyboard support while the calculator is open (digits/ops/=; Esc closes)
+document.addEventListener("keydown",e=>{
+  const p=$("#exCalc"); if(!p||p.classList.contains("hide"))return;
+  const m=/^[\d.\+\-*/%]$/.test(e.key);
+  if(m){e.preventDefault();calcKey(e.key==="*"?"×":e.key==="/"?"÷":e.key==="-"?"−":e.key);}
+  else if(e.key==="Enter"){e.preventDefault();calcKey("=");}
+  else if(e.key==="Backspace"){e.preventDefault();calcKey("⌫");}
+  else if(e.key==="Escape"){e.preventDefault();calcToggle(false);}
+});
+// The calculator is reset & hidden inside startExam() itself (see below).
+
 // Mobile polish: start with the palette hidden on small screens so the
 // question gets the full viewport; the palette button opens it as a slide-up sheet.
 if(matchMedia&&matchMedia("(max-width:860px)").matches)$("#exPal").classList.add("collapsed");
@@ -7393,6 +8176,9 @@ function viewSettings(root){
   const nameIn=el("input");nameIn.type="text";nameIn.value=st.candidate||"Candidate";nameIn.style.maxWidth="320px";
   nameIn.oninput=()=>{st.candidate=nameIn.value||"Candidate";clearTimeout(nameIn._t);nameIn._t=setTimeout(save,500);}; // debounced — full-state save per keystroke froze typing
   c.appendChild(block("Candidate name",nameIn,"Shown on the exam header, exactly like the NTA console."));
+  const gs=el("button","btn ghost sm",ic("rocket")+" Show Getting Started guide");
+  gs.onclick=showOnboarding;gs.style.marginTop="8px";
+  c.appendChild(block("Beginner?",gs,"See the 5-step orientation again — helpful any time, not just on day one."));
   root.appendChild(c);
 
   const eb=el("div","card");
@@ -7990,6 +8776,24 @@ function viewNotebook(root){
   bar.firstElementChild.appendChild(el("div","row"));
   /* AI mistake analysis entry point (only when there are untagged mistakes) */
   bar.firstElementChild.lastElementChild.append(practice,practiceDue);
+  // drill by mistake type — attack ONE error-pattern at a time
+  const tagCounts={};MISTAKE_TAGS.forEach(([k])=>tagCounts[k]=0);
+  list.forEach(x=>{const t=S.qtags[x.q.id];if(t&&tagCounts[t]!=null)tagCounts[t]++;});
+  const tagDrills=Object.entries(tagCounts).filter(([,n])=>n>0);
+  if(tagDrills.length){
+    const trow=el("div","row");trow.style.cssText="gap:6px;flex-wrap:wrap;margin-top:8px";
+    trow.appendChild(el("span","small muted","Drill by mistake type:"));
+    tagDrills.forEach(([k,n])=>{
+      const lbl=(MISTAKE_TAG_LABEL[k]||k).replace(/^[^ ]+ /,"");
+      const b=el("button","tagchip",`${lbl} (${n})`);b.type="button";
+      b.onclick=()=>{
+        const pool=list.filter(x=>S.qtags[x.q.id]===k);
+        startDrill(lbl+" Fix · "+fmtDate(Date.now()),pool.slice(0,10),100);
+      };
+      trow.appendChild(b);
+    });
+    bar.appendChild(trow);
+  }
 
   // ---- filters: subject / chapter / tag / due + free-text search ----
   const NBF=viewNotebook._f||(viewNotebook._f={sub:"All",ch:"All",tag:"All",due:"All",q:""});
@@ -8762,7 +9566,7 @@ function prepScore(){
   // readiness is TARGET-specific: same data, but labeled for the exam the
   // student is actually preparing for (Board / JEE Main / JEE Advanced)
   const target=(p&&p.profile&&p.profile.target)||"jeemain";
-  const readinessLabel={jeemain:"JEE Main readiness",jeeadv:"JEE Advanced readiness",board12:"Board readiness",board11:"Class 11 readiness"}[target]||"Readiness";
+  const readinessLabel={jeemain:"JEE Main readiness",jeeadv:"JEE Advanced readiness",board12:"Board readiness",cbse27:"CBSE 2027 Board readiness",board11:"Class 11 readiness"}[target]||"Readiness";
   return {score,parts,weakest:weakest[0],target,readinessLabel};
 }
 /* ═════════ NEXT BEST ACTION — "abhi sabse zaroori kya hai" ═════════
@@ -9073,7 +9877,7 @@ function missionControlCard(){
         const mySubs=(p2&&p2.profile&&Object.keys(p2.profile.channels||{}).length?Object.keys(p2.profile.channels):SUBJECTS).map(s2=>s2.toLowerCase());
         const relevant=data.items.find(v2=>{
           const t2=(v2.title||"").toLowerCase();
-          const examOK=target2.startsWith("board")?/board|cbse|ncert|class 12|class 11/.test(t2):/jee|iit|mains|advanced/.test(t2);
+          const examOK=target2==="board12"||target2==="board11"||target2==="cbse27"?/board|cbse|ncert|class 12|class 11/.test(t2):/jee|iit|mains|advanced/.test(t2);
           const subOK=mySubs.some(s2=>t2.includes(s2.slice(0,5)))||/physics|chemistry|math/.test(t2);
           const topicBoost=weakNames.some(w2=>t2.includes(w2.split(" ")[0].toLowerCase()));
           return (examOK&&subOK)||topicBoost;
@@ -9434,6 +10238,34 @@ function focusLockCard(){
     row.appendChild(b);
   });
   c.appendChild(row);
+  // weekly focus summary — "did my blocking work?" (Forest/AppBlock style reward)
+  const wk=(()=>{const out={mins:0,blocks:0,days:0};const now=new Date();
+    for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()-i);const k=todayKey(d);
+      const ss=(S.focusSessions||[]).filter(s2=>s2.on===k);
+      if(ss.length)out.days++;ss.forEach(s=>{out.mins+=s.mins||0;out.blocks+=s.distractions||0;});}
+    return out;})();
+  // focus streak: consecutive days (from today) with a completed focus session
+  const focusStreak=(()=>{const fs=S.focusSessions||[];let n=0;const now=new Date();
+    for(let i=0;i<400;i++){const d=new Date(now);d.setDate(d.getDate()-i);const k=todayKey(d);
+      if(fs.some(s2=>s2.on===k)){n++;}else{if(i===0)continue;break;}}
+    return n;})();
+  c.appendChild(el("div","row")).style.cssText="gap:8px;flex-wrap:wrap;margin-top:10px";
+  c.lastElementChild.innerHTML=`<span class="pill">🔥 Focus streak: <b>${focusStreak}</b> din</span><span class="pill">⏱️ ${wk.mins} min is hafte</span><span class="pill n">🛡️ ${wk.blocks} distractions blocked</span>`;
+  // ── Focus Grove (Forest-style gamification): coins per focus block, and a
+  //    growing grove of trees. Focus minutes → coins → trees, so every
+  //    completed block visibly grows something instead of vanishing. ──
+  const totalMin=(S.focusSessions||[]).reduce((s2,x)=>s2+(x.mins||0),0);
+  const coins=Math.floor(totalMin/25);            // 1 coin per full 25-min block
+  const trees=Math.floor(coins/3);                // 1 tree per 3 coins
+  const grove=el("div");grove.style.cssText="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)";
+  grove.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+      <div><span class="small" style="font-weight:800">🌳 Tumhara Focus Grove</span>
+        <div class="small muted" style="margin-top:2px">Har 25-min focus block = 1 🪙 · har 3 coins = 1 🌳</div></div>
+      <div style="text-align:right;white-space:nowrap"><span class="small" style="font-weight:800;color:var(--accent-text)">🪙 ${coins}</span>
+        <span class="small muted"> · </span><span class="small" style="font-weight:800;color:var(--green)">🌳 ${trees}</span></div></div>
+      <div class="small" style="margin-top:8px;font-size:20px;letter-spacing:2px">${"🌱".repeat(Math.min(8,coins%3))}${"🌿".repeat(Math.min(8,Math.floor(coins/3)))}\u2003${"🌳".repeat(Math.min(12,trees))}</div>
+      <div class="small muted" style="margin-top:6px">${coins>=30?"Kya bada jungle! 🎉 Consistent deep work hi selection layegi.":coins>=15?"Grove grow ho raha hai — aage badho, rukna mat!":"Pehle kuch trees ugao — har focus block count hota hai."}</div>`;
+  c.appendChild(grove);
   if(inApp&&!guardOn){
     const gb=el("button","btn sm",`⚙️ Focus Guard ON karo (1 baar)`);
     gb.style.marginTop="8px";
@@ -9504,12 +10336,21 @@ function weeklyReportCard(){
     .reduce((s2,[,v])=>s2+v,0);
   let focus="";try{const p=chapterPriorities()[0];if(p)focus=p.name+" ("+p.acc+"%)";}catch(e){}
   const c=el("div","card");
+  // cross-pillar week totals: focus minutes (distraction blocker) + videos
+  // watched (StudyTube) + questions — the "whole student" picture
+  let weekFocus=0;try{Object.entries(pomoLog()).forEach(([k,v])=>{if(new Date(k).getTime()>now-weekMs)weekFocus+=+v||0;});}catch(e){}
+  let weekVideos=0,weekVideoMin=0;try{Object.entries(videoLog()).forEach(([id,v])=>{if(v.lastAt&&v.lastAt>now-weekMs){weekVideos++;weekVideoMin+=Math.round((v.watchedSec||0)/60);}});}catch(e){}
   c.innerHTML=`<div class="section-title"><span class="ico">${ic("news")}</span><h3 style="margin:0">Weekly Mentor Report</h3></div>
     <div class="grid g4" style="margin-top:10px">
       ${statCard("Tests taken",wk.length)}
       ${statCard("Avg marks",avg(wk)+(prev.length?` <span class="small ${dMarks>=0?"ok":"no"}" style="font-size:12px">${dMarks>=0?"+":""}${dMarks}</span>`:""))}
       ${statCard("Avg accuracy",acc(wk)+"%"+(prev.length?` <span class="small ${dAcc>=0?"ok":"no"}" style="font-size:12px">${dAcc>=0?"+":""}${dAcc}%</span>`:""))}
       ${statCard("Questions done",qDone)}
+    </div>
+    <div class="grid g3" style="margin-top:8px">
+      ${statCard("⏱️ Focus",weekFocus+" min")}
+      ${statCard("▶️ Videos",weekVideos+(weekVideoMin?` <span class="small muted" style="font-size:12px">${weekVideoMin}m</span>`:""))}
+      ${statCard("🎯 Ratio",(weekFocus||qDone)?Math.round(qDone/Math.max(1,weekFocus||0)*100)/100+" Q/min": "—")}
     </div>`;
   // full mentor-report lines: subjects, mistake pattern, backlog, revision, priorities
   const lines=[];
@@ -9618,12 +10459,78 @@ function viewDash(root){
   const goal=S.settings.dailyGoal||20, doneToday=S.dailyQuestions[todayKey(Date.now())]||0;
   const goalPct=Math.min(100,Math.round(doneToday/goal*100));
   const dg=el("div","card");
+  // cross-pillar daily goal: questions (existing) + focus minutes (distraction blocker)
+  const focusToday=pomoLog()[todayKey(Date.now())]||0, focusGoal=Math.max(10,S.settings.focusGoal||100);
+  const focusPct=Math.min(100,Math.round(focusToday/focusGoal*100));
   dg.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
-    <div><b>${ic("target")} Today's goal</b><div class="small muted">${doneToday} / ${goal} questions attempted today</div></div>
-    <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:20px;color:var(--accent-text)">${goalPct}%</div></div>
+    <div><b>${ic("target")} Today's goals</b><div class="small muted">✍️ ${doneToday} / ${goal} questions · 🔒 ${focusToday} / ${focusGoal} focus-min</div></div>
+    <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:20px;color:var(--accent-text)">${Math.round((goalPct+focusPct)/2)}%</div></div>
     <div class="bar" style="margin-top:10px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
-      <i style="display:block;height:100%;width:${goalPct}%;background:var(--blue);border-radius:4px"></i></div>`;
+      <i style="display:block;height:100%;width:${goalPct}%;background:var(--blue);border-radius:4px"></i></div>
+    <div class="bar" style="margin-top:4px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+      <i style="display:block;height:100%;width:${focusPct}%;background:var(--green);border-radius:4px"></i></div>`;
   root.appendChild(dg);
+  // ── STUDY QUALITY SCORE: one honest 0-100 number for how you're studying ──
+  //     consistency (7-day questions) 40% · accuracy 25% · focus minutes 20% ·
+  //     revision adherence 15%. No competitor collapses 'how well am I
+  //     preparing' into a single honest number that rewards doing + focus +
+  //     review together, not just attempts.
+  try{
+    const now7=Date.now()-7*86400000;
+    let q7=0,activeDays7=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const k=todayKey(d);const n=S.dailyQuestions[k]||0;q7+=n;if(n>0)activeDays7++;}
+    const qGoal=Math.max(10,S.settings.dailyGoal||20);
+    const cons=Math.min(100,Math.round(q7/(qGoal*7)*100));
+    const acc=g.avgAcc!=null?Math.min(100,g.avgAcc):(g.total?Math.min(100,g.avgAcc):0);
+    const f7=Object.entries(pomoLog()).reduce((s,[k,v])=>(new Date(k).getTime()>now7?s+v:s),0);
+    const fGoal=Math.max(10,S.settings.focusGoal||100);
+    const focus=Math.min(100,Math.round(f7/(fGoal*7)*100));
+    let rev=0;try{const rq=revisionQueue();rev=Math.max(0,100-rq.length*8);}catch(e){rev=50;}
+    const qScore=Math.round(cons*0.4+acc*0.25+focus*0.20+rev*0.15);
+    const lvl=qScore>=85?["🔥","Elite prep","Zabardast — depth aur consistency dono. Bas yahi pace pakdo."]:
+      qScore>=70?["💪","Strong prep","Bahut achha! Ab weak chapters ko aur mark karo."]:
+      qScore>=50?["🌱","Building","Base solid hai — focus/consistency badhao, score upar jayega."]:
+      ["🚀","Starting up","Har din ka ek test + ek focus block pehla kadam hai."];
+    const sq=el("div","card");sq.style.cssText="border-color:color-mix(in srgb,var(--accent-text) 40%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent-text) 6%,var(--panel)),var(--panel))";
+    sq.innerHTML=`<div class="section-title"><span class="ico">${ic("gauge")}</span>
+      <div><h3 style="margin:0">📊 Study Quality Score</h3>
+      <div class="small muted">${lvl[1]} — consistency 40% · accuracy 25% · focus 20% · revision 15%</div></div></div>
+      <div class="row" style="align-items:center;gap:16px;margin-top:10px">
+        <div style="position:relative;width:84px;height:84px;flex:none">
+          <svg viewBox="0 0 36 36" style="width:84px;height:84px;transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--line)" stroke-width="3.6"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="${qScore>=70?"var(--green)":qScore>=50?"var(--amber)":"var(--red)"}" stroke-width="3.6"
+              stroke-dasharray="${qScore} 100" stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:grid;place-items:center"><b style="font-size:22px">${qScore}</b></div>
+        </div>
+        <div><div class="small" style="font-weight:700;font-size:16px">${lvl[0]} ${lvl[1]}</div>
+          <div class="small muted">${lvl[2]}</div>
+          <div class="small muted" style="margin-top:4px">Aaj tak: ${g.total} tests · ${q7} Q is hafte · ${Math.round(f7)} focus-min is hafte</div></div></div>`;
+    root.appendChild(sq);
+  }catch(e){}
+  // ── Exam-day checklist — appears in the final window before the exam ──
+  try{
+    if(S.settings.examDate){
+      const daysTo=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);
+      if(daysTo>=0&&daysTo<=7){
+        const items=[
+          daysTo<=1?["🎒","Admit card + photo ID ready","Aaj raat hi pack kar lo — subah bhaag mat."]:null,
+          daysTo<=1?["⏰","Alarm set (2 hours pehle)","Test centre se mile duration + 1.5 hr buffer."]:null,
+          ["📑","Rough paper + pen + transparent water bottle","NTA ke allowed items — page 3 par print hai."],
+          ["🧠","Mock revision nahi — bas quick formula sheet","Ab naya kuch mat seekho, jo aata hai pakka karo."],
+          ["😴","7-8 ghante neend aaj raat","Exam se ek raat pehle overstudy = worst mistake."],
+          ["🧘","Ek subah ki light walk / breathing","Nerves down, focus up."]
+        ].filter(Boolean);
+        const ec=el("div","card");ec.style.cssText="border-color:color-mix(in srgb,var(--purple) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--purple) 7%,var(--panel)),var(--panel))";
+        ec.innerHTML=`<div class="section-title"><span class="ico">${ic("flag")}</span>
+          <div><h3 style="margin:0">🎒 Exam day — ${daysTo===0?"AAJ hai!":daysTo===1?"Kal hai":`${daysTo} din baaki`}</h3>
+          <div class="small muted">${daysTo===0?"Tumne poori mehnat ki — ab relax. Checklist:":daysTo<=1?"Last-day checklist — ek-ek item par tick karo.":"Final-window checklist — raat ko ek baar padh lo."}</div></div></div>
+          <div style="margin-top:8px">${items.map((it,i)=>`<label class="row" style="justify-content:flex-start;gap:10px;padding:6px 0;cursor:pointer">
+            <input type="checkbox" data-cb="${i}" style="width:17px;height:17px"><span>${it[0]} <b>${it[1]}</b></span><span class="small muted" style="margin-left:auto;text-align:right">${it[2]}</span></label>`).join("")}</div>`;
+        root.appendChild(ec);
+      }
+    }
+  }catch(e){}
 
   // ---- Next scheduled mock (from the Planner) ----
   const nextSched=schedules().filter(s=>s.when>Date.now()).sort((a,b)=>a.when-b.when)[0];
@@ -9743,6 +10650,78 @@ function viewDash(root){
 
   countUpStats(root); // animate the headline numbers in
 }
+
+/* ═══ FIRST-RUN "GETTING STARTED" — beginner→advanced in 5 taps ═══════
+   Shown once on first launch (dismissed permanently via localStorage,
+   re-openable from Settings). Gives a brand-new student a clear, honest
+   orientation instead of a wall of features: lock your goal, build a plan,
+   add your papers, take a test, review mistakes. Advanced users dismiss it
+   once and never see it again. No clutter rule — it earns its one shot.  */
+const ONB_LS="jeecbt.onboarded.v1";
+/* Expose the key + a shared localStorage reference on window so the
+   handlers below always resolve them the same way (robust whether the
+   function is invoked from this script's scope or re-entered by a
+   test runner / console). */
+window.__ONB_LS=ONB_LS;
+window.__onbDone=()=>{try{window.localStorage.setItem(window.__ONB_LS,"1");}catch(e){}};
+function showOnboarding(){
+  const m=el("div","modal onb-modal");m.setAttribute("data-static","1");
+  m.innerHTML=`<div class="box"><div class="onb-hero">
+      <div class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:800">Welcome aboard</div>
+      <h2>Apna JEE Main companion ready 🎯</h2>
+      <div class="muted" style="font-size:13.5px;line-height:1.6">Har level ke liye bana hai — beginner se advanced. Sirf 5 cheezein jaan lo, baaki app khud sambhal legi.</div>
+    </div>
+    <div class="onb-body"></div>
+    <div class="onb-foot">
+      <button class="btn" data-done>${ic("check")} Got it — let's start</button>
+      <button class="btn ghost" data-done-later>Later</button>
+      <span class="muted">Tumhara data sirf isi device par hai — kabhi bhi Backup kar sakte ho.</span>
+    </div></div>`;
+  const body=m.querySelector(".onb-body");
+  const steps=[
+    ["🎯","Apna sapna lock karo","Dream college + reason — mentor aur dashboard har roz yaad dilayenge. (2 sec)",
+      ()=>{go("dash");setTimeout(()=>{const b=[...document.querySelectorAll("#app input[type=text]")].find(x=>/college|NIT|IIT/i.test(x.placeholder||""));if(b){b.focus();b.scrollIntoView({block:"center"});}},250);}],
+    ["🗓️","Personalised study plan","Apna exam, apne teachers, apne weak chapters — 60 second ka wizard. Videos + daily tasks.",
+      ()=>{go("planner");setTimeout(()=>{const b=[...document.querySelectorAll("#app button")].find(x=>/Build|Plan|plan/i.test(x.textContent||"")&&x.classList.contains("btn"));if(b)b.click();},250);}],
+    ["📚","Pehla test lao","Upload Physics + Chemistry + Maths PDFs → 75-question CBT ban jata hai, ya public library/PYQ se seedha attempt karo.",
+      ()=>{go("upload");}],
+    ["✍️","Test do — NTA style","Timer, palette, mark-for-review, auto-submit. Real CBT jaisa hi. Numerical questions mein ab NTA-2026 ke hisaab se NO negative marking.",
+      ()=>{const t=cloudTests[0];if(t){const b=el("button","btn","Start now");b.onclick=()=>startExam(t.id);document.body.appendChild(b);b.click();b.remove();}else go("library");}],
+    ["🔍","Galtiyon se seekho","Result → AI analysis → mistake notebook → spaced review. Yehi loop marks badhata hai.",
+      ()=>{go("result");}]
+  ];
+  steps.forEach(([em,title,sub,run],i)=>{
+    const r=el("button","onb-step");r.type="button";
+    r.innerHTML=`<div style="font-size:22px;flex:none">${em}</div>
+      <div><b>${esc(title)}</b><div class="s">${esc(sub)}</div></div>
+      <span class="badge onb-go">Open →</span>`;
+    r.onclick=()=>{window.__onbDone();m.remove();run();};
+    body.appendChild(r);
+  });
+  m.querySelector("[data-done]").onclick=()=>{window.__onbDone();m.remove();};
+  m.querySelector("[data-done-later]").onclick=()=>m.remove();
+  document.body.appendChild(m);
+  setTimeout(()=>{if(m.isConnected){const b=m.querySelector("[data-done]");if(b)b.focus();}},50);
+}
+/* The auto-show hook, factored out so it's callable (Settings re-open and
+   the boot path both use it) and so it can be exercised by the robot test.
+   It re-checks the flag every time it runs — a visitor who dismissed the
+   guide (or opened it from Settings) is never auto-nagged again. */
+function maybeOnboard(){
+  try{ if(window.localStorage.getItem(window.__ONB_LS)) return; }catch(e){ return; }
+  // Only interrupt a brand-new visitor, shortly after first paint, and not
+  // mid-exam / mid-chat. Advanced users who dismissed it won't be nagged.
+  setTimeout(()=>{
+    // Re-check the flag INSIDE the timer: a brand-new visitor may dismiss
+    // the guide (or open it from Settings) within the 900ms delay — don't
+    // nag them again just because the boot-time check predated their action.
+    try{ if(window.localStorage.getItem(window.__ONB_LS)) return; }catch(e){}
+    if(typeof EX!=="undefined"&&EX&&!$("#examView").classList.contains("hide"))return;
+    if(typeof aiChatIsOpen!=="undefined"&&aiChatIsOpen)return;
+    showOnboarding();
+  },900);
+}
+maybeOnboard(); // first-run auto-show on load
 
 /* -------------------------------- BOOT ----------------------------------- */
 /* Offline mode: register the generated worker only in a real published tab.
@@ -9985,6 +10964,28 @@ function aiChatTypeOut(modelMsg,fullText){
   };
   tick();
 }
+function aiChatRenderMem(){
+  const bar=$("#aiChatMemBar");if(!bar)return;
+  const mem=aiMemory();
+  const lastModel=aiChatHistory.length?[...aiChatHistory].reverse().find(m=>m.role==="model"&&m.text&&!m.pending):null;
+  let html="";
+  if(lastModel){
+    html+=`<button class="btn ghost sm" data-memAdd style="margin-top:8px">📌 ${mem.length?"Ye bhi yaad rakho":"Advice yaad rakho (saath rakhega)"}</button>`;
+  }
+  if(mem.length){
+    html+=`<div class="small muted" style="margin-top:8px">🧠 Saarthi yaad rakhta hai (har session mein):</div>`;
+    mem.slice(0,6).forEach((m,i)=>{
+      html+=`<div class="row" style="align-items:flex-start;gap:6px;margin-top:5px">
+        <span style="flex:1;font-size:12.5px">${esc(String(m.text).slice(0,90))}</span>
+        <button class="btn ghost sm" data-memDel="${i}" style="padding:2px 6px;font-size:11px">✕</button></div>`;
+    });
+  }
+  bar.innerHTML=html;
+  bar.classList.toggle("hide",!html);
+  const add=bar.querySelector("[data-memAdd]");
+  if(add)add.onclick=()=>{if(lastModel)aiMemoryAdd(lastModel.text.replace(/<[^>]+>/g,"").trim());aiChatRenderMem();toast("Saarthi ab ye aage bhi yaad rakhega");};
+  bar.querySelectorAll("[data-memDel]").forEach(b2=>b2.onclick=()=>{aiMemoryDel(+b2.getAttribute("data-memDel"));aiChatRenderMem();});
+}
 function aiChatRenderChips(){
   const box=$("#aiChatChips"); if(!box)return; box.innerHTML="";
   const last=aiChatHistory[aiChatHistory.length-1];
@@ -9993,15 +10994,24 @@ function aiChatRenderChips(){
     const b=el("button",null,c);b.type="button";b.onclick=()=>{$("#aiChatInput").value=c;aiChatSend();};
     box.appendChild(b);
   });
+  // weekly mentor deep-dive: synthesize the whole week across every pillar
+  const wd=el("button",null,ic("news")+" Weekly deep-dive");wd.type="button";
+  wd.onclick=()=>{$("#aiChatInput").value="Mentor, is hafte ka full review do: meri tests, accuracy, weak chapters, focus minutes, videos dekhe, streak aur plan health — sab dekh ke batana main kahan achha kar raha hun, kahan dikkat hai, aur is aane wale hafte ke liye top 3 actions kya hain. Seedha aur practical raho.";aiChatSend();};
+  box.appendChild(wd);
 }
 let aiChatIsOpen=false;
+/* Socratic mentor mode (Khanmigo-style): when on, Saarthi guides with
+   hints and questions instead of giving the answer outright. Persisted so
+   a student's chosen learning style carries across sessions. */
+let aiSocratic=!!(S.settings&&S.settings.aiSocratic);
+const AI_SOCRATIC_INSTR="You are in SOCRATIC MENTOR MODE. Do NOT give the final answer directly. Instead: (1) ask what the student thinks, (2) give ONE small hint at a time, (3) if they are stuck, walk them one guided step forward, (4) only reveal the solution after they have shown a genuine attempt or explicitly ask for the full answer. Keep hints in simple Hinglish. If the question is not a learning/doubt question, answer normally.";
 function aiChatOpen(){
   const p=$("#aiChatPanel");if(!p)return;
   p.classList.remove("hide"); aiChatIsOpen=true;
   $("#aiChatBtn").classList.add("hide"); $("#aiChatBtn").classList.remove("pulse");
   const _lbl=document.getElementById("aiFabLabel");if(_lbl)_lbl.remove(); // chip follows the fab
   document.body.style.overflow="hidden"; // lock background scroll behind the full-screen panel
-  aiChatRenderMsgs(); aiChatRenderChips();
+  aiChatRenderMsgs(); aiChatRenderChips(); aiChatRenderMem();
   // NOTE: deliberately not auto-focusing the input — on phones that pops the
   // keyboard immediately, and the first tap on Close then just dismisses the
   // keyboard instead of registering, making the panel feel "stuck open".
@@ -10070,10 +11080,23 @@ function aiChatSetFile(file){
  * test?" with their actual numbers instead of generic advice.
  * Everything is computed from local data already on the device;
  * bounded to ~2KB so it never bloats requests. */
+/* Long-form mentor memory: key advice/conclusions the student chooses to
+   keep (or that are worth carrying over), persisted across chat sessions
+   and chat resets. Prepend to student context so Saarthi remembers. */
+function aiMemory(){return S.aiMemory||(S.aiMemory=[]);}
+function aiMemoryAdd(text){if(!text)return;const m=aiMemory();
+  m.unshift({text:String(text).slice(0,500),at:Date.now()});
+  if(m.length>20)m.length=20;save();}
+function aiMemoryDel(i){const m=aiMemory();if(m[i]!=null){m.splice(i,1);save();}}
 function buildStudentContext(){
   try{
     const done=S.attempts.filter(a=>a.submittedAt).sort((a,b)=>a.submittedAt-b.submittedAt);
     const parts=[];
+    // LONG-FORM MEMORY — what the student chose to remember across sessions
+    try{
+      const mem=aiMemory().slice(0,6).map(m=>String(m.text||"").slice(0,120)).filter(Boolean);
+      if(mem.length)parts.push("PERSISTENT MENTOR MEMORY (student kept these — respect and build on them):\n- "+mem.join("\n- "));
+    }catch(e){}
     // THE MISSION — the mentor's north star (goal + urgency), even for new students
     if(S.goal&&S.goal.college)parts.push(`STUDENT'S DREAM: ${S.goal.college}${S.goal.why?` — reason: "${S.goal.why}"`:""}. This is YOUR mission too.`);
     if(S.settings.examDate){const dl=Math.ceil((new Date(S.settings.examDate)-Date.now())/86400000);if(dl>0)parts.push(`⏳ ONLY ${dl} days to JEE Main. Every reply should respect this urgency.`);}
@@ -10181,7 +11204,7 @@ async function aiChatSend(){
     const payloadMsgs=aiChatHistory.filter(m=>!m.pending).slice(-16).map(m=>({role:m.role,text:m.text}));
     if(file) payloadMsgs[payloadMsgs.length-1].image={mimeType:file.mimeType,data:file.data};
     const r=await fetch("/api/public/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({messages:payloadMsgs,studentContext:buildStudentContext()})});
+      body:JSON.stringify({messages:payloadMsgs,studentContext:buildStudentContext(),systemHint:aiSocratic?AI_SOCRATIC_INSTR:""})});
     const data=await r.json().catch(()=>null);
     if(r.ok&&data&&data.reply){
       aiChatSend._busy=false;
@@ -10196,19 +11219,51 @@ async function aiChatSend(){
   }
   aiChatSend._busy=false;
   modelMsg.pending=false;
-  aiChatRenderMsgs(); aiChatRenderChips(); save_aiChatHistory();
+  aiChatRenderMsgs(); aiChatRenderChips(); aiChatRenderMem(); save_aiChatHistory();
 }
 (function initAiChat(){
   const btn=$("#aiChatBtn"), closeBtn=$("#aiChatClose"), resetBtn=$("#aiChatReset"),
-        sendBtn=$("#aiChatSend"), input=$("#aiChatInput"), attachBtn=$("#aiChatAttach"), fileInp=$("#aiChatFile");
+        sendBtn=$("#aiChatSend"), input=$("#aiChatInput"), attachBtn=$("#aiChatAttach"), fileInp=$("#aiChatFile"), micBtn=$("#aiChatMic"),
+        socBtn=$("#aiChatSocratic"), socLine=$("#aiChatSocLine");
   if(!btn) return;
   if(aiChatHistory.length) btn.classList.remove("pulse"); // returning user — skip the "look here" cue
   btn.onclick=aiChatOpen;
   closeBtn.onclick=aiChatClose;
   resetBtn.onclick=()=>{aiChatHistory=[];save_aiChatHistory();aiChatRenderMsgs();$("#aiChatChips").innerHTML="";};
+  // Socratic mentor toggle
+  const socSync=()=>{
+    if(!socBtn||!socLine)return;
+    socBtn.classList.toggle("on",!!aiSocratic);
+    socBtn.title=aiSocratic?"Socratic mode ON — guided hints":"Socratic mentor mode: guided hints, not full answers";
+    socLine.classList.toggle("hide",!aiSocratic);
+    if(aiSocratic)socLine.innerHTML=`${ic("bulb")} Socratic mode ON — Saarthi hint se guide karega, seedha answer nahi. Saath solve karo.`;
+  };
+  if(socBtn)socBtn.onclick=()=>{aiSocratic=!aiSocratic;if(S.settings)S.settings.aiSocratic=aiSocratic;save();socSync();};
+  socSync();
   sendBtn.onclick=aiChatSend;
   attachBtn.onclick=()=>fileInp.click();
   fileInp.onchange=()=>{if(fileInp.files&&fileInp.files[0])aiChatSetFile(fileInp.files[0]);fileInp.value="";};
+  // Voice-to-text: bolo apna doubt. Optional Web Speech API — hidden on
+  // browsers that don't support it, so unsupported devices just don't show it.
+  if(micBtn){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){micBtn.classList.add("hide");}
+    else{
+      const rec=new SR();rec.lang="en-IN";rec.interimResults=true;rec.continuous=false;
+      let listening=false;
+      micBtn.onclick=()=>{
+        if(listening){try{rec.stop();}catch(e){}return;}
+        try{listening=true;micBtn.classList.add("recording");toast("Suna raha hun… bolna shuru karo");rec.start();}
+        catch(e){listening=false;micBtn.classList.remove("recording");toast("Mic shuru nahi ho paya — permission check karo");}
+      };
+      rec.onresult=e=>{
+        let txt="";for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript;
+        input.value=txt;input.dispatchEvent(new Event("input"));
+      };
+      const stopRec=()=>{if(listening){listening=false;micBtn.classList.remove("recording");aiChatSyncSend();}};
+      rec.onend=stopRec;rec.onerror=e=>{if(e.error==="not-allowed")toast("Mic ki permission nahi mili");stopRec();};
+    }
+  }
   input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();aiChatSend();}});
   input.addEventListener("input",()=>{input.style.height="";input.style.height=Math.min(120,input.scrollHeight)+"px";aiChatSyncSend();});
   // Escape closes the panel from anywhere — a second, always-reliable way out

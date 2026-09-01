@@ -38,16 +38,55 @@ const ROWS_API =
 const SK_COMMIT = "4d5a80388c3a86fd278f0a581e0de069e5dfae34";
 const SK_RAW =
   `https://raw.githubusercontent.com/Samkarya/online-exam-questions/${SK_COMMIT}/India/undergraduate/JEEMains/`;
+const SK_TREE_API =
+  `https://api.github.com/repos/Samkarya/online-exam-questions/git/trees/${SK_COMMIT}?recursive=1`;
+// Baseline: the exact machine-readable 2025/2026 papers known to exist at
+// the pinned commit. Every remaining 2025/2026 shift is published only as
+// an NTA PDF, so today this is genuinely all there is.
 const SK_FILES = [
   "jeeMain_2025_22Jan_shift1.json",
   "jeeMain_2025_22Jan_shift2.json",
   "jeeMain_2026_02April_shift1.json",
   "jeeMain_2026_02April_shift2.json",
   "jeeMain_2026_04April_shift1.json",
-  // (Only these 2025/2026 shift files exist in machine-readable form today.
-  // The remaining 2025 shifts are published only as PDFs; when a clean
-  // source appears we add its file name here and move the pin.)
 ];
+
+/** File name must map to a paper via skPaperId() — keeps junk/partial files out. */
+const SK_NAME_RE = /^jeeMain_\d{4}_\d{1,2}[A-Za-z]+_shift\d\.json$/;
+
+/**
+ * Discover every machine-readable JEEMains paper at the pinned commit.
+ * This is the "coverage keeps growing" mechanism: the moment the pinned
+ * source repo adds a new 2025/2026 shift file, this build picks it up
+ * automatically — no code change needed. It's still a FROZEN snapshot
+ * (the pinned commit's tree, never anyone's future pushes).
+ * Falls back to SK_FILES if the tree API is unreachable so a network
+ * hiccup can never reduce coverage below the known baseline.
+ */
+async function discoverSkFiles() {
+  try {
+    const r = await fetch(SK_TREE_API, {
+      signal: AbortSignal.timeout(30_000),
+      headers: { accept: "application/vnd.github+json", "user-agent": "jee-cbt build" },
+    });
+    if (!r.ok) throw new Error("tree http " + r.status);
+    const tree = await r.json();
+    const found = (tree.tree || [])
+      .map((t) => t.path || "")
+      .filter((p) => /^India\/undergraduate\/JEEMains\/[^/]+\.json$/.test(p))
+      .map((p) => p.slice("India/undergraduate/JEEMains/".length))
+      .filter((n) => SK_NAME_RE.test(n))
+      .sort();
+    if (found.length) {
+      const added = found.filter((n) => !SK_FILES.includes(n));
+      if (added.length) console.log(`[pyq] discovered ${added.length} new machine-readable paper(s): ${added.join(", ")}`);
+      return found;
+    }
+  } catch (e) {
+    console.warn("[pyq] paper discovery unavailable (" + e.message + ") — using the pinned baseline list.");
+  }
+  return SK_FILES;
+}
 
 const SUBJ = { physics: "Physics", chemistry: "Chemistry", maths: "Mathematics", mathematics: "Mathematics" };
 const pretty = (s) => String(s || "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
@@ -256,9 +295,9 @@ function skPaperId(name) {
   return { id: `jee-main-${m[1]}-online-${m[2]}-${month.toLowerCase()}-${m[4] === "1" ? "morning" : "evening"}-shift`,
     year: +m[1], month, label: `${m[2]} ${month.slice(0, 3)} · ${m[4] === "1" ? "Morning" : "Evening"} Shift` };
 }
-async function fromLatestJson() {
+async function fromLatestJson(files) {
   const out = { rowsByPaper: new Map(), metas: [] };
-  for (const name of SK_FILES) {
+  for (const name of files || SK_FILES) {
     const meta = skPaperId(name);
     if (!meta) continue;
     try {
@@ -268,6 +307,33 @@ async function fromLatestJson() {
       if (!Array.isArray(rows) || rows.length < 30) continue;
       const qs = skTransform(rows, meta.id);
       if (qs.length >= 30) { out.rowsByPaper.set(meta.id, qs); out.metas.push(meta); }
+    } catch { /* skip one bad file, keep the rest */ }
+  }
+  return out;
+}
+
+/* ---- Source 3: JEE Main 2026 papers transcribed from the user's own
+   scanned PDFs (the "Question Paper with Solutions" scans under
+   data/jee2026). These are committed, hand-verified examify JSON files
+   under data/jee2026/transcribed/. They read from local disk only — no
+   network — so they bake offline and never fabricate (they are the user's
+   own papers). File names follow the same jeeMain_..._shiftN.json scheme,
+   so skPaperId()/skTransform() reuse applies unchanged. */
+import { readdir, readFile } from "node:fs/promises";
+const LOCAL_PYQ_DIR = join(root, "data", "jee2026", "transcribed");
+async function fromLocalJson() {
+  const out = { rowsByPaper: new Map(), metas: [] };
+  let names = [];
+  try { names = (await readdir(LOCAL_PYQ_DIR)).filter((n) => n.endsWith(".json")).sort(); }
+  catch { return out; } // dir absent → nothing to add (safe)
+  for (const name of names) {
+    const meta = skPaperId(name);
+    if (!meta) continue;
+    try {
+      const rows = JSON.parse(await readFile(join(LOCAL_PYQ_DIR, name), "utf8"));
+      if (!Array.isArray(rows) || rows.length < 10) continue;
+      const qs = skTransform(rows, meta.id);
+      if (qs.length >= 10) { out.rowsByPaper.set(meta.id, qs); out.metas.push(meta); }
     } catch { /* skip one bad file, keep the rest */ }
   }
   return out;
@@ -311,28 +377,39 @@ async function main() {
     try { rows = await fromRowsApi(); console.log(`[pyq] rows API: ${rows.length} rows`); }
     catch (e2) { console.warn("[pyq] snapshot dataset unavailable (" + e2.message + ")"); }
   }
-  // Source 2: latest sessions (2025/2026 …) from plain-JSON papers
-  const latest = await fromLatestJson();
+  // Source 2: latest sessions (2025/2026 …) from plain-JSON papers.
+  // Auto-discover the pinned source's current machine-readable papers so
+  // coverage expands as the source repo adds new shifts.
+  const skFiles = await discoverSkFiles();
+  const latest = await fromLatestJson(skFiles);
   if (latest.metas.length) console.log(`[pyq] latest-session source: ${latest.metas.length} paper(s) (${latest.metas.map((m) => m.year).join(", ")})`);
+  // Source 3: user-transcribed JEE 2026 papers (offline, committed).
+  const local = await fromLocalJson();
+  if (local.metas.length) console.log(`[pyq] user-transcribed source: ${local.metas.length} paper(s)`);
 
-  if (!rows && !latest.metas.length) {
+  if (!rows && !latest.metas.length && !local.metas.length) {
     console.warn("[pyq] WARNING: no source reachable. Site still builds; the PYQ tab will use the API fallback until the next build.");
     return; // never break the build
   }
 
   const { papers, index } = rows ? buildDataset(rows) : { papers: {}, index: [] };
-  // merge latest-session papers (they win on id collision — newer data)
-  for (const meta of latest.metas) {
-    const qs = latest.rowsByPaper.get(meta.id);
-    qs.sort((a, b) => SUBJECT_ORDER[a.subject] - SUBJECT_ORDER[b.subject] || (a.type === b.type ? 0 : a.type === "mcq" ? -1 : 1));
-    const counts = { Physics: 0, Chemistry: 0, Mathematics: 0 };
-    let mcq = 0, integer = 0;
-    qs.forEach((q, i) => { q.no = i + 1; counts[q.subject]++; q.type === "mcq" ? mcq++ : integer++; });
-    papers[meta.id] = qs.map(({ paperId, ...rest }) => rest);
-    const entry = { id: meta.id, year: meta.year, month: meta.month, label: meta.label, total: qs.length, counts, mcq, integer };
-    const at = index.findIndex((p) => p.id === meta.id);
-    if (at >= 0) index[at] = entry; else index.push(entry);
-  }
+  // merge a given source's papers (they win on id collision — newer data)
+  const mergePapers = (src, metas) => {
+    for (const meta of metas) {
+      const qs = src.rowsByPaper.get(meta.id);
+      qs.sort((a, b) => SUBJECT_ORDER[a.subject] - SUBJECT_ORDER[b.subject] || (a.type === b.type ? 0 : a.type === "mcq" ? -1 : 1));
+      const counts = { Physics: 0, Chemistry: 0, Mathematics: 0 };
+      let mcq = 0, integer = 0;
+      qs.forEach((q, i) => { q.no = i + 1; counts[q.subject]++; q.type === "mcq" ? mcq++ : integer++; });
+      papers[meta.id] = qs.map(({ paperId, ...rest }) => rest);
+      const entry = { id: meta.id, year: meta.year, month: meta.month, label: meta.label, total: qs.length, counts, mcq, integer };
+      const at = index.findIndex((p) => p.id === meta.id);
+      if (at >= 0) index[at] = entry; else index.push(entry);
+    }
+  };
+  // merge latest-session papers, then user-transcribed papers
+  mergePapers(latest, latest.metas);
+  mergePapers(local, local.metas);
   index.sort((a, b) => b.year - a.year || a.id.localeCompare(b.id));
   await mkdir(OUT, { recursive: true });
   await writeFile(join(OUT, "index.json"), JSON.stringify({ v: 1, builtAt: Date.now(), papers: index }));

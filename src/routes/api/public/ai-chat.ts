@@ -305,7 +305,7 @@ export const Route = createFileRoute("/api/public/ai-chat")({
           );
         }
 
-        let body: { messages?: ChatMessage[]; studentContext?: string };
+        let body: { messages?: ChatMessage[]; studentContext?: string; systemHint?: string };
         try {
           body = await request.json();
         } catch {
@@ -333,6 +333,11 @@ export const Route = createFileRoute("/api/public/ai-chat")({
         let systemPrompt = ctx
           ? `${SYSTEM_PROMPT}\n\nSTUDENT DATA (real, from their app — use when relevant):\n${ctx}`
           : SYSTEM_PROMPT;
+        // Optional Socratic/mentor-mode instruction from the client (applied
+        // on top of the base mentor persona, so both providers see it).
+        const sysHint =
+          typeof body.systemHint === "string" ? body.systemHint.slice(0, 1500) : "";
+        if (sysHint) systemPrompt += `\n\nUSER-SELECTED MODE:\n${sysHint}`;
 
         // Live web knowledge: only when the question needs fresh facts.
         if (!hasImage && needsWeb(lastMsg?.text || "")) {
