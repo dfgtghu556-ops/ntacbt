@@ -3434,6 +3434,23 @@ function viewUpload(root){
    even scanned pages. Standard-format papers are parsed instantly with pixel-perfect question images; anything else is
    read page-by-page by AI (questions, options and answer keys, in any numbering style). Always check
    <b>Preview &amp; fix</b> before publishing.</p>`;
+  // ---- destination: public Test Library (cloud) vs PYQ (this device) ----
+  let uploadDest="library"; // "library" | "pyq"
+  const destBox=el("div","card");destBox.style.marginTop="14px";
+  destBox.innerHTML=`<div class="section-title"><span class="ico">${ic("tag")}</span><h3 style="margin:0">Where should this paper go?</h3></div>
+    <div class="small muted" style="margin-bottom:10px">Pick a destination once below — it applies to both the 3-subject and single-PDF uploads.</div>`;
+  const destRow=el("div","seg");destRow.style.cssText="flex-wrap:wrap";
+  const destOpt=(id,title,desc)=>{
+    const b=el("button",uploadDest===id?"on":"",`${title}<span class="small" style="opacity:.85"> — ${desc}</span>`);
+    b.type="button";b.onclick=()=>{uploadDest=id;destRow.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+      destHint.textContent=id==="pyq"?"Papers are saved and served on this device and added to the PYQ section — they are NOT uploaded to the cloud library.":"Papers are uploaded to the public cloud Test Library for everyone to attempt.";};
+    return b;
+  };
+  destRow.append(destOpt("library","Test Library (cloud)","shared with everyone"),
+                 destOpt("pyq","PYQ section (this device)","in-app, no cloud"));
+  const destHint=el("div","small muted");destHint.style.cssText="margin-top:8px";
+  destHint.textContent="Papers are uploaded to the public cloud Test Library for everyone to attempt.";
+  destBox.appendChild(destRow);destBox.appendChild(destHint);c.appendChild(destBox);
   const grid=el("div","grid g3");
   SUBJECTS.forEach(sub=>{
     const d=el("div","drop");
@@ -3555,10 +3572,19 @@ function viewUpload(root){
     t.questions.forEach(q=>q.chapter=q.chapter||t.chapter[q.subject]||q.subject+" — General");
     const meta={year:+year.value||new Date().getFullYear(),difficulty:diff.value,type:type.value,subjectChapters:t.chapter};
     try{
-      const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m,meta);
-      cloudTests.unshift(published);S.tests.push(published);
-      SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
-      toast("Public test created · "+published.testId);go("library");
+      if(uploadDest==="pyq"){
+        const paper=saveLocalPyq(t,{...meta,label:name.value.trim()||"Untitled Test"});
+        S.tests.push(paper.test);
+        if(pyqState.index)pyqState.index=pyqState.index.filter(p=>p.id!==paper.meta.id).concat([paper.meta]);
+        SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
+        toast("PYQ paper saved to this device · "+paper.meta.label);
+        pyqState.year=paper.meta.year;go("pyq");
+      }else{
+        const published=await publishPublicTest(t,pendingFiles,m=>status.textContent=m,meta);
+        cloudTests.unshift(published);S.tests.push(published);
+        SUBJECTS.forEach(s=>{pending[s]=null;pendingFiles[s]=null;});
+        toast("Public test created · "+published.testId);go("library");
+      }
     }catch(e){toast("Publish failed: "+e.message,5000);mk.disabled=false;status.textContent="Upload failed. Your local PDFs were not removed — try again.";}
   });
   root.appendChild(c);
@@ -3597,9 +3623,17 @@ function viewUpload(root){
       t.questions.forEach(q=>q.chapter=q.chapter||"Full Syllabus — "+q.subject);
       const meta={year:+fsYear.value||new Date().getFullYear(),difficulty:fsDiff.value,
         type:"Full Syllabus",subjectChapters:t.chapter};
-      const published=await publishPublicTest(t,{Physics:f,Chemistry:f,Mathematics:f},m=>fsSt.textContent=m,meta);
-      cloudTests.unshift(published);S.tests.push(published);
-      toast("Full syllabus mock published · "+published.testId);go("library");
+      if(uploadDest==="pyq"){
+        const paper=saveLocalPyq(t,{...meta,label:fsName.value.trim()||"Full Syllabus Mock Test"});
+        S.tests.push(paper.test);
+        if(pyqState.index)pyqState.index=pyqState.index.filter(p=>p.id!==paper.meta.id).concat([paper.meta]);
+        toast("PYQ paper saved to this device · "+paper.meta.label);
+        pyqState.year=paper.meta.year;go("pyq");
+      }else{
+        const published=await publishPublicTest(t,{Physics:f,Chemistry:f,Mathematics:f},m=>fsSt.textContent=m,meta);
+        cloudTests.unshift(published);S.tests.push(published);
+        toast("Full syllabus mock published · "+published.testId);go("library");
+      }
     }catch(e){fsSt.textContent="Failed: "+e.message;toast("Publish failed: "+e.message,4500);}
     fsBtn.disabled=false;fsIn.value="";
   };
@@ -6256,7 +6290,44 @@ function viewLive(root){
    else: full timer, palette, marking scheme, analytics, percentile,
    mistake notebook — everything just works. */
 let pyqState={index:null,loading:false,error:null,year:null};
-const PYQ_MONTH_ORDER=["January","February","March","April","June","July","August","September","Offline","AIEEE"];
+const PYQ_MONTH_ORDER=["My Papers","January","February","March","April","June","July","August","September","Offline","AIEEE"];
+/* ---- USER-UPLOADED PYQ PAPERS -------------------------------------
+   When a user uploads a paper and picks the PYQ destination, the paper is
+   saved ON THIS DEVICE only (localStorage, key jeecbt.userPyq) and served
+   from the app itself — it is NEVER pushed to Supabase. It shows up in the
+   PYQ section right beside the baked official papers and runs in the same
+   CBT engine. Storage is bounded: ~1MB per paper keeps a healthy headroom
+   under the 5MB localStorage cap. */
+const USER_PYQ_KEY="jeecbt.userPyq";
+function userPyqStore(){
+  try{const d=JSON.parse(localStorage.getItem(USER_PYQ_KEY)||"null");
+    if(d&&Array.isArray(d.papers))return d.papers;}catch(e){}
+  return [];
+}
+function saveUserPyqStore(papers){
+  // storage hygiene: keep at most 8 user papers so we never approach the cap
+  if(papers.length>8)papers=papers.slice(papers.length-8);
+  try{localStorage.setItem(USER_PYQ_KEY,JSON.stringify({papers}));return true;}
+  catch(e){toast("Could not save the PYQ paper — device storage is full.");return false;}
+}
+function userPyqMetas(){return userPyqStore().map(p=>p.meta);}
+/** Persist a built test as a user PYQ paper and return {meta, test}. */
+function saveLocalPyq(test,meta){
+  const counts={Physics:0,Chemistry:0,Mathematics:0};
+  let mcq=0,integer=0;
+  (test.questions||[]).forEach(q=>{
+    if(counts[q.subject]!=null)counts[q.subject]++;
+    if(q.type==="integer")integer++;else mcq++;
+  });
+  const id="user-pyq-"+crypto.randomUUID();
+  test.pyq=true;test.pyqId=id;
+  const paper={meta:{id,year:meta.year||new Date().getFullYear(),month:"My Papers",
+    label:meta.label||test.name,total:test.questions.length,counts,mcq,integer,user:true},test};
+  const store=userPyqStore();
+  store.push(paper);
+  saveUserPyqStore(store);
+  return paper;
+}
 async function pyqLoadIndex(force){
   if(pyqState.loading)return;
   if(!force&&pyqState.index)return;
@@ -6300,6 +6371,21 @@ async function pyqLoadIndex(force){
 async function pyqStart(meta,btn){
   const existing=S.tests.find(t=>t.pyqId===meta.id);
   if(existing){startExam(existing.id);return;}
+  // User-uploaded PYQ papers live on THIS device — serve them straight from
+  // the app, no network, no Supabase. (If pruned for storage, rebuild from
+  // the store so they still open in one tap.)
+  if(meta.id&&meta.user){
+    const store=userPyqStore().find(p=>p.meta.id===meta.id);
+    if(store&&store.test){
+      if(btn){btn.disabled=true;btn.innerHTML=ic("clock")+" Loading…";}
+      ensureKatex();
+      const t=store.test;
+      S.tests.push(t);save();
+      startExam(t.id);
+      if(btn)btn.disabled=false;
+      return;
+    }
+  }
   if(btn){btn.disabled=true;btn.innerHTML=ic("clock")+" Loading…";}
   try{
     // static file on our own site first; API fallback second
@@ -6360,7 +6446,10 @@ function pyqBestScore(meta){
 }
 function viewPyq(root){
   const hero=el("div","card pyq-hero");
-  const idx=pyqState.index||[];
+  // merge the user's on-device PYQ papers in with the baked official ones
+  const allIdx=(pyqState.index||[]).concat(userPyqMetas());
+  const seen=new Set(),idx=[];
+  allIdx.forEach(p=>{if(!p||!p.id||seen.has(p.id))return;seen.add(p.id);idx.push(p);});
   const years=[...new Set(idx.map(p=>p.year))].sort((a,b)=>b-a);
   const totalQ=idx.reduce((s,p)=>s+p.total,0);
   hero.innerHTML=`<div style="position:relative">
@@ -6410,7 +6499,7 @@ function viewPyq(root){
   sessions.forEach(mon=>{
     const papers=inYear.filter(p=>p.month===mon);
     const sec=el("div","pyq-session");
-    const label=mon==="Offline"?"Offline Paper":mon==="AIEEE"?"AIEEE Era":mon+" Session";
+    const label=mon==="Offline"?"Offline Paper":mon==="AIEEE"?"AIEEE Era":mon==="My Papers"?"My Papers":mon+" Session";
     sec.innerHTML=`<h3>${esc(label)}<span class="small muted">${papers.length} paper${papers.length>1?"s":""}</span></h3>`;
     const g=el("div","pyq-grid");
     papers.forEach(meta=>{
