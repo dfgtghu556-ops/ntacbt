@@ -73,7 +73,12 @@ function parsePhysics(text) {
     let c;
     while ((c = chRe.exec(seg))) {
       const description = clean(c[3]).slice(0, 4000);
-      chapters.push({ no: Number(c[1]), name: clean(c[2]), description, topics: topicsFrom(description) });
+      chapters.push({
+        no: Number(c[1]),
+        name: clean(c[2]),
+        description,
+        topics: topicsFrom(description),
+      });
     }
     if (!chapters.length) continue;
     units.push({
@@ -92,7 +97,8 @@ function parseChemistry(text) {
   if (start < 0) throw new Error("Chemistry: Class XII units not found");
   const body = text.slice(start);
   const units = [];
-  const re = /^Unit\s+(\d+)\s*:\s*([^\n]+)\n([\s\S]*?)(?=^Unit\s+\d+\s*:|^PRACTICALS|^Prescribed|$)/gm;
+  const re =
+    /^Unit\s+(\d+)\s*:\s*([^\n]+)\n([\s\S]*?)(?=^Unit\s+\d+\s*:|^PRACTICALS|^Prescribed|$)/gm;
   let m;
   const markTable = {};
   const mt = /^\s*(\d{1,2})\s{2,}([A-Za-z][^\n]*?)\s{2,}(\d{1,2})\s*$/gm;
@@ -118,7 +124,8 @@ function parseMaths(text) {
   if (start < 0) throw new Error("Mathematics: Class XII units not found");
   const body = text.slice(start);
   const units = [];
-  const re = /^Unit[-–]\s*([IVX]+)\s*:\s*([^\n]+)\n([\s\S]*?)(?=^Unit[-–]\s*[IVX]+\s*:|^MATHEMATICS|^Prescribed|$)/gm;
+  const re =
+    /^Unit[-–]\s*([IVX]+)\s*:\s*([^\n]+)\n([\s\S]*?)(?=^Unit[-–]\s*[IVX]+\s*:|^MATHEMATICS|^Prescribed|$)/gm;
   let m;
   while ((m = re.exec(body))) {
     const seg = m[3];
@@ -127,7 +134,12 @@ function parseMaths(text) {
     let c;
     while ((c = chRe.exec(seg))) {
       const description = clean(c[3]).slice(0, 4000);
-      chapters.push({ no: Number(c[1]), name: clean(c[2]), description, topics: topicsFrom(description) });
+      chapters.push({
+        no: Number(c[1]),
+        name: clean(c[2]),
+        description,
+        topics: topicsFrom(description),
+      });
     }
     if (!chapters.length) {
       const description = clean(seg).slice(0, 4000);
@@ -148,7 +160,9 @@ for (const s of SUBJECTS) {
   const units = PARSERS[s.name](text);
   const chapterCount = units.reduce((a, u) => a + u.chapters.length, 0);
   if (!units.length || chapterCount < 6) {
-    throw new Error(`${s.name}: parsed only ${chapterCount} chapters — refusing to emit partial syllabus`);
+    throw new Error(
+      `${s.name}: parsed only ${chapterCount} chapters — refusing to emit partial syllabus`,
+    );
   }
   subjects.push({
     name: s.name,

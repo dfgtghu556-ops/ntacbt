@@ -6,32 +6,32 @@ paper's own title block — no guessing.
 
 ## January 2026 Session-1 (10 papers)
 
-| File (prefix)          | Paper                |
-|------------------------|----------------------|
-| X0dVBbZomUVsyDED1JZx   | 21 January 2026 S1   |
-| hzPlYFzdqkFPaQIgWcBN   | 21 January 2026 S2   |
-| BPD4dLYdvGj7xm8cDL66   | 22 January 2026 S1   |
-| EtBWnJs3E0PPblHCTwq2   | 22 January 2026 S2   |
-| 75UG8OUubPYvBFELOMtO   | 23 January 2026 S1   |
-| OV8iq7inKceolGYsbYCn   | 23 January 2026 S2   |
-| sbYuHEX7JdgSJ5l1liBf   | 24 January 2026 S1   |
-| RfF8KJW24khYaqoVbSjO   | 24 January 2026 S2   |
-| cEDaK5Wn5ILe4nOdotd6   | 28 January 2026 S1   |
-| GZhYQcqGs7JdWcFJlYCQ   | 28 January 2026 S2   |
+| File (prefix)        | Paper              |
+| -------------------- | ------------------ |
+| X0dVBbZomUVsyDED1JZx | 21 January 2026 S1 |
+| hzPlYFzdqkFPaQIgWcBN | 21 January 2026 S2 |
+| BPD4dLYdvGj7xm8cDL66 | 22 January 2026 S1 |
+| EtBWnJs3E0PPblHCTwq2 | 22 January 2026 S2 |
+| 75UG8OUubPYvBFELOMtO | 23 January 2026 S1 |
+| OV8iq7inKceolGYsbYCn | 23 January 2026 S2 |
+| sbYuHEX7JdgSJ5l1liBf | 24 January 2026 S1 |
+| RfF8KJW24khYaqoVbSjO | 24 January 2026 S2 |
+| cEDaK5Wn5ILe4nOdotd6 | 28 January 2026 S1 |
+| GZhYQcqGs7JdWcFJlYCQ | 28 January 2026 S2 |
 
 ## April 2026 Session-1 (9 papers)
 
-| File (prefix)          | Paper                |
-|------------------------|----------------------|
-| vjbspTs09FPcGY3xbonJ   | 02 April 2026 S1     |
-| qi62GA4EorhhC40ZKWzq   | 02 April 2026 S2     |
-| 5Vhxm2G5vqu3EYX1Vs0a   | 04 April 2026 S1     |
-| uw8LHJQzwX36Pxa5GFEA   | 04 April 2026 S2     |
-| v2Bl3Hd2dHXr4yGJGFMs   | 05 April 2026 S1     |
-| wn5Es1sxkATmuDcSPsxA   | 05 April 2026 S2     |
-| aG4gsIczmgvS9AXfC0RN   | 06 April 2026 S1     |
-| 2i7F6SsQOGUlrHyYx6V1   | 06 April 2026 S2     |
-| zSsCaG617CetJiuFdYdi   | 08 April 2026 S2     |
+| File (prefix)        | Paper            |
+| -------------------- | ---------------- |
+| vjbspTs09FPcGY3xbonJ | 02 April 2026 S1 |
+| qi62GA4EorhhC40ZKWzq | 02 April 2026 S2 |
+| 5Vhxm2G5vqu3EYX1Vs0a | 04 April 2026 S1 |
+| uw8LHJQzwX36Pxa5GFEA | 04 April 2026 S2 |
+| v2Bl3Hd2dHXr4yGJGFMs | 05 April 2026 S1 |
+| wn5Es1sxkATmuDcSPsxA | 05 April 2026 S2 |
+| aG4gsIczmgvS9AXfC0RN | 06 April 2026 S1 |
+| 2i7F6SsQOGUlrHyYx6V1 | 06 April 2026 S2 |
+| zSsCaG617CetJiuFdYdi | 08 April 2026 S2 |
 
 ## Dedup vs. existing baked Samkarya coverage
 

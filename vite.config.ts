@@ -35,7 +35,10 @@ export default defineConfig({
             {
               urlPattern: /^https:\/\/cdnjs\.cloudflare\.com\/.*/i,
               handler: "CacheFirst",
-              options: { cacheName: "cdn-libs", expiration: { maxEntries: 20, maxAgeSeconds: 2592000 } },
+              options: {
+                cacheName: "cdn-libs",
+                expiration: { maxEntries: 20, maxAgeSeconds: 2592000 },
+              },
             },
             {
               urlPattern: ({ url, request }: { url: URL; request: Request }) =>

@@ -21,13 +21,13 @@ import { createFileRoute } from "@tanstack/react-router";
  */
 
 interface LiveItem {
-  id: string;          // YouTube video id
+  id: string; // YouTube video id
   title: string;
   channel: string;
   channelId: string;
-  viewers: string;     // e.g. "1.2K watching" (best-effort)
-  live: boolean;       // true = LIVE now, false = upcoming/premiere caught by filter
-  query: string;       // which search query surfaced it (debug/rank aid)
+  viewers: string; // e.g. "1.2K watching" (best-effort)
+  live: boolean; // true = LIVE now, false = upcoming/premiere caught by filter
+  query: string; // which search query surfaced it (debug/rank aid)
 }
 
 const SP_LIVE = "EgJAAQ%3D%3D"; // YouTube search filter: Type=Video, Feature=Live
@@ -54,7 +54,8 @@ function collect(node: unknown, key: string, out: Record<string, unknown>[], dep
   }
   const obj = node as Record<string, unknown>;
   for (const k of Object.keys(obj)) {
-    if (k === key && obj[k] && typeof obj[k] === "object") out.push(obj[k] as Record<string, unknown>);
+    if (k === key && obj[k] && typeof obj[k] === "object")
+      out.push(obj[k] as Record<string, unknown>);
     collect(obj[k], key, out, depth + 1);
   }
 }
@@ -107,17 +108,23 @@ function parseSearchPage(html: string, query: string): LiveItem[] {
     let channelId = "";
     try {
       const runs = (r["ownerText"] as { runs?: unknown[] })?.runs as
-        | { navigationEndpoint?: { browseEndpoint?: { browseId?: string } } }[]
-        | undefined;
+        { navigationEndpoint?: { browseEndpoint?: { browseId?: string } } }[] | undefined;
       channelId = runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId || "";
     } catch {
       /* optional */
     }
     // "1,234 watching" / shortViewCountText "1.2K watching"
-    const viewers =
-      textOf(r["shortViewCountText"]) || textOf(r["viewCountText"]) || "";
+    const viewers = textOf(r["shortViewCountText"]) || textOf(r["viewCountText"]) || "";
     if (!title || !channel) continue;
-    items.push({ id, title, channel: channel.slice(0, 80), channelId, viewers: viewers.slice(0, 40), live, query });
+    items.push({
+      id,
+      title,
+      channel: channel.slice(0, 80),
+      channelId,
+      viewers: viewers.slice(0, 40),
+      live,
+      query,
+    });
   }
   return items;
 }
@@ -126,7 +133,9 @@ async function fetchLive(query: string): Promise<LiveItem[]> {
   const url =
     "https://www.youtube.com/results?search_query=" +
     encodeURIComponent(query) +
-    "&sp=" + SP_LIVE + "&hl=en&gl=IN";
+    "&sp=" +
+    SP_LIVE +
+    "&hl=en&gl=IN";
   const r = await fetch(url, {
     headers: {
       "User-Agent":
@@ -166,7 +175,12 @@ export const Route = createFileRoute("/api/public/live-classes")({
         const key = level + "|" + subject;
         const hit = cache.get(key);
         if (hit && Date.now() - hit.at < TTL) {
-          return Response.json({ items: hit.items, fetchedAt: hit.at, fallback: hit.fallback, cached: true });
+          return Response.json({
+            items: hit.items,
+            fetchedAt: hit.at,
+            fallback: hit.fallback,
+            cached: true,
+          });
         }
         const queries = buildQueries(level, subject);
         const settled = await Promise.allSettled(queries.map((q) => fetchLive(q)));

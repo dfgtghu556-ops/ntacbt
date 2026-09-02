@@ -10,7 +10,10 @@ export const Route = createFileRoute("/")({
         content:
           "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
       },
-      { property: "og:title", content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
+      {
+        property: "og:title",
+        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+      },
       {
         property: "og:description",
         content:

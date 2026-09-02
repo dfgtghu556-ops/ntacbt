@@ -13,7 +13,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # needed to create/update the release
+  contents: write # needed to create/update the release
 
 jobs:
   build:

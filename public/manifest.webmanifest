@@ -14,8 +14,20 @@
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Start next test", "url": "/jee-cbt.html#library", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Mistake Notebook", "url": "/jee-cbt.html#notebook", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Analytics", "url": "/jee-cbt.html#analytics", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Start next test",
+      "url": "/jee-cbt.html#library",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mistake Notebook",
+      "url": "/jee-cbt.html#notebook",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Analytics",
+      "url": "/jee-cbt.html#analytics",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

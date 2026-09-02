@@ -1,0 +1,6 @@
+{
+  "name": "NTA JEE Main CBT Platform",
+  "description": "Comprehensive offline-first JEE Main CBT exam portal featuring authentic previous year papers, AI doubt solving, and smart study planning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

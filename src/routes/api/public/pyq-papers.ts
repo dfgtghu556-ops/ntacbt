@@ -28,7 +28,8 @@ interface PyqQuestion {
   options: { label: string; text: string }[];
   answer: string;
   /** Non-exact integer keys NTA published: {kind:"range",lo,hi} | {kind:"any",vals} | {kind:"all"} (bonus) */
-  accept?: { kind: "range"; lo: number; hi: number } | { kind: "any"; vals: number[] } | { kind: "all" };
+  accept?:
+    { kind: "range"; lo: number; hi: number } | { kind: "any"; vals: number[] } | { kind: "all" };
   sol: string;
 }
 interface PaperMeta {
@@ -72,18 +73,27 @@ export function parseIntegerKey(raw: string): { answer: string; accept?: PyqQues
   if (!s || /bonus/i.test(s)) return { answer: "0", accept: { kind: "all" } };
   const range = s.match(/^(-?[\d.]+)\s*to\s*(-?[\d.]+)$/i);
   if (range) {
-    const lo = parseFloat(range[1] ?? ""), hi = parseFloat(range[2] ?? "");
+    const lo = parseFloat(range[1] ?? ""),
+      hi = parseFloat(range[2] ?? "");
     if (isFinite(lo) && isFinite(hi))
-      return { answer: String(lo), accept: { kind: "range", lo: Math.min(lo, hi), hi: Math.max(lo, hi) } };
+      return {
+        answer: String(lo),
+        accept: { kind: "range", lo: Math.min(lo, hi), hi: Math.max(lo, hi) },
+      };
   }
-  const anyOf = s.split(/\s*OR\s*/i).map((x) => parseFloat(x)).filter((x) => isFinite(x));
+  const anyOf = s
+    .split(/\s*OR\s*/i)
+    .map((x) => parseFloat(x))
+    .filter((x) => isFinite(x));
   if (anyOf.length > 1) return { answer: String(anyOf[0]), accept: { kind: "any", vals: anyOf } };
   const n = parseFloat(s.replace(/,/g, ""));
   return { answer: isFinite(n) ? String(n) : s };
 }
 
 /** Raw dataset row → clean question (null = unusable row, skipped). */
-export function transformRow(row: Record<string, unknown>): (PyqQuestion & { paperId: string }) | null {
+export function transformRow(
+  row: Record<string, unknown>,
+): (PyqQuestion & { paperId: string }) | null {
   const paperId = String(row["paper_id"] || "");
   const subject = SUBJ[String(row["subject"] || "").toLowerCase()];
   const text = String(row["question"] || "").trim();
@@ -100,10 +110,16 @@ export function transformRow(row: Record<string, unknown>): (PyqQuestion & { pap
     accept = parsed.accept;
   } else {
     try {
-      const opts = JSON.parse(String(row["options"] || "[]")) as { identifier?: string; content?: string }[];
+      const opts = JSON.parse(String(row["options"] || "[]")) as {
+        identifier?: string;
+        content?: string;
+      }[];
       options = opts
         .filter((o) => o && o.identifier)
-        .map((o) => ({ label: String(o.identifier).toLowerCase(), text: String(o.content || "").trim() }));
+        .map((o) => ({
+          label: String(o.identifier).toLowerCase(),
+          text: String(o.content || "").trim(),
+        }));
     } catch {
       return null;
     }
@@ -116,7 +132,9 @@ export function transformRow(row: Record<string, unknown>): (PyqQuestion & { pap
     }
     if (!answer || !options.some((o) => o.label === answer)) return null;
   }
-  const sol = String(row["explanation"] || row["solution"] || "").trim().slice(0, 2400);
+  const sol = String(row["explanation"] || row["solution"] || "")
+    .trim()
+    .slice(0, 2400);
   return {
     paperId,
     no: 0,
@@ -134,7 +152,9 @@ export function transformRow(row: Record<string, unknown>): (PyqQuestion & { pap
 
 /** "jee-main-2024-online-27th-january-morning-shift" → meta parts */
 export function parsePaperId(id: string): { year: number; month: string; label: string } | null {
-  let m = id.match(/^jee-main-(\d{4})-online-(\d+)(?:st|nd|rd|th)?-([a-z]+)-(morning|evening)-(?:shift|slot)$/i);
+  let m = id.match(
+    /^jee-main-(\d{4})-online-(\d+)(?:st|nd|rd|th)?-([a-z]+)-(morning|evening)-(?:shift|slot)$/i,
+  );
   if (m) {
     const month = pretty(m[3] ?? "");
     return {
@@ -145,8 +165,15 @@ export function parsePaperId(id: string): { year: number; month: string; label: 
   }
   m = id.match(/^jee-main-(\d{4})-offline$/i);
   if (m) return { year: +(m[1] ?? 0), month: "Offline", label: "Offline Paper" };
-  m = id.match(/^jee-main-(\d{4})-online-(\d+)(?:st|nd|rd|th)?-([a-z]+)-(?:morning|evening)?-?(?:shift|slot)?$/i);
-  if (m) return { year: +(m[1] ?? 0), month: pretty(m[3] ?? ""), label: `${m[2]} ${pretty(m[3] ?? "").slice(0, 3)}` };
+  m = id.match(
+    /^jee-main-(\d{4})-online-(\d+)(?:st|nd|rd|th)?-([a-z]+)-(?:morning|evening)?-?(?:shift|slot)?$/i,
+  );
+  if (m)
+    return {
+      year: +(m[1] ?? 0),
+      month: pretty(m[3] ?? ""),
+      label: `${m[2]} ${pretty(m[3] ?? "").slice(0, 3)}`,
+    };
   m = id.match(/^aieee-(\d{4})$/i);
   if (m) return { year: +(m[1] ?? 0), month: "AIEEE", label: `AIEEE ${m[1]} (Full Paper)` };
   return null;
@@ -176,7 +203,8 @@ export function buildDataset(rows: Record<string, unknown>[]): Dataset {
         (a.type === b.type ? 0 : a.type === "mcq" ? -1 : 1),
     );
     const counts = { Physics: 0, Chemistry: 0, Mathematics: 0 };
-    let mcq = 0, integer = 0;
+    let mcq = 0,
+      integer = 0;
     qs.forEach((q, i) => {
       q.no = i + 1;
       counts[q.subject]++;
@@ -184,7 +212,16 @@ export function buildDataset(rows: Record<string, unknown>[]): Dataset {
       else integer++;
     });
     papers[id] = qs.map(({ paperId: _p, ...rest }) => rest);
-    index.push({ id, year: meta.year, month: meta.month, label: meta.label, total: qs.length, counts, mcq, integer });
+    index.push({
+      id,
+      year: meta.year,
+      month: meta.month,
+      label: meta.label,
+      total: qs.length,
+      counts,
+      mcq,
+      integer,
+    });
   }
   index.sort((a, b) => b.year - a.year || a.id.localeCompare(b.id));
   return { v: 1, builtAt: Date.now(), papers, index };
@@ -197,7 +234,10 @@ async function loadFromUpstream(): Promise<Dataset | null> {
     const buf = await r.arrayBuffer();
     const { parquetReadObjects } = await import("hyparquet");
     const { compressors } = await import("hyparquet-compressors");
-    const rows = (await parquetReadObjects({ file: buf, compressors })) as Record<string, unknown>[];
+    const rows = (await parquetReadObjects({ file: buf, compressors })) as Record<
+      string,
+      unknown
+    >[];
     if (!rows?.length) return null;
     const data = buildDataset(rows);
     return data.index.length ? data : null;
@@ -213,9 +253,14 @@ async function loadFromRowsApi(): Promise<Dataset | null> {
   const base =
     "https://datasets-server.huggingface.co/rows?dataset=ruh-ai%2Fgrafite-jee-mains-qna-no-img&config=default&split=train";
   try {
-    const first = await fetch(`${base}&offset=0&length=100`, { signal: AbortSignal.timeout(20_000) });
+    const first = await fetch(`${base}&offset=0&length=100`, {
+      signal: AbortSignal.timeout(20_000),
+    });
     if (!first.ok) return null;
-    const fd = (await first.json()) as { num_rows_total?: number; rows?: { row: Record<string, unknown> }[] };
+    const fd = (await first.json()) as {
+      num_rows_total?: number;
+      rows?: { row: Record<string, unknown> }[];
+    };
     const total = fd.num_rows_total || 0;
     if (!total || !fd.rows?.length) return null;
     const all: Record<string, unknown>[] = fd.rows.map((r) => r.row);
@@ -226,7 +271,9 @@ async function loadFromRowsApi(): Promise<Dataset | null> {
       const batch = offsets.slice(i, i + 5);
       const results = await Promise.allSettled(
         batch.map(async (o) => {
-          const r = await fetch(`${base}&offset=${o}&length=100`, { signal: AbortSignal.timeout(20_000) });
+          const r = await fetch(`${base}&offset=${o}&length=100`, {
+            signal: AbortSignal.timeout(20_000),
+          });
           if (!r.ok) throw new Error(String(r.status));
           const d = (await r.json()) as { rows?: { row: Record<string, unknown> }[] };
           return (d.rows || []).map((x) => x.row);
@@ -268,7 +315,10 @@ export const Route = createFileRoute("/api/public/pyq-papers")({
         const data = await ensureData();
         if (!data) {
           return Response.json(
-            { error: "PYQ library is warming up or temporarily unreachable — try again in a minute." },
+            {
+              error:
+                "PYQ library is warming up or temporarily unreachable — try again in a minute.",
+            },
             { status: 503 },
           );
         }

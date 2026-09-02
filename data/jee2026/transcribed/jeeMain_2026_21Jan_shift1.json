@@ -5,7 +5,7 @@
     "topic": "Inverse Trigonometric Functions",
     "question_type": "mcq",
     "question_text": "If the domain of the function f(x) = cos⁻¹((2x-5)/(11-3x)) + sin⁻¹(2x²-3x+1) is the interval [α, β], then α+2β is equal to:",
-    "options": {"1":"1", "2":"3", "3":"5", "4":"2"},
+    "options": { "1": "1", "2": "3", "3": "5", "4": "2" },
     "correct_answer": "2",
     "explanation": "cos⁻¹ requires -1≤(2x-5)/(11-3x)≤1 giving x∈[16/5, 6]∪(-∞,...] and sin⁻¹ requires -1≤2x²-3x+1≤1 giving x∈[0,3/2]. Intersection is x∈[0,3/2], so α=0, β=3/2 and α+2β=3."
   },
@@ -15,7 +15,7 @@
     "topic": "Application of Integrals",
     "question_type": "mcq",
     "question_text": "The area of the region, inside the ellipse x²+4y²=4 and outside the region bounded by the curves y=|x|-1 and y=1-|x|, is:",
-    "options": {"1":"2(π-1)", "2":"2π-1/2", "3":"3(π-1)", "4":"2π-1"},
+    "options": { "1": "2(π-1)", "2": "2π-1/2", "3": "3(π-1)", "4": "2π-1" },
     "correct_answer": "1",
     "explanation": "The ellipse has semi-axes 2 and 1, so its area is π·2·1=2π. The two V-shaped curves enclose a diamond of area 2. Required area = 2π - 2 = 2(π-1)."
   },
@@ -25,7 +25,7 @@
     "topic": "Relations and Functions",
     "question_type": "mcq",
     "question_text": "The number of relations, defined on the set {a, b, c, d}, which are both reflexive and symmetric, is equal to:",
-    "options": {"1":"256", "2":"16", "3":"1024", "4":"64"},
+    "options": { "1": "256", "2": "16", "3": "1024", "4": "64" },
     "correct_answer": "4",
     "explanation": "A reflexive and symmetric relation on an n-element set is determined by the (n²-n)/2 off-diagonal unordered pairs, each chosen freely. Here n=4, giving 6 free pairs and 2⁶=64 such relations."
   },
@@ -35,7 +35,7 @@
     "topic": "Straight Lines",
     "question_type": "mcq",
     "question_text": "Let a point A lie between the parallel lines L₁ and L₂ such that its distances from L₁ and L₂ are 6 and 3 units respectively. Then the area (in sq. units) of the equilateral triangle ABC, where the points B and C lie on the lines L₁ and L₂ respectively, is:",
-    "options": {"1":"15√6", "2":"27", "3":"21√3", "4":"12√2"},
+    "options": { "1": "15√6", "2": "27", "3": "21√3", "4": "12√2" },
     "correct_answer": "3",
     "explanation": "The distance between the two parallel lines is 9. From the geometry the side of the equilateral triangle is √84, so the area is (√3/4)(√84)² = 21√3 sq. units."
   },
@@ -45,7 +45,7 @@
     "topic": "Vector Algebra",
     "question_type": "mcq",
     "question_text": "Let a = -î+2ĵ+2k̂, b = 8î+7ĵ-3k̂ and c be a vector such that a×c = b. If c·(î+ĵ+k̂) = 4, then |a+c|² is equal to:",
-    "options": {"1":"33", "2":"30", "3":"35", "4":"27"},
+    "options": { "1": "33", "2": "30", "3": "35", "4": "27" },
     "correct_answer": "4",
     "explanation": "Solving a×c=b component-wise with a=(-1,2,2) together with c·(1,1,1)=4 gives c=(2,-1,3). Then a+c=(1,1,5) and |a+c|²=1+1+25=27."
   },
@@ -55,7 +55,7 @@
     "topic": "Sequences & Series",
     "question_type": "mcq",
     "question_text": "Let a₁, a₂, a₃, … be a G.P. of increasing positive terms such that a₂·a₃·a₄ = 64 and a₁+a₃+a₅ = 813/7. Then a₃+a₅+a₇ is equal to:",
-    "options": {"1":"3256", "2":"3252", "3":"3244", "4":"3248"},
+    "options": { "1": "3256", "2": "3252", "3": "3244", "4": "3248" },
     "correct_answer": "2",
     "explanation": "With terms a, ar, ar²,…, a₂a₃a₄=(ar²)³=64 gives ar²=4. Then a(1+r²+r⁴)=813/7 gives r²=28, a=1/7. Hence a₃+a₅+a₇=ar²(1+r²+r⁴)=4(1+28+784)=3252."
   },
@@ -65,7 +65,7 @@
     "topic": "Vector Algebra",
     "question_type": "mcq",
     "question_text": "Let c and d be vectors such that |c+d|=√29 and c×(2î+3ĵ+4k̂) = (2î+3ĵ+4k̂)×d. If λ₁, λ₂ (λ₁>λ₂) are the possible values of (c+d)·(-7î+2ĵ+3k̂), then the equation K²x²+(K²-5K+λ₁)xy+(3K+λ₂²)y²-8x+12y+λ₂=0 represents a circle, for K equal to:",
-    "options": {"1":"4", "2":"1", "3":"-1", "4":"2"},
+    "options": { "1": "4", "2": "1", "3": "-1", "4": "2" },
     "correct_answer": "2",
     "explanation": "The condition implies (c+d) is parallel to (2î+3ĵ+4k̂). With |c+d|=√29, c+d=±(2î+3ĵ+4k̂), giving (c+d)·(-7î+2ĵ+3k̂)=±4, so λ₁=4, λ₂=-4. For a circle the xy-coefficient must vanish: K²-5K+4=0 ⇒ K=1 or 4. Checking the circle condition gives K=1."
   },
@@ -75,7 +75,12 @@
     "topic": "Differential Equations",
     "question_type": "mcq",
     "question_text": "Let y=y(x) be the solution curve of the differential equation (1+x²)dy + (y-tan⁻¹x)dx = 0, y(0)=1. Then the value of y(1) is:",
-    "options": {"1":"4/e^(π/4) - π/2 - 1", "2":"2/e^(π/4) + π/4 - 1", "3":"2/e^(π/4) - π/4 - 1", "4":"4/e^(π/4) + π/2 - 1"},
+    "options": {
+      "1": "4/e^(π/4) - π/2 - 1",
+      "2": "2/e^(π/4) + π/4 - 1",
+      "3": "2/e^(π/4) - π/4 - 1",
+      "4": "4/e^(π/4) + π/2 - 1"
+    },
     "correct_answer": "1",
     "explanation": "Rewrite as dy/dx + y/(1+x²) = tan⁻¹x/(1+x²). The integrating factor is e^(tan⁻¹x). Solving with y(0)=1 gives y(1)=4/e^(π/4) - π/2 - 1."
   },
@@ -85,7 +90,7 @@
     "topic": "Permutations & Combinations",
     "question_type": "mcq",
     "question_text": "The number of strictly increasing functions f from the set {1, 2, 3, 4, 5, 6} to the set {1, 2, 3, …, 9} such that f(i) ≠ i for 1≤i≤6, is equal to:",
-    "options": {"1":"21", "2":"27", "3":"22", "4":"28"},
+    "options": { "1": "21", "2": "27", "3": "22", "4": "28" },
     "correct_answer": "4",
     "explanation": "Counting cases by the value of f(1): f(1)=2 gives ²¹C₁=21, f(1)=3 gives ⁶C₁=6, f(1)=4 gives ¹C₁=1. Total = 21+6+1 = 28."
   },
@@ -95,7 +100,7 @@
     "topic": "Limits, Continuity & Differentiability",
     "question_type": "mcq",
     "question_text": "Let f: R → (0, ∞) be a twice differentiable function such that f(3)=18, f′(3)=0 and f″(3)=4. Then lim(x→1) logₑ[f(2+x)/f(3)]^(18/(x-1)²) is equal to:",
-    "options": {"1":"1", "2":"9", "3":"2", "4":"18"},
+    "options": { "1": "1", "2": "9", "3": "2", "4": "18" },
     "correct_answer": "3",
     "explanation": "Let the limit be T. Then log T = lim 18·log(f(2+x)/18)/(x-1)². Putting h=x-1, f(3+h)≈18+2h², so log(f(3+h)/18)≈h²/9. Hence log T=18·(1/9)=2, so T=e² and log T=2."
   },
@@ -105,7 +110,7 @@
     "topic": "Conic Sections",
     "question_type": "mcq",
     "question_text": "Let the foci of a hyperbola coincide with the foci of the ellipse x²/36 + y²/16 = 1. If the eccentricity of the hyperbola is 5, then the length of its latus rectum is:",
-    "options": {"1":"12", "2":"16", "3":"96/√5", "4":"24√5"},
+    "options": { "1": "12", "2": "16", "3": "96/√5", "4": "24√5" },
     "correct_answer": "3",
     "explanation": "The ellipse has a=6, b=4, so its focal distance is √(36-16)=2√5. For the hyperbola with e=5 the focal distance satisfies ae=2√5, giving b²=a²(e²-1)=16/5. Latus rectum = 2b²/a = 96/√5."
   },
@@ -115,7 +120,7 @@
     "topic": "Definite Integration & Area",
     "question_type": "mcq",
     "question_text": "The value of ∫(from -π/6 to π/6) (π+4x¹¹)/(1-sin(|x|+π/6)) dx is equal to:",
-    "options": {"1":"2π", "2":"4π", "3":"8π", "4":"6π"},
+    "options": { "1": "2π", "2": "4π", "3": "8π", "4": "6π" },
     "correct_answer": "2",
     "explanation": "The 4x¹¹ term is odd and integrates to zero over the symmetric interval. Substituting t=x+π/6 reduces the remaining integral to 2π∫sec²t dt + 2π∫sect·tant dt over [π/6,π/3], which evaluates to 4π."
   },
@@ -125,7 +130,7 @@
     "topic": "Probability",
     "question_type": "mcq",
     "question_text": "Let the mean and variance of 7 observations 2, 4, 10, x, 12, 14, y, where x>y, be 8 and 16 respectively. Two numbers are chosen from {1, 2, 3, x-4, y, 5} one after another without replacement, then the probability that the smaller number among the two chosen numbers is less than 4, is:",
-    "options": {"1":"3/5", "2":"4/5", "3":"2/5", "4":"1/3"},
+    "options": { "1": "3/5", "2": "4/5", "3": "2/5", "4": "1/3" },
     "correct_answer": "2",
     "explanation": "Mean 8 gives x+y=14; variance 16 gives x²+y²=100, so (x,y)=(8,6). The set becomes {1,2,3,4,6,5}. Total ordered draws = 6×5=30. Draws where the smaller is ≥4 come from {4,6,5}: 3×2=6. P(smaller<4)=1-6/30=4/5."
   },
@@ -135,7 +140,7 @@
     "topic": "Three Dimensional Geometry",
     "question_type": "mcq",
     "question_text": "Let (α, β, γ) be the co-ordinates of the foot of the perpendicular drawn from the point (5, 4, 2) on the line r = (-î+3ĵ+k̂) + λ(2î+3ĵ-k̂). Then the length of the projection of the vector αî+βĵ+γk̂ on the vector 6î+2ĵ+3k̂ is:",
-    "options": {"1":"15/7", "2":"4", "3":"18/7", "4":"3"},
+    "options": { "1": "15/7", "2": "4", "3": "18/7", "4": "3" },
     "correct_answer": "3",
     "explanation": "The foot of the perpendicular is (1, 6, 0), so u=î+6ĵ. The projection on w=6î+2ĵ+3k̂ is (u·w)/|w| = (6+12)/7 = 18/7."
   },
@@ -145,7 +150,12 @@
     "topic": "Conic Sections",
     "question_type": "mcq",
     "question_text": "Let PQ and MN be two straight lines touching the circle x²+y²-4x-6y-3=0 at the points A and B respectively. Let O be the centre of the circle and ∠AOB=π/3. Then the locus of the point of intersection of the lines PQ and MN is:",
-    "options": {"1":"3(x²+y²)-18x-12y+25=0", "2":"x²+y²-12x-18y-25=0", "3":"x²+y²-18x-12y-25=0", "4":"3(x²+y²)-12x-18y-25=0"},
+    "options": {
+      "1": "3(x²+y²)-18x-12y+25=0",
+      "2": "x²+y²-12x-18y-25=0",
+      "3": "x²+y²-18x-12y-25=0",
+      "4": "3(x²+y²)-12x-18y-25=0"
+    },
     "correct_answer": "4",
     "explanation": "The circle has centre C(2,3) and radius 4. Using the tangent geometry with ∠AOB=π/3, the locus of the intersection point P(h,k) is 3(x²+y²)-12x-18y-25=0."
   },
@@ -155,7 +165,7 @@
     "topic": "Binomial Theorem",
     "question_type": "mcq",
     "question_text": "If the coefficient of x in the expansion of (ax²+bx+c)(1-2x)²⁶ is -56 and the coefficients of x² and x³ are both zero, then a+b+c is equal to:",
-    "options": {"1":"1300", "2":"1500", "3":"1403", "4":"1483"},
+    "options": { "1": "1300", "2": "1500", "3": "1403", "4": "1483" },
     "correct_answer": "3",
     "explanation": "From (1-2x)²⁶=Σ²⁶Cᵣ(-2x)ᵣ, the coefficient conditions give a-52b+1300c=0, -52a+1300b-20800c=0 and b-52c=-56. Solving gives a=1300, b=100, c=3, so a+b+c=1403."
   },
@@ -165,7 +175,7 @@
     "topic": "Complex Numbers",
     "question_type": "mcq",
     "question_text": "If x²+x+1=0, then the value of (x+1/x)² + (x²+1/x²)² + (x³+1/x³)² + … + (x²⁵+1/x²⁵)² is:",
-    "options": {"1":"128", "2":"162", "3":"175", "4":"145"},
+    "options": { "1": "128", "2": "162", "3": "175", "4": "145" },
     "correct_answer": "4",
     "explanation": "x is a non-real cube root of unity. Terms with exponent a multiple of 3 contribute 4, the rest contribute 1. There are 17 terms contributing 1 and 8 contributing 4, giving 17+128=145."
   },
@@ -175,7 +185,7 @@
     "topic": "Trigonometry",
     "question_type": "mcq",
     "question_text": "The value of cosec10° - √3·sec10° is equal to:",
-    "options": {"1":"4", "2":"2", "3":"8", "4":"6"},
+    "options": { "1": "4", "2": "2", "3": "8", "4": "6" },
     "correct_answer": "1",
     "explanation": "cosec10°-√3sec10° = (cos10°-√3sin10°)/(sin10°cos10°) = 2sin(30°-10°)/sin20° = 2·(sin20°)/sin20°... using sin30°cos10°-cos30°sin10°=sin20°, giving 4."
   },
@@ -185,7 +195,7 @@
     "topic": "Quadratic Equations",
     "question_type": "mcq",
     "question_text": "The sum of all the roots of the equation (x-1)² - 5|x-1| + 6 = 0, is:",
-    "options": {"1":"4", "2":"3", "3":"1", "4":"5"},
+    "options": { "1": "4", "2": "3", "3": "1", "4": "5" },
     "correct_answer": "1",
     "explanation": "Let t=|x-1|. Then t²-5t+6=0 gives t=2,3. So |x-1|=2 ⇒ x=3,-1 and |x-1|=3 ⇒ x=4,-2. Sum of all roots = 3-1+4-2 = 4."
   },
@@ -195,7 +205,7 @@
     "topic": "Conic Sections",
     "question_type": "mcq",
     "question_text": "Let O be the vertex of the parabola x²=4y and Q be any point on it. Let the locus of the point P, which divides the line segment OQ internally in the ratio 2:3 be the conic C. Then the equation of the chord of C, which is bisected at the point (1, 2), is:",
-    "options": {"1":"5x-y-3=0", "2":"4x-5y+6=0", "3":"x-2y+3=0", "4":"5x-4y+3=0"},
+    "options": { "1": "5x-y-3=0", "2": "4x-5y+6=0", "3": "x-2y+3=0", "4": "5x-4y+3=0" },
     "correct_answer": "4",
     "explanation": "With Q=(2t,t²), the point P dividing OQ in ratio 2:3 is (4t/5, 2t²/5), giving the locus 5x²=8y. The chord bisected at (1,2) is T=S₁, i.e. 5x-4y+3=0."
   },
@@ -255,7 +265,12 @@
     "topic": "Work, Energy & Power",
     "question_type": "mcq",
     "question_text": "Potential energy (V) versus distance (x) is given by the graph [see figure]. Rank various regions as per the magnitudes of the force (F) acting on a particle from high to low.",
-    "options": {"1":"F_CD > F_AB > F_BC > F_DE", "2":"F_CD > F_DE > F_AB > F_BC", "3":"F_BC > F_AB > F_DE > F_CD", "4":"F_BC > F_CD > F_DE > F_AB"},
+    "options": {
+      "1": "F_CD > F_AB > F_BC > F_DE",
+      "2": "F_CD > F_DE > F_AB > F_BC",
+      "3": "F_BC > F_AB > F_DE > F_CD",
+      "4": "F_BC > F_CD > F_DE > F_AB"
+    },
     "correct_answer": "3",
     "explanation": "The slope of the V-x curve gives the negative of the force. From the graph, the steepest slopes are in region BC, then AB, then DE, then CD, so F_BC > F_AB > F_DE > F_CD."
   },
@@ -265,7 +280,7 @@
     "topic": "Thermodynamics",
     "question_type": "mcq",
     "question_text": "A gas based geyser heats water flowing at the rate of 5.0 litres per minute from 27°C to 87°C. The rate of consumption of the gas is ___ g/s. (Take heat of combustion of gas = 5.0×10⁴ J/g, specific heat capacity of water = 4200 J/kg·°C)",
-    "options": {"1":"2.1", "2":"4.2", "3":"0.42", "4":"0.21"},
+    "options": { "1": "2.1", "2": "4.2", "3": "0.42", "4": "0.21" },
     "correct_answer": "3",
     "explanation": "Power needed = (dm/dt)·s·ΔT = (5/60)·4200·60 = 21000 W. With heat of combustion 5×10⁴ J/g, gas rate = 21000/50000 = 0.42 g/s."
   },
@@ -275,7 +290,7 @@
     "topic": "Electromagnetic Induction",
     "question_type": "mcq",
     "question_text": "A conducting circular loop of area 1.0 m² is placed perpendicular to a magnetic field which varies as B = sin(100t) Tesla. If the resistance of the loop is 100 Ω, then the average thermal energy dissipated in the loop in one period is ___ J.",
-    "options": {"1":"2π", "2":"π", "3":"π²", "4":"π/2"},
+    "options": { "1": "2π", "2": "π", "3": "π²", "4": "π/2" },
     "correct_answer": "2",
     "explanation": "Emf = A·dB/dt = 100cos(100t), current I = cos(100t). Average power over one period is ∫I²R dt / T = (1/2)·R... The average thermal energy per period is π J."
   },
@@ -285,7 +300,7 @@
     "topic": "Fluid Mechanics",
     "question_type": "mcq",
     "question_text": "Water flows through a horizontal tube as shown in the figure [see figure]. The difference in height between the water columns in vertical tubes is 5 cm and the area of cross-sections at A and B are 6 cm² and 3 cm² respectively. The rate of flow will be ___ cm³/s. (take g = 10 m/s²)",
-    "options": {"1":"200/√3", "2":"200√6", "3":"200√3", "4":"100√3"},
+    "options": { "1": "200/√3", "2": "200√6", "3": "200√3", "4": "100√3" },
     "correct_answer": "3",
     "explanation": "By continuity 6vA=3vB ⇒ vB=2vA. By Bernoulli, pg·0.05 = (1/2)ρ(vB²-vA²), giving vA=100/√3 cm/s. Volume flow rate = 6·(100/√3) = 200√3 cm³/s."
   },
@@ -295,7 +310,7 @@
     "topic": "Units & Measurement",
     "question_type": "mcq",
     "question_text": "In an experiment the values of two spring constants were measured as k₁=(10±0.2) N/m and k₂=(20±0.3) N/m. If these springs are connected in parallel, then the percentage error in equivalent spring constant is:",
-    "options": {"1":"2.67%", "2":"2.33%", "3":"1.33%", "4":"1.67%"},
+    "options": { "1": "2.67%", "2": "2.33%", "3": "1.33%", "4": "1.67%" },
     "correct_answer": "4",
     "explanation": "For parallel, K=k₁+k₂=30 N/m with ΔK=Δk₁+Δk₂=0.5 N/m. Percentage error = (0.5/30)×100 = 1.67%."
   },
@@ -305,7 +320,12 @@
     "topic": "Laws of Motion",
     "question_type": "mcq",
     "question_text": "A 4 kg mass moves under the influence of a force F = (4t³î - 3t²ĵ) N where t is the time in seconds. If the mass starts from origin at t=0, the velocity and position after t=2 s will be:",
-    "options": {"1":"v=4î-3/2ĵ, r=8/5î-ĵ", "2":"v=4î-2ĵ, r=8/5î-ĵ", "3":"v=4î-3ĵ, r=8/5î-2ĵ", "4":"v=4î-3ĵ, r=8/5î-ĵ"},
+    "options": {
+      "1": "v=4î-3/2ĵ, r=8/5î-ĵ",
+      "2": "v=4î-2ĵ, r=8/5î-ĵ",
+      "3": "v=4î-3ĵ, r=8/5î-2ĵ",
+      "4": "v=4î-3ĵ, r=8/5î-ĵ"
+    },
     "correct_answer": "2",
     "explanation": "a=F/m=(t³î-3/4t²ĵ). Integrating: v=∫a dt = t⁴/4 î - t³/4 ĵ, at t=2 → v=4î-2ĵ. r=∫v dt = t⁵/20 î - t⁴/16 ĵ, at t=2 → r=8/5 î - ĵ."
   },
@@ -315,7 +335,12 @@
     "topic": "Units & Measurement",
     "question_type": "mcq",
     "question_text": "Consider a modified Bernoulli equation. P + A/(Bt²) + ρg(h + Bt) + (1/2)ρv² = constant. If t has the dimension of time then the dimensions of A and B are ___ respectively.",
-    "options": {"1":"[MLT⁻¹] and [M⁰LT]", "2":"[ML⁰T⁻²] and [M⁰LT⁻¹]", "3":"[ML⁰T⁻²] and [M⁰LT⁻²]", "4":"[MLT⁻¹] and [M⁰LT⁻¹]"},
+    "options": {
+      "1": "[MLT⁻¹] and [M⁰LT]",
+      "2": "[ML⁰T⁻²] and [M⁰LT⁻¹]",
+      "3": "[ML⁰T⁻²] and [M⁰LT⁻²]",
+      "4": "[MLT⁻¹] and [M⁰LT⁻¹]"
+    },
     "correct_answer": "4",
     "explanation": "h+Bt must have dimension of length so [B]=[LT⁻¹]. Since P has dimensions [ML⁻¹T⁻²], A/(Bt²) must too, giving [A]=[MLT⁻¹]. Hence A=[MLT⁻¹] and B=[M⁰LT⁻¹]."
   },
@@ -325,7 +350,7 @@
     "topic": "Magnetism & Matter",
     "question_type": "mcq",
     "question_text": "A current carrying solenoid is placed vertically and a particle of mass m with charge Q is released from rest. The particle moves along the axis of the solenoid. If g is the acceleration due to gravity then the acceleration (a) of the charged particle will satisfy:",
-    "options": {"1":"a = g", "2":"a > g", "3":"a = 0", "4":"0 < a < g"},
+    "options": { "1": "a = g", "2": "a > g", "3": "a = 0", "4": "0 < a < g" },
     "correct_answer": "1",
     "explanation": "Inside the solenoid the magnetic field is along the axis, and the particle moves along the axis, so the magnetic force q(v×B)=0. The net force is only gravity, hence a=g."
   },
@@ -335,7 +360,7 @@
     "topic": "Electrostatics",
     "question_type": "mcq",
     "question_text": "A parallel plate capacitor has capacitance C, when there is vacuum within the parallel plates. A sheet having thickness d/3 of the separation between the plates and relative permittivity K is introduced between the plates. The new capacitance of the system is:",
-    "options": {"1":"3KC/(2K+1)", "2":"CK/(2+K)", "3":"3CK²/(2K+1)²", "4":"4KC/(3K-1)"},
+    "options": { "1": "3KC/(2K+1)", "2": "CK/(2+K)", "3": "3CK²/(2K+1)²", "4": "4KC/(3K-1)" },
     "correct_answer": "1",
     "explanation": "The system behaves as two capacitors in series: one air capacitor of plate separation 2d/3 and one dielectric capacitor of separation d/3. C_eq = 3KC/(2K+1)."
   },
@@ -345,7 +370,12 @@
     "topic": "Electromagnetic Waves",
     "question_type": "mcq",
     "question_text": "The electric field in a plane electromagnetic wave is given by E_y = 69 sin[0.6×10³ x - 1.8×10¹¹ t] V/m. The expression for magnetic field associated with this electromagnetic wave is ___ T.",
-    "options": {"1":"B_z = 2.3×10⁻⁷ sin[0.6×10³x - 1.8×10¹¹t]", "2":"B_z = 2.3×10⁻⁷ sin[0.6×10³x + 1.8×10¹¹t]", "3":"B_y = 69 sin[0.6×10³x + 1.8×10¹¹t]", "4":"B_y = 2.3×10⁻⁷ sin[0.6×10³x - 1.8×10¹¹t]"},
+    "options": {
+      "1": "B_z = 2.3×10⁻⁷ sin[0.6×10³x - 1.8×10¹¹t]",
+      "2": "B_z = 2.3×10⁻⁷ sin[0.6×10³x + 1.8×10¹¹t]",
+      "3": "B_y = 69 sin[0.6×10³x + 1.8×10¹¹t]",
+      "4": "B_y = 2.3×10⁻⁷ sin[0.6×10³x - 1.8×10¹¹t]"
+    },
     "correct_answer": "1",
     "explanation": "B_max = E_max/c = 69/(3×10⁸) = 2.3×10⁻⁷ T, and B is perpendicular to E with the same phase, so B_z = 2.3×10⁻⁷ sin[0.6×10³x - 1.8×10¹¹t]."
   },
@@ -355,7 +385,7 @@
     "topic": "Wave Optics",
     "question_type": "mcq",
     "question_text": "In a double slit experiment the distance between the slits is 0.1 cm and the screen is placed at 50 cm from the slits plane. When one slit is covered with a transparent sheet having thickness t and refractive index n(=1.5), the central fringe shifts by 0.2 cm. The value of t is ___ cm.",
-    "options": {"1":"8×10⁻⁴", "2":"6×10⁻³", "3":"5.6×10⁻⁴", "4":"5×10⁻³"},
+    "options": { "1": "8×10⁻⁴", "2": "6×10⁻³", "3": "5.6×10⁻⁴", "4": "5×10⁻³" },
     "correct_answer": "1",
     "explanation": "The shift is x = D(μ-1)t/d. So t = x·d/(D(μ-1)) = (0.2×0.1)/(50×0.5) = 8×10⁻⁴ cm."
   },
@@ -365,7 +395,7 @@
     "topic": "Dual Nature of Radiation & Matter",
     "question_type": "mcq",
     "question_text": "A light wave described by E = 60[sin(3×10¹⁵)t + sin(12×10¹⁵)t] (in SI units) falls on a metal surface of work function 2.8 eV. The maximum kinetic energy of ejected photoelectron is (approximately) ___ eV. (h=6.6×10⁻³⁴ J·s and e=1.6×10⁻¹⁹ C)",
-    "options": {"1":"5.1", "2":"3.8", "3":"6.0", "4":"7.8"},
+    "options": { "1": "5.1", "2": "3.8", "3": "6.0", "4": "7.8" },
     "correct_answer": "1",
     "explanation": "The higher frequency photon has energy E = hν = h·(12×10¹⁵/2π) ≈ 7.9 eV. K_max = E - φ = 7.9 - 2.8 = 5.1 eV."
   },
@@ -375,7 +405,7 @@
     "topic": "Atoms & Nuclei",
     "question_type": "mcq",
     "question_text": "If an alpha particle with energy 7.7 MeV is bombarded on a thin gold foil, the closest distance from the nucleus it can reach is ___ m. (Atomic number of gold = 79 and 1/(4πε₀) = 9×10⁹ in SI units)",
-    "options": {"1":"2.95×10⁻¹⁴", "2":"2.95×10⁻¹⁶", "3":"3.85×10⁻¹⁶", "4":"3.85×10⁻¹⁴"},
+    "options": { "1": "2.95×10⁻¹⁴", "2": "2.95×10⁻¹⁶", "3": "3.85×10⁻¹⁶", "4": "3.85×10⁻¹⁴" },
     "correct_answer": "1",
     "explanation": "At closest approach, kinetic energy equals electrostatic potential energy: r = k(2e)(79e)/(7.7×10⁶ eV) = 2.95×10⁻¹⁴ m."
   },
@@ -385,7 +415,7 @@
     "topic": "System of Particles & Rotational Motion",
     "question_type": "mcq",
     "question_text": "A uniform rod of mass m and length l suspended by means of two identical inextensible light strings as shown in figure [see figure]. Tension in one string immediately after the other string is cut, is (g = acceleration due to gravity):",
-    "options": {"1":"mg/2", "2":"mg/4", "3":"mg/3", "4":"mg"},
+    "options": { "1": "mg/2", "2": "mg/4", "3": "mg/3", "4": "mg" },
     "correct_answer": "2",
     "explanation": "Immediately after cutting one string, the rod rotates about the point where the other string is attached. Using torque and Newton's law gives the remaining tension as mg/4."
   },
@@ -395,7 +425,7 @@
     "topic": "Thermal Properties of Matter",
     "question_type": "mcq",
     "question_text": "An aluminium and steel rod having same lengths and cross-sections are joined to make total length of 120 cm at 30°C. The coefficient of linear expansion of aluminium and steel are 24×10⁻⁶/°C and 1.2×10⁻⁵/°C respectively. The length of this composite rod when its temperature is raised to 100°C, is ___ cm.",
-    "options": {"1":"120.20", "2":"120.15", "3":"120.03", "4":"120.06"},
+    "options": { "1": "120.20", "2": "120.15", "3": "120.03", "4": "120.06" },
     "correct_answer": "2",
     "explanation": "Each rod is 60 cm. New total length = 60(1+αAl·70) + 60(1+αSt·70) = 60[2+(24×10⁻⁶+1.2×10⁻⁵)×70] = 120.15 cm."
   },
@@ -405,7 +435,7 @@
     "topic": "Electromagnetic Induction",
     "question_type": "mcq",
     "question_text": "A 1 m long metal rod AB completes the circuit as shown in figure [see figure]. The area of the circuit is perpendicular to the magnetic field of 0.10 T. If the resistance of the total circuit is 2 Ω then the force needed to move the rod towards right with constant speed (v) of 1.5 m/s is ___ N.",
-    "options": {"1":"7.5×10⁻²", "2":"5.7×10⁻³", "3":"5.7×10⁻²", "4":"7.5×10⁻³"},
+    "options": { "1": "7.5×10⁻²", "2": "5.7×10⁻³", "3": "5.7×10⁻²", "4": "7.5×10⁻³" },
     "correct_answer": "4",
     "explanation": "At constant speed the applied force balances the magnetic force: F = B²l²v/R = (0.1)²(1)²(1.5)/2 = 7.5×10⁻³ N."
   },
@@ -415,7 +445,7 @@
     "topic": "Semiconductor Electronics",
     "question_type": "mcq",
     "question_text": "The given circuit works as: [see figure]",
-    "options": {"1":"AND gate", "2":"NOR gate", "3":"NAND gate", "4":"OR gate"},
+    "options": { "1": "AND gate", "2": "NOR gate", "3": "NAND gate", "4": "OR gate" },
     "correct_answer": "3",
     "explanation": "Following the logic levels through the two-transistor circuit, the output is the complement of the AND of the two inputs, i.e. a NAND gate."
   },
@@ -425,7 +455,7 @@
     "topic": "Waves",
     "question_type": "mcq",
     "question_text": "Two strings (A, B) having linear densities μ_A = 2×10⁻⁴ kg/m and μ_B = 4×10⁻⁴ kg/m and lengths L_A = 2.5 m and L_B = 1.5 m respectively are joined. Free ends of A and B are tied to two rigid supports C and D, respectively creating a tension of 500 N in the wire. Two identical pulses, sent from C and D ends, take time t_A and t_B respectively to reach the joint. The ratio t_A/t_B is:",
-    "options": {"1":"1.08", "2":"1.90", "3":"1.67", "4":"1.18"},
+    "options": { "1": "1.08", "2": "1.90", "3": "1.67", "4": "1.18" },
     "correct_answer": "4",
     "explanation": "Wave speeds are v=√(T/μ): vA=5√10×10² and vB=5√5×10² m/s. Times tA=2.5/vA, tB=1.5/vB. Ratio tA/tB = (2.5/1.5)·(√(μA)/√(μB))... = 1.18."
   },
@@ -435,7 +465,7 @@
     "topic": "Gravitation",
     "question_type": "mcq",
     "question_text": "Initially a satellite of 100 kg is in a circular orbit of radius 1.5R_E. This satellite can be moved to a circular orbit of radius 3R_E by supplying α×10⁶ J of energy. The value of α is ___. (Take Radius of Earth R_E = 6×10⁶ m and g = 10 m/s²)",
-    "options": {"1":"150", "2":"500", "3":"100", "4":"1000"},
+    "options": { "1": "150", "2": "500", "3": "100", "4": "1000" },
     "correct_answer": "4",
     "explanation": "Energy change ΔE = E_final - E_initial = (GMm/(6R_E)) - (GMm/(3R_E))·... = gmR_E/6 = (10×100×6×10⁶)/6 = 1000×10⁶ J, so α=1000."
   },
@@ -445,7 +475,7 @@
     "topic": "Electrostatics",
     "question_type": "mcq",
     "question_text": "A point charge of 10⁻⁸ C is placed at origin. The work done in moving a point charge 2 μC from point A(4, 4, 2) m to B(2, 2, 1) m is ___ J. (1/(4πε₀) = 9×10⁹ in SI units)",
-    "options": {"1":"45×10⁻⁶", "2":"0", "3":"30×10⁻⁶", "4":"15×10⁻⁶"},
+    "options": { "1": "45×10⁻⁶", "2": "0", "3": "30×10⁻⁶", "4": "15×10⁻⁶" },
     "correct_answer": "3",
     "explanation": "r_A = √(16+16+4) = 6 m and r_B = √(4+4+1) = 3 m. Work = (9×10⁹)(10⁻⁸)(2×10⁻⁶)(1/r_B - 1/r_A) = 30×10⁻⁶ J."
   },
@@ -505,7 +535,12 @@
     "topic": "Qualitative Analysis",
     "question_type": "mcq",
     "question_text": "Consider the following reactions. PbCl₂ + K₂CrO₄ → A + 2KCl (Hot solution); A + NaOH → B + Na₂CrO₄; PbSO₄ + 4CH₃COONH₄ → (NH₄)₂SO₄ + X. In the above reactions, A, B and X are respectively:",
-    "options": {"1":"Na₂[Pb(OH)₄], PbCrO₄ and (NH₄)₂[Pb(CH₃COO)₄]", "2":"Na₂[Pb(OH)₄], PbCrO₄ and [Pb(NH₃)₄]SO₄", "3":"PbCrO₄, Na₂[Pb(OH)₄] and [Pb(NH₃)₄]SO₄", "4":"PbCrO₄, Na₂[Pb(OH)₄] and (NH₄)₂[Pb(CH₃COO)₄]"},
+    "options": {
+      "1": "Na₂[Pb(OH)₄], PbCrO₄ and (NH₄)₂[Pb(CH₃COO)₄]",
+      "2": "Na₂[Pb(OH)₄], PbCrO₄ and [Pb(NH₃)₄]SO₄",
+      "3": "PbCrO₄, Na₂[Pb(OH)₄] and [Pb(NH₃)₄]SO₄",
+      "4": "PbCrO₄, Na₂[Pb(OH)₄] and (NH₄)₂[Pb(CH₃COO)₄]"
+    },
     "correct_answer": "4",
     "explanation": "PbCl₂ + K₂CrO₄ gives yellow PbCrO₄ (A). PbCrO₄ with excess NaOH forms Na₂[Pb(OH)₄] (B). PbSO₄ with ammonium acetate forms soluble (NH₄)₂[Pb(CH₃COO)₄] (X)."
   },
@@ -515,7 +550,12 @@
     "topic": "Classification of Elements",
     "question_type": "mcq",
     "question_text": "Which of the following represents the correct trend for the mentioned property? A. F > P > S > B — First Ionization Energy. B. Cl > F > S > P — Electron Affinity. C. K > Al > Mg > B — Metallic character. D. K₂O > Na₂O > MgO > Al₂O₃ — Basic character. Choose the correct answer from the options given below:",
-    "options": {"1":"A, B and D only", "2":"A, B, C and D", "3":"A and B only", "4":"B and C only"},
+    "options": {
+      "1": "A, B and D only",
+      "2": "A, B, C and D",
+      "3": "A and B only",
+      "4": "B and C only"
+    },
     "correct_answer": "1",
     "explanation": "Ionization energy: F>P>S>B is correct. Electron affinity: Cl>F>S>P is correct. Metallic character K>Al>Mg>B is wrong (Al is not between K and Mg in metallic character). Basic character K₂O>Na₂O>MgO>Al₂O₃ is correct. So A, B and D only."
   },
@@ -525,7 +565,12 @@
     "topic": "Organic Chemistry",
     "question_type": "mcq",
     "question_text": "Identify A in the following reaction: [see figure] (A hydrocarbon/acid derivative undergoing oxidation/reduction sequence shown in figure.)",
-    "options": {"1":"[Structure option 1]", "2":"[Structure option 2]", "3":"[Structure option 3]", "4":"[Structure option 4]"},
+    "options": {
+      "1": "[Structure option 1]",
+      "2": "[Structure option 2]",
+      "3": "[Structure option 3]",
+      "4": "[Structure option 4]"
+    },
     "correct_answer": "3",
     "explanation": "Following the reaction sequence in the scan (which involves hydrogenation over Pt and KMnO₄ oxidation producing the diacid), the intermediate A is identified as option (3)."
   },
@@ -535,7 +580,12 @@
     "topic": "Hydrocarbons",
     "question_type": "mcq",
     "question_text": "A hydrocarbon P (C₄H₈) on reaction with HCl gives an optically active compound Q (C₄H₉Cl) which on reaction with one mole of ammonia gives compound R (C₄H₁₁N). R on diazotization followed by hydrolysis gives S. Identify P, Q, R and S.",
-    "options": {"1":"P=CH₂=CH-CH₂-CH₃, Q=CH₃-CH₂-CH₂-CH₂Cl, R=CH₃-CH₂-CH₂-NH₂, S=CH₃-CH₂-CH(OH)CH₃", "2":"P=CH₃-CH=CH-CH₃, Q=CH₃-CH₂-CH₂-CH₂-Cl, R=CH₃-CH₂-CH(NH₂)CH₃, S=CH₃-CH₂-CH₂-CH₂OH", "3":"P=CH₃-CH=CH-CH₃, Q=CH₃-CH₂-CH(Cl)CH₃, R=CH₃-CH₂-CH(NH₂)CH₃, S=CH₃-CH₂-CH(OH)CH₃", "4":"P=Cyclobutane, Q=Chlorocyclobutane, R=Cyclobutylamine, S=Cyclobutanol"},
+    "options": {
+      "1": "P=CH₂=CH-CH₂-CH₃, Q=CH₃-CH₂-CH₂-CH₂Cl, R=CH₃-CH₂-CH₂-NH₂, S=CH₃-CH₂-CH(OH)CH₃",
+      "2": "P=CH₃-CH=CH-CH₃, Q=CH₃-CH₂-CH₂-CH₂-Cl, R=CH₃-CH₂-CH(NH₂)CH₃, S=CH₃-CH₂-CH₂-CH₂OH",
+      "3": "P=CH₃-CH=CH-CH₃, Q=CH₃-CH₂-CH(Cl)CH₃, R=CH₃-CH₂-CH(NH₂)CH₃, S=CH₃-CH₂-CH(OH)CH₃",
+      "4": "P=Cyclobutane, Q=Chlorocyclobutane, R=Cyclobutylamine, S=Cyclobutanol"
+    },
     "correct_answer": "3",
     "explanation": "But-2-ene P adds HCl to give the optically active 2-chlorobutane Q. Reaction with NH₃ gives 2-butylamine R, which on diazotization and hydrolysis gives butan-2-ol S."
   },
@@ -545,7 +595,12 @@
     "topic": "p-Block Elements",
     "question_type": "mcq",
     "question_text": "Given below are two statements. Statement I: The number of pairs among [SiO₂, CO₂], [SnO, SnO₂], [PbO, PbO₂] and [GeO, GeO₂], which contain oxides that are both amphoteric is 2. Statement II: BF₃ is an electron deficient molecule, can act as a Lewis acid, forms adduct with NH₃ and has a trigonal planar geometry. In the light of the above statements, choose the correct answer.",
-    "options": {"1":"Both Statement I and Statement II are true", "2":"Both Statement I and Statement II are false", "3":"Statement I is true but Statement II is false", "4":"Statement I is false but Statement II is true"},
+    "options": {
+      "1": "Both Statement I and Statement II are true",
+      "2": "Both Statement I and Statement II are false",
+      "3": "Statement I is true but Statement II is false",
+      "4": "Statement I is false but Statement II is true"
+    },
     "correct_answer": "1",
     "explanation": "SnO/SnO₂ and PbO/PbO₂ are amphoteric pairs, while SiO₂/CO₂ and GeO/GeO₂ are acidic, so Statement I is true (2 amphoteric pairs). BF₃ is indeed an electron-deficient Lewis acid forming an adduct with NH₃ with trigonal planar geometry, so Statement II is true."
   },
@@ -555,7 +610,7 @@
     "topic": "Some Basic Concepts of Chemistry",
     "question_type": "mcq",
     "question_text": "80 mL of a hydrocarbon on mixing with 264 mL of oxygen in a closed U-tube undergoes complete combustion. The residual gases after cooling to 273 K occupy 224 mL. When the system is treated with KOH solution, the volume decreases to 64 mL. The formula of the hydrocarbon is:",
-    "options": {"1":"C₂H₄", "2":"C₄H₁₀", "3":"C₂H₂", "4":"C₂H₆"},
+    "options": { "1": "C₂H₄", "2": "C₄H₁₀", "3": "C₂H₂", "4": "C₂H₆" },
     "correct_answer": "3",
     "explanation": "KOH absorbs CO₂: volume of CO₂ = 224-64 = 160 mL. The remaining 64 mL is excess O₂. Solving the combustion stoichiometry gives the hydrocarbon as C₂H₂."
   },
@@ -565,7 +620,12 @@
     "topic": "Some Basic Concepts of Chemistry",
     "question_type": "mcq",
     "question_text": "14.0 g of calcium metal is allowed to react with excess HCl at 1.0 atm pressure and 273 K. Which of the following statements is incorrect? [Given: Molar mass in g mol⁻¹ of Ca=40, Cl=35.5, H=1]",
-    "options": {"1":"0.35 mol of H₂ gas is evolved", "2":"7.84 L of H₂ gas is evolved", "3":"33.3 g of CaCl₂ is produced", "4":"The limiting reagent is calcium metal"},
+    "options": {
+      "1": "0.35 mol of H₂ gas is evolved",
+      "2": "7.84 L of H₂ gas is evolved",
+      "3": "33.3 g of CaCl₂ is produced",
+      "4": "The limiting reagent is calcium metal"
+    },
     "correct_answer": "3",
     "explanation": "n(Ca)=14/40=0.35 mol, producing 0.35 mol H₂ (7.84 L). The mass of CaCl₂ produced = 0.35×111 = 38.85 g, not 33.3 g, so statement (3) is incorrect."
   },
@@ -575,7 +635,7 @@
     "topic": "Qualitative Analysis",
     "question_type": "mcq",
     "question_text": "In Carius method, 0.75 g of an organic compound gave 1.2 g of barium sulphate, find percentage of sulphur (molar mass 32 g mol⁻¹). Molar mass of barium sulphate is 233 g mol⁻¹.",
-    "options": {"1":"4.55%", "2":"10.30%", "3":"21.97%", "4":"16.48%"},
+    "options": { "1": "4.55%", "2": "10.30%", "3": "21.97%", "4": "16.48%" },
     "correct_answer": "3",
     "explanation": "%S = (mass of BaSO₄ × 32)/(233 × mass of compound) × 100 = (1.2×32)/(233×0.75) × 100 = 21.97%."
   },
@@ -585,7 +645,7 @@
     "topic": "Solutions",
     "question_type": "mcq",
     "question_text": "Elements P and Q form two types of non-volatile, non-ionizable compounds PQ and PQ₂. When 1 g of PQ is dissolved in 50 g of solvent A, ΔT_b was 1.176 K while when 1 g of PQ₂ is dissolved in 50 g of solvent A, ΔT_b was 0.689 K. (K_b of A = 5 K kg mol⁻¹). The molar masses of elements P and Q (in g mol⁻¹) respectively, are:",
-    "options": {"1":"70, 110", "2":"65, 145", "3":"60, 25", "4":"25, 60"},
+    "options": { "1": "70, 110", "2": "65, 145", "3": "60, 25", "4": "25, 60" },
     "correct_answer": "4",
     "explanation": "Using ΔT_b = K_b·m gives M(PQ)=85.03 and M(PQ₂)=145.13. So M_P+M_Q=85 and M_P+2M_Q=145, giving M_P≈25 and M_Q≈60."
   },
@@ -595,7 +655,12 @@
     "topic": "Aldehydes, Ketones & Carboxylic Acids",
     "question_type": "mcq",
     "question_text": "An organic compound P on treatment with aqueous ammonia under hot condition forms compound Q which on heating with Br₂ and KOH forms compound R having molecular formula C₆H₇N. Names of P, Q and R respectively are:",
-    "options": {"1":"Benzoic acid, benzamide, aniline", "2":"Toluic acid, methylbenzamide, 2-methylaniline", "3":"Benzoic acid, 4-methylbenzamide, 4-methylaniline", "4":"Phenylethanoic acid, phenylethanamide, benzamine"},
+    "options": {
+      "1": "Benzoic acid, benzamide, aniline",
+      "2": "Toluic acid, methylbenzamide, 2-methylaniline",
+      "3": "Benzoic acid, 4-methylbenzamide, 4-methylaniline",
+      "4": "Phenylethanoic acid, phenylethanamide, benzamine"
+    },
     "correct_answer": "1",
     "explanation": "Benzoic acid + NH₃ gives benzamide (Q), which on Hoffmann bromamide degradation (Br₂/KOH) gives aniline (R) of formula C₆H₇N."
   },
@@ -605,7 +670,12 @@
     "topic": "Aldehydes, Ketones & Carboxylic Acids",
     "question_type": "mcq",
     "question_text": "An organic compound P of molecular formula C₇H₁₂O₂ gives positive Iodoform test but negative Tollen's test. When P is treated with dilute acid, it produces Q. Q gives positive Tollen's test and also Iodoform test. The structure of P is:",
-    "options": {"1":"CH₃-CO-CH₂-CH(OCH₃)₂", "2":"CH₃-CO-CH₂-CH(OCH₃)-CH₃", "3":"H-CO-CH₂-CH₂-CH(OCH₃)₂", "4":"CH₃-CO-C(OCH₃)₂-CH₃"},
+    "options": {
+      "1": "CH₃-CO-CH₂-CH(OCH₃)₂",
+      "2": "CH₃-CO-CH₂-CH(OCH₃)-CH₃",
+      "3": "H-CO-CH₂-CH₂-CH(OCH₃)₂",
+      "4": "CH₃-CO-C(OCH₃)₂-CH₃"
+    },
     "correct_answer": "2",
     "explanation": "P is a ketone acetal that gives a positive Iodoform test (methyl ketone) but negative Tollen's. On hydrolysis it releases Q with an aldehyde group, which gives both Tollen's and Iodoform tests, matching option (2)."
   },
@@ -615,7 +685,12 @@
     "topic": "Chemical Bonding",
     "question_type": "mcq",
     "question_text": "From the following, the least stable structure is: (Assume standard resonance structures) [see figure for resonance structures]",
-    "options": {"1":"[Structure 1]", "2":"[Structure 2]", "3":"[Structure 3]", "4":"[Structure 4]"},
+    "options": {
+      "1": "[Structure 1]",
+      "2": "[Structure 2]",
+      "3": "[Structure 3]",
+      "4": "[Structure 4]"
+    },
     "correct_answer": "3",
     "explanation": "The resonance structure having positive charges on adjacent atoms is the least stable, which corresponds to option (3)."
   },
@@ -625,7 +700,12 @@
     "topic": "d & f Block Elements",
     "question_type": "mcq",
     "question_text": "MnO₄²⁻, in acidic medium, disproportionates to:",
-    "options": {"1":"Mn₂O₇ and MnO₂", "2":"MnO and MnO", "3":"MnO₄⁻ and MnO₂", "4":"Mn₂O₇ and MnO"},
+    "options": {
+      "1": "Mn₂O₇ and MnO₂",
+      "2": "MnO and MnO",
+      "3": "MnO₄⁻ and MnO₂",
+      "4": "Mn₂O₇ and MnO"
+    },
     "correct_answer": "3",
     "explanation": "In acidic medium, manganate ion disproportionates: 3MnO₄²⁻ + 4H⁺ → 2MnO₄⁻ + MnO₂ + 2H₂O, giving MnO₄⁻ and MnO₂."
   },
@@ -635,7 +715,12 @@
     "topic": "Chemical Bonding",
     "question_type": "mcq",
     "question_text": "Given below are two statements. Statement I: The number of species among SF₄, NH₄⁺, Ni(CO)₄, XeF₄, [PtCl₄]²⁻, SeF₄ and [Ni(CN)₄]²⁻ that have tetrahedral geometry is 3. Statement II: In the set NO, BeH₂, BF₃, AlCl₃, all the molecules have incomplete octet around central atom. In the light of the above statements, choose the correct answer.",
-    "options": {"1":"Both Statement I and Statement II are true", "2":"Both Statement I and Statement II are false", "3":"Statement I is false but Statement II is true", "4":"Statement I is true but Statement II is false"},
+    "options": {
+      "1": "Both Statement I and Statement II are true",
+      "2": "Both Statement I and Statement II are false",
+      "3": "Statement I is false but Statement II is true",
+      "4": "Statement I is true but Statement II is false"
+    },
     "correct_answer": "3",
     "explanation": "Among the species, only NH₄⁺ and Ni(CO)₄ are tetrahedral (2, not 3), so Statement I is false. NO, BeH₂, BF₃ and AlCl₃ all have incomplete octets, so Statement II is true."
   },
@@ -645,7 +730,12 @@
     "topic": "Coordination Compounds",
     "question_type": "mcq",
     "question_text": "Given below are two statements. Statement I: Among [Cu(NH₃)₄]²⁺, [Ni(en)₃]²⁺, [Ni(NH₃)₆]²⁺ and [Mn(H₂O)₆]²⁺, [Mn(H₂O)₆]²⁺ has the maximum number of unpaired electrons. Statement II: The number of pairs among {[NiCl₄]²⁻, [Ni(CO)₄]}, {[NiCl₄]²⁻, [Ni(CN)₄]²⁻} and {[Ni(CO)₄], [Ni(CN)₄]²⁻} that contain only diamagnetic species is two. In the light of the above statements, choose the correct answer.",
-    "options": {"1":"Both Statement I and Statement II are true", "2":"Statement I is false but Statement II is true", "3":"Both Statement I and Statement II are false", "4":"Statement I is true but Statement II is false"},
+    "options": {
+      "1": "Both Statement I and Statement II are true",
+      "2": "Statement I is false but Statement II is true",
+      "3": "Both Statement I and Statement II are false",
+      "4": "Statement I is true but Statement II is false"
+    },
     "correct_answer": "4",
     "explanation": "Mn²⁺ (d⁵ high spin) has 5 unpaired electrons, the maximum, so Statement I is true. [NiCl₄]²⁻ is paramagnetic, so only {[Ni(CO)₄],[Ni(CN)₄]²⁻} is a diamagnetic-only pair (only 1, not 2), making Statement II false."
   },
@@ -655,7 +745,12 @@
     "topic": "Organic Chemistry",
     "question_type": "mcq",
     "question_text": "Identify correct statements from the following: A. Propanal and propanone are functional isomers. B. Ethoxyethane and methoxypropane are metamers. C. But-2-ene shows optical isomerism. D. But-1-ene and but-2-ene are functional isomers. E. Pentane and 2,2-dimethyl propane are chain isomers. Choose the correct answer from the options given below:",
-    "options": {"1":"A, B and E only", "2":"A, B and C only", "3":"A, B and C only", "4":"C, D and E only"},
+    "options": {
+      "1": "A, B and E only",
+      "2": "A, B and C only",
+      "3": "A, B and C only",
+      "4": "C, D and E only"
+    },
     "correct_answer": "1",
     "explanation": "A (functional isomers), B (metamers) and E (chain isomers) are correct. But-2-ene does not show optical isomerism (C wrong) and but-1-ene/but-2-ene are position isomers, not functional isomers (D wrong)."
   },
@@ -665,7 +760,12 @@
     "topic": "Biomolecules",
     "question_type": "mcq",
     "question_text": "Identify the correct statements. A. Arginine and Tryptophan are essential amino acids. B. Histidine does not contain heterocyclic ring in its structure. C. Proline is a six membered cyclic ring amino acid. D. Glycine does not have chiral centre. E. Cysteine has characteristic feature of side chain as MeS-CH₂-CH₂-. Choose the correct answer from the options given below:",
-    "options": {"1":"A and D Only", "2":"B and E Only", "3":"C and D Only", "4":"C and E Only"},
+    "options": {
+      "1": "A and D Only",
+      "2": "B and E Only",
+      "3": "C and D Only",
+      "4": "C and E Only"
+    },
     "correct_answer": "1",
     "explanation": "Arginine and tryptophan are essential amino acids (A true). Glycine has no chiral centre (D true). Histidine does contain a heterocyclic ring (B false). Proline is a five-membered ring (C false). Cysteine's side chain is -CH₂SH, not MeS-CH₂-CH₂ (E false). So A and D only."
   },
@@ -675,7 +775,7 @@
     "topic": "Thermodynamics",
     "question_type": "mcq",
     "question_text": "Which of the following graphs between pressure P versus volume V represents the maximum work done? [see figure with P-V graphs]",
-    "options": {"1":"[Graph 1]", "2":"[Graph 2]", "3":"[Graph 3]", "4":"[Graph 4]"},
+    "options": { "1": "[Graph 1]", "2": "[Graph 2]", "3": "[Graph 3]", "4": "[Graph 4]" },
     "correct_answer": "4",
     "explanation": "The magnitude of work done equals the area under the P-V curve. The graph with the largest area under the curve represents the maximum work done, which is option (4)."
   },
@@ -685,7 +785,12 @@
     "topic": "Thermodynamics",
     "question_type": "mcq",
     "question_text": "For the reaction N₂O₄ ⇌ 2NO₂, a graph is plotted as shown below [see figure]. Identify correct statements. A. Standard free energy change for the reaction is 5.40 kJ mol⁻¹. B. As ΔG in graph is positive, N₂O₄ will not dissociate into NO₂ at all. C. Reverse reaction will go to completion. D. When 1 mole of N₂O₄ changes into equilibrium mixture, value of ΔG = -0.84 kJ mol⁻¹. E. When 2 mole of NO₂ changes into equilibrium mixture, ΔG for equilibrium mixture is -6.24 kJ mol⁻¹. Choose the correct answer from the options given below:",
-    "options": {"1":"D and E only", "2":"C and E only", "3":"A and D only", "4":"B and C only"},
+    "options": {
+      "1": "D and E only",
+      "2": "C and E only",
+      "3": "A and D only",
+      "4": "B and C only"
+    },
     "correct_answer": "1",
     "explanation": "Statement D (ΔG=-0.84 kJ for 1 mol N₂O₄) and Statement E (ΔG=-6.24 kJ for 2 mol NO₂) are correct. B and C are wrong because N₂O₄ does partially dissociate at equilibrium. So D and E only."
   },
@@ -695,7 +800,12 @@
     "topic": "Structure of Atom",
     "question_type": "mcq",
     "question_text": "Given below are two statements. Statement I: When an electric discharge is passed through gaseous hydrogen, the hydrogen molecules dissociate and the energetically excited hydrogen atoms produce electromagnetic radiation of discrete frequencies. Statement II: The frequency of second line of Balmer series obtained from He⁺ is equal to that of first line of Lyman series obtained from hydrogen atom. In the light of the above statements, choose the correct answer.",
-    "options": {"1":"Both Statement I and Statement II are true", "2":"Both Statement I and Statement II are false", "3":"Statement I is false but Statement II is true", "4":"Statement I is true but Statement II is false"},
+    "options": {
+      "1": "Both Statement I and Statement II are true",
+      "2": "Both Statement I and Statement II are false",
+      "3": "Statement I is false but Statement II is true",
+      "4": "Statement I is true but Statement II is false"
+    },
     "correct_answer": "1",
     "explanation": "Electric discharge dissociates H₂ and excites H atoms which emit line spectra of discrete frequencies, so Statement I is true. The second line of Balmer for He⁺ matches the first line of Lyman for H, so Statement II is also true."
   },

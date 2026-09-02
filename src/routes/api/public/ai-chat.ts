@@ -335,8 +335,7 @@ export const Route = createFileRoute("/api/public/ai-chat")({
           : SYSTEM_PROMPT;
         // Optional Socratic/mentor-mode instruction from the client (applied
         // on top of the base mentor persona, so both providers see it).
-        const sysHint =
-          typeof body.systemHint === "string" ? body.systemHint.slice(0, 1500) : "";
+        const sysHint = typeof body.systemHint === "string" ? body.systemHint.slice(0, 1500) : "";
         if (sysHint) systemPrompt += `\n\nUSER-SELECTED MODE:\n${sysHint}`;
 
         // Live web knowledge: only when the question needs fresh facts.

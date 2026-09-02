@@ -37,14 +37,22 @@ const html = readFileSync(htmlPath, "utf8");
 /* ------------------------------------------------------------------ */
 /* Small test framework                                                */
 /* ------------------------------------------------------------------ */
-let passed = 0, failed = 0;
+let passed = 0,
+  failed = 0;
 const failures = [];
 function ok(cond, label) {
-  if (cond) { passed++; console.log("  ✓ " + label); }
-  else { failed++; failures.push(label); console.error("  ✗ FAIL: " + label); }
+  if (cond) {
+    passed++;
+    console.log("  ✓ " + label);
+  } else {
+    failed++;
+    failures.push(label);
+    console.error("  ✗ FAIL: " + label);
+  }
 }
 function eq(actual, expected, label) {
-  const a = JSON.stringify(actual), e = JSON.stringify(expected);
+  const a = JSON.stringify(actual),
+    e = JSON.stringify(expected);
   ok(a === e, `${label} (got ${a}, want ${e})`);
 }
 
@@ -52,15 +60,22 @@ function eq(actual, expected, label) {
 /* A no-op 2D canvas context so chart / crop code never crashes in jsdom */
 /* ------------------------------------------------------------------ */
 function makeFakeCtx() {
-  const target = new Proxy({}, {
-    get(_t, prop) {
-      if (prop === "measureText") return () => ({ width: 10, actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 2 });
-      if (prop === "getImageData") return () => ({ data: new Uint8ClampedArray(1024).fill(128) });
-      if (prop === "createLinearGradient" || prop === "createRadialGradient") return () => ({ addColorStop: () => {} });
-      return (..._a) => 0;
+  const target = new Proxy(
+    {},
+    {
+      get(_t, prop) {
+        if (prop === "measureText")
+          return () => ({ width: 10, actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 2 });
+        if (prop === "getImageData") return () => ({ data: new Uint8ClampedArray(1024).fill(128) });
+        if (prop === "createLinearGradient" || prop === "createRadialGradient")
+          return () => ({ addColorStop: () => {} });
+        return (..._a) => 0;
+      },
+      set() {
+        return true;
+      },
     },
-    set() { return true; },
-  });
+  );
   return target;
 }
 
@@ -78,9 +93,22 @@ const dom = new JSDOM(html, {
   // every top-level `const`/`let` declared after that line (ONB_LS,
   // AICHAT_LS, the onboarding helpers…) stays in the temporal dead zone.
   beforeParse(window) {
-    window.fetch = async () => ({ ok: false, status: 404, json: async () => ({}), text: async () => "" });
+    window.fetch = async () => ({
+      ok: false,
+      status: 404,
+      json: async () => ({}),
+      text: async () => "",
+    });
     window.indexedDB = globalThis.indexedDB;
-    window.matchMedia = window.matchMedia || (() => ({ matches: false, addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {} }));
+    window.matchMedia =
+      window.matchMedia ||
+      (() => ({
+        matches: false,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
     window.confirm = () => true;
     window.alert = () => {};
   },
@@ -88,15 +116,33 @@ const dom = new JSDOM(html, {
 const w = dom.window;
 
 w.caches = undefined;
-Object.defineProperty(w.HTMLElement.prototype, "scrollIntoView", { value: () => {}, configurable: true });
-Object.defineProperty(w.Element.prototype, "requestFullscreen", { value: () => Promise.resolve(), configurable: true });
-Object.defineProperty(w.Document.prototype, "exitFullscreen", { value: () => Promise.resolve(), configurable: true });
-w.HTMLCanvasElement.prototype.getContext = function () { return makeFakeCtx(); };
-w.HTMLCanvasElement.prototype.toDataURL = function () { return "data:image/jpeg;base64,/9j/4AAQSkZJRg=="; };
-w.HTMLCanvasElement.prototype.toBlob = function (cb) { cb(new Blob(["x"], { type: "image/jpeg" })); };
+Object.defineProperty(w.HTMLElement.prototype, "scrollIntoView", {
+  value: () => {},
+  configurable: true,
+});
+Object.defineProperty(w.Element.prototype, "requestFullscreen", {
+  value: () => Promise.resolve(),
+  configurable: true,
+});
+Object.defineProperty(w.Document.prototype, "exitFullscreen", {
+  value: () => Promise.resolve(),
+  configurable: true,
+});
+w.HTMLCanvasElement.prototype.getContext = function () {
+  return makeFakeCtx();
+};
+w.HTMLCanvasElement.prototype.toDataURL = function () {
+  return "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+};
+w.HTMLCanvasElement.prototype.toBlob = function (cb) {
+  cb(new Blob(["x"], { type: "image/jpeg" }));
+};
 
 // Math + markdown shims (only used at render time; keep them inert).
-w.katex = { renderToString: (s) => "<span>" + String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>" };
+w.katex = {
+  renderToString: (s) =>
+    "<span>" + String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>",
+};
 w.marked = { parse: (s) => String(s) };
 // pdf.js shim installed lazily by the PDF→test scenario (window.pdfjsLib).
 
@@ -137,26 +183,30 @@ const SUBJECTS = ["Physics", "Chemistry", "Mathematics"];
 function makeQuestions(subject, n = 25, opts = {}) {
   const out = [];
   for (let i = 1; i <= n; i++) {
-    const isInteger = opts.integerSet ? opts.integerSet.includes(i) : (i % 5 === 0);
+    const isInteger = opts.integerSet ? opts.integerSet.includes(i) : i % 5 === 0;
     const answer = isInteger ? String(10 + i) : "abcd"[(i - 1) % 4];
     const q = {
       id: subj2id(subject) + "-q" + i,
       subject,
       no: i,
       printedNo: i,
-      text: `${subject} question number ${i} about topic T${i} (chapter C${i % 7 + 1})`,
-      chapter: "C" + (i % 7 + 1),
+      text: `${subject} question number ${i} about topic T${i} (chapter C${(i % 7) + 1})`,
+      chapter: "C" + ((i % 7) + 1),
       solText: "Step-by-step solution for Q" + i,
       type: isInteger ? "integer" : "mcq",
       answer,
-      options: isInteger ? [] : ["a", "b", "c", "d"].map((l) => ({ label: l, text: `${l}) Option text for Q${i}` })),
+      options: isInteger
+        ? []
+        : ["a", "b", "c", "d"].map((l) => ({ label: l, text: `${l}) Option text for Q${i}` })),
     };
     out.push(q);
   }
   return out;
 }
 let _idc = 0;
-function subj2id(s) { return String(++_idc); }
+function subj2id(s) {
+  return String(++_idc);
+}
 
 function makeTest(name = "Robot Mock #1") {
   const packs = {};
@@ -184,20 +234,32 @@ console.log("\n== 1. Build & scoring ==");
   });
   const phyMcq = t.questions.filter((q) => q.subject === "Physics" && q.type === "mcq");
   const phyInt = t.questions.filter((q) => q.subject === "Physics" && q.type === "integer");
-  phyMcq.slice(0, 15).forEach((q) => { resp[q.id].ans = q.answer; resp[q.id].status = "answered"; });
+  phyMcq.slice(0, 15).forEach((q) => {
+    resp[q.id].ans = q.answer;
+    resp[q.id].status = "answered";
+  });
   phyMcq.slice(15, 20).forEach((q) => {
     const wrong = "abcd".split("").find((l) => l !== q.answer) || "a";
-    resp[q.id].ans = wrong; resp[q.id].status = "answered";
+    resp[q.id].ans = wrong;
+    resp[q.id].status = "answered";
   });
-  phyInt.forEach((q) => { resp[q.id].ans = q.answer; resp[q.id].status = "answered"; });
-  t.questions.filter((q) => q.type === "integer" && q.subject !== "Physics").forEach((q) => { resp[q.id].ans = q.answer; resp[q.id].status = "answered"; });
+  phyInt.forEach((q) => {
+    resp[q.id].ans = q.answer;
+    resp[q.id].status = "answered";
+  });
+  t.questions
+    .filter((q) => q.type === "integer" && q.subject !== "Physics")
+    .forEach((q) => {
+      resp[q.id].ans = q.answer;
+      resp[q.id].status = "answered";
+    });
 
   const r = A.evaluate(t, resp);
   // 15 correct MCQ + 15 integer correct = 30 correct → 120 marks; 5 wrong MCQ → -5
   eq(r.all.correct, 30, "30 correct answers");
   eq(r.all.wrong, 5, "5 wrong answers");
   eq(r.all.marks, 115, "marks = 30×4 − 5×1 = 115");
-  eq(r.all.accuracy, Math.round(30 / 35 * 1000) / 10, "accuracy = 30/35");
+  eq(r.all.accuracy, Math.round((30 / 35) * 1000) / 10, "accuracy = 30/35");
   eq(r.per.Physics.total, 25, "physics bucket totals 25");
   eq(r.per.Mathematics.correct, 5, "maths: 5 integer correct");
 }
@@ -213,7 +275,7 @@ console.log("\n== 1b. Numerical questions: no negative marking (2026 rule) ==");
   const integer = t.questions.find((q) => q.type === "integer");
   const resp = {};
   t.questions.forEach((q) => (resp[q.id] = { ans: null, status: "notvisited", time: 0 }));
-  resp[mcq.id].ans = mcq.answer === "a" ? "b" : "a";        // wrong MCQ
+  resp[mcq.id].ans = mcq.answer === "a" ? "b" : "a"; // wrong MCQ
   resp[integer.id].ans = String(Number(integer.answer) + 1); // wrong integer
   resp[integer.id].status = "answered";
   resp[mcq.id].status = "answered";
@@ -246,7 +308,9 @@ console.log("\n== 2. Exam flow (UI) ==");
     const q = EX().test.questions[i];
     if (q.type === "mcq") {
       const rows = [...w.document.querySelectorAll("#exQ .optrow")];
-      const target = rows.find((row) => row.querySelector(".optlab").textContent === String(q.answer).toUpperCase());
+      const target = rows.find(
+        (row) => row.querySelector(".optlab").textContent === String(q.answer).toUpperCase(),
+      );
       ok(!!target, `Q${i + 1} correct option row present`);
       target.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
     } else {
@@ -256,7 +320,9 @@ console.log("\n== 2. Exam flow (UI) ==");
     }
   }
   // Verify the attempt recorded answers for all 75 before submitting
-  const answered = Object.values(EX().attempt.responses).filter((r) => r.ans != null && r.ans !== "").length;
+  const answered = Object.values(EX().attempt.responses).filter(
+    (r) => r.ans != null && r.ans !== "",
+  ).length;
   eq(answered, 75, "all 75 questions answered via UI");
 
   A.submitExam(false);
@@ -268,7 +334,10 @@ console.log("\n== 2. Exam flow (UI) ==");
   ok(last.result.per.Physics && last.result.per.Mathematics, "subject-wise result present");
   // Persistence round-trip
   const saved = JSON.parse(w.localStorage.getItem(LS()) || "{}");
-  ok((saved.attempts || []).some((a) => a.id === last.id), "attempt persisted to localStorage");
+  ok(
+    (saved.attempts || []).some((a) => a.id === last.id),
+    "attempt persisted to localStorage",
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -295,10 +364,16 @@ console.log("\n== 2b. On-screen calculator ==");
 
   // 12 + 3 = 15
   const press = (label) => {
-    const b = [...w.document.querySelectorAll("#exCalcKeys button")].find((x) => x.textContent === label);
+    const b = [...w.document.querySelectorAll("#exCalcKeys button")].find(
+      (x) => x.textContent === label,
+    );
     b.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
   };
-  press("1"); press("2"); press("+"); press("3"); press("=");
+  press("1");
+  press("2");
+  press("+");
+  press("3");
+  press("=");
   eq(w.document.getElementById("exCalcDisp").textContent, "15", "12 + 3 = 15 on the calc display");
 
   // Insert into the numerical answer input.
@@ -307,7 +382,11 @@ console.log("\n== 2b. On-screen calculator ==");
   insBtn.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
   const inp = w.document.querySelector("#exQ input[type=text]");
   eq(inp.value, "15", "calculator result inserted into the numerical answer box");
-  eq(EX().attempt.responses[t.questions[intIdx].id].ans, "15", "inserted answer recorded in the attempt");
+  eq(
+    EX().attempt.responses[t.questions[intIdx].id].ans,
+    "15",
+    "inserted answer recorded in the attempt",
+  );
 
   // Keyboard support + Escape closes.
   w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -322,7 +401,8 @@ console.log("\n== 2c. First-run onboarding ==");
 {
   // simulate a brand-new user: no onboarding flag; snapshot shared state
   // so later scenarios (analytics) still see their own history.
-  const prevTests = g("S").tests, prevAttempts = g("S").attempts;
+  const prevTests = g("S").tests,
+    prevAttempts = g("S").attempts;
   w.localStorage.removeItem("jeecbt.onboarded.v1");
   g("S").tests = [];
   g("S").attempts = [];
@@ -339,7 +419,10 @@ console.log("\n== 2c. First-run onboarding ==");
     const doneBtn = modal.querySelector("[data-done]");
     doneBtn.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
     ok(!w.document.querySelector(".onb-modal"), "guide dismisses cleanly");
-    ok(w.localStorage.getItem("jeecbt.onboarded.v1") === "1", "dismissal is remembered (won't nag again)");
+    ok(
+      w.localStorage.getItem("jeecbt.onboarded.v1") === "1",
+      "dismissal is remembered (won't nag again)",
+    );
   }
   g("S").tests = prevTests;
   g("S").attempts = prevAttempts;
@@ -356,12 +439,18 @@ console.log("\n== 2d. Onboarding guard (auto-show + no re-open after dismissal) 
   // had their modals removed, so a fresh call schedules exactly one.)
   w.localStorage.removeItem("jeecbt.onboarded.v1");
   w.document.querySelectorAll(".onb-modal").forEach((x) => x.remove());
-  w.eval("maybeOnboard()");          // schedules the 900ms auto-show timer
+  w.eval("maybeOnboard()"); // schedules the 900ms auto-show timer
   await new Promise((r2) => setTimeout(r2, 1000));
   const autoShown = w.document.querySelectorAll(".onb-modal").length > 0;
   ok(autoShown, "new user auto-sees the guide after load");
   // Dismiss every auto-shown modal and confirm the flag is persisted.
-  w.document.querySelectorAll(".onb-modal").forEach((x) => x.querySelector("[data-done]") && x.querySelector("[data-done]").dispatchEvent(new w.MouseEvent("click", { bubbles: true })));
+  w.document
+    .querySelectorAll(".onb-modal")
+    .forEach(
+      (x) =>
+        x.querySelector("[data-done]") &&
+        x.querySelector("[data-done]").dispatchEvent(new w.MouseEvent("click", { bubbles: true })),
+    );
   ok(w.localStorage.getItem("jeecbt.onboarded.v1") === "1", "auto guide dismissal is persisted");
   // A returning visitor (flag now set) is never auto-nagged again: re-run
   // the boot hook and wait out its timer — the guide must NOT come back.
@@ -378,7 +467,8 @@ console.log("\n== 3. PDF → test (parser) ==");
 {
   // Build a synthetic "PDF": 25 single-column questions (20 MCQ + 5 integer),
   // an answer-key table and a solutions section.
-  const W = 595, H = 842;
+  const W = 595,
+    H = 842;
   const items = [];
   const blocksPerPage = 8;
   const qCount = 25;
@@ -388,13 +478,35 @@ console.log("\n== 3. PDF → test (parser) ==");
     const page = Math.ceil(i / blocksPerPage);
     const pos = i - (page - 1) * blocksPerPage;
     const startY = 70 + (pos - 1) * 62;
-    items.push({ page, item: { str: `${i}.`, transform: [1, 0, 0, 12, 20, -(H - startY)], x: 20, y: startY } });
-    items.push({ page, item: { str: `Physics synthetic question number ${i} about Newton's laws.`, transform: [1, 0, 0, 12, 70, 0], x: 70, y: startY + 12 } });
+    items.push({
+      page,
+      item: { str: `${i}.`, transform: [1, 0, 0, 12, 20, -(H - startY)], x: 20, y: startY },
+    });
+    items.push({
+      page,
+      item: {
+        str: `Physics synthetic question number ${i} about Newton's laws.`,
+        transform: [1, 0, 0, 12, 70, 0],
+        x: 70,
+        y: startY + 12,
+      },
+    });
     if (!isInteger) {
       ["a", "b", "c", "d"].forEach((l, oi) => {
         const oy = startY + 30 + oi * 7;
-        items.push({ page, item: { str: `(${l})`, transform: [1, 0, 0, 12, 60, 0], x: 60, y: oy } });
-        items.push({ page, item: { str: `Option ${l.toUpperCase()} text`, transform: [1, 0, 0, 12, 80, 0], x: 80, y: oy } });
+        items.push({
+          page,
+          item: { str: `(${l})`, transform: [1, 0, 0, 12, 60, 0], x: 60, y: oy },
+        });
+        items.push({
+          page,
+          item: {
+            str: `Option ${l.toUpperCase()} text`,
+            transform: [1, 0, 0, 12, 80, 0],
+            x: 80,
+            y: oy,
+          },
+        });
       });
       answers.push("abcd"[(i - 1) % 4]);
     } else {
@@ -403,19 +515,47 @@ console.log("\n== 3. PDF → test (parser) ==");
   }
   // Answer key page
   const akPage = 4;
-  items.push({ page: akPage, item: { str: "ANSWER KEY", transform: [1, 0, 0, 12, 60, 0], x: 60, y: 100 } });
+  items.push({
+    page: akPage,
+    item: { str: "ANSWER KEY", transform: [1, 0, 0, 12, 60, 0], x: 60, y: 100 },
+  });
   for (let i = 0; i < qCount; i++) {
-    items.push({ page: akPage, item: { str: String(i + 1), transform: [1, 0, 0, 12, 40 + i * 20, 0], x: 40 + i * 20, y: 140 } });
+    items.push({
+      page: akPage,
+      item: {
+        str: String(i + 1),
+        transform: [1, 0, 0, 12, 40 + i * 20, 0],
+        x: 40 + i * 20,
+        y: 140,
+      },
+    });
   }
   for (let i = 0; i < qCount; i++) {
-    items.push({ page: akPage, item: { str: answers[i], transform: [1, 0, 0, 12, 40 + i * 20, 0], x: 40 + i * 20, y: 162 } });
+    items.push({
+      page: akPage,
+      item: { str: answers[i], transform: [1, 0, 0, 12, 40 + i * 20, 0], x: 40 + i * 20, y: 162 },
+    });
   }
   // Solutions page
   const solPage = 5;
-  items.push({ page: solPage, item: { str: "SOLUTIONS", transform: [1, 0, 0, 12, 60, 0], x: 60, y: 100 } });
+  items.push({
+    page: solPage,
+    item: { str: "SOLUTIONS", transform: [1, 0, 0, 12, 60, 0], x: 60, y: 100 },
+  });
   for (let i = 1; i <= qCount; i++) {
-    items.push({ page: solPage, item: { str: `${i}.`, transform: [1, 0, 0, 12, 12, 0], x: 12, y: 120 + i * 16 } });
-    items.push({ page: solPage, item: { str: `Full solution text for question ${i}.`, transform: [1, 0, 0, 12, 40, 0], x: 40, y: 120 + i * 16 } });
+    items.push({
+      page: solPage,
+      item: { str: `${i}.`, transform: [1, 0, 0, 12, 12, 0], x: 12, y: 120 + i * 16 },
+    });
+    items.push({
+      page: solPage,
+      item: {
+        str: `Full solution text for question ${i}.`,
+        transform: [1, 0, 0, 12, 40, 0],
+        x: 40,
+        y: 120 + i * 16,
+      },
+    });
   }
 
   const pageCount = Math.max(akPage, solPage, Math.ceil(qCount / blocksPerPage));
@@ -425,18 +565,23 @@ console.log("\n== 3. PDF → test (parser) ==");
     pages[n] = {
       getViewport: ({ scale }) => ({ width: W * (scale || 1), height: H * (scale || 1) }),
       getTextContent: async () => ({
-        items: items.filter((it) => it.page === n).map((it) => ({
-          str: it.item.str,
-          // PDF.js text transform: [a,b,c,d,e,f] where e=x, f=bottom-origin y.
-          // pageItems() computes top-origin y = viewport.height - f, so f = H - item.y.
-          transform: [1, 0, 0, it.item.h || 12, it.item.x, H - it.item.y],
-        })),
+        items: items
+          .filter((it) => it.page === n)
+          .map((it) => ({
+            str: it.item.str,
+            // PDF.js text transform: [a,b,c,d,e,f] where e=x, f=bottom-origin y.
+            // pageItems() computes top-origin y = viewport.height - f, so f = H - item.y.
+            transform: [1, 0, 0, it.item.h || 12, it.item.x, H - it.item.y],
+          })),
       }),
       render: () => ({ promise: Promise.resolve() }),
     };
   }
   w.pdfjsLib = {
-    getDocument: () => ({ numPages, promise: Promise.resolve({ numPages, getPage: async (n) => pages[n] }) }),
+    getDocument: () => ({
+      numPages,
+      promise: Promise.resolve({ numPages, getPage: async (n) => pages[n] }),
+    }),
   };
 
   const fakeFile = {
@@ -445,7 +590,9 @@ console.log("\n== 3. PDF → test (parser) ==");
     arrayBuffer: async () => new Uint8Array([37, 80, 68, 70]).buffer, // "%PDF" — ignored by the fake backend
   };
 
-  const questions = await A.parsePaper(fakeFile, "Physics", (msg) => { /* progress */ });
+  const questions = await A.parsePaper(fakeFile, "Physics", (msg) => {
+    /* progress */
+  });
   eq(questions.length, 25, "parser found all 25 questions");
   const mcqCount = questions.filter((q) => q.type === "mcq").length;
   const intCount = questions.filter((q) => q.type === "integer").length;
@@ -454,8 +601,14 @@ console.log("\n== 3. PDF → test (parser) ==");
   const hasAnswer = questions.filter((q) => q.answer != null && q.answer !== "").length;
   eq(hasAnswer, 25, "all 25 questions got an answer from the key");
   // Verify a couple of specific answers mapped to the right question numbers
-  ok(questions.some((q) => q.no === 1 && q.answer === "a"), "Q1 answer mapped correctly");
-  ok(questions.some((q) => q.no === 5 && q.type === "integer" && q.answer === "15"), "Q5 integer answer mapped correctly");
+  ok(
+    questions.some((q) => q.no === 1 && q.answer === "a"),
+    "Q1 answer mapped correctly",
+  );
+  ok(
+    questions.some((q) => q.no === 5 && q.type === "integer" && q.answer === "15"),
+    "Q5 integer answer mapped correctly",
+  );
   const hasSol = questions.filter((q) => q.solText).length;
   eq(hasSol, 25, "solutions attached to all questions");
   const t = w.buildTest("Parsed Paper", { Physics: questions, Chemistry: [], Mathematics: [] });
@@ -469,7 +622,10 @@ console.log("\n== 4. Analytics ==");
 {
   ok(A.ntaPercentile(0) === 0.84, "0 marks → 0.84 percentile (real anchor)");
   ok(A.ntaPercentile(300) >= 99, "perfect → ~100 percentile");
-  ok(A.ntaPercentile(160) > 98 && A.ntaPercentile(160) < 99.1, "160 marks → ~99 percentile (real anchor)");
+  ok(
+    A.ntaPercentile(160) > 98 && A.ntaPercentile(160) < 99.1,
+    "160 marks → ~99 percentile (real anchor)",
+  );
   ok(A.ntaRank(99.5) > 1000 && A.ntaRank(99.5) < 50000, "rank formula sane for 99.5 pct");
 
   // Build a real attempted+submitted history to test analyse() + mistakeDNA().
@@ -479,12 +635,29 @@ console.log("\n== 4. Analytics ==");
   t.questions.forEach((q) => (resp[q.id] = { ans: null, status: "notvisited", time: 0 }));
   // 20 correct, 10 wrong (all in Physics, tagged 'calculation'), rest skipped
   const phyMcq = t.questions.filter((q) => q.subject === "Physics" && q.type === "mcq");
-  phyMcq.slice(0, 10).forEach((q) => { resp[q.id].ans = q.answer; resp[q.id].status = "answered"; });
-  t.questions.filter((q) => q.subject === "Chemistry" && q.type === "mcq").slice(0, 10).forEach((q) => { resp[q.id].ans = q.answer; resp[q.id].status = "answered"; });
-  phyMcq.slice(10, 20).forEach((q) => { resp[q.id].ans = q.answer === "a" ? "b" : "a"; resp[q.id].status = "answered"; });
+  phyMcq.slice(0, 10).forEach((q) => {
+    resp[q.id].ans = q.answer;
+    resp[q.id].status = "answered";
+  });
+  t.questions
+    .filter((q) => q.subject === "Chemistry" && q.type === "mcq")
+    .slice(0, 10)
+    .forEach((q) => {
+      resp[q.id].ans = q.answer;
+      resp[q.id].status = "answered";
+    });
+  phyMcq.slice(10, 20).forEach((q) => {
+    resp[q.id].ans = q.answer === "a" ? "b" : "a";
+    resp[q.id].status = "answered";
+  });
   const attempt = {
-    id: A.uid(), testId: t.id, startedAt: Date.now(), submittedAt: Date.now(),
-    responses: resp, result: A.evaluate(t, resp), tabSwitches: 0,
+    id: A.uid(),
+    testId: t.id,
+    startedAt: Date.now(),
+    submittedAt: Date.now(),
+    responses: resp,
+    result: A.evaluate(t, resp),
+    tabSwitches: 0,
   };
   S().attempts.push(attempt);
   S().qtags = S().qtags || {};
