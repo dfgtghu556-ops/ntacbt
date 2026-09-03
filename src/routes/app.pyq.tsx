@@ -115,6 +115,19 @@ function Pyq() {
           Official-style previous-year papers baked into the app. Answers carry the exact NTA keys
           (including ranges, accepted values and bonus questions).
         </p>
+        <div className="mt-3 rounded-xl border border-primary/30 bg-accent/40 p-4 text-sm">
+          <p className="font-medium">This React view has the NTA 2026 papers baked in.</p>
+          <p className="mt-1 text-muted-foreground">
+            The complete historical PYQ library (all sessions, shifts and older years) lives on the
+            Full platform.
+          </p>
+          <a
+            href="/jee-cbt.html#pyq"
+            className="mt-3 inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Open full PYQ library →
+          </a>
+        </div>
       </section>
 
       {loading ? (

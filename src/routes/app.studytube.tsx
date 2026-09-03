@@ -252,6 +252,29 @@ function StudyTube() {
           : "Auto (best match for this target)"}
       </p>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="text-xs font-medium text-muted-foreground" htmlFor="pref-teacher">
+          Preferred teacher
+        </label>
+        <select
+          id="pref-teacher"
+          value={teacher ?? ""}
+          onChange={(e) => setTeacher(e.target.value || undefined)}
+          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none"
+        >
+          <option value="">Auto (best match)</option>
+          {LEGACY_TEACHERS.filter(
+            (t) =>
+              t.subject === ((weak?.subject as StudyTubeRequest["subject"]) || "Physics") &&
+              teacherSupportsTarget(t.id, target),
+          ).map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name} · {t.channelName}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex gap-2">
         <input
           value={query}

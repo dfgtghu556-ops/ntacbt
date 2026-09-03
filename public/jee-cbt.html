@@ -5690,6 +5690,14 @@
       <div class="brand">
         NTACBT&nbsp;<span style="opacity: 0.8; font-weight: 500">JEE CBT Platform</span>
       </div>
+      <a
+        class="iconbtn"
+        href="/app"
+        title="Open the new React Learning OS (planner, StudyTube, CBT, analytics, focus, Saarthi)"
+        style="text-decoration:none"
+      >
+        <span>🧠</span> Learning OS
+      </a>
       <div class="spacer"></div>
       <button
         class="ckbtn"
@@ -11356,6 +11364,7 @@
         { id: "eduniti", name: "Eduniti", short: "Eduniti", icon: "⚡", subjects: ["Physics"] },
         { id: "mathongo", name: "MathonGo", short: "MathonGo", icon: "📐", subjects: ["Mathematics"] },
         { id: "apni-kaksha", name: "Apni Kaksha", short: "Apni Kaksha", icon: "📚", subjects: ["Physics", "Chemistry", "Mathematics"] },
+        { id: "science-fun", name: "Science & Fun (Ashu Sir / Ushank Sir)", short: "Science & Fun", icon: "🧪", subjects: ["Physics", "Chemistry", "Mathematics"] },
       ];
 
       const AIP_TEACHERS = [
@@ -11400,7 +11409,7 @@
         { id: "un-piyush-maheshwari", name: "Piyush Maheshwari Sir (PMS Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Inorganic Chemistry Legend", examTarget: ["jeemain", "jeeadv"], batchInfo: "Nucleus Kota HOD Series", channelName: "Unacademy JEE" },
         { id: "un-brijesh-jindal", name: "Brijesh Jindal Sir (BJ Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Physical Chemistry Legend", examTarget: ["jeemain", "jeeadv"], batchInfo: "Nucleus Kota HOD Series", channelName: "Unacademy JEE" },
         { id: "un-mka-sir", name: "Mohammad Kashif Alam Sir (MKA Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Organic Chemistry Maestro", examTarget: ["jeemain", "jeeadv"], batchInfo: "Brainanza / Master Organic", channelName: "Unacademy JEE" },
-        { id: "un-monica-bedi", name: "Monica Bedi Ma'am", instituteId: "unacademy", subject: "Chemistry", specialization: "CBSE Board 12 & NCERT One-Shots", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Shaurya Batch / Board 12 Score 100", channelName: "Unacademy Class 11 & 12" },
+        { id: "un-monica-bedi", name: "Monica Bedi Ma'am (Shaurya Mam)", instituteId: "unacademy", subject: "Chemistry", specialization: "CBSE Board 12 & NCERT One-Shots", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Shaurya Batch / Board 12 Score 100", channelName: "Unacademy Class 11 & 12" },
         { id: "un-paras-thakur", name: "Paras Thakur Sir", instituteId: "unacademy", subject: "Chemistry", specialization: "Conceptual Chemistry & Mechanisms", examTarget: ["jeemain", "board12"], batchInfo: "JEE Live Daily", channelName: "Unacademy JEE" },
         { id: "un-skm-sir", name: "Surendra K Mishra Sir (SKM Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Organic Chemistry God (Ex-Nucleus Kota)", examTarget: ["jeeadv", "jeemain"], batchInfo: "Super Achievers Advanced", channelName: "Unacademy JEE" },
         { id: "un-akk-sir", name: "Akhilesh Kanther Sir (AKK Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Physical Chemistry Kota HOD", examTarget: ["jeeadv", "jeemain"], batchInfo: "Super Achievers Advanced", channelName: "Unacademy JEE" },
@@ -11469,7 +11478,15 @@
         { id: "eduniti-mohit-goenka", name: "Mohit Goenka Sir", instituteId: "eduniti", subject: "Physics", specialization: "Formula Checklists & PYQ Marathons", examTarget: ["jeemain", "jeeadv"], batchInfo: "Formula Checklist / Rank Booster PYQs", channelName: "Eduniti - Physics for JEE" },
         { id: "mathongo-anup-sir", name: "Anup Gupta Sir", instituteId: "mathongo", subject: "Mathematics", specialization: "JEE Main Marks Booster & PYQ Priority", examTarget: ["jeemain", "jeeadv"], batchInfo: "Marks App / JEE Main Marks Booster", channelName: "MathonGo" },
         { id: "ak-aman-dhattarwal", name: "Aman Dhattarwal Sir", instituteId: "apni-kaksha", subject: "Physics", specialization: "CBSE Class 12 Boards & JEE Foundations", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Apni Kaksha Board Animation Series", channelName: "Apni Kaksha" },
+        // --- SCIENCE & FUN (Ashu Sir / Ushank Sir) --- BOARD-SPECIFIC CLASS 12 ---
+        { id: "sf-ashu-ghai", name: "Ashu Ghai Sir (Ashu Sir)", instituteId: "science-fun", subject: "Physics", specialization: "NCERT Class 12 Physics & Board Revision", examTarget: ["board12", "cbse27", "board11"], batchInfo: "Science and Fun / 11th & 12th Board Series", channelName: "Science and Fun" },
+        { id: "sf-ushank-sir", name: "Ushank Sir", instituteId: "science-fun", subject: "Mathematics", specialization: "Class 12 Maths NCERT & Board One-Shots", examTarget: ["board12", "cbse27"], batchInfo: "Class 12 Maths Marathon / NCERT", channelName: "Science and Fun" },
       ];
+
+      const AIP_BOARD_PRIORITY = ["sf-ashu-ghai", "un-monica-bedi", "sf-ushank-sir"];
+      function aipBoardPriority(t) {
+        return AIP_BOARD_PRIORITY.indexOf(t.id) >= 0 ? AIP_BOARD_PRIORITY.indexOf(t.id) : 99;
+      }
 
       function aipTargetSupports(t, target) {
         const norm = String(target || "jeemain").toLowerCase();
@@ -11508,9 +11525,18 @@
             return true;
           });
         }
+        const normT = String(examTarget || "jeemain").toLowerCase();
+        const board = normT === "board12" || normT === "cbse27" || normT === "cbse" || normT === "board";
         return list
           .slice()
-          .sort((a, b) => aipFitScore(a, examTarget) - aipFitScore(b, examTarget) || a.name.localeCompare(b.name));
+          .sort((a, b) => {
+            if (board) {
+              const pa = aipBoardPriority(a);
+              const pb = aipBoardPriority(b);
+              if (pa !== pb) return pa - pb;
+            }
+            return aipFitScore(a, examTarget) - aipFitScore(b, examTarget) || a.name.localeCompare(b.name);
+          });
       }
 
       function aipInstituteHasTarget(instituteId, subject, target) {
@@ -11541,6 +11567,7 @@
         w.examFilters[subject] = target;
         aipClearIncompatibleTeacher(w, subject, target);
       }
+
 
       const AIP_CHANNELS = {
         // popular free JEE educators on YouTube (Dream Team options)
@@ -12523,6 +12550,42 @@
               instRow.appendChild(b);
             });
             sec.appendChild(instRow);
+            // ── DREAM TEACHER (automatic): visible before choosing an institute ──
+            if (!w.institutes[s]) {
+              const activeExamFilter = w.examFilters[s] || w.target || "jeemain";
+              const autoTeachers = aipGetFaculties(null, s, activeExamFilter).slice(0, 8);
+              if (autoTeachers.length) {
+                const dtBox = el("div");
+                dtBox.style.cssText = "margin-top:14px;padding:14px;background:var(--bg, #f8fafc);border:1px solid var(--line);border-radius:10px";
+                const targetText = activeExamFilter === "board12" || activeExamFilter === "cbse27" ? "CBSE Class 12" : activeExamFilter === "board11" ? "CBSE Class 11" : activeExamFilter === "jeeadv" ? "JEE Advanced" : "JEE Main";
+                dtBox.innerHTML = `
+                  <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">🎓 Dream Teachers — Best for ${targetText}</div>
+                  <div class="small muted" style="margin-top:2px">Top ${s} teachers across platforms for this class. Pick one, or choose an institute below to narrow the list.</div>
+                `;
+                const dtGrid = el("div", "grid");
+                dtGrid.style.cssText = "grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:10px;margin-top:10px";
+                autoTeachers.forEach((f) => {
+                  const isTeacherSelected = w.teachers[s] === f.id;
+                  const tc = el("div");
+                  let tcStyle = "padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--panel)";
+                  if (isTeacherSelected) tcStyle += ";border:1.5px solid var(--accent, #3b82f6);box-shadow:0 0 0 1px var(--accent)";
+                  tc.style.cssText = tcStyle;
+                  const bdg = (f.examTarget || []).map(function (ex) { const tag = ex === "jeemain" ? "JEE Main" : ex === "jeeadv" ? "JEE Adv" : ex === "board12" || ex === "cbse27" ? "Board 12" : "Class 11"; return `<span class="badge" style="font-size:9px;padding:2px 5px;margin-right:3px">${tag}</span>`; }).join("");
+                  tc.innerHTML = `<div style="font-weight:700;font-size:13px">${f.name}${isTeacherSelected ? " ✓" : ""}</div><div style="color:var(--accent,#3b82f6);font-size:11px;margin-top:2px">${esc(f.specialization)}</div><div class="small muted" style="font-size:11px;margin-top:4px">${esc(f.batchInfo || "")} · ${esc(f.channelName)}</div><div style="margin-top:6px">${bdg}</div>`;
+                  tc.onclick = function () {
+                    if (isTeacherSelected) {
+                      delete w.teachers[s]; delete w.teacherNames[s];
+                    } else {
+                      w.teachers[s] = f.id; w.teacherNames[s] = f.name; w.institutes[s] = f.instituteId; w.channels[s] = f.channelName || "Any";
+                    }
+                    render(0);
+                  };
+                  dtGrid.appendChild(tc);
+                });
+                dtBox.appendChild(dtGrid);
+                sec.appendChild(dtBox);
+              }
+            }
 
             // If an institute is selected, display TOP FACULTIES (Dream Teacher) selection block!
             if (w.institutes[s]) {

@@ -1,5 +1,5 @@
 {
-  "extractedAt": "2026-09-03T04:16:13.711Z",
+  "extractedAt": "2026-09-03T05:03:25.726Z",
   "sourceFile": "public/jee-cbt.html",
   "schema": 1,
   "data": {
@@ -1499,7 +1499,7 @@
       },
       {
         "id": "un-monica-bedi",
-        "name": "Monica Bedi Ma'am",
+        "name": "Monica Bedi Ma'am (Shaurya Mam)",
         "instituteId": "unacademy",
         "subject": "Chemistry",
         "specialization": "CBSE Board 12 & NCERT One-Shots",
@@ -2205,6 +2205,33 @@
         ],
         "batchInfo": "Apni Kaksha Board Animation Series",
         "channelName": "Apni Kaksha"
+      },
+      {
+        "id": "sf-ashu-ghai",
+        "name": "Ashu Ghai Sir (Ashu Sir)",
+        "instituteId": "science-fun",
+        "subject": "Physics",
+        "specialization": "NCERT Class 12 Physics & Board Revision",
+        "examTarget": [
+          "board12",
+          "cbse27",
+          "board11"
+        ],
+        "batchInfo": "Science and Fun / 11th & 12th Board Series",
+        "channelName": "Science and Fun"
+      },
+      {
+        "id": "sf-ushank-sir",
+        "name": "Ushank Sir",
+        "instituteId": "science-fun",
+        "subject": "Mathematics",
+        "specialization": "Class 12 Maths NCERT & Board One-Shots",
+        "examTarget": [
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Class 12 Maths Marathon / NCERT",
+        "channelName": "Science and Fun"
       }
     ],
     "aipChannels": {
