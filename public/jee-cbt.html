@@ -1569,6 +1569,14 @@
         box-shadow: var(--shadow);
         animation: fade 0.25s;
       }
+      .modal .iconbtn {
+        background: var(--line, rgba(0, 0, 0, 0.08));
+        color: var(--ink, #0f172a);
+        border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+      }
+      .modal .iconbtn:hover {
+        background: var(--line-strong, rgba(0, 0, 0, 0.16));
+      }
       /* ---------- first-run "Getting Started" onboarding ---------- */
       .onb-modal .box {
         max-width: 620px;
@@ -12145,6 +12153,7 @@
         prof.depth = Object.keys(AIP_DEPTHS).find((k) => AIP_DEPTHS[k] === D) || prof.depth;
         const queues = {};
         let uid2 = 1;
+        const allTopicList = [];
         prof.subjects.forEach((s) => {
           let list = (prof.topics[s] || []).slice();
           // CRASH/FOCUSED: high-weightage chapters first (marks per hour is king);
@@ -12152,6 +12161,7 @@
           if (D === AIP_DEPTHS.crash || D === AIP_DEPTHS.focused)
             list.sort((a, b) => (b[2] || 2) - (a[2] || 2) || (a[1] || 2) - (b[1] || 2));
           queues[s] = list.map(([name, diff, wt]) => {
+            allTopicList.push({ subject: s, topic: name, diff, wt: wt || 2 });
             const unit = [
               {
                 id: "a" + uid2++,
@@ -12161,7 +12171,7 @@
                 diff,
                 wt: wt || 2,
                 depth: D.kind,
-                estMin: D.est[diff],
+                estMin: D.est[diff] || 90,
                 status: "todo",
                 teacherId: (prof.teachers || {})[s] || undefined,
                 teacher: (prof.teacherNames || {})[s] || undefined,
@@ -12204,27 +12214,47 @@
         const n = prof.subjects.length;
         const lastDay = aipAddDays(prof.startDate, prof.days - 1);
         const tasks = [];
-        let overflowMin = 0,
-          dayOff = 0;
+        let overflowMin = 0;
+
+        const totalUnitsCount = prof.subjects.reduce((sum, s) => sum + queues[s].length, 0);
+        // Pace initial chapter coverage across the learning phase:
+        // For long plans (60, 90, 120, 150 days), space out new chapter learning to take ~65-70% of total days
+        const learnDays = prof.days <= 45
+          ? Math.max(1, prof.days - 6)
+          : Math.min(prof.days - 14, Math.max(20, Math.floor(prof.days * 0.68)));
+        const maxUnitsPerDay = Math.max(1, Math.ceil(totalUnitsCount / learnDays));
+
         const anyLeft = () => prof.subjects.some((s) => queues[s].length);
-        while (anyLeft() && dayOff < prof.days) {
+
+        for (let dayOff = 0; dayOff < prof.days; dayOff++) {
           const dk = aipAddDays(prof.startDate, dayOff);
           let cap = aipDayCap(dk, prof) * 1.1;
+          const wi = Math.floor(dayOff / 7);
+          const isSunday = (dayOff + 1) % 7 === 0;
+
           // which subjects are active this week?
           let active;
           if (prof.style === "one")
             active = [prof.subjects.find((s) => queues[s].length)].filter(Boolean);
           else {
-            const wi = Math.floor(dayOff / 7);
             active =
               n <= 2 ? prof.subjects.slice() : [prof.subjects[wi % n], prof.subjects[(wi + 1) % n]];
-            if (!active.some((s) => queues[s].length)) active = prof.subjects.slice(); // pair done → open up
+            if (!active.some((s) => queues[s].length)) active = prof.subjects.slice();
           }
+
+          let unitsToday = 0;
           let ai2 = dayOff,
-            guard = 0; // rotate the starting subject day by day
-          while (cap > 0 && guard++ < 60) {
+            guard = 0;
+
+          // Schedule new chapter units if any remain
+          while (anyLeft() && unitsToday < maxUnitsPerDay && cap > 0 && guard++ < 60) {
             const pool = active.filter((s) => queues[s].length);
-            if (!pool.length) break;
+            if (!pool.length) {
+              const anyPool = prof.subjects.filter((s) => queues[s].length);
+              if (!anyPool.length) break;
+              active = anyPool;
+              continue;
+            }
             const s = pool[ai2 % pool.length];
             ai2++;
             const unit = queues[s][0];
@@ -12236,25 +12266,103 @@
               tasks.push(t2);
             });
             cap -= unitEff;
+            unitsToday++;
           }
-          dayOff++;
+
+          // 7th day: Weekly Milestone Test / Sectional Assessment
+          if (isSunday) {
+            const weekNum = Math.floor(dayOff / 7) + 1;
+            const isFinalWeek = dayOff >= prof.days - 7;
+            const subj = active[0] || prof.subjects[0];
+            tasks.push({
+              id: "a" + uid2++,
+              subject: subj,
+              topic: isFinalWeek
+                ? "Grand All-India CBT Mock Test #" + Math.min(5, Math.floor(weekNum / 2))
+                : "Weekly CBT Milestone Test · Hafta " + weekNum,
+              kind: "test",
+              diff: 2,
+              wt: 3,
+              depth: D.kind,
+              estMin: 90,
+              status: "todo",
+              date: dk,
+              teacherId: (prof.teachers || {})[subj] || undefined,
+              teacher: (prof.teacherNames || {})[subj] || undefined,
+              instituteId: (prof.institutes || {})[subj] || undefined,
+            });
+          }
+
+          // If day has no scheduled learning tasks (e.g. after queues finished, in Phase 2 or Phase 3):
+          const dayTasks = tasks.filter((t) => t.date === dk);
+          if (!dayTasks.length) {
+            const subj = prof.subjects[dayOff % prof.subjects.length];
+            const subjTopics = allTopicList.filter((t) => t.subject === subj);
+            const chosen = subjTopics[dayOff % (subjTopics.length || 1)] || { topic: subj + " High-Yield Core", wt: 3 };
+
+            const isFinalPhase = dayOff >= prof.days - 14;
+            if (isFinalPhase && dayOff % 3 === 0) {
+              tasks.push({
+                id: "a" + uid2++,
+                subject: subj,
+                topic: "Full-Syllabus 3-Hour CBT Practice Mock · Sprint " + Math.floor(dayOff / 3),
+                kind: "test",
+                diff: 3,
+                wt: 3,
+                depth: D.kind,
+                estMin: 120,
+                status: "todo",
+                date: dk,
+                teacherId: (prof.teachers || {})[subj] || undefined,
+                teacher: (prof.teacherNames || {})[subj] || undefined,
+                instituteId: (prof.institutes || {})[subj] || undefined,
+              });
+            } else if (isFinalPhase) {
+              tasks.push({
+                id: "a" + uid2++,
+                subject: subj,
+                topic: "Mistake Notebook Redo & Formula Marathon: " + chosen.topic,
+                kind: "revision",
+                diff: chosen.diff || 2,
+                wt: chosen.wt || 2,
+                depth: D.kind,
+                estMin: 60,
+                status: "todo",
+                date: dk,
+                teacherId: (prof.teachers || {})[subj] || undefined,
+                teacher: (prof.teacherNames || {})[subj] || undefined,
+                instituteId: (prof.institutes || {})[subj] || undefined,
+              });
+            } else {
+              tasks.push({
+                id: "a" + uid2++,
+                subject: subj,
+                topic: "PYQ Mastery Drill: " + chosen.topic + " (2020–2025 PYQs)",
+                kind: "practice",
+                diff: chosen.diff || 2,
+                wt: chosen.wt || 2,
+                depth: D.kind,
+                estMin: 60,
+                status: "todo",
+                date: dk,
+                teacherId: (prof.teachers || {})[subj] || undefined,
+                teacher: (prof.teacherNames || {})[subj] || undefined,
+                instituteId: (prof.institutes || {})[subj] || undefined,
+              });
+            }
+          }
         }
-        // anything that didn't fit lands on the final day (counted as overflow)
-        prof.subjects.forEach((s) =>
-          queues[s].forEach((unit) =>
-            unit.forEach((t2) => {
-              t2.date = lastDay;
-              overflowMin += aipEff(t2.estMin, prof);
-              tasks.push(t2);
-            }),
-          ),
-        );
-        // spaced revision after each learn — the DEPTH decides how many passes
+
+        // spaced revision after each learn — extended for long timelines
         const revs = [];
+        const revGaps = D.rev.slice();
+        if (prof.days >= 90) revGaps.push([45, 20]);
+        if (prof.days >= 120) revGaps.push([75, 20]);
+
         tasks
           .filter((t2) => t2.kind === "learn")
           .forEach((t2) => {
-            D.rev.forEach(([gap, min]) => {
+            revGaps.forEach(([gap, min]) => {
               const rd = aipAddDays(t2.date, gap);
               if (rd <= lastDay)
                 revs.push({
@@ -12268,13 +12376,16 @@
                   estMin: min,
                   status: "todo",
                   date: rd,
+                  teacherId: t2.teacherId,
+                  teacher: t2.teacher,
+                  instituteId: t2.instituteId,
                 });
             });
           });
         return {
           tasks: tasks.concat(revs),
-          endDate: aipAddDays(prof.startDate, Math.max(0, Math.min(dayOff, prof.days) - 1)),
-          overflowMin,
+          endDate: lastDay,
+          overflowMin: 0,
         };
       }
       /** Adaptive catch-up: spread overdue work forward instead of piling it on tomorrow. */
@@ -12446,7 +12557,12 @@
           }
           cb(fresh.length ? fresh : items, !!(data && data.fallback));
         } catch (e) {
-          cb([], true);
+          try {
+            const offline = ytOfflinePicks(t.topic, t.subject, p.profile.language, p.profile.target, prefCh);
+            cb(offline, true);
+          } catch (e2) {
+            cb([], true);
+          }
         }
       }
       /* ═══ PER-VIDEO WATCH TRACKING — the missing model ═══
@@ -12582,14 +12698,19 @@
         const m = el("div", "modal");
         m.setAttribute("data-static", "1");
         const p = aip();
-        m.innerHTML = `<div class="box" style="max-width:860px;max-height:92vh;overflow-y:auto">
-    <div class="row" style="justify-content:space-between;align-items:flex-start">
-      <div><span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
-        <span class="badge">${t.kind.toUpperCase()}</span>
-        ${t.depth ? `<span class="badge">${t.depth === "oneshot" ? "⚡ ONE-SHOT" : t.depth === "detailed" ? "🏆 DETAILED" : "📘 LECTURE"}</span>` : ""}
-        <h3 style="margin:6px 0 2px">${esc(t.topic)}</h3>
-        <div class="small muted">~${aipEff(t.estMin, p.profile)} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}</div></div>
-      <button class="iconbtn" data-x>✕</button></div>
+        m.innerHTML = `<div class="box" style="max-width:860px;max-height:92vh;overflow-y:auto;position:relative">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
+          <span class="badge">${t.kind.toUpperCase()}</span>
+          ${t.depth ? `<span class="badge">${t.depth === "oneshot" ? "⚡ ONE-SHOT" : t.depth === "detailed" ? "🏆 DETAILED" : "📘 LECTURE"}</span>` : ""}
+        </div>
+        <h3 style="margin:6px 0 2px;word-break:break-word">${esc(t.topic)}</h3>
+        <div class="small muted">~${aipEff(t.estMin, p.profile)} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}</div>
+      </div>
+      <button class="iconbtn close-lesson-btn" data-x aria-label="Band karo (Close)" title="Band karo (Close) ✕" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--line,#e2e8f0);color:var(--ink,#0f172a);border:1px solid rgba(0,0,0,0.15);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:all 0.15s ease">✕</button>
+    </div>
     ${(() => {
       // PREREQUISITE MODE: board-12 plans stay pure class-12, but a
       // known class-11 dependency gets a short revision suggestion here
@@ -12600,16 +12721,28 @@
     })()}
     <div data-player style="margin-top:10px"><div class="small muted">${ic("search")} Finding the best free lesson on YouTube…</div></div>
     <div data-alts></div>
-    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
-      <button class="btn green sm" data-done>${ic("check")} Mark Complete</button>
-      <button class="btn ghost sm" data-move>Move to tomorrow</button>
+    <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn green sm" data-done>${ic("check")} Mark Complete</button>
+        <button class="btn ghost sm" data-move>Move to tomorrow</button>
+      </div>
+      <button class="btn ghost sm" data-x-foot style="border:1px solid var(--line);font-weight:600;display:inline-flex;align-items:center;gap:4px">✕ Band karo (Close)</button>
     </div>
     <div data-fb class="small muted" style="margin-top:10px"></div></div>`;
         document.body.appendChild(m);
-        m.querySelector("[data-x]").onclick = () => {
+        const closeLesson = () => {
           vwEnd();
           m.remove();
+          document.removeEventListener("keydown", onEsc);
         };
+        m.querySelectorAll("[data-x], [data-x-foot]").forEach((b) => (b.onclick = closeLesson));
+        m.onclick = (e) => {
+          if (e.target === m) closeLesson();
+        };
+        const onEsc = (e) => {
+          if (e.key === "Escape" && m.isConnected) closeLesson();
+        };
+        document.addEventListener("keydown", onEsc);
         m.querySelector("[data-done]").onclick = () => {
           vwEnd(); // bank this video's watch-time before closing out
           t.status = "done";
@@ -12679,16 +12812,49 @@
           vwStart(v, t);
           const prog = vwProgress(v.id);
           const resumeSec = prog && !prog.done && prog.lastPosition > 60 ? prog.lastPosition : 0;
+          const isRealYt = /^[A-Za-z0-9_-]{11}$/.test(v.id || "");
+          const directYtUrl = isRealYt
+            ? `https://www.youtube.com/watch?v=${encodeURIComponent(v.id)}${resumeSec ? "&t=" + resumeSec : ""}`
+            : (v.playlistUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title + " " + (v.channel || "") + " " + t.subject)}`);
+          const playlistUrl = v.playlistUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(t.topic + " " + (v.teacher || v.channel || "") + " playlist")}`;
+
           m.querySelector("[data-player]").innerHTML = `
-      <div style="position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="badge" style="background:rgba(37,99,235,0.12);color:#2563eb;font-weight:700;padding:4px 8px;border-radius:6px">🎯 ${esc(v.teacher ? v.teacher + " (" + (v.institute || v.channel) + ")" : v.channel || "Verified Faculty")}</span>
+          ${v.verified || v.isCurated ? `<span class="badge" style="background:rgba(16,185,129,0.12);color:#059669;font-weight:600">✓ Consistent Series</span>` : ""}
+          <span class="badge" style="background:var(--line);color:var(--ink);font-weight:600">${t.kind === "practice" ? "⚡ PYQ Practice" : t.kind === "revision" ? "🔄 Formula Revision" : t.kind === "advanced" ? "🏆 Advanced Rigor" : "📚 Concept Lecture"}</span>
+        </div>
+        <button class="btn ghost sm" data-x-player style="padding:4px 12px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--line);border-radius:8px;cursor:pointer">✕ Band karo (Close)</button>
+      </div>
+      ${isRealYt ? `
+      <div style="position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.12)">
         <iframe src="https://www.youtube.com/embed/${esc(v.id)}${resumeSec ? "?start=" + resumeSec : ""}" title="${esc(v.title)}" allowfullscreen
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
+          style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+      </div>` : `
+      <div style="padding:22px 18px;background:linear-gradient(135deg,rgba(37,99,235,0.08),rgba(16,185,129,0.06));border:1px solid var(--line);border-radius:12px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">📺</div>
+        <h4 style="margin:0 0 6px;color:var(--ink)">${esc(v.title)}</h4>
+        <p class="small muted" style="margin:0 0 14px">${esc(v.channel)} · Estimated ~${fmtTime(v.durationSec)}</p>
+        <a href="${esc(directYtUrl)}" target="_blank" rel="noopener" class="btn blue" style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;font-weight:700;border-radius:8px;text-decoration:none">▶️ Watch Lecture on YouTube</a>
+      </div>`}
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:240px">
+          <div style="font-weight:700;font-size:14px;line-height:1.4;color:var(--ink)">${esc(v.title)}</div>
+          <div class="small muted" style="margin-top:3px">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec / (aip().profile.speed || 1.25)))} at ${aip().profile.speed}×)</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <a href="${esc(directYtUrl)}" target="_blank" rel="noopener" class="btn ghost sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);font-size:12px">↗️ Open on YouTube</a>
+          <a href="${esc(playlistUrl)}" target="_blank" rel="noopener" class="btn ghost sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);font-size:12px">📑 Chapter Playlist</a>
+        </div>
+      </div>
+
       ${resumeSec ? `<div class="small" style="margin-top:6px;color:var(--green)">▶️ Pichhli baar ~${fmtTime(resumeSec)} tak dekha tha — wahin se shuru (estimate).</div>` : ""}
       ${prog && prog.done ? `<div class="small" style="margin-top:6px;color:var(--green)">✅ Ye video tum pehle poora dekh chuke ho — ab iski PRACTICE zyada kaam degi.</div>` : ""}
-      <div class="small" style="margin-top:8px"><b>${esc(v.title)}</b></div>
-      <div class="small muted">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec / (aip().profile.speed || 1.25)))} at ${aip().profile.speed}×)</div>
-      ${v.why ? `<div class="small" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">💡 <b>Isliye recommend kiya:</b> ${esc(v.why)}${(p.profile.target || "") === "board12" || (p.profile.target || "") === "cbse27" ? " · board-level fit" : (p.profile.target || "") === "jeeadv" ? " · Advanced-level fit" : " · JEE Main-level fit"}</div>` : ""}`;
+      ${v.why ? `<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--card,rgba(0,0,0,0.02))">💡 <b>Faculty & Plan Fit:</b> ${esc(v.why)}${(p.profile.target || "") === "board12" || (p.profile.target || "") === "cbse27" ? " · board-level fit" : (p.profile.target || "") === "jeeadv" ? " · Advanced-level fit" : " · JEE Main-level fit"}</div>` : ""}`;
+          m.querySelectorAll("[data-x-player]").forEach((b) => (b.onclick = closeLesson));
         };
         aipFindVideo(t, (items, fallback) => {
           if (!m.isConnected) return;
@@ -12700,14 +12866,17 @@
           show(items[0]);
           if (items.length > 1) {
             m.querySelector("[data-alts]").innerHTML =
-              `<div class="small muted" style="margin-top:10px">Not the right fit? Alternatives:</div>` +
+              `<div class="small muted" style="margin-top:12px;font-weight:600">Switch Educator / Alternative Lessons:</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">` +
               items
-                .slice(1, 4)
+                .slice(1, 5)
                 .map(
                   (v, i2) =>
-                    `<button class="btn ghost sm" data-alt="${i2 + 1}" style="margin:6px 6px 0 0;max-width:100%;white-space:normal;text-align:left">${esc(v.title.slice(0, 70))}${v.title.length > 70 ? "…" : ""} <span class="muted">· ${fmtTime(v.durationSec)}</span></button>`,
+                    `<button class="btn ghost sm" data-alt="${i2 + 1}" style="max-width:100%;white-space:normal;text-align:left;border:1px solid var(--line);border-radius:8px;padding:6px 10px">
+                       <span style="font-weight:600;display:block;color:var(--ink)">${esc(v.teacher || v.channel)}</span>
+                       <span class="small muted">${esc(v.title.slice(0, 55))}${v.title.length > 55 ? "…" : ""} · ${fmtTime(v.durationSec)}</span>
+                     </button>`,
                 )
-                .join("");
+                .join("") + `</div>`;
             m.querySelectorAll("[data-alt]").forEach(
               (b) => (b.onclick = () => show(items[+b.dataset.alt])),
             );
@@ -13436,9 +13605,16 @@
                       : "🎯 All Exams") +
               ").",
           );
-          const budgetOptions = [240, 300, 360, 420, 480, 600, 720];
+          const budgetOptions =
+            w.days >= 120
+              ? [90, 120, 150, 180, 240, 300, 360, 480]
+              : w.days >= 90
+                ? [120, 150, 180, 210, 240, 300, 360, 480]
+                : w.days >= 60
+                  ? [150, 180, 240, 300, 360, 420, 480]
+                  : [240, 300, 360, 420, 480, 600, 720];
           if (!w.dailyBudget) {
-            const target = w.dailyMin || 360;
+            const target = w.dailyMin || (w.days >= 120 ? 120 : w.days >= 90 ? 150 : w.days >= 60 ? 180 : 360);
             w.dailyBudget = budgetOptions.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a), budgetOptions[0]);
           }
           w.dailyMin = w.dailyBudget;
@@ -13629,8 +13805,35 @@
       }
       function aipToday(root) {
         aipRebalance();
-        const p = aip(),
-          tk = todayKey(Date.now()),
+        const p = aip();
+        if (!p || !p.tasks) return;
+
+        // AUTO-HEAL: If student selected a plan of >= 60 days (e.g. 90, 120, 150 days)
+        // but current saved tasks only span fewer days (e.g. truncated at 49 days from old bug),
+        // automatically heal the plan across all prof.days while preserving completed tasks!
+        const existingDates = [...new Set(p.tasks.map((t) => t.date))].sort();
+        const profDays = p.profile && p.profile.days ? p.profile.days : existingDates.length;
+        if (profDays >= 60 && existingDates.length < profDays * 0.8) {
+          try {
+            const doneSet = new Set(
+              p.tasks
+                .filter((t) => t.status === "done")
+                .map((t) => `${t.subject}::${t.topic}::${t.kind}`)
+            );
+            const fresh = aipGenerate(p.profile);
+            fresh.tasks.forEach((t) => {
+              if (doneSet.has(`${t.subject}::${t.topic}::${t.kind}`)) {
+                t.status = "done";
+              }
+            });
+            p.tasks = fresh.tasks;
+            aipSave(p);
+          } catch (e) {
+            console.error("AIP auto-heal failed:", e);
+          }
+        }
+
+        const tk = todayKey(Date.now()),
           h = aipHealth();
         const today = p.tasks
           .filter((t) => t.date === tk)
@@ -13640,9 +13843,12 @@
           .reduce((s2, t) => s2 + aipEff(t.estMin, p.profile), 0);
         const head = el("div", "card");
         const Dp = AIP_DEPTHS[p.profile.depth] || AIP_DEPTHS.standard;
-        head.innerHTML = `<div class="section-title"><span class="ico">${ic("spark")}</span>
-      <div><h3 style="margin:0">Today's Study Plan <span class="badge" style="color:${Dp.color}">${Dp.icon} ${Dp.label}</span></h3>
-      <div class="small muted">${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} · ${Dp.kind === "oneshot" ? "one-shots, high-weightage first" : Dp.kind === "detailed" ? "detailed lectures, full practice" : "full lectures + practice"} · planned around your time</div></div></div>
+        const totalPlanDates = [...new Set(p.tasks.map((t) => t.date))].sort();
+        head.innerHTML = `<div class="section-title" style="justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:10px;align-items:center"><span class="ico">${ic("spark")}</span>
+      <div><h3 style="margin:0">Today's Study Plan <span class="badge" style="color:${Dp.color}">${Dp.icon} ${Dp.label}</span> <span class="badge g">${totalPlanDates.length} Days Plan</span></h3>
+      <div class="small muted">${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} · ${Dp.kind === "oneshot" ? "one-shots, high-weightage first" : Dp.kind === "detailed" ? "detailed lectures, full practice" : "full lectures + practice"} · Finishes on ${fmtDate(totalPlanDates[totalPlanDates.length - 1] || tk)}</div></div></div>
+      <button class="btn ghost sm" id="btn-aip-resync-top" style="font-size:11px;padding:4px 8px;margin-left:auto" title="Re-sync schedule across all ${p.profile.days || totalPlanDates.length} days">🔄 Re-sync</button>
+    </div>
     <div class="plan-summary">
       <div><b>${Math.floor(todayEff / 60)}h ${todayEff % 60}m</b><span>Left today</span></div>
       <div><b>${h.pctDone}%</b><span>Plan progress</span></div>
@@ -13651,6 +13857,24 @@
     </div>
     <div class="progress" style="margin-top:12px"><i style="width:${h.pctDone}%"></i></div>
     <div class="small muted" style="margin-top:6px">You're completing ~${h.ratio}% of planned work${h.label === "At Risk" ? " — tap a task and just start with 20 minutes" : ""}.</div>`;
+        const resyncBtn = head.querySelector("#btn-aip-resync-top");
+        if (resyncBtn) {
+          resyncBtn.onclick = () => {
+            const doneSet = new Set(
+              p.tasks
+                .filter((t) => t.status === "done")
+                .map((t) => `${t.subject}::${t.topic}::${t.kind}`)
+            );
+            const fresh = aipGenerate(p.profile);
+            fresh.tasks.forEach((t) => {
+              if (doneSet.has(`${t.subject}::${t.topic}::${t.kind}`)) t.status = "done";
+            });
+            p.tasks = fresh.tasks;
+            aipSave(p);
+            toast(`✨ ${p.profile.days} dino ka poora plan re-synced!`);
+            render(0);
+          };
+        }
         root.appendChild(head);
         const list = el("div", "card");
         list.innerHTML = `<h3>Today's tasks</h3>`;
@@ -13713,6 +13937,33 @@
           row.appendChild(acts);
           list.appendChild(row);
         });
+        const todayPending = today.filter((t) => t.status === "todo").length;
+        const todayLeft = todayPending;
+        const futurePending = p.tasks
+          .filter((t) => t.date > tk && t.status === "todo")
+          .sort((a, b) => a.date.localeCompare(b.date));
+        if (todayPending === 0 && futurePending.length > 0) {
+          const pullBox = el("div");
+          pullBox.style.cssText =
+            "margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(59,130,246,0.08);border:1px dashed var(--accent,#3b82f6);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px";
+          pullBox.innerHTML = `
+            <div>
+              <b style="color:var(--ink)">⚡ Momentum banae rakho!</b>
+              <div class="small muted">Aaj ka scheduled kaam poora ho gaya. Agle ${futurePending.length} future tasks bache hain (~${Math.round(aipEff(futurePending[0].estMin, p.profile))} min agla task).</div>
+            </div>`;
+          const pullBtn = el("button", "btn green sm", "⚡ Agle 2 tasks aaj pull karo");
+          pullBtn.onclick = () => {
+            const toPull = futurePending.slice(0, 2);
+            toPull.forEach((t) => {
+              t.date = tk;
+            });
+            aipSave(p);
+            toast("🚀 Agle 2 tasks aaj ke schedule mein add kar diye gaye!");
+            render(0);
+          };
+          pullBox.appendChild(pullBtn);
+          list.appendChild(pullBox);
+        }
         root.appendChild(list);
         // subject progress
         const sp = el("div", "card");
@@ -13735,107 +13986,365 @@
       <div class="bar"><i style="width:${pct(dn, all.length)}%;background:${SUBCOLOR[s]}"></i></div></div>`;
         });
         root.appendChild(sp);
-        // ── UPCOMING (next 7 days) — ab sirf dekhna nahi, KARNA bhi ──
-        // "Aaj ka ho gaya, aage ka karna hai" — har future task khul sakta hai
-        // (Watch + Done). Aaj ke tasks complete hon to pehla din auto-expand.
-        const todayLeft = p.tasks.filter((t) => t.date === tk && t.status === "todo").length;
-        const up = el("div", "card");
-        up.innerHTML = `<div class="section-title"><span class="ico">${ic("calendar")}</span>
-    <div><h3 style="margin:0">Aage ke 7 din — aage badho 🚀</h3>
-    <div class="small muted">${todayLeft === 0 ? "Aaj ka sab ho gaya! Kal ka kaam AAJ karke lead banao — har task khul sakta hai." : "Kisi bhi din ka task pehle karna ho to yahin se kholo."}</div></div></div>`;
-        // ── weekly load bars: aatne wale 7 din ka study load ek nazar mein ──
-        (() => {
-          const days7 = [];
-          let maxEff = 1;
-          for (let i = 0; i < 7; i++) {
-            const dk = aipAddDays(tk, i);
-            const ds = p.tasks.filter((t) => t.date === dk && t.status === "todo");
-            const eff = ds.reduce((s2, t) => s2 + aipEff(t.estMin, p.profile), 0);
-            days7.push({
-              dk,
-              eff,
-              done: p.tasks.filter((t) => t.date === dk && t.status === "done").length,
-            });
-            if (eff > maxEff) maxEff = eff;
+        // ── UPCOMING & FULL STUDY ROADMAP ──
+        const allPlanDates = [...new Set(p.tasks.map((t) => t.date))].sort();
+        const allPendingTasks = p.tasks.filter((t) => t.status === "todo");
+        const allDoneTasks = p.tasks.filter((t) => t.status === "done");
+        const futurePendingTasks2 = p.tasks.filter((t) => t.date > tk && t.status === "todo");
+        const futureDatesWithTodo = allPlanDates.filter((d) =>
+          d > tk && p.tasks.some((t) => t.date === d && t.status === "todo")
+        );
+
+        // If whole plan is 100% finished, show Grand Celebration & Next Phase options
+        if (p.tasks.length > 0 && allPendingTasks.length === 0) {
+          const grand = el("div", "card");
+          grand.style.cssText =
+            "text-align:center;padding:26px 20px;border-radius:14px;background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(59,130,246,0.12));border:2px solid rgba(34,197,94,0.4);margin-top:14px";
+          grand.innerHTML = `
+            <div style="font-size:36px">🏆 🎓 🎉</div>
+            <h2 style="margin:8px 0 4px;color:var(--green)">Zabardast! Tumhara Poora Study Plan 100% Complete!</h2>
+            <div class="small muted" style="max-width:540px;margin:0 auto 16px;line-height:1.6">
+              Tumne apne plan ke sabhi <b>${p.tasks.length} tasks</b> (~${Math.round(p.tasks.reduce((s2, t) => s2 + aipEff(t.estMin, p.profile), 0) / 60)}h total study) safalta-purvak poore kar liye hain!
+            </div>
+            <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap">
+              <button class="btn green sm" id="btn-next-rev">🔁 Start 30-Day High-Yield Revision Phase</button>
+              <button class="btn sm" id="btn-rebuild-adv">🔥 Upgrade to JEE Advanced Phase</button>
+              <button class="btn ghost sm" id="btn-new-wiz">⚙️ Naya Plan Create Karein</button>
+            </div>
+          `;
+          grand.querySelector("#btn-next-rev").onclick = () => {
+            const revProf = { ...p.profile, days: 30, depth: "crash", style: "daily" };
+            const revGen = aipGenerate(revProf);
+            aipSave({ profile: revProf, tasks: revGen.tasks, createdAt: Date.now() });
+            toast("🎉 30-Day Revision Phase plan taiyar!");
+            render(0);
+          };
+          grand.querySelector("#btn-rebuild-adv").onclick = () => {
+            const advProf = { ...p.profile, target: "jeeadv", days: 45, depth: "detailed" };
+            const advGen = aipGenerate(advProf);
+            aipSave({ profile: advProf, tasks: advGen.tasks, createdAt: Date.now() });
+            toast("🔥 JEE Advanced Mastery plan taiyar!");
+            render(0);
+          };
+          grand.querySelector("#btn-new-wiz").onclick = () => {
+            aiWiz = null;
+            S.aiPlanner = null;
+            save();
+            render(0);
+          };
+          root.appendChild(grand);
+        } else {
+          // Regular Roadmap / Upcoming Card
+          const up = el("div", "card");
+          window._aipScope = window._aipScope || "active";
+          const scope = window._aipScope;
+
+          // Check if the next 7 calendar days from today have completed tasks
+          const next7Cal = [];
+          for (let i = 1; i <= 7; i++) next7Cal.push(aipAddDays(tk, i));
+          const next7PendingCount = p.tasks.filter((t) => next7Cal.includes(t.date) && t.status === "todo").length;
+          const isFirst7DaysFinished = next7PendingCount === 0 && futureDatesWithTodo.length > 0;
+
+          up.innerHTML = `
+            <div class="section-title"><span class="ico">${ic("calendar")}</span>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                  <h3 style="margin:0">Study Plan Roadmap 🚀</h3>
+                  <span class="badge" style="background:rgba(59,130,246,0.12);color:var(--accent-text);font-weight:700">
+                    ${allDoneTasks.length}/${p.tasks.length} Done · ${allPendingTasks.length} Pending
+                  </span>
+                </div>
+                <div class="small muted" style="margin-top:2px">
+                  ${isFirst7DaysFinished ? "🎉 Pehle 7 din complete ho gaye! Day 8+ ke aage ke tasks active hain." : "Kisi bhi din ke tasks pehle se start kar sakte ho ya plan aage track kar sakte ho."}
+                </div>
+              </div>
+            </div>
+          `;
+
+          if (isFirst7DaysFinished && scope === "active") {
+            const aheadAlert = el("div");
+            aheadAlert.style.cssText =
+              "margin:10px 0;padding:12px 14px;border-radius:10px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);display:flex;align-items:center;gap:8px";
+            aheadAlert.innerHTML = `
+              <span style="font-size:20px">🏆</span>
+              <div>
+                <b style="color:var(--green)">Pehle 7 din ka target poora done! You are ahead of schedule!</b>
+                <div class="small muted">Neeche Day 8 aur aage ke dino ke tasks hain — aage ki lead banao!</div>
+              </div>
+            `;
+            up.appendChild(aheadAlert);
           }
-          const wl = el("div");
-          wl.style.cssText = "margin-top:10px";
-          wl.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-end;gap:6px">${days7
-            .map((d, i) => {
-              const lbl =
-                i === 0
-                  ? "Aaj"
-                  : i === 1
-                    ? "Kal"
-                    : ["S", "M", "T", "W", "T", "F", "S"][new Date(d.dk + "T00:00:00").getDay()];
-              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-          <span class="small muted" style="font-size:10.5px">${d.eff ? Math.round(d.eff / 60) : ""}</span>
-          <div style="width:100%;height:46px;background:var(--line);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden">
-            <div style="width:100%;height:${d.eff ? Math.max(8, pct(d.eff, maxEff)) : 0}%;background:${d.done && !d.eff ? "var(--green)" : "linear-gradient(180deg,var(--blue-l),var(--purple))"};border-radius:4px"></div></div>
-          <b class="small muted" style="font-size:10.5px;font-weight:${i === 0 || i === 1 ? "800" : "600"};color:${i === 0 ? "var(--accent-text)" : "var(--muted)"}">${lbl}</b></div>`;
-            })
-            .join("")}</div>`;
-          wl.appendChild(
-            el(
-              "div",
-              "small muted",
-              `Har bar = us din ka total study load (ghante). ${days7.reduce((s, d) => s + d.eff, 0) ? Math.round(days7.reduce((s, d) => s + d.eff, 0) / 60) + " ghante total in 7 din" : "— is week ke plan mein abhi load nahi."}`,
-            ),
-          );
-          up.appendChild(wl);
-        })();
-        let firstExpanded = false;
-        for (let i = 1; i <= 7; i++) {
-          const dk = aipAddDays(tk, i),
-            dts = p.tasks.filter((t) => t.date === dk && t.status === "todo");
-          if (!dts.length) continue;
-          const eff = dts.reduce((s2, t) => s2 + aipEff(t.estMin, p.profile), 0);
-          const open = todayLeft === 0 && !firstExpanded;
-          firstExpanded = firstExpanded || open;
-          const day = el("details");
-          day.style.marginTop = "10px";
-          if (open) day.open = true;
-          day.innerHTML = `<summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px">
-      <b>${i === 1 ? "Kal" : fmtDate(dk)}</b><span class="small muted">· ${dts.length} task · ${Math.floor(eff / 60)}h ${eff % 60}m</span>
-      <span class="small muted" style="margin-left:auto">${open ? "👇 shuru karo" : "tap karo ▾"}</span></summary>`;
-          const body = el("div");
-          body.style.cssText = "padding:4px 2px 2px";
-          dts.forEach((t) => {
-            const row = el("div", "optrow");
-            row.style.cssText = "cursor:default;margin-top:8px";
-            row.innerHTML = `<div style="flex:1;min-width:0"><span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
-        <span class="badge">${t.kind.toUpperCase()}</span>
-        <div style="margin-top:4px"><b>${esc(t.topic)}</b></div>
-        <div class="small muted">~${aipEff(t.estMin, p.profile)} min at ${p.profile.speed}×</div></div>`;
-            const acts = el("div", "row");
-            acts.style.cssText = "gap:6px;flex:none";
-            const wb = el("button", "btn sm", ic("play") + " Watch");
-            wb.onclick = () => aipOpenLesson(t);
-            const db = el("button", "btn green sm", ic("check"));
-            db.title = "Done";
-            db.onclick = () => {
-              t.status = "done";
-              t.completedAt = Date.now();
-              aipSave(p);
-              toast("🚀 Future task pehle hi complete — tum plan se aage ho!");
+
+          // Filter tabs: Support short plans (<=45 days) with weekly tabs, and longer plans (60, 90, 120, 150 days) with Month/Phase tabs + week selector
+          const tabsBar = el("div");
+          tabsBar.style.cssText =
+            "display:flex;align-items:center;gap:6px;overflow-x:auto;padding-bottom:6px;margin:12px 0 10px;scrollbar-width:thin";
+          const tabs = [
+            { id: "active", label: `⚡ Active (${futureDatesWithTodo.length || allPlanDates.length} din)` },
+          ];
+          if (allPlanDates.length <= 45) {
+            tabs.push({ id: "w1", label: "Hafta 1 (Din 1–7)" });
+            tabs.push({ id: "w2", label: "Hafta 2 (Din 8–14)" });
+            tabs.push({ id: "w3", label: "Hafta 3 (Din 15–21)" });
+            tabs.push({ id: "w4", label: "Hafta 4 (Din 22–28)" });
+            if (allPlanDates.length > 28) {
+              tabs.push({ id: "w5", label: `Hafta 5+ (Din 29–${allPlanDates.length})` });
+            }
+          } else {
+            // Month / 30-day phase tabs for 60, 90, 120, 150 day plans
+            tabs.push({ id: "m1", label: "Mahina 1 (Din 1–30)" });
+            tabs.push({ id: "m2", label: `Mahina 2 (Din 31–${Math.min(60, allPlanDates.length)})` });
+            if (allPlanDates.length > 60) {
+              tabs.push({ id: "m3", label: `Mahina 3 (Din 61–${Math.min(90, allPlanDates.length)})` });
+            }
+            if (allPlanDates.length > 90) {
+              tabs.push({ id: "m4", label: `Mahina 4 (Din 91–${Math.min(120, allPlanDates.length)})` });
+            }
+            if (allPlanDates.length > 120) {
+              tabs.push({ id: "m5", label: `Mahina 5 (Din 121–${Math.min(150, allPlanDates.length)})` });
+            }
+          }
+          tabs.push({ id: "all", label: `Poora Plan (${allPlanDates.length} Din)` });
+          tabs.push({ id: "done", label: `✅ Done (${allDoneTasks.length})` });
+
+          tabs.forEach((tab) => {
+            const b = el(
+              "button",
+              "btn sm " + (scope === tab.id ? "accent" : "ghost"),
+              tab.label,
+            );
+            b.style.cssText =
+              "white-space:nowrap;font-size:12px;padding:5px 10px;border-radius:8px;" +
+              (scope === tab.id ? "font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.1)" : "border:1px solid var(--line)");
+            b.onclick = () => {
+              window._aipScope = tab.id;
               render(0);
             };
-            acts.append(wb, db);
-            row.appendChild(acts);
-            body.appendChild(row);
+            tabsBar.appendChild(b);
           });
-          day.appendChild(body);
-          up.appendChild(day);
+
+          // If plan has many weeks, also show a convenient week jump selector
+          const totalWeeks = Math.ceil(allPlanDates.length / 7);
+          if (totalWeeks > 4) {
+            const wSelectWrap = el("div");
+            wSelectWrap.style.cssText = "display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0";
+            const wSelect = el("select");
+            wSelect.style.cssText = "font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)";
+            wSelect.innerHTML = `<option value="">📅 Hafta chuno...</option>` +
+              Array.from({ length: totalWeeks }, (_, i) => {
+                const wNum = i + 1;
+                const dStart = i * 7 + 1;
+                const dEnd = Math.min((i + 1) * 7, allPlanDates.length);
+                const isSel = scope === `week_${wNum}` ? "selected" : "";
+                return `<option value="week_${wNum}" ${isSel}>Hafta ${wNum} (Din ${dStart}–${dEnd})</option>`;
+              }).join("");
+            wSelect.onchange = (e) => {
+              if (e.target.value) {
+                window._aipScope = e.target.value;
+                render(0);
+              }
+            };
+            wSelectWrap.appendChild(wSelect);
+            tabsBar.appendChild(wSelectWrap);
+          }
+          up.appendChild(tabsBar);
+
+          // Determine dates to show
+          let targetDates = [];
+          if (scope === "active") {
+            if (!isFirst7DaysFinished) {
+              targetDates = next7Cal.filter((d) => allPlanDates.includes(d));
+              if (!targetDates.length) targetDates = futureDatesWithTodo.slice(0, 10);
+            } else {
+              targetDates = futureDatesWithTodo.slice(0, 10);
+              if (!targetDates.length) targetDates = allPlanDates.slice(7, 17);
+            }
+          } else if (scope === "w1") {
+            targetDates = allPlanDates.slice(0, 7);
+          } else if (scope === "w2") {
+            targetDates = allPlanDates.slice(7, 14);
+          } else if (scope === "w3") {
+            targetDates = allPlanDates.slice(14, 21);
+          } else if (scope === "w4") {
+            targetDates = allPlanDates.slice(21, 28);
+          } else if (scope === "w5") {
+            targetDates = allPlanDates.slice(28);
+          } else if (scope === "m1") {
+            targetDates = allPlanDates.slice(0, 30);
+          } else if (scope === "m2") {
+            targetDates = allPlanDates.slice(30, 60);
+          } else if (scope === "m3") {
+            targetDates = allPlanDates.slice(60, 90);
+          } else if (scope === "m4") {
+            targetDates = allPlanDates.slice(90, 120);
+          } else if (scope === "m5") {
+            targetDates = allPlanDates.slice(120, 150);
+          } else if (scope && scope.startsWith("week_")) {
+            const wIdx = parseInt(scope.replace("week_", ""), 10) - 1;
+            targetDates = allPlanDates.slice(wIdx * 7, (wIdx + 1) * 7);
+          } else if (scope === "all") {
+            targetDates = allPlanDates;
+          } else if (scope === "done") {
+            targetDates = allPlanDates.filter((d) => p.tasks.some((t) => t.date === d && t.status === "done"));
+          }
+          if (!targetDates.length) targetDates = allPlanDates.slice(0, 10);
+
+          // Control bar for expanding/collapsing all days when viewing full plan
+          if (scope === "all" || targetDates.length > 10) {
+            const toggleBar = el("div");
+            toggleBar.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px;font-size:12px";
+            toggleBar.innerHTML = `
+              <span class="small muted">Dikhaye ja rahe hain: <b>${targetDates.length} din</b> (${targetDates[0]} se ${targetDates[targetDates.length - 1]})</span>
+              <div style="display:flex;gap:6px">
+                <button class="btn ghost sm" id="btn-exp-all" style="font-size:11px;padding:3px 8px">🔽 Sabhi Kholo</button>
+                <button class="btn ghost sm" id="btn-col-all" style="font-size:11px;padding:3px 8px">🔼 Sabhi Band Karo</button>
+              </div>
+            `;
+            const expBtn = toggleBar.querySelector("#btn-exp-all");
+            const colBtn = toggleBar.querySelector("#btn-col-all");
+            if (expBtn) {
+              expBtn.onclick = () => {
+                up.querySelectorAll("details").forEach((d) => (d.open = true));
+              };
+            }
+            if (colBtn) {
+              colBtn.onclick = () => {
+                up.querySelectorAll("details").forEach((d) => (d.open = false));
+              };
+            }
+            up.appendChild(toggleBar);
+          }
+
+          // Load bars for displayed dates
+          if (targetDates.length > 0 && scope !== "done") {
+            const barDates = targetDates.slice(0, 7);
+            let maxEff = 1;
+            const barData = barDates.map((dk) => {
+              const ds = p.tasks.filter((t) => t.date === dk && t.status === "todo");
+              const eff = ds.reduce((s2, t) => s2 + aipEff(t.estMin, p.profile), 0);
+              const doneCount = p.tasks.filter((t) => t.date === dk && t.status === "done").length;
+              if (eff > maxEff) maxEff = eff;
+              return { dk, eff, doneCount };
+            });
+            const wl = el("div");
+            wl.style.cssText = "margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--line-soft,rgba(0,0,0,0.02));border:1px solid var(--line)";
+            wl.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-end;gap:6px">${barData
+              .map((d) => {
+                const dayIdx = allPlanDates.indexOf(d.dk) + 1;
+                const dObj = new Date(d.dk + "T00:00:00");
+                const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dObj.getDay()];
+                const isToday = d.dk === tk;
+                return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <span class="small muted" style="font-size:10px;font-weight:600">${d.eff ? Math.round(d.eff / 60) + "h" : d.doneCount ? "✓" : "-"}</span>
+                  <div style="width:100%;height:38px;background:var(--line);border-radius:5px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${d.eff ? Math.max(10, pct(d.eff, maxEff)) : d.doneCount ? 100 : 0}%;background:${d.doneCount && !d.eff ? "var(--green)" : "linear-gradient(180deg,var(--blue-l),var(--purple))"};border-radius:4px"></div>
+                  </div>
+                  <b class="small" style="font-size:10px;font-weight:700;color:${isToday ? "var(--accent-text)" : "var(--muted)"}">D${dayIdx || dayName}</b>
+                </div>`;
+              })
+              .join("")}</div>`;
+            up.appendChild(wl);
+          }
+
+          let firstExpanded = false;
+          let renderedDays = 0;
+
+          targetDates.forEach((dk) => {
+            const allDayTasks = p.tasks.filter((t) => t.date === dk);
+            const todoTasks = allDayTasks.filter((t) => t.status === "todo");
+            const doneDayTasks = allDayTasks.filter((t) => t.status === "done");
+            const dts = scope === "done" ? doneDayTasks : allDayTasks;
+            if (!dts.length) return;
+            renderedDays++;
+
+            const eff = todoTasks.reduce((s2, t) => s2 + aipEff(t.estMin, p.profile), 0);
+            const dayIdx = allPlanDates.indexOf(dk) + 1;
+            const open = (todayLeft === 0 || isFirst7DaysFinished) && !firstExpanded && todoTasks.length > 0;
+            if (open) firstExpanded = true;
+
+            const day = el("details");
+            day.style.marginTop = "8px";
+            if (open || scope === "all" || targetDates.length <= 3) day.open = true;
+
+            const dayLabel = dk === tk ? "Aaj (Today)" : dk === aipAddDays(tk, 1) ? "Kal (Tomorrow)" : `Din ${dayIdx} · ${fmtDate(dk)}`;
+
+            day.innerHTML = `
+              <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)">
+                <b style="font-size:13.5px">${dayLabel}</b>
+                <span class="small muted">· ${todoTasks.length} pending${eff ? ` · ~${Math.floor(eff / 60)}h ${eff % 60}m` : ""}${doneDayTasks.length ? ` · <span style="color:var(--green)">${doneDayTasks.length} done</span>` : ""}</span>
+                <span class="small muted" style="margin-left:auto">${open ? "👇 start karo" : "tap karo ▾"}</span>
+              </summary>
+            `;
+
+            const body = el("div");
+            body.style.cssText = "padding:4px 2px 2px";
+
+            dts.forEach((t) => {
+              const row = el("div", "optrow");
+              row.style.cssText = "cursor:default;margin-top:6px" + (t.status === "done" ? ";opacity:.6" : "");
+              row.innerHTML = `
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span class="chip" style="color:${SUBCOLOR[t.subject]}">${esc(t.subject)}</span>
+                    <span class="badge">${t.kind.toUpperCase()}</span>
+                    ${t.status === "done" ? `<span class="badge" style="color:var(--green);border-color:var(--green)">✓ COMPLETED</span>` : ""}
+                  </div>
+                  <div style="margin-top:4px"><b>${esc(t.topic)}</b></div>
+                  <div class="small muted">~${aipEff(t.estMin, p.profile)} min at ${p.profile.speed}×</div>
+                </div>
+              `;
+
+              const acts = el("div", "row");
+              acts.style.cssText = "gap:6px;flex:none;align-items:center";
+
+              if (t.status !== "done") {
+                const wb = el("button", "btn sm", ic("play") + " Watch");
+                wb.onclick = () => aipOpenLesson(t);
+
+                const db = el("button", "btn green sm", ic("check"));
+                db.title = "Mark Done";
+                db.onclick = () => {
+                  t.status = "done";
+                  t.completedAt = Date.now();
+                  aipSave(p);
+                  toast("🚀 Future task pehle hi complete — tum plan se aage ho!");
+                  render(0);
+                };
+
+                const pb = el("button", "btn ghost sm", "⚡ Aaj karo");
+                pb.title = "Move task to today";
+                pb.onclick = () => {
+                  t.date = tk;
+                  aipSave(p);
+                  toast("🚀 Task aaj ke schedule mein move ho gaya!");
+                  render(0);
+                };
+
+                acts.append(wb, db, pb);
+              } else {
+                acts.appendChild(el("span", "small", `<span style="color:var(--green);font-weight:700">✓ Done</span>`));
+              }
+
+              row.appendChild(acts);
+              body.appendChild(row);
+            });
+
+            day.appendChild(body);
+            up.appendChild(day);
+          });
+
+          if (renderedDays === 0) {
+            up.appendChild(
+              el(
+                "div",
+                "small muted",
+                `<div style="padding:16px;text-align:center">Is category mein abhi koi tasks nahi hain — doosra tab select karein ya 'Poora Plan' dekhein.</div>`,
+              ),
+            );
+          }
+
+          root.appendChild(up);
         }
-        if (!firstExpanded && todayLeft === 0 && !up.querySelector("details"))
-          up.appendChild(
-            el(
-              "div",
-              "small muted",
-              "Aane wale 7 din ka sab kuch already done — legend ho tum! 🏆",
-            ),
-          );
-        root.appendChild(up);
         // ── WHAT-IF SIMULATOR: study-hours ka asli asar dikhta hai ──
         (() => {
           const base = whatIfPlanSim(3);
@@ -16478,6 +16987,7 @@
 
         // ── Target-marks planner: kitne questions attempt karne hain target hits ──
         (() => {
+          const stats = globalStats();
           const tc = el("div", "card");
           tc.innerHTML = `<div class="section-title"><span class="ico">${ic("target")}</span><h3 style="margin:0">🎯 Target-marks planner</h3>
       <div class="small muted" style="margin-left:auto">jeetna kitne sahi sawal = target marks</div></div>
@@ -16485,7 +16995,7 @@
         <div style="display:grid;gap:4px"><label class="small muted">Mera target marks (JEE Main, 300)</label>
           <input data-tm type="number" min="0" max="300" value="${S.settings.targetMarks || 180}" style="width:120px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
         <div style="display:grid;gap:4px"><label class="small muted">Meri accuracy (%)</label>
-          <input data-ta type="number" min="0" max="100" value="${Math.max(50, Math.round(g.avgAcc || 70))}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
+          <input data-ta type="number" min="0" max="100" value="${Math.max(50, Math.round(stats.avgAcc || 70))}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></div>
         <div class="small muted" data-tmOut></div>
       </div>
       <div class="small muted" style="margin-top:8px">Numerical (no negative) +4, MCQ +4/−1. Ye ek estimate hai — accuracy jitni zyada, utne kam attempts.</div>`;
@@ -16637,7 +17147,7 @@
           ["bookmarked", "Bookmarked Questions Test", "Everything you bookmarked in review"],
           ["mixed", "Mixed Revision Test", "25 random questions from all papers"],
         ];
-        const g = el("div", "grid g2");
+        const kindsGrid = el("div", "grid g2");
         kinds.forEach(([k, title, desc]) => {
           const pool = collectQuestions(k);
           const c = el("div", "card");
@@ -16648,9 +17158,9 @@
           b.disabled = !pool.length;
           b.onclick = () => startDrill(title + " · " + fmtDate(Date.now()), pool);
           c.appendChild(b);
-          g.appendChild(c);
+          kindsGrid.appendChild(c);
         });
-        root.appendChild(g);
+        root.appendChild(kindsGrid);
       }
 
       /* -------------------------------- SEARCH --------------------------------- */
@@ -24507,6 +25017,7 @@
        *  icon grid, category chips, search, essential apps pinned, and a
        *  --preview mode so it can be seen/inspected from the website too. */
       function appDrawerOpen(preview) {
+        preview = preview === true;
         const n = preview ? null : nativeLauncher();
         let apps = [];
         if (n) {
@@ -24637,6 +25148,10 @@
                 toast("🧪 Preview: kal is app ko isi tile se kholenge (native bridge me)");
                 return;
               }
+              if (!n) {
+                toast(`📱 "${label}" app Android phone launcher mode me khulti hai`, 3500);
+                return;
+              }
               let ok = false;
               try {
                 ok =
@@ -24692,7 +25207,7 @@
         };
         d.onfocus = () => (d.style.outline = "3px solid rgba(242,103,10,.45)");
         d.onblur = () => (d.style.outline = "");
-        d.onclick = appDrawerOpen;
+        d.onclick = () => appDrawerOpen(false);
         document.body.appendChild(d);
       }
       function focusStart(minutes) {

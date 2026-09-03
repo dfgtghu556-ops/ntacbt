@@ -16,9 +16,10 @@ function fmtDate(key: string): string {
 }
 
 function Planner() {
-  const [rows, setRows] = useState<PlannerTaskRow[]>([]);
+  const [allTasks, setAllTasks] = useState<PlannerTaskRow[]>([]);
   const [weak, setWeak] = useState<WeakTopic[]>([]);
   const [adapted, setAdapted] = useState(true);
+  const [showAll, setShowAll] = useState(true);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -26,18 +27,19 @@ function Planner() {
     setWeak(computeReadiness(store).weakTopics);
     const planner = store.planner;
     const tasks = planner?.tasks ?? [];
-    const today = store.dayKey;
     const sorted = [...tasks]
       .filter((t) => t && t.date)
       .sort((a, b) => String(a.date).localeCompare(String(b.date)));
-    // Show from a few days before today to 21 days ahead.
-    const start = localDayKey(Date.now() - 3 * 24 * 3600 * 1000);
-    const end = localDayKey(Date.now() + 24 * 24 * 3600 * 1000);
-    const visible = sorted.filter((t) => t.date >= start && t.date <= end);
-    setRows(visible);
-    void today;
+    setAllTasks(sorted);
     setLoaded(true);
   }, []);
+
+  const rows = useMemo(() => {
+    if (showAll) return allTasks;
+    const start = localDayKey(Date.now() - 3 * 24 * 3600 * 1000);
+    const end = localDayKey(Date.now() + 24 * 24 * 3600 * 1000);
+    return allTasks.filter((t) => t.date >= start && t.date <= end);
+  }, [allTasks, showAll]);
 
   const plan = useMemo(() => adaptTasks(rows, weak, Date.now()), [rows, weak]);
   const displayRows = adapted ? plan.tasks : rows;
@@ -69,13 +71,22 @@ function Planner() {
               : "Reading your plan…"}
           </p>
         </div>
-        <button
-          onClick={() => setAdapted((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />{" "}
-          {adapted ? "Show original order" : "Adapt for weaknesses"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAll((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />{" "}
+            {showAll ? "Focus 3-Week Window" : `Show All Plan (${allTasks.length} tasks)`}
+          </button>
+          <button
+            onClick={() => setAdapted((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />{" "}
+            {adapted ? "Show original order" : "Adapt for weaknesses"}
+          </button>
+        </div>
       </section>
 
       {loaded ? (

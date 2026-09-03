@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { TEACHERS, INSTITUTES, findTeacherById, findInstituteById } from "../../../data/teachers";
+import { resolveCuratedVideos } from "../../../data/video-engine";
 
 /**
  * AI STUDY PLANNER — YouTube resource discovery service.
@@ -25,6 +26,9 @@ interface Candidate {
   why: string;
   teacher?: string | undefined;
   institute?: string | undefined;
+  playlistUrl?: string | undefined;
+  verified?: boolean | undefined;
+  isCurated?: boolean | undefined;
 }
 
 /** Walk arbitrary JSON and collect every object under a given key. */
@@ -599,6 +603,44 @@ export const Route = createFileRoute("/api/public/study-planner")({
           });
         }
 
+        // 1. Resolve canonical curated lessons (100% reliable, zero-latency, verified pedagogy)
+        const validKind =
+          kind === "practice" || kind === "revision" || kind === "advanced" ? kind : "learn";
+        const validDepth = depth === "oneshot" || depth === "detailed" ? depth : "lecture";
+        const validTarget =
+          target === "jeeadv" || target === "board12" || target === "board11" || target === "cbse27"
+            ? target
+            : "jeemain";
+
+        const curated = resolveCuratedVideos({
+          topic,
+          subject,
+          kind: validKind,
+          depth: validDepth,
+          target: validTarget,
+          teacherId: teacher,
+          teacher,
+          instituteId: institute,
+          institute,
+        });
+
+        const curatedCandidates: Candidate[] = curated.map((c) => ({
+          id: c.id,
+          title: c.title,
+          channel: c.channel,
+          channelId: c.channelId || "",
+          durationSec: c.durationSec,
+          published: c.published || "Verified Lecture",
+          score: c.score,
+          why: c.why,
+          teacher: c.teacher,
+          institute: c.institute,
+          playlistUrl: c.playlistUrl,
+          verified: true,
+          isCurated: true,
+        }));
+
+        // 2. Fetch live YouTube items concurrently
         const queries = buildQueries(
           topic,
           subject,
@@ -618,7 +660,7 @@ export const Route = createFileRoute("/api/public/study-planner")({
           anyOk = true;
           raw.push(...s.value);
         }
-        const items = rank(
+        const liveItems = rank(
           raw,
           topic,
           language,
@@ -631,7 +673,27 @@ export const Route = createFileRoute("/api/public/study-planner")({
           teacher,
           institute,
         );
-        const fallback = !anyOk || items.length === 0;
+
+        // 3. Merge: Curated authoritative items first, followed by unique high-scoring live items
+        const seenIds = new Set<string>();
+        const merged: Candidate[] = [];
+
+        for (const c of curatedCandidates) {
+          if (!seenIds.has(c.id)) {
+            seenIds.add(c.id);
+            merged.push(c);
+          }
+        }
+
+        for (const item of liveItems) {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            merged.push(item);
+          }
+        }
+
+        const items = merged.slice(0, 6);
+        const fallback = items.length === 0;
         cache.set(key, { at: Date.now(), items, fallback });
         if (cache.size > 500) cache.clear();
         return Response.json({ items, fetchedAt: Date.now(), fallback });

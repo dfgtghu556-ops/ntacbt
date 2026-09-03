@@ -229,8 +229,8 @@ async function tryGemini(
     return { role: m.role, parts };
   });
   const model = thinking
-    ? process.env["GEMINI_MODEL"] || "gemini-3.5-flash"
-    : process.env["GEMINI_MODEL_LIGHT"] || "gemini-3.5-flash-lite";
+    ? process.env["GEMINI_MODEL"] || "gemini-2.5-flash"
+    : process.env["GEMINI_MODEL_LIGHT"] || "gemini-2.5-flash-lite";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
   let r: Response;

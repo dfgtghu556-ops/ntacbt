@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/public/pdf-reformat")({
         // Guard against runaway input (Gemini free tier has a token budget too).
         const trimmed = text.slice(0, 120_000);
 
-        const model = process.env["GEMINI_MODEL"] || "gemini-3.5-flash";
+        const model = process.env["GEMINI_MODEL"] || "gemini-2.5-flash";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
         const schema = {

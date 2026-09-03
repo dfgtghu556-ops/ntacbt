@@ -18,6 +18,9 @@ export interface StudyTubeVideo {
   topic?: string;
   depth?: string;
   kind?: string;
+  playlistUrl?: string | undefined;
+  verified?: boolean | undefined;
+  isCurated?: boolean | undefined;
   /** When set, the item is an offline "search pick" that opens YouTube search (no single video id). */
   externalUrl?: string | undefined;
 }
