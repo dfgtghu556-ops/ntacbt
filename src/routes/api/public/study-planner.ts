@@ -503,8 +503,8 @@ function rank(
       published: v.published,
       score: Math.round(score),
       why: why.join(" · "),
-      teacher: teacher?.name,
-      institute: institute?.name,
+      ...(teacher?.name != null && { teacher: teacher.name }),
+      ...(institute?.name != null && { institute: institute.name }),
     });
   }
 
