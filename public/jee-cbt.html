@@ -12457,10 +12457,10 @@
           );
         }
         if (w.step === 3) {
-          // JEE-360 "Dream Team & Dream Teachers": pick institute & top faculty per subject.
+          // JEE-360 Step 3 — DREAM TEAM ONLY: choose coaching / platform (the team).
           c.innerHTML = H(
-            "Build your Dream Team, then pick your Dream Teacher",
-            "Two separate choices per subject: first <b>Dream Team</b> = coaching / platform; then <b>Dream Teacher</b> = favourite single faculty from that team. Both are filtered for your target exam (" +
+            "Choose your Dream Team",
+            "Pick the coaching / platform (the team) whose faculty lectures you want prioritised — filtered for your target exam (" +
               (w.target === "jeemain"
                 ? "🎯 JEE Main 2026"
                 : w.target === "jeeadv"
@@ -12470,7 +12470,7 @@
                     : w.target === "board11"
                       ? "📗 Class 11"
                       : "🎯 All Exams") +
-              "). Or keep Auto to let us pick the best verified lecture per chapter.",
+              "). Your Dream Teacher is the next step.",
           );
           w.channels = w.channels || {};
           w.institutes = w.institutes || {};
@@ -12483,14 +12483,17 @@
             sec.style.cssText =
               "margin-top:14px;padding:16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)";
 
-            // Subject Header + Active Summary Pill
-            const curTeacher = w.teachers[s] ? AIP_TEACHERS.find((t) => t.id === w.teachers[s]) : null;
+            // Subject Header + Team Summary Pill
             const curInst = w.institutes[s] ? AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) : null;
-            let statusPillHtml = `<span class="badge" style="font-size:11px;opacity:0.85">✨ Auto (Best available)</span>`;
-            if (curTeacher) {
-              statusPillHtml = `<span class="badge g" style="font-size:11px;font-weight:600">🎯 Dream Teacher: ${esc(curTeacher.name)} (${esc(curInst ? curInst.short : "Verified")})</span>`;
-            } else if (curInst) {
-              statusPillHtml = `<span class="badge" style="font-size:11px;font-weight:600">⚡ ${esc(curInst.name)} (Any Top Faculty)</span>`;
+            const selectedTeacherForTeam = w.teachers[s]
+              ? AIP_TEACHERS.find((t) => t.id === w.teachers[s])
+              : null;
+            let statusPillHtml = `<span class="badge" style="font-size:11px;opacity:0.85">✨ Auto (Best available team)</span>`;
+            if (curInst) {
+              statusPillHtml = `<span class="badge g" style="font-size:11px;font-weight:600">🏆 ${esc(curInst.name)} (${esc(curInst.short)})</span>`;
+            }
+            if (selectedTeacherForTeam) {
+              statusPillHtml += ` <span class="badge" style="font-size:11px;opacity:0.9">🎯 ${esc(selectedTeacherForTeam.name)}</span>`;
             }
 
             sec.innerHTML = `
@@ -12500,8 +12503,8 @@
                 </div>
                 ${statusPillHtml}
               </div>
-              <div style="margin-top:14px;padding:12px 0 8px;font-size:12px;font-weight:800;letter-spacing:0.02em">🏆 DREAM TEAM — Coaching / Platform</div>
-              <div style="font-size:11.5px;margin-bottom:8px;color:var(--text-muted, #64748b)">Choose the coaching / team whose faculty lectures you want prioritised. Dream Teacher (below) then picks one favourite faculty from that team.</div>
+              <div style="margin-top:12px;font-size:12px;font-weight:800;letter-spacing:0.02em">🏆 DREAM TEAM — Coaching / Platform</div>
+              <div style="font-size:11.5px;margin-bottom:8px;color:var(--text-muted, #64748b)">Pick the team / coaching you trust most for ${s}. You will choose your favourite faculty (Dream Teacher) on the next screen.</div>
             `;
 
             // Institute button row
@@ -12552,19 +12555,91 @@
             });
             sec.appendChild(instRow);
 
-            // ── SEPARATE DREAM TEACHER SECTION ──
-            const dtHeader = el("div");
-            dtHeader.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--line)";
-            dtHeader.innerHTML = `
-              <div style="font-size:12px;font-weight:800;letter-spacing:0.02em">🎯 DREAM TEACHER — Preferred Faculty</div>
-              <div style="font-size:11.5px;margin-top:2px;color:var(--text-muted, #64748b)">${
+            c.appendChild(sec);
+          });
+
+          // Dream Team summary (only: coaching / platform per subject)
+          const teamItems = w.subjects
+            .map((s) => {
+              const instId = w.institutes[s];
+              const inst = instId ? AIP_INSTITUTES.find((i) => i.id === instId) : null;
+              const txt = inst
+                ? `⚡ <b>${esc(inst.name)}</b> (${esc(inst.short)})`
+                : `✨ Auto (Best available)`;
+              return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span style="color:${SUBCOLOR[s]};font-weight:600">${s}:</span> <span>${txt}</span></div>`;
+            })
+            .join("");
+
+          const teamCard = el("div", "card");
+          teamCard.style.cssText = "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
+          teamCard.innerHTML = `
+            <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
+              <span>🏆</span> <span>Your Dream Team (Coaching / Platform)</span>
+            </div>
+            <div style="margin-top:8px">${teamItems}</div>
+          `;
+          c.appendChild(teamCard);
+
+          c.appendChild(
+            nav(true, () => {
+              w.step = 4;
+              render(0);
+            }, "Continue to Dream Teacher →"),
+          );
+        }
+        if (w.step === 4) {
+          // JEE-360 Step 4 — DREAM TEACHER ONLY: favourite single faculty per subject.
+          c.innerHTML = H(
+            "Choose your Dream Teacher",
+            "One favourite faculty per subject. If you picked a team, these are the top faculty from that team; if not, it shows the best available across platforms — filtered for your target (" +
+              (w.target === "jeemain"
+                ? "🎯 JEE Main 2026"
+                : w.target === "jeeadv"
+                  ? "🔥 JEE Advanced"
+                  : w.target === "board12" || w.target === "cbse27"
+                    ? "📘 Class 12 Boards"
+                    : w.target === "board11"
+                      ? "📗 Class 11"
+                      : "🎯 All Exams") +
+              ").",
+          );
+          w.channels = w.channels || {};
+          w.institutes = w.institutes || {};
+          w.teachers = w.teachers || {};
+          w.teacherNames = w.teacherNames || {};
+          w.examFilters = w.examFilters || {};
+
+          w.subjects.forEach((s) => {
+            const sec = el("div", "card");
+            sec.style.cssText =
+              "margin-top:14px;padding:16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)";
+
+            // Subject Header + Dream Teacher Summary Pill
+            const curTeacher = w.teachers[s] ? AIP_TEACHERS.find((t) => t.id === w.teachers[s]) : null;
+            const curInst = w.institutes[s] ? AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) : null;
+            let statusPillHtml = `<span class="badge" style="font-size:11px;opacity:0.85">✨ Auto (Best available)</span>`;
+            if (curTeacher) {
+              statusPillHtml = `<span class="badge g" style="font-size:11px;font-weight:600">🎯 Dream Teacher: ${esc(curTeacher.name)} (${esc(curInst ? curInst.short : "Verified")})</span>`;
+            } else if (curInst) {
+              statusPillHtml = `<span class="badge" style="font-size:11px;font-weight:600">⚡ ${esc(curInst.name)} (Any Top Faculty)</span>`;
+            }
+
+            sec.innerHTML = `
+              <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <div class="row" style="align-items:center;gap:8px">
+                  <span class="chip" style="color:${SUBCOLOR[s]};font-weight:700;font-size:13px;padding:4px 10px">${s}</span>
+                </div>
+                ${statusPillHtml}
+              </div>
+              <div style="margin-top:12px;font-size:12px;font-weight:800;letter-spacing:0.02em">🎯 DREAM TEACHER — Preferred Faculty</div>
+              <div style="font-size:11.5px;margin-bottom:8px;color:var(--text-muted, #64748b)">${
                 w.institutes[s]
                   ? `Top ${s} faculty from ${esc((AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) || {}).name || "your team")}.`
-                  : "No team chosen yet — shown below are best available faculty across platforms. Pick a team above to narrow this list."
+                  : "No team chosen yet — shown below are best available faculty across platforms. Go Back if you want to pick a team first."
               }</div>
             `;
-            sec.appendChild(dtHeader);
-            // ── DREAM TEACHER (automatic): visible before choosing an institute ──
+
+            // DREAM TEACHER (automatic): shown when no institute/team chosen
             if (!w.institutes[s]) {
               const activeExamFilter = w.examFilters[s] || w.target || "jeemain";
               const autoTeachers = aipGetFaculties(null, s, activeExamFilter).slice(0, 8);
@@ -12574,7 +12649,7 @@
                 const targetText = activeExamFilter === "board12" || activeExamFilter === "cbse27" ? "CBSE Class 12" : activeExamFilter === "board11" ? "CBSE Class 11" : activeExamFilter === "jeeadv" ? "JEE Advanced" : "JEE Main";
                 dtBox.innerHTML = `
                   <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">🎯 Dream Teacher — Best for ${targetText}</div>
-                  <div class="small muted" style="margin-top:2px">Pick your favourite single ${s} teacher across platforms for this class. Choose a team above to narrow this list.</div>
+                  <div class="small muted" style="margin-top:2px">Pick your favourite single ${s} teacher across platforms for this class.</div>
                 `;
                 const dtGrid = el("div", "grid");
                 dtGrid.style.cssText = "grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:10px;margin-top:10px";
@@ -12601,7 +12676,7 @@
               }
             }
 
-            // If an institute is selected, display TOP FACULTIES (Dream Teacher) selection block!
+            // If an institute/team is selected, show TOP FACULTIES (Dream Teacher) block
             if (w.institutes[s]) {
               const selectedInst = AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) || {
                 name: "Selected Institute",
@@ -12661,7 +12736,7 @@
                 const emptyMsg = el(
                   "div",
                   "small muted",
-                  `No faculties listed for this exam filter in ${selectedInst.name}. Switch to "All Faculties" above or pick another platform.`,
+                  `No faculties listed for this exam filter in ${selectedInst.name}. Switch to "All Faculties" above or go back and pick another team.`,
                 );
                 emptyMsg.style.padding = "10px 0";
                 teacherBox.appendChild(emptyMsg);
@@ -12734,17 +12809,7 @@
             c.appendChild(sec);
           });
 
-          // Assembled Dream Team + Dream Teacher Summary Cards (SEPARATE)
-          const teamItems = w.subjects
-            .map((s) => {
-              const instId = w.institutes[s];
-              const inst = instId ? AIP_INSTITUTES.find((i) => i.id === instId) : null;
-              const txt = inst
-                ? `⚡ <b>${esc(inst.name)}</b> (${esc(inst.short)})`
-                : `✨ Auto (Best available)`;
-              return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span style="color:${SUBCOLOR[s]};font-weight:600">${s}:</span> <span>${txt}</span></div>`;
-            })
-            .join("");
+          // Dream Teachers summary (only: preferred faculty per subject)
           const teacherItems = w.subjects
             .map((s) => {
               const tName = w.teacherNames[s];
@@ -12756,18 +12821,8 @@
             })
             .join("");
 
-          const teamCard = el("div", "card");
-          teamCard.style.cssText = "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
-          teamCard.innerHTML = `
-            <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
-              <span>🏆</span> <span>Your Dream Team (Coaching / Platform)</span>
-            </div>
-            <div style="margin-top:8px">${teamItems}</div>
-          `;
-          c.appendChild(teamCard);
-
           const teacherCard = el("div", "card");
-          teacherCard.style.cssText = "margin-top:12px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
+          teacherCard.style.cssText = "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
           teacherCard.innerHTML = `
             <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
               <span>🎯</span> <span>Your Dream Teachers (Preferred Faculty)</span>
@@ -12781,12 +12836,12 @@
 
           c.appendChild(
             nav(true, () => {
-              w.step = 4;
+              w.step = 5;
               render(0);
-            }),
+            }, "Continue →"),
           );
         }
-        if (w.step === 4) {
+        if (w.step === 5) {
           // JEE-360 core screen, now DEPTH-AWARE: every window shows not just the
           // hours/day cost but WHAT KIND of preparation it buys (crash one-shots
           // vs full mastery). Different timelines = genuinely different plans.
@@ -12868,12 +12923,12 @@
               w.depth = Object.keys(AIP_DEPTHS).find((k) => AIP_DEPTHS[k] === D2);
               w.dailyMin =
                 Math.ceil(aipTotalEff(w.subjects, w.topics, w.speed, D2) / w.days / 5) * 5;
-              w.step = 5;
+              w.step = 6;
               render(0);
             }),
           );
         }
-        if (w.step === 5) {
+        if (w.step === 6) {
           // JEE-360 "how do you want to study?" + language, then reality check.
           const Dw = AIP_DEPTHS[w.depth] || aipDepthFor(w.days, w.subjects, w.topics);
           const total = aipTotalEff(w.subjects, w.topics, w.speed, Dw);
