@@ -381,6 +381,7 @@ public class MainActivity extends Activity {
      *  apps — a base64 PNG of the REAL launcher icon. */
     String listLaunchableApps() {
         JSONArray arr = new JSONArray();
+        riCache.clear();
         try {
             Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
             PackageManager pm = getPackageManager();
