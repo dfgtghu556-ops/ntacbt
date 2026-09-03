@@ -20957,6 +20957,19 @@
           root.appendChild(lc);
         }
 
+        // ---- Launcher app drawer preview (web-friendly) ----
+        const lpd = el("div", "card");
+        lpd.innerHTML = `<div class="section-title"><span class="ico">${ic("home")}</span>
+        <div><h3 style="margin:0">📱 Launcher app drawer</h3>
+        <div class="small muted" style="margin-top:4px">Study launcher ka app grid — icon cards, search, category chips, pinned essential apps. Web pe bhi preview dekh sakte ho.</div></div></div>`;
+        const lr2 = el("div", "row");
+        lr2.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
+        const lpv = el("button", "btn sm", "🧪 Preview launcher UI");
+        lpv.onclick = () => appDrawerOpen(true);
+        lr2.appendChild(lpv);
+        lpd.appendChild(lr2);
+        root.appendChild(lpd);
+
         const hm = el("div", "card");
         const { heat } = streakInfo();
         const maxC = Math.max(1, ...heat.map((h) => h.count));
@@ -24140,55 +24153,184 @@
       /** Minimal app drawer — the "dock" of the study launcher. Zaroori apps
        *  (Phone/Camera/WhatsApp…) yahin se khulti hain; Focus Lock ke दौरान
        *  blocked apps ko native side hi mana kar deta hai. */
-      function appDrawerOpen() {
-        const n = nativeLauncher();
-        if (!n) return;
+      /** App grid colours — deterministic from label/pkg so the drawer looks
+       *  like a real launcher (each app keeps its own icon colour). */
+      function appIconColor(label, pkg) {
+        const s2 = String(label || pkg || "A");
+        let h = 0;
+        for (let i = 0; i < s2.length; i++) h = (h * 31 + s2.charCodeAt(i)) % 360;
+        return "linear-gradient(135deg, hsl(" + h + " 60% 52%), hsl(" + ((h + 40) % 360) + " 65% 42%))";
+      }
+      function appEmoji(label, pkg) {
+        const t = (String(label || "") + " " + String(pkg || "")).toLowerCase();
+        if (/phone|dial|call/.test(t)) return "📞";
+        if (/camera/.test(t)) return "📷";
+        if (/whatsapp|message|sms/.test(t)) return "💬";
+        if (/insta|instagram|social/.test(t)) return "📸";
+        if (/youtube|video|watch/.test(t)) return "▶️";
+        if (/chrome|browser|internet/.test(t)) return "🌐";
+        if (/settings|setup/.test(t)) return "⚙️";
+        if (/file|doc|drive/.test(t)) return "📁";
+        if (/calculator|calc/.test(t)) return "🧮";
+        if (/clock|time|alarm/.test(t)) return "⏰";
+        if (/note|memo/.test(t)) return "📝";
+        if (/music|sound|audio/.test(t)) return "🎧";
+        if (/map|location|gps/.test(t)) return "📍";
+        if (/mail|gmail|email/.test(t)) return "✉️";
+        if (/bank|payment|upi|pay/.test(t)) return "🏦";
+        if (/learn|study|edu|exam|course|class/.test(t)) return "🎓";
+        if (/game/.test(t)) return "🎮";
+        return "📱";
+      }
+      /** The study launcher app drawer — improved to a real launcher look:
+       *  icon grid, category chips, search, essential apps pinned, and a
+       *  --preview mode so it can be seen/inspected from the website too. */
+      function appDrawerOpen(preview) {
+        const n = preview ? null : nativeLauncher();
         let apps = [];
-        try {
-          apps = JSON.parse(n.listApps() || "[]");
-        } catch (e) {}
+        if (n) {
+          try {
+            apps = JSON.parse(n.listApps() || "[]");
+          } catch (e) {}
+        } else {
+          apps = [
+            { label: "Phone", pkg: "com.android.dialer" },
+            { label: "WhatsApp", pkg: "com.whatsapp" },
+            { label: "Camera", pkg: "com.android.camera" },
+            { label: "Messages", pkg: "com.android.mms" },
+            { label: "Chrome", pkg: "com.android.chrome" },
+            { label: "YouTube", pkg: "com.google.android.youtube" },
+            { label: "Settings", pkg: "com.android.settings" },
+            { label: "Files", pkg: "com.google.android.documentsui" },
+            { label: "Calculator", pkg: "com.google.android.calculator" },
+            { label: "Clock", pkg: "com.google.android.deskclock" },
+            { label: "Notes", pkg: "com.samsung.android.app.notes" },
+            { label: "Instagram", pkg: "com.instagram.android" },
+            { label: "Gmail", pkg: "com.google.android.gm" },
+            { label: "Maps", pkg: "com.google.android.apps.maps" },
+            { label: "Music", pkg: "com.google.android.apps.youtube.music" },
+            { label: "Play Store", pkg: "com.android.vending" },
+          ];
+        }
+        if (!apps.length) {
+          toast("Koi app list nahi mili (native launcher me apps khul gayi hain)");
+          return;
+        }
         const m = el("div", "modal");
         m.setAttribute("data-static", "1");
-        m.innerHTML = `<div class="box" style="max-width:560px;max-height:82vh;display:flex;flex-direction:column">
-    <h3 style="margin:0 0 4px">📱 Apps${focusActive() ? ' <span class="badge" style="color:var(--red)">🔒 Focus Lock — sirf zaroori apps</span>' : ""}</h3>
-    <div class="small muted">Study launcher mode: yahan se koi bhi app kholo. Padhai ke time distraction apps khud block ho jayenge.</div>
-    <input type="text" placeholder="App dhundo…" data-q style="width:100%;margin:10px 0">
-    <div data-list style="overflow:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"></div>
-    <button class="btn ghost sm" data-close style="margin-top:10px">Band karo</button></div>`;
+        m.innerHTML = `<div class="box" style="max-width:600px;max-height:86vh;display:flex;flex-direction:column;padding:16px 18px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">
+      <div style="min-width:0">
+        <h3 style="margin:0 0 4px">📱 Apps <span class="small muted">· ${apps.length}</span>${preview ? ' <span class="badge" style="background:var(--blue-soft);color:var(--accent-text)">preview</span>' : ""}</h3>
+        <div class="small muted">Study launcher mode — padhai ke time distraction apps Block mode me khud chipko jaate hain.</div>
+      </div>
+      <button class="iconbtn" data-close aria-label="Band karo" style="font-size:16px;flex:none">✕</button>
+    </div>
+    <input type="text" placeholder="App dhundo… (Phone, WhatsApp, YouTube…)" data-q style="width:100%;margin:10px 0 8px">
+    <div data-cats style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+    <div data-list style="overflow:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;padding:2px"></div>
+    <div class="small muted" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)">${preview ? "Web preview — asli launcher me apps ke saath yahi grid dikhega." : "Tap = app kholo. Focus Lock chalte waqt sirf essential apps enabled."}</div>
+  </div>`;
         document.body.appendChild(m);
         const list = m.querySelector("[data-list]"),
-          q = m.querySelector("[data-q]");
+          q = m.querySelector("[data-q]"),
+          cats = m.querySelector("[data-cats]");
+        const CATS = [
+          ["all", "All"],
+          ["essential", "Essential"],
+          ["social", "Social"],
+          ["learn", "Learning"],
+          ["utility", "Utility"],
+        ];
+        let activeCat = "all";
+        const catFor = (a) => {
+          const t = (String(a.label || "") + " " + String(a.pkg || "")).toLowerCase();
+          if (/phone|dial|call|camera|message|sms|calculator|clock|time|note|settings|file|doc|drive|maps|mail|bank|payment|upi|play store|vending/.test(t))
+            return "essential";
+          if (/whatsapp|insta|instagram|social|facebook|twitter|snap|telegram|discord/.test(t)) return "social";
+          if (/learn|study|edu|exam|course|class|video|youtube|browser|chrome|music|audio/.test(t)) return "learn";
+          return "utility";
+        };
+        const isEssential = (a) => {
+          const t = (String(a.label || "") + " " + String(a.pkg || "")).toLowerCase();
+          return /phone|dial|call|camera|message|sms|calculator|clock|time|settings|file|doc|drive|maps|mail|bank|payment|upi|play store|vending|emergency/.test(t);
+        };
+        CATS.forEach(([id, l]) => {
+          const b = el("button", "chip");
+          b.textContent = l;
+          b.style.cursor = "pointer";
+          b.onclick = () => {
+            activeCat = id;
+            cats.querySelectorAll("button").forEach((x) => (x.style.opacity = x === b ? "1" : ".55"));
+            draw2();
+          };
+          cats.appendChild(b);
+        });
+        const ESC = { escape: () => m.remove() };
+        m.setAttribute("data-esc", "1");
         const draw2 = () => {
           const term = (q.value || "").trim().toLowerCase();
-          list.innerHTML = "";
-          apps
-            .filter(
-              (a) =>
-                !term ||
-                String(a.label || "")
-                  .toLowerCase()
-                  .includes(term),
-            )
-            .slice(0, 200)
-            .forEach((a) => {
-              const b = el("button", "optrow");
-              b.style.cssText = "cursor:pointer;text-align:left;padding:10px";
-              b.innerHTML = `<b style="font-size:13px">${esc(String(a.label || a.pkg).slice(0, 26))}</b>`;
-              b.onclick = () => {
-                let ok = false;
-                try {
-                  ok = n.openApp(a.pkg);
-                } catch (e) {}
-                if (ok) m.remove();
-              };
-              list.appendChild(b);
+          let rows = apps.filter((a) => {
+            const probe = String(a.label || "") + " " + String(a.pkg || "");
+            if (term && !probe.toLowerCase().includes(term)) return false;
+            const c = catFor(a);
+            if (activeCat === "social" && c !== "social") return false;
+            if (activeCat === "learn" && c !== "learn") return false;
+            if (activeCat === "utility" && c === "social") return false;
+            if (activeCat === "essential" && !isEssential(a)) return false;
+            return true;
+          });
+          if (activeCat === "all" && !term) {
+            rows = rows.slice().sort((a, b) => {
+              const ea = isEssential(a) ? 0 : 1;
+              const eb = isEssential(b) ? 0 : 1;
+              return ea - eb || String(a.label || "").localeCompare(String(b.label || ""));
             });
+          }
+          list.innerHTML = "";
+          rows.slice(0, 200).forEach((a) => {
+            const label = String(a.label || a.pkg || "App");
+            const icon = el("button");
+            icon.type = "button";
+            icon.className = "launch-app";
+            icon.style.cssText =
+              "cursor:pointer;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 6px 8px;transition:all .18s ease;box-shadow:0 2px 8px rgba(0,0,0,.04)";
+            icon.onmouseenter = () => {
+              icon.style.transform = "translateY(-2px)";
+              icon.style.borderColor = "var(--accent-text)";
+              icon.style.boxShadow = "0 8px 18px rgba(0,0,0,.1)";
+            };
+            icon.onmouseleave = () => {
+              icon.style.transform = "";
+              icon.style.borderColor = "var(--line)";
+              icon.style.boxShadow = "0 2px 8px rgba(0,0,0,.04)";
+            };
+            icon.innerHTML = `<div style="width:42px;height:42px;margin:0 auto 6px;border-radius:12px;background:${appIconColor(label, a.pkg)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 8px rgba(0,0,0,.15)">${appEmoji(label, a.pkg)}</div>
+        <div style="font-size:11.5px;font-weight:700;line-height:1.25;word-break:break-word;min-height:28px">${esc(label.slice(0, 22))}${label.length > 22 ? "…" : ""}</div>
+        <div class="small muted" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(String(a.pkg || "").split(".").slice(-2).join("."))}</div>`;
+            icon.onclick = () => {
+              if (preview) {
+                toast("🧪 Preview: kal is app ko isi tile se kholenge (native bridge me)");
+                return;
+              }
+              let ok = false;
+              try {
+                ok = n.openApp(a.pkg);
+              } catch (e) {}
+              if (ok) m.remove();
+              else toast("App khola nahi ja saka — galaxy ya launcher permissions check karo", 3000);
+            };
+            list.appendChild(icon);
+          });
           if (!list.children.length)
-            list.innerHTML = `<div class="small muted">Kuch nahi mila.</div>`;
+            list.innerHTML = `<div class="small muted" style="grid-column:1/-1;padding:20px;text-align:center">Kuch nahi mila — search ya category change karo.</div>`;
         };
         q.oninput = draw2;
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && m.isConnected) m.remove();
+        });
         draw2();
-        m.querySelector("[data-close]").onclick = () => m.remove();
+        m.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => m.remove()));
       }
       /** Floating dock button — only when we ARE the phone's home screen
        *  (otherwise the normal launcher has its own drawer). */

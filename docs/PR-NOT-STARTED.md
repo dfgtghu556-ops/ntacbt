@@ -23,11 +23,21 @@ Wait for user confirmation after verifying on the live preview.
   questions, missed scheduled mocks, and untouched syllabus chapters all appear with a
   one-tap clear action.
 
-## Validation (this round)
-- HTML inline-script syntax check: ok
-- `npm run build`: ok
-- `npm test`: 112 passed / 0 failed
-- `npx tsc --noEmit`: ok
+## Launcher app drawer UI (improved)
+- App drawer redesigned from a plain option list to a real launcher app-grid:
+  deterministic icon tiles (emoji + gradient per app), category chips
+  (All / Essential / Social / Learning / Utility), live search, pinned
+  essential apps on top, focus-lock hint, and Escape-to-close.
+- Added a web-friendly **"Preview launcher UI"** button in Settings so the
+  drawer can be inspected without the APK; the native bridge still opens real apps.
+
+## Whole-site functionality check (this round)
+- All 15 routes present in served HTML (Dashboard, Test Library, PYQ, Planner,
+  StudyTube, Live Classes, Practice, Review, Mistake Notebook, Mastery,
+  Formulas, Analytics, Upload, Search, Settings).
+- New helpers referenced by the 5 feature cards / launcher all resolve.
+- `npm run build`, `npm test` (112 passed), `npx tsc --noEmit`, HTML inline-script
+  syntax check all green.
 
 ## StudyTube theme fix (added so the hub is orange, not black/white)
 - Defined the previously-undefined `--accent` token as orange (`var(--blue)`), so every
