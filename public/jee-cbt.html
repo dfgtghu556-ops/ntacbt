@@ -15028,6 +15028,63 @@
             : "";
         return { p1, p2, p3, p4, lastAi: ai };
       }
+      /* ═══ CORE-OBJECTIVE ENGINE: syllabus coverage + exam readiness ═══
+   Directly answers "am I actually going to clear this exam?" with one
+   number built from coverage, accuracy, consistency and projected target. */
+      function syllabusStats() {
+        const target =
+          (S.aiPlanner && S.aiPlanner.profile && S.aiPlanner.profile.target) || "jeemain";
+        let syl;
+        try { syl = topicsForTarget(target); } catch (e) { syl = JEE_TOPICS; }
+        const SUB_SET = new Set(["Physics", "Chemistry", "Mathematics"]);
+        const chapterSub = {};
+        let total = 0;
+        Object.keys(syl || {}).forEach((s) => {
+          if (!SUB_SET.has(s)) return;
+          (syl[s] || []).forEach((t) => {
+            chapterSub[t[0]] = s;
+            total++;
+          });
+        });
+        const bankIdx = new Set(), touchedIdx = new Set();
+        S.tests.forEach((t) =>
+          (t.questions || []).forEach((q) => {
+            const k = q.chapter || q.subject;
+            if (chapterSub[k]) bankIdx.add(k);
+          }),
+        );
+        const accMap = {}, nMap = {};
+        S.attempts
+          .filter((a) => a.submittedAt)
+          .forEach((a) => {
+            const t = testById(a.testId);
+            if (!t) return;
+            (t.questions || []).forEach((q) => {
+              const k = q.chapter || q.subject;
+              if (!chapterSub[k]) return;
+              touchedIdx.add(k);
+              const r = a.responses[q.id] || {};
+              if (r.ans == null || r.ans === "") return;
+              accMap[k] = (accMap[k] || 0) + (isRight(q, r.ans) ? 1 : 0);
+              nMap[k] = (nMap[k] || 0) + 1;
+            });
+          });
+        let mastered = 0;
+        [...touchedIdx].forEach((k) => {
+          if (nMap[k] && pct(accMap[k], nMap[k]) >= 75) mastered++;
+        });
+        return {
+          target,
+          total,
+          bankCount: bankIdx.size,
+          touched: touchedIdx.size,
+          mastered,
+          chapterSub,
+          bankIdx,
+          touchedIdx,
+        };
+      }
+
       function viewAnalytics(root) {
         const done = S.attempts
           .filter((a) => a.submittedAt)
@@ -15095,6 +15152,89 @@
             );
           }
         }
+        /* ═══ EXAM READINESS — the honest "am I clearing the exam?" score ═══
+   One number + one click. Built from: coverage 30% · accuracy 25% ·
+   consistency 25% · projection 20%. Below it: the single highest-payoff
+   action for TODAY, not ten generic tips. */
+        try {
+          const sylS = syllabusStats();
+          const trendR = percentileTrend();
+          const targetPct = S.settings.targetPercentile;
+          const proj = trendR.projected;
+          const qGoal = Math.max(10, S.settings.dailyGoal || 20);
+          let q7 = 0, active7 = 0;
+          for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const k = todayKey(d);
+            const n = S.dailyQuestions[k] || 0;
+            q7 += n;
+            if (n > 0) active7++;
+          }
+          const covScore = sylS.total ? Math.min(100, Math.round((sylS.touched / sylS.total) * 100)) : 0;
+          const accScore = done.length
+            ? Math.round(done.slice(-5).reduce((s, a) => s + a.result.all.accuracy, 0) / Math.min(5, done.length))
+            : 0;
+          const conScore = Math.min(100, Math.round((active7 / 7) * 100));
+          const projScore = proj != null && targetPct ? Math.min(100, Math.round((proj / targetPct) * 100)) : null;
+          const rScore =
+            projScore != null
+              ? Math.round(covScore * 0.3 + accScore * 0.25 + conScore * 0.25 + projScore * 0.2)
+              : Math.round(covScore * 0.35 + accScore * 0.3 + conScore * 0.35);
+          const rlvl =
+            rScore >= 85
+              ? ["🔥", "Exam ready", "Aap target ke bahut paas ho — bas yeh pace 40 din tak pakdo."]
+              : rScore >= 70
+                ? ["💪", "On the right track", "Base strong hai. Ab sirf weak chapters ka targeted fix chahiye."]
+                : rScore >= 50
+                  ? ["🌱", "Building", "Coverage + consistency badhane par hi yeh number upar jayega."]
+                  : ["🚀", "Starting / risk", "Pehle daily goal aur ek mock. Phir yeh number khud improve hoga."];
+          const unt = sylS.total - sylS.touched;
+          let act;
+          if (!done.length)
+            act = { t: "Take your first mock", s: "Tab tak score aur readiness dono banege", p: () => go("library") };
+          else if (conScore < 50)
+            act = {
+              t: "Complete today's goal",
+              s: `${S.dailyQuestions[todayKey(Date.now())] || 0}/${qGoal} Q — consistency sabse bada lever hai`,
+              p: () => go("practice"),
+            };
+          else if (unt > 0 && sylS.touched / sylS.total < 0.5)
+            act = { t: `Cover next untouched chapter (${unt} baaki)`, s: "Syllabus gap = direct marks loss", p: () => go("youtube") };
+          else if (proj != null && targetPct && proj < targetPct)
+            act = { t: "Take one more full mock", s: `Projection ${proj} vs target ${targetPct}`, p: () => go("library") };
+          else
+            act = { t: "Fix your weakest chapter", s: "Highest-payoff practice yahi hai", p: () => go("mastery") };
+          const rc = el("div", "card");
+          rc.style.cssText =
+            "border-color:color-mix(in srgb,var(--accent-text) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent-text) 8%,var(--panel)),var(--panel))";
+          rc.innerHTML = `<div class="section-title"><span class="ico">${ic("gauge")}</span>
+      <div><h3 style="margin:0">🎯 Exam Readiness</h3>
+      <div class="small muted">Coverage 30% · accuracy 25% · consistency 25% · projection 20%. Ek number, clear answer.</div></div></div>
+      <div class="row" style="align-items:center;gap:16px;margin-top:10px">
+        <div style="position:relative;width:92px;height:92px;flex:none">
+          <svg viewBox="0 0 36 36" style="width:92px;height:92px;transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--line)" stroke-width="3.6"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="${rScore >= 70 ? "var(--green)" : rScore >= 50 ? "var(--amber)" : "var(--red)"}" stroke-width="3.6" stroke-dasharray="${rScore} 100" stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:grid;place-items:center"><b style="font-size:24px">${rScore}</b></div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="small" style="font-weight:700;font-size:16px">${rlvl[0]} ${rlvl[1]}</div>
+          <div class="small muted">${rlvl[2]}</div>
+          <div class="small muted" style="margin-top:5px">Syllabus ${sylS.touched}/${sylS.total} chapters · accuracy ${accScore}% · ${active7}/7 active days${projScore != null ? ` · proj ${proj} vs target ${targetPct}` : ""}</div>
+        </div>
+      </div>
+      <div class="bar" style="margin-top:10px;height:8px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;width:${covScore}%;height:100%;background:var(--blue);border-radius:4px"></i></div>
+      <div class="row" style="justify-content:space-between;margin-top:4px"><span class="small muted">Syllabus coverage</span><span class="small">${sylS.touched}/${sylS.total} chapters</span></div>
+      <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" data-act>${ic("play")} ${esc(act.t)}</button>
+        <div class="small muted" style="align-self:center">${esc(act.s)}</div>
+      </div>`;
+          rc.querySelector("[data-act]").onclick = act.p;
+          root.appendChild(rc);
+        } catch (e) {}
+
         if (!done.length) {
           root.appendChild(el("div", "card", `<p class="muted">No attempts yet.</p>`));
           return;
@@ -15495,12 +15635,76 @@
           ),
         );
 
+        /* ═══ SYLLABUS COVERAGE — direct link between syllabus & score ═══ */
+        try {
+          const sylS = syllabusStats();
+          if (sylS.total) {
+            const cov = el("div", "card");
+            const subJee = ["Physics", "Chemistry", "Mathematics"];
+            const rows = subJee.map((sub) => {
+              const all = Object.entries(sylS.chapterSub).filter(([, v]) => v === sub);
+              const total2 = all.length;
+              const done2 = all.filter(([k]) => sylS.touchedIdx.has(k)).length;
+              return { sub, total: total2, done: done2 };
+            });
+            const remaining = [...sylS.bankIdx].filter((k) => !sylS.touchedIdx.has(k));
+            const nextCh = remaining[0] || null;
+            cov.innerHTML = `<div class="section-title"><span class="ico">${ic("book")}</span>
+        <div><h3 style="margin:0">Syllabus Coverage</h3>
+        <div class="small muted">Direct link: jitne chapters tumne actually attempt kiye, full ${sylS.target.toUpperCase()} syllabus ke against. Bank me ${sylS.bankCount}/${sylS.total} chapters ka data hai.</div></div></div>
+        <div class="grid g4" style="margin-top:10px">
+          ${statCard("Covered", sylS.touched)}
+          ${statCard("Mastered ≥75%", sylS.mastered)}
+          ${statCard("Remaining", sylS.total - sylS.touched)}
+          ${statCard("Bank", sylS.bankCount + "/" + sylS.total)}
+        </div>
+        ${rows
+          .map(
+            (r) => `<div style="margin-top:12px">
+          <div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="small" style="font-weight:700">${r.sub}</span><span class="small muted">${r.done}/${r.total} chapters</span></div>
+          <div class="bar"><i style="width:${r.total ? pct(r.done, r.total) : 0}%;background:${SUBCOLOR[r.sub] || "var(--blue)"}"></i></div>
+        </div>`,
+          )
+          .join("")}
+        <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" data-coverNext>${nextCh ? ic("zap") + " Cover next: " + esc(nextCh).slice(0, 40) : ic("check") + " Saare bank chapters touched"}</button>
+          <button class="btn sm ghost" data-goYt>${ic("play")} StudyTube syllabus</button>
+        </div>`;
+            cov.querySelector("[data-coverNext]").onclick = () => {
+              if (!nextCh) {
+                go("youtube");
+                return;
+              }
+              const pool = [];
+              const seen = new Set();
+              S.tests.forEach((t) =>
+                (t.questions || []).forEach((q) => {
+                  if (seen.has(q.id)) return;
+                  if ((q.chapter || q.subject) !== nextCh) return;
+                  seen.add(q.id);
+                  pool.push({ q });
+                }),
+              );
+              if (pool.length)
+                startDrill(
+                  nextCh + " · Coverage",
+                  pool.sort(() => Math.random() - 0.5).slice(0, 10),
+                  100,
+                );
+              else toast("Is chapter ke questions locally nahi mile — StudyTube se concept pick karo", 3000);
+            };
+            cov.querySelector("[data-goYt]").onclick = () => go("youtube");
+            root.appendChild(cov);
+          }
+        } catch (e) {}
+
         /* ── organize the page: pinned coach summary + readiness, then tabs ── */
         organizeIntoTabs(root, "jeecbt.tab.analytics", {
           pin: (node, txt) =>
             txt.includes("Analytics Dashboard") ||
             txt.includes("Coach's summary") ||
-            txt.includes("Current Percentile"),
+            txt.includes("Current Percentile") ||
+            txt.includes("Exam Readiness"),
           assign: (node, txt) => {
             if (
               txt.includes("Percentile Trajectory") ||
@@ -15516,6 +15720,7 @@
               txt.includes("Speed × Accuracy") ||
               txt.includes("Chapter Wise Accuracy") ||
               txt.includes("Weakness Heatmap") ||
+              txt.includes("Syllabus Coverage") ||
               txt.includes("Fix these first")
             )
               return "chapters";

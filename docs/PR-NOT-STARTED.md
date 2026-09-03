@@ -24,6 +24,16 @@ Wait for user confirmation after verifying on the live preview.
   watch-modal buttons/avatar/chips and the Planned-lessons "Start" pill.
 - No black/white/gray/red StudyTube hardcoded colors remain in served HTML.
 
+## Core-objective engine (added to Analytics)
+- `syllabusStats()`: maps real JEE/board syllabus chapters against the local question bank and every
+  attempted chapter, producing covered / banked / mastered ≥75% counts per subject.
+- **Exam Readiness** card (pinned at top of Analytics): one honest score =
+  coverage 30% · accuracy 25% · consistency 25% · projection 20%, with a verdict
+  and the single highest-payoff "do this now" action (first mock / daily goal /
+  next untouched syllabus chapter / full mock / weakest chapter).
+- **Syllabus Coverage** card (Chapters tab): per-subject coverage bars + a one-tap
+  "Cover next: <chapter>" drill so syllabus gaps become practice, not noise.
+
 ## User's checklist before I open a PR
 1. Orange website opens by default (`/` -> `/jee-cbt.html`), orange color intact.
 2. StudyTube horizontal/sidebar sliding feels smooth (no page jumping).
