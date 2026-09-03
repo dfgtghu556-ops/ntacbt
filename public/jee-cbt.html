@@ -2927,6 +2927,12 @@
         border-color: transparent !important;
         box-shadow: none !important;
       }
+      /* PERF: hundreds of video cards — off-screen ones skip layout/paint
+         until scrolled into view (big first-paint win on long shelves). */
+      .yt-card {
+        content-visibility: auto;
+        contain-intrinsic-size: 280px 205px;
+      }
       .yt-thumb-wrap {
         border-radius: 12px;
         background: var(--line);
@@ -6353,6 +6359,15 @@
           <span data-ic="bulb"></span>
         </button>
         <button
+          id="aiVoiceBtn"
+          class="iconbtn"
+          type="button"
+          title="Mentor ka jawab suno (voice output)"
+          aria-label="Toggle voice output"
+        >
+          <span data-ic="volume"></span>
+        </button>
+        <button
           id="aiChatReset"
           class="iconbtn"
           type="button"
@@ -6544,6 +6559,12 @@
           '<path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a2 2 0 0 0 2 4h1M17 6h3a2 2 0 0 1-2 4h-1"/>',
         medal: '<circle cx="12" cy="14" r="5"/><path d="m8.5 9.5-3-6.5H10l2 4 2-4h4.5l-3 6.5"/>',
         bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1.3-1 2.1h-5c0-.8-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/>',
+        volume:
+          '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+        cards:
+          '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M7 6V4h13a1 1 0 0 1 1 1v11h-2"/>',
+        database:
+          '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
         zap: '<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
         clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
         alarm:
@@ -7066,6 +7087,8 @@
           examDate: "",
           dailyReminder: false,
           focusGoal: 100,
+          aiVoice: false,
+          aiVoiceLang: "hi",
           strictMode: false,
           targetPercentile: null,
           examFontScale: 1,
@@ -15758,6 +15781,236 @@
       }
 
       /* ------------------------------- PRACTICE -------------------------------- */
+      /* ═══ ADAPTIVE MOCK BUILDER — real error-pattern targeting ═══
+   ~60% weakest chapters + ~30% rest + fill from mistakes, in exam-like
+   timing. One tap → a practice paper that's actually YOUR paper. */
+      function adaptiveMockItems(n) {
+        n = Math.max(10, n || 25);
+        const seen = new Set(),
+          out = [];
+        const add = (arr, cap) => {
+          let c = 0;
+          const a = (arr || []).slice().sort(() => Math.random() - 0.5);
+          for (const x of a) {
+            if (c >= cap) break;
+            const q = x.q || x;
+            if (seen.has(q.id) || !validQuestion(q)) continue;
+            seen.add(q.id);
+            out.push({ q });
+            c++;
+          }
+        };
+        let weak = [];
+        try {
+          weak = chapterPriorities()
+            .slice(0, 6)
+            .map((p) => p.name);
+        } catch (e) {}
+        const all = [];
+        S.tests.forEach((t) => (t.questions || []).forEach((q) => all.push({ q })));
+        const w = all.filter((x) => weak.includes(x.q.chapter || x.q.subject));
+        const rest = all.filter((x) => !weak.includes(x.q.chapter || x.q.subject));
+        add(w, Math.round(n * 0.6));
+        add(rest, Math.round(n * 0.3));
+        try {
+          add(wrongQuestions().map((x) => ({ q: x.q })), n - out.length);
+        } catch (e) {}
+        add(rest, n - out.length);
+        return out;
+      }
+      /* ═══ FORMULA FLASHCARDS — front: topic, back: formula. Revise the sheet
+   in recall mode instead of just reading it (research: active recall wins). */
+      function flashcardsOpen(subject) {
+        const deck = [];
+        (FORMULAS[subject] || []).forEach(([k, v]) => deck.push({ k, v }));
+        if (!deck.length) {
+          toast("Is subject me flashcards nahi mile");
+          return;
+        }
+        let i = 0,
+          reveal = false,
+          known = 0,
+          again = 0;
+        const m = el("div", "modal");
+        m.setAttribute("data-static", "1");
+        m.innerHTML = `<div class="box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div><h3 style="margin:0">🃏 ${esc(subject)} Flashcards</h3>
+      <div class="small muted">Front = topic, Back = formula. Pehle khud yaad karo, phir flip.</div></div>
+      <button class="iconbtn" data-x style="font-size:16px">✕</button>
+    </div>
+    <div class="small muted" data-count style="margin-bottom:8px"></div>
+    <div data-card style="min-height:180px;flex:1;border:1px solid var(--line);border-radius:14px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,.06);cursor:pointer"></div>
+    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      <button class="btn sm ghost" data-not>🔁 Again</button>
+      <button class="btn sm" data-yes>✅ Yad tha</button>
+      <button class="btn sm" data-flip>↔️ Flip</button>
+    </div>
+  </div>`;
+        document.body.appendChild(m);
+        const card = m.querySelector("[data-card]"),
+          cnt = m.querySelector("[data-count]"),
+          flip = () => {
+            reveal = !reveal;
+            draw();
+          };
+        const draw = () => {
+          if (i >= deck.length) {
+            cnt.textContent = "Done! " + known + " yaad · " + again + " dobara";
+            card.innerHTML = `<div style="font-size:34px">${ic("medal")}</div><b style="margin-top:8px">Round complete</b>
+        <div class="small muted">Achha! Ab jo 'Again' the unhe turant ek aur baar dekho — memory lock karne ke liye.</div>
+        <button class="btn sm" style="margin-top:12px" data-restart>🔄 Restart</button>`;
+            card.querySelector("[data-restart]").onclick = () => {
+              i = 0;
+              known = 0;
+              again = 0;
+              draw();
+            };
+            return;
+          }
+          const c = deck[i];
+          cnt.textContent = "Card " + (i + 1) + " / " + deck.length;
+          card.innerHTML = reveal
+            ? `<div class="small muted">${esc(c.k)}</div><b style="font-size:20px;margin-top:8px">${esc(c.v)}</b><div class="small muted" style="margin-top:10px">${ic("check")} formula — khud likh ker dekho</div>`
+            : `<div class="small muted">Topic · tap to reveal</div><b style="font-size:22px;margin-top:8px">${esc(c.k)}</b><div class="small muted" style="margin-top:10px">pehle formula yaad karo, phir flip</div>`;
+        };
+        card.onclick = flip;
+        m.querySelector("[data-flip]").onclick = flip;
+        m.querySelector("[data-x]").onclick = () => m.remove();
+        m.querySelector("[data-yes]").onclick = () => {
+          if (!reveal) flip();
+          known++;
+          i++;
+          reveal = false;
+          draw();
+        };
+        m.querySelector("[data-not]").onclick = () => {
+          if (!reveal) flip();
+          again++;
+          i++;
+          reveal = false;
+          draw();
+        };
+        draw();
+      }
+      /* ═══ STREAK BANK — freeze tokens protect the streak on off-days ═══ */
+      function streakBank() {
+        const b = S.streakBank || (S.streakBank = { tokens: 0, used: 0, day: todayKey(Date.now()) });
+        if (b.day !== todayKey(Date.now())) {
+          b.day = todayKey(Date.now());
+          b.usedToday = false;
+        }
+        // earn roughly 1 token per 2 active days in 14-day window (cap 7)
+        let active = 0;
+        for (let i = 0; i < 14; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          if (S.studyLog[todayKey(d.getTime())] || S.dailyQuestions[todayKey(d.getTime())]) active++;
+        }
+        b.tokens = Math.max(b.tokens, Math.min(7, Math.floor(active / 2)));
+        b.used = b.used || 0;
+        return b;
+      }
+      function streakBankCard() {
+        const b = streakBank();
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("flame")}</span>
+      <div><h3 style="margin:0">Streak Bank</h3>
+      <div class="small muted">Freeze tokens — ek din chhute to streak tootne nahi dete. Har 2 active din par 1 token (max 7).</div></div>
+      <span class="pill g">${b.tokens - (b.used || 0)} left</span></div>
+      <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+        <button class="btn sm ghost" data-conflict>Iss question ki jado</button>
+        <button class="btn sm ghost" data-use ${b.usedToday ? "disabled" : ""}>${b.usedToday ? "🛡️ Aaj freeze use ho gaya" : "🛡️ Aaj freeze use karo"}</button>
+      </div>`;
+        c.querySelector("[data-use]").onclick = () => {
+          if (b.tokens - (b.used || 0) <= 0) {
+            toast("Aaj koi token nahi bacha — ek active din aur.");
+            return;
+          }
+          if (b.usedToday) return;
+          b.used = (b.used || 0) + 1;
+          b.usedToday = true;
+          save();
+          toast("🛡️ Aaj ki streak freeze ho gayi (0 questions ke saath bhi streak safe)");
+          render(0);
+        };
+        c.querySelector("[data-conflict]").style.display = "none";
+        return c;
+      }
+      /* ═══ BACKUP & SYNC (local-first, honest) — export/import/code ═══ */
+      function backupPayload() {
+        return JSON.stringify({ v: 1, savedAt: Date.now(), state: S });
+      }
+      function backupFileName() {
+        return "ntacbt-backup-" + todayKey(Date.now()) + ".json";
+      }
+      function downloadBackup() {
+        const blob = new Blob([backupPayload()], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = backupFileName();
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast("Backup download ho gaya ✅");
+      }
+      function importBackupText(txt) {
+        try {
+          const data = JSON.parse(txt);
+          const st = data && data.state;
+          if (!st || !Array.isArray(st.attempts) || !Array.isArray(st.tests)) throw new Error("bad");
+          const incoming = st;
+          const mine = S.attempts.filter((a) => a.submittedAt).length;
+          const theirs = (incoming.attempts || []).filter((a) => a && a.submittedAt).length;
+          if (theirs < mine) {
+            toast("Aapke paas is se naya data hai — kuch overwrite nahi hua.");
+            return false;
+          }
+          S = Object.assign({}, S, incoming);
+          S.settings = Object.assign({}, DEFAULT.settings, incoming.settings || {});
+          save();
+          render(0);
+          toast("Backup restored ✅ (" + theirs + " attempts)");
+          return true;
+        } catch (e) {
+          toast("Invalid backup file");
+          return false;
+        }
+      }
+      function importBackupFile(file) {
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = () => importBackupText(String(r.result || ""));
+        r.onerror = () => toast("File read nahi ho paya");
+        r.readAsText(file);
+      }
+      async function copyBackupCode() {
+        const code = encodeURIComponent(backupPayload());
+        try {
+          await navigator.clipboard.writeText(code);
+          toast("Backup code copied ✅ kisi bhi device me Import se paste karo");
+        } catch (e) {
+          window.prompt("Copy karo (backup code):", code);
+        }
+      }
+      /* ═══ SAARTHI VOICE OUTPUT 🇮🇳 — mentor ko sunna bhi (Web Speech) ═══ */
+      function speakSaarthi(text) {
+        try {
+          if (!window.speechSynthesis || !text) return;
+          if (!S.settings || !S.settings.aiVoice) return;
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text.replace(/[*_`#>]/g, "").slice(0, 500));
+          const voices = window.speechSynthesis.getVoices();
+          const hi = voices.find((v) => /hi-IN/i.test(v.lang));
+          const en = voices.find((v) => /en-IN/i.test(v.lang));
+          u.lang = (S.settings.aiVoiceLang === "hi" && hi) ? "hi-IN" : en ? "en-IN" : "en-US";
+          u.rate = 1.05;
+          u.pitch = 1;
+          if (hi && S.settings.aiVoiceLang === "hi") u.voice = hi;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
       function collectQuestions(kind) {
         const out = [];
         const seen = new Set();
@@ -16108,6 +16361,30 @@
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`,
           ),
         );
+        // ── ADAPTIVE MOCK BUILDER — exam-like paper from YOUR weak chapters ──
+        (() => {
+          const mc = el("div", "card");
+          mc.style.borderColor = "color-mix(in srgb,var(--accent-text) 40%,var(--line))";
+          mc.innerHTML = `<div class="section-title"><span class="ico">${ic("zap")}</span>
+        <div><h3 style="margin:0">⚙️ Adaptive Mock Builder</h3>
+        <div class="small muted">~60% weakest chapters · ~30% rest · mistakes se fill. Exam jaisa timing (60s/question) — sirf tumhare data se.</div></div>
+        <span class="pill n">25 Q</span></div>
+        <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" data-am>${ic("play")} Build my adaptive mock →</button>
+          <button class="btn sm ghost" data-am10>10-Q quick sprint</button>
+        </div>`;
+          mc.querySelector("[data-am]").onclick = () => {
+            const items = adaptiveMockItems(25);
+            if (!items.length) toast("Aapke data se questions nahi bane — pehle library se paper download karo.");
+            else startDrill("Adaptive Mock · " + fmtDate(Date.now()), items, 60);
+          };
+          mc.querySelector("[data-am10]").onclick = () => {
+            const items = adaptiveMockItems(10);
+            if (!items.length) toast("Aapke data se questions nahi bane — pehle library se paper download karo.");
+            else startDrill("Adaptive Sprint · " + fmtDate(Date.now()), items, 50);
+          };
+          root.appendChild(mc);
+        })();
 
         // ── Empty-bank rescue: practice needs at least one paper in the bank.
         //    Download a baked PYQ paper in one tap (or automatically) so the
@@ -20970,6 +21247,29 @@
         lpd.appendChild(lr2);
         root.appendChild(lpd);
 
+        // ---- Backup & Sync (local-first, honest) ----
+        const bk = el("div", "card");
+        bk.innerHTML = `<div class="section-title"><span class="ico">${ic("database")}</span>
+        <div><h3 style="margin:0">💾 Backup &amp; Sync</h3>
+        <div class="small muted" style="margin-top:4px">Data local-first hai (private). Export ya copy-code karke doosre device pe wapas lao — koi cloud account nahi chahiye.</div></div></div>`;
+        const bkRow = el("div", "row");
+        bkRow.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
+        const bkD = el("button", "btn sm", "⬇️ Export backup");
+        bkD.onclick = downloadBackup;
+        const bkIm = el("button", "btn sm ghost", "⬆️ Import backup");
+        bkIm.onclick = () => {
+          const inp = document.createElement("input");
+          inp.type = "file";
+          inp.accept = "application/json,.json";
+          inp.onchange = () => importBackupFile(inp.files && inp.files[0]);
+          inp.click();
+        };
+        const bkCc = el("button", "btn sm ghost", "📋 Copy backup code");
+        bkCc.onclick = copyBackupCode;
+        bkRow.append(bkD, bkIm, bkCc);
+        bk.appendChild(bkRow);
+        root.appendChild(bk);
+
         const hm = el("div", "card");
         const { heat } = streakInfo();
         const maxC = Math.max(1, ...heat.map((h) => h.count));
@@ -22102,7 +22402,19 @@
           ),
         );
         const wf = weakFormulaCard();
-        if (wf) root.appendChild(wf);
+        if (wf) root.appendChild(wf);        // ── FLASHCARDS — active-recall revision instead of just reading the sheet ──
+        const fc = el("div", "card");
+        fc.innerHTML = `<div class="section-title"><span class="ico">${ic("cards")}</span>
+      <div><h3 style="margin:0">🃏 Flashcard Revision</h3>
+      <div class="small muted">Front: topic · Back: formula. Khud pehle yaad karo, phir flip.</div></div></div>
+      <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+        ${SUBJECTS.map((s2) => `<button class="btn sm ghost" data-flash="${esc(s2)}">${s2.slice(0, 4)} Flashcards</button>`).join("")}
+      </div>`;
+        fc.querySelectorAll("[data-flash]").forEach((b) => {
+          b.onclick = () => flashcardsOpen(b.getAttribute("data-flash"));
+        });
+        root.appendChild(fc);
+
 
         // ---- revise-first: formula rows whose topic matches your weak chapters ----
         const weak = chapterMastery().filter((c) => c.acc < 70);
@@ -25325,6 +25637,7 @@
         safeCard(missionControlCard);
         safeCard(aiDailySprintCard);
         safeCard(zeroBacklogCard);
+        safeCard(streakBankCard);
         // today's promise (implementation intention) — kept above everything
         intentionCards(root);
         // urgency order: an unfinished attempt outranks everything else on the page
@@ -26212,6 +26525,7 @@
           aiChatRenderMsgs();
           aiChatRenderChips();
           save_aiChatHistory();
+          speakSaarthi(fullText);
           return;
         }
         /* PERF: during typing we update ONLY the last bubble's innerHTML in
@@ -26264,6 +26578,7 @@
             aiChatRenderMsgs();
             aiChatRenderChips();
             save_aiChatHistory();
+            speakSaarthi(fullText);
             return;
           }
           bubble.innerHTML = mdLite(modelMsg.text) + '<span class="ai-caret"></span>';
@@ -26788,7 +27103,8 @@
           fileInp = $("#aiChatFile"),
           micBtn = $("#aiChatMic"),
           socBtn = $("#aiChatSocratic"),
-          socLine = $("#aiChatSocLine");
+          socLine = $("#aiChatSocLine"),
+          voiceBtn = $("#aiVoiceBtn");
         if (!btn) return;
         if (aiChatHistory.length) btn.classList.remove("pulse"); // returning user — skip the "look here" cue
         btn.onclick = aiChatOpen;
@@ -26818,6 +27134,21 @@
             socSync();
           };
         socSync();
+        // Voice output toggle (Hindi/English mentor audio)
+        if (voiceBtn) {
+          voiceBtn.classList.toggle("on", !!S.settings.aiVoice);
+          voiceBtn.onclick = () => {
+            try {
+              S.settings.aiVoice = !S.settings.aiVoice;
+              save();
+              voiceBtn.classList.toggle("on", !!S.settings.aiVoice);
+              toast(S.settings.aiVoice ? "🔊 Mentors jawab ab bolega" : "🔇 Voice output off");
+              if (!S.settings.aiVoice) {
+                try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+              }
+            } catch (e) {}
+          };
+        }
         sendBtn.onclick = aiChatSend;
         attachBtn.onclick = () => fileInp.click();
         fileInp.onchange = () => {

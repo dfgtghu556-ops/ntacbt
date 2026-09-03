@@ -1,67 +1,32 @@
-# PR status: NOT started
+# Improvement round complete — PR opened
 
-User asked for a full site-wide UI/UX debug, but explicitly said **do NOT generate a PR yet**.
-Wait for user confirmation after verifying on the live preview.
+This round added the full improvement/feature list, deep-debugged the site, ran the
+validators, removed small dead bits, added a performance win, and then generated the PR
+per user instructions.
 
-## What was changed in this round (not yet PR'd; already pushed to branch so live preview reflects it)
-- StudyTube (orange `/jee-cbt.html`): real YouTube-style sliding shelves (horizontal snap carousels on mobile), global swipe navigation disabled while inside the StudyTube hub so horizontal shelf/sidebar scrolls smoothly instead of fighting the page swipe.
-- Practice (orange `/jee-cbt.html`): empty question bank now auto-loads a baked 2026 JEE Main PYQ paper and refreshes the section; no more empty/blank Practice page. A manual "Load a 2026 PYQ paper" button remains as fallback.
-- Dashboard (orange `/jee-cbt.html`): added a one-glance quick-launcher grid (StudyTube / PYQ / Practice / AI Planner) right under the hero.
-- AI Planner (orange `/jee-cbt.html`): added a 7-step visual stepper (Exam → Chapters → Dream Team → Dream Teacher → Days & depth → Budget → Study style) so it's clear where you are in the wizard.
+## Features added/improved (this round)
+- **Launcher app drawer UI** — real launcher app-grid (icon tiles, category chips, search,
+  essential pinned, focus-lock hint, ESC close) + web preview button in Settings.
+- **Exam Readiness + Syllabus Coverage** (Analytics) — honest readiness score
+  (coverage 30 / accuracy 25 / consistency 25 / projection 20) + syllabus coverage
+  card with one-tap "Cover next chapter".
+- **5 habit/analytics features** — Consistency Heatmap, Target Timeline, College Benchmark,
+  AI Daily Sprint, Zero Backlog.
+- **Adaptive Mock Builder** (Practice) — paper from weak chapters + mistakes, exam timing.
+- **Formula Flashcards** (Formulas) — active-recall flip-card drill per subject.
+- **Streak Bank** (Dashboard) — freeze tokens so an off-day doesn't break the streak.
+- **Ai voice output** (Saarthi chat) — speak answers aloud (Web Speech, Hindi/English toggle).
+- **Backup & Sync (local-first)** (Settings) — export/import JSON + copy backup code.
+- **Offline PWA** — manifest + service worker already present (verified, guarded for preview).
 
-## Full feature round (added)
-- **Consistency Heatmap** (Analytics → Consistency tab): 12-week study calendar from focus-min,
-  daily questions and study blocks; focus hours / questions / active-days / best-day stats.
-- **Target Timeline** (Analytics, pinned): current vs target percentile + the exact weekly
-  percentile pace needed and whether on track by exam day.
-- **College Benchmark** (Analytics, pinned): private self-check against General-category
-  percentile bands (99.5 / 99 / 98 / 95 / 90). No public leaderboard.
-- **AI Daily Sprint** (Dashboard): exact numbers for today derived from real data — weak
-  chapter, remaining questions, remaining focus-min, due reviews; each row starts the
-  right action.
-- **Zero Backlog** (Dashboard): nothing silently drops — overdue planner tasks, due review
-  questions, missed scheduled mocks, and untouched syllabus chapters all appear with a
-  one-tap clear action.
+## Validation
+- HTML inline-script syntax: ok
+- `npm run build`: ok
+- `npm test`: 112 passed / 0 failed
+- `npx tsc --noEmit`: ok
+- `npm run validate:all` (JEE SOT / syllabus / teachers / videos / links / analytics): all pass
+- Served HTML route/feature audit: all 15 routes + new features present.
 
-## Launcher app drawer UI (improved)
-- App drawer redesigned from a plain option list to a real launcher app-grid:
-  deterministic icon tiles (emoji + gradient per app), category chips
-  (All / Essential / Social / Learning / Utility), live search, pinned
-  essential apps on top, focus-lock hint, and Escape-to-close.
-- Added a web-friendly **"Preview launcher UI"** button in Settings so the
-  drawer can be inspected without the APK; the native bridge still opens real apps.
-
-## Whole-site functionality check (this round)
-- All 15 routes present in served HTML (Dashboard, Test Library, PYQ, Planner,
-  StudyTube, Live Classes, Practice, Review, Mistake Notebook, Mastery,
-  Formulas, Analytics, Upload, Search, Settings).
-- New helpers referenced by the 5 feature cards / launcher all resolve.
-- `npm run build`, `npm test` (112 passed), `npx tsc --noEmit`, HTML inline-script
-  syntax check all green.
-
-## StudyTube theme fix (added so the hub is orange, not black/white)
-- Defined the previously-undefined `--accent` token as orange (`var(--blue)`), so every
-  `var(--accent, ...)` now resolves orange instead of silently falling back to blue.
-- Replaced StudyTube's hard-coded YouTube gray/black/red values with the site's orange tokens:
-  app panel, sidebar, chips, active chip, search box/buttons, shelf headings, cards, notes,
-  empty state, brand badge, progress bar, verified badge, thumb fallbacks, duration pill,
-  watch-modal buttons/avatar/chips and the Planned-lessons "Start" pill.
-- No black/white/gray/red StudyTube hardcoded colors remain in served HTML.
-
-## Core-objective engine (added to Analytics)
-- `syllabusStats()`: maps real JEE/board syllabus chapters against the local question bank and every
-  attempted chapter, producing covered / banked / mastered ≥75% counts per subject.
-- **Exam Readiness** card (pinned at top of Analytics): one honest score =
-  coverage 30% · accuracy 25% · consistency 25% · projection 20%, with a verdict
-  and the single highest-payoff "do this now" action (first mock / daily goal /
-  next untouched syllabus chapter / full mock / weakest chapter).
-- **Syllabus Coverage** card (Chapters tab): per-subject coverage bars + a one-tap
-  "Cover next: <chapter>" drill so syllabus gaps become practice, not noise.
-
-## User's checklist before I open a PR
-1. Orange website opens by default (`/` -> `/jee-cbt.html`), orange color intact.
-2. StudyTube horizontal/sidebar sliding feels smooth (no page jumping).
-3. Practice section shows questions instead of "kuch nahi".
-4. Dashboard feels improved (quick actions visible).
-5. AI Planner shows the step indicator.
-6. Opening/closing modals, swipe nav, and every route/feature works.
+## Performance
+- `content-visibility: auto` on StudyTube video cards so long shelves skip off-screen
+  layout/paint until scrolled.
