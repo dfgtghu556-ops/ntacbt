@@ -21,7 +21,7 @@
  *   builds never break because of a network hiccup.
  * - Parquet path first (1 request); rows-API paging as fallback.
  */
-import { mkdir, writeFile, access } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,6 +37,11 @@ const ROWS_API =
 // same bytes are fetched forever; only we can ever move this pin.
 const SK_COMMIT = "4d5a80388c3a86fd278f0a581e0de069e5dfae34";
 const SK_RAW = `https://raw.githubusercontent.com/Samkarya/online-exam-questions/${SK_COMMIT}/India/undergraduate/JEEMains/`;
+const SK_CONTENTS_API = `https://api.github.com/repos/Samkarya/online-exam-questions/contents/India/undergraduate/JEEMains/`;
+const SK_HEADERS = {
+  accept: "application/vnd.github+json",
+  "user-agent": "jee-cbt build",
+};
 const SK_TREE_API = `https://api.github.com/repos/Samkarya/online-exam-questions/git/trees/${SK_COMMIT}?recursive=1`;
 // Baseline: the exact machine-readable 2025/2026 papers known to exist at
 // the pinned commit. Every remaining 2025/2026 shift is published only as
@@ -65,7 +70,7 @@ async function discoverSkFiles() {
   try {
     const r = await fetch(SK_TREE_API, {
       signal: AbortSignal.timeout(30_000),
-      headers: { accept: "application/vnd.github+json", "user-agent": "jee-cbt build" },
+      headers: SK_HEADERS,
     });
     if (!r.ok) throw new Error("tree http " + r.status);
     const tree = await r.json();
@@ -434,15 +439,41 @@ function skPaperId(name) {
     label: `${m[2]} ${month.slice(0, 3)} · ${m[4] === "1" ? "Morning" : "Evening"} Shift`,
   };
 }
+/**
+ * Fetch one pinned JSON paper from the frozen GitHub snapshot. Tries the
+ * raw CDN first (normal builds), then GitHub's Contents API (base64) as a
+ * fallback. Both URLs point at the same pinned commit, so the bytes are
+ * identical either way. Returns parsed JSON or null.
+ */
+async function fetchSkJson(name) {
+  try {
+    const pr = await fetch(SK_RAW + name, { signal: AbortSignal.timeout(60_000) });
+    if (pr.ok) return await pr.json();
+  } catch {
+    /* raw CDN unreachable (e.g. restricted networks) — try Contents API */
+  }
+  try {
+    const pr = await fetch(SK_CONTENTS_API + name + "?ref=" + SK_COMMIT, {
+      signal: AbortSignal.timeout(60_000),
+      headers: SK_HEADERS,
+    });
+    if (!pr.ok) return null;
+    const meta = await pr.json();
+    if (!meta?.content || meta.encoding !== "base64") return null;
+    return JSON.parse(Buffer.from(meta.content, "base64").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
 async function fromLatestJson(files) {
   const out = { rowsByPaper: new Map(), metas: [] };
   for (const name of files || SK_FILES) {
     const meta = skPaperId(name);
     if (!meta) continue;
     try {
-      const pr = await fetch(SK_RAW + name, { signal: AbortSignal.timeout(60_000) });
-      if (!pr.ok) continue;
-      const rows = await pr.json();
+      const rows = await fetchSkJson(name);
+      if (!rows) continue;
       if (!Array.isArray(rows) || rows.length < 30) continue;
       const qs = skTransform(rows, meta.id);
       if (qs.length >= 30) {
@@ -518,17 +549,43 @@ async function fromRowsApi() {
   return all;
 }
 
-async function main() {
-  // Already baked (committed or from a previous build)? Keep it — never
-  // fail a build over the network.
+/* ---- Re-load previously baked papers ------------------------------------
+   Used only as a safety net: if the upstream snapshot is temporarily
+   unreachable, an earlier complete bake is preserved instead of losing
+   coverage. Never replaces fresh source data (new rows/latest/local win). */
+async function loadExistingPapers() {
+  const out = { papers: {}, index: [] };
   try {
-    await access(join(OUT, "index.json"));
-    console.log("[pyq] public/pyq/index.json already present — keeping the baked papers.");
-    return;
+    const idx = JSON.parse(await readFile(join(OUT, "index.json"), "utf8"));
+    const list = Array.isArray(idx.index) ? idx.index : Array.isArray(idx.papers) ? idx.papers : [];
+    for (const meta of list) {
+      if (!meta?.id) continue;
+      try {
+        const file = JSON.parse(await readFile(join(OUT, meta.id + ".json"), "utf8"));
+        const qs = Array.isArray(file?.questions)
+          ? file.questions
+          : Array.isArray(file?.paper?.questions)
+            ? file.paper.questions
+            : [];
+        if (qs.length) {
+          out.papers[meta.id] = qs;
+          out.index.push(meta);
+        }
+      } catch {
+        /* one bad paper file doesn't block the merge */
+      }
+    }
   } catch {
-    /* not baked yet */
+    /* nothing baked yet */
   }
+  return out;
+}
 
+async function main() {
+  // Always refresh the bake. If the upstream snapshot is reachable this
+  // produces the complete historical library; if nothing is reachable the
+  // existing public/pyq/ files stay untouched (we only write below after at
+  // least one source succeeded), so a build never loses coverage.
   console.log("[pyq] baking PYQ papers into public/pyq/ …");
   let rows = null;
   try {
@@ -601,6 +658,15 @@ async function main() {
   // merge latest-session papers, then user-transcribed papers
   mergePapers(latest, latest.metas);
   mergePapers(local, local.metas);
+  // Preserve any earlier complete bake (e.g. when the upstream snapshot is
+  // temporarily unreachable) so a build never silently loses older years.
+  const existing = await loadExistingPapers();
+  for (const meta of existing.index) {
+    if (!papers[meta.id]) {
+      papers[meta.id] = existing.papers[meta.id];
+      index.push(meta);
+    }
+  }
   index.sort((a, b) => b.year - a.year || a.id.localeCompare(b.id));
   await mkdir(OUT, { recursive: true });
   await writeFile(

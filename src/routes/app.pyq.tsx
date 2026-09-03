@@ -4,6 +4,8 @@ import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
 import { DEFAULT_TEST_MINUTES, type CbtTest, type Subject } from "@/features/cbt/types";
 import { saveCbtTest } from "@/features/cbt/store";
 
+type PyqSource = "api" | "baked" | "error";
+
 export const Route = createFileRoute("/app/pyq")({
   component: Pyq,
 });
@@ -17,6 +19,11 @@ interface Paper {
   counts: { Physics: number; Chemistry: number; Mathematics: number };
   mcq: number;
   integer: number;
+}
+
+interface PaperFile {
+  paper?: { meta?: Paper; questions?: PyqQuestion[] };
+  questions?: PyqQuestion[];
 }
 
 interface PyqQuestion {
@@ -40,6 +47,7 @@ function toSubject(s: string): Subject {
 function Pyq() {
   const navigate = useNavigate();
   const [papers, setPapers] = useState<Paper[]>([]);
+  const [source, setSource] = useState<PyqSource>("baked");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Paper | null>(null);
@@ -49,6 +57,22 @@ function Pyq() {
   async function loadIndex() {
     setLoading(true);
     setError("");
+    // 1) Full historical library: same server endpoint used by the full
+    //    platform (snapshot backed by official keys/solutions, all years).
+    try {
+      const r = await fetch("/api/public/pyq-papers", { cache: "no-store" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = (await r.json()) as { papers?: Paper[]; source?: string };
+      const list = data.papers ?? [];
+      if (!list.length) throw new Error("No papers returned by the library API.");
+      setPapers(list);
+      setSource("api");
+      setLoading(false);
+      return;
+    } catch {
+      /* fall through to the offline/baked fallback */
+    }
+    // 2) Offline fallback: papers baked into the build (public/pyq/).
     try {
       const r = await fetch("/pyq/index.json", { cache: "no-store" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -56,7 +80,9 @@ function Pyq() {
       const list = data.index ?? data.papers ?? [];
       if (!list.length) throw new Error("No papers baked yet.");
       setPapers(list);
+      setSource("baked");
     } catch (e) {
+      setSource("error");
       setError(e instanceof Error ? e.message : "Failed to load PYQ index.");
     } finally {
       setLoading(false);
@@ -70,11 +96,30 @@ function Pyq() {
   async function open(paper: Paper) {
     setSelected(paper);
     setQLoading(true);
+    // Prefer the full library API (handles every session/shift + older years);
+    // fall back to the baked per-paper file when the server can't reach the
+    // upstream snapshot (offline builds, preview sandboxes, etc.).
+    try {
+      const r = await fetch(`/api/public/pyq-papers?paper=${encodeURIComponent(paper.id)}`, {
+        cache: "no-store",
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = (await r.json()) as { paper?: { questions?: PyqQuestion[] } };
+      const qs = data.paper?.questions ?? [];
+      if (qs.length) {
+        setQuestions(qs);
+        setQLoading(false);
+        return;
+      }
+      throw new Error("No questions in API payload.");
+    } catch {
+      /* fall through to baked paper */
+    }
     try {
       const r = await fetch(`/pyq/${paper.id}.json`, { cache: "no-store" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as { questions?: PyqQuestion[] };
-      setQuestions(data.questions ?? []);
+      const data = (await r.json()) as PaperFile;
+      setQuestions(data.questions ?? data.paper?.questions ?? []);
     } catch {
       setQuestions([]);
     } finally {
@@ -112,21 +157,38 @@ function Pyq() {
       <section>
         <h1 className="text-2xl font-semibold tracking-tight">PYQ Papers</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Official-style previous-year papers baked into the app. Answers carry the exact NTA keys
-          (including ranges, accepted values and bonus questions).
+          Official-style previous-year papers from the verified academic snapshot. Answers carry the
+          exact NTA keys (including ranges, accepted values and bonus questions).
         </p>
         <div className="mt-3 rounded-xl border border-primary/30 bg-accent/40 p-4 text-sm">
-          <p className="font-medium">This React view has the NTA 2026 papers baked in.</p>
-          <p className="mt-1 text-muted-foreground">
-            The complete historical PYQ library (all sessions, shifts and older years) lives on the
-            Full platform.
+          <p className="font-medium">
+            {source === "api"
+              ? `Full historical PYQ library loaded — ${papers.length} papers, every available session, shift and year.`
+              : source === "baked"
+                ? "Full library is temporarily unreachable — showing the papers baked into this build."
+                : "PYQ library unavailable right now."}
           </p>
-          <a
-            href="/jee-cbt.html#pyq"
-            className="mt-3 inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Open full PYQ library →
-          </a>
+          <p className="mt-1 text-muted-foreground">
+            {source === "api"
+              ? "Paper keys and solutions come from the same verified academic snapshot used by the full platform. You can solve any paper as an NTA-style CBT."
+              : "Searching the full snapshot failed on this network, so these offline papers are shown. Try again in a moment — the full historical library (all sessions, shifts and older years) is served by the platform API."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {source !== "api" ? (
+              <button
+                onClick={loadIndex}
+                className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-xs"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Retry full library
+              </button>
+            ) : null}
+            <a
+              href="/jee-cbt.html#pyq"
+              className="inline-flex items-center rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
+            >
+              Open full PYQ library →
+            </a>
+          </div>
         </div>
       </section>
 
