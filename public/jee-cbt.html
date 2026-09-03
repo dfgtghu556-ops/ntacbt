@@ -21178,74 +21178,83 @@
         }
         root.appendChild(eb);
 
-        // ---- STUDY LAUNCHER MODE (APK v3.1+): Home button = padhai ----
-        if (nativeLauncher()) {
+        // ---- STUDY LAUNCHER MODE — always visible (website bhi) ----
+        {
+          const nl = nativeLauncher();
           const isOn = launcherModeOn(),
             isHome = isDefaultLauncher();
+          const badge = !nl
+            ? '<span class="badge" style="color:var(--muted)">APK me available</span>'
+            : isHome
+              ? '<span class="badge" style="color:var(--green)">ACTIVE — Home app</span>'
+              : isOn
+                ? '<span class="badge" style="color:var(--amber)">ON · set default baaki</span>'
+                : '<span class="badge" style="color:var(--muted)">OFF</span>';
           const lc = el("div", "card");
           lc.style.borderColor = isHome ? "var(--green)" : "var(--line)";
           lc.innerHTML = `<div class="section-title"><span class="ico">${ic("home")}</span>
-        <div><h3 style="margin:0">🏠 Study Launcher Mode${isHome ? ' <span class="badge" style="color:var(--green)">ACTIVE</span>' : isOn ? ' <span class="badge" style="color:var(--amber)">set default baaki</span>' : ""}</h3>
-        <div class="small muted" style="margin-top:4px">PW LearnOS jaisa: app ko phone ki <b>home screen</b> bana do. Home button dabao → seedha padhai, reels nahi. Zaroori apps (Phone, Camera, WhatsApp…) neeche 📱 dock se khulti hain — aur Focus Lock ke दौरान distraction apps wahan bhi block rahenge.</div></div></div>`;
+        <div><h3 style="margin:0">🏠 Study Launcher Mode ${badge}</h3>
+        <div class="small muted" style="margin-top:4px">PW LearnOS jaisa: app ko phone ki <b>home screen</b> bana do. Home button dabao → seedha padhai, reels nahi. Zaroori apps (Phone, Camera, WhatsApp…) neeche wale app-grid dock se khulti hain — aur Focus Lock ke दौरान distraction apps wahan bhi block rahenge.</div></div></div>`;
           const lrow = el("div", "row");
           lrow.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
-          if (!isOn) {
-            const on = el("button", "btn sm", "🏠 Launcher mode ON karo");
-            on.onclick = () => {
-              try {
-                nativeLauncher().setLauncherMode(true);
-              } catch (e) {}
-              toast("Ab Android poochhega — 'JEE CBT' ko Home app chuno", 5000);
-              setTimeout(() => render(0), 800);
-            };
-            lrow.appendChild(on);
-          } else {
-            if (!isHome) {
-              const pick = el("button", "btn sm", "⚙️ Default home app chuno");
-              pick.onclick = () => {
+          if (nl) {
+            if (!isOn) {
+              const on = el("button", "btn sm", "🏠 Launcher ON karo");
+              on.onclick = () => {
                 try {
-                  nativeLauncher().openHomeSettings();
+                  nl.setLauncherMode(true);
                 } catch (e) {}
+                toast("Ab Android poochhega — 'JEE CBT' ko Home app chuno", 5000);
+                setTimeout(() => render(0), 800);
               };
-              lrow.appendChild(pick);
+              lrow.appendChild(on);
+            } else {
+              if (!isHome) {
+                const pick = el("button", "btn sm", "⚙️ Home app chuno");
+                pick.onclick = () => {
+                  try {
+                    nl.openHomeSettings();
+                  } catch (e) {}
+                };
+                lrow.appendChild(pick);
+              }
+              const off = el("button", "btn ghost sm", "🚫 Launcher OFF (normal phone)");
+              off.onclick = () => {
+                try {
+                  nl.setLauncherMode(false);
+                } catch (e) {}
+                toast("Launcher mode OFF — phone wapas normal 🏠");
+                setTimeout(() => render(0), 500);
+              };
+              lrow.appendChild(off);
             }
-            const off = el("button", "btn ghost sm", "Wapas normal phone");
-            off.onclick = () => {
-              try {
-                nativeLauncher().setLauncherMode(false);
-              } catch (e) {}
-              toast("Launcher mode OFF — phone wapas normal 🏠");
-              setTimeout(() => render(0), 500);
-            };
-            lrow.appendChild(off);
             const dr = el("button", "btn ghost sm", "📱 App drawer kholo");
-            dr.onclick = appDrawerOpen;
+            dr.onclick = () => appDrawerOpen();
             lrow.appendChild(dr);
+          } else {
+            const dl = el("a", "btn sm");
+            dl.style.cssText = "display:inline-flex;align-items:center;gap:6px;text-decoration:none";
+            dl.href = "https://github.com/dfgtghu556-ops/ntacbt/releases/download/app-latest/jee-cbt.apk";
+            dl.setAttribute("download", "jee-cbt.apk");
+            dl.textContent = "⬇️ Download App (APK)";
+            lrow.appendChild(dl);
+            const lpv = el("button", "btn ghost sm", "🧪 Preview launcher UI");
+            lpv.onclick = () => appDrawerOpen(true);
+            lrow.appendChild(lpv);
           }
           lc.appendChild(lrow);
           lc.appendChild(
             el(
               "div",
               "small muted",
-              "Poori tarah reversible: yahin se OFF karo, phone turant purane launcher par wapas. Ye tumhari marzi ka switch hai — koi zabardasti nahi.",
+              nl
+                ? "Poori tarah reversible: yahin se OFF karo, phone turant purane launcher par wapas. Ye tumhari marzi ka switch hai — koi zabardasti nahi."
+                : "Launcher mode sirf Android APK ke andar chalta hai. Website pe uska app-grid preview dekh sakte ho.",
             ),
           );
           lc.lastElementChild.style.marginTop = "8px";
           root.appendChild(lc);
         }
-
-        // ---- Launcher app drawer preview (web-friendly) ----
-        const lpd = el("div", "card");
-        lpd.innerHTML = `<div class="section-title"><span class="ico">${ic("home")}</span>
-        <div><h3 style="margin:0">📱 Launcher app drawer</h3>
-        <div class="small muted" style="margin-top:4px">Study launcher ka app grid — icon cards, search, category chips, pinned essential apps. Web pe bhi preview dekh sakte ho.</div></div></div>`;
-        const lr2 = el("div", "row");
-        lr2.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
-        const lpv = el("button", "btn sm", "🧪 Preview launcher UI");
-        lpv.onclick = () => appDrawerOpen(true);
-        lr2.appendChild(lpv);
-        lpd.appendChild(lr2);
-        root.appendChild(lpd);
 
         // ---- Backup & Sync (local-first, honest) ----
         const bk = el("div", "card");
@@ -21284,7 +21293,7 @@
         root.appendChild(hm);
 
         // ---- Get the Android app (browser-only card; hidden inside the APK) ----
-        if (!nativeFocus() && /android/i.test(navigator.userAgent || "")) {
+        if (!nativeFocus()) {
           const ap = el("div", "card");
           ap.innerHTML = `<div class="section-title"><span class="ico">${ic("rocket")}</span><h3 style="margin:0">📱 Android App — REAL Focus Lock ke saath</h3></div>
       <div class="small muted">Website wali sab cheezein + <b>asli app blocker</b>: Focus Lock ke दौरान reels/games/socials kholte hi wapas padhai par phenk deta hai (accessibility-based, wahi technique jo scroll-stopper apps use karte hain). Privacy: sirf app ka NAAM dekha jata hai, koi content nahi — kuch bhi upload nahi hota.</div>`;
@@ -24617,7 +24626,10 @@
               icon.style.borderColor = "var(--line)";
               icon.style.boxShadow = "0 2px 8px rgba(0,0,0,.04)";
             };
-            icon.innerHTML = `<div style="width:42px;height:42px;margin:0 auto 6px;border-radius:12px;background:${appIconColor(label, a.pkg)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 8px rgba(0,0,0,.15)">${appEmoji(label, a.pkg)}</div>
+            const iconArt = a.icon
+              ? `<img src="${esc(String(a.icon))}" alt="" width="42" height="42" style="width:42px;height:42px;margin:0 auto 6px;display:block;border-radius:12px;object-fit:contain;background:transparent">`
+              : `<div style="width:42px;height:42px;margin:0 auto 6px;border-radius:12px;background:${appIconColor(label, a.pkg)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 8px rgba(0,0,0,.15)">${appEmoji(label, a.pkg)}</div>`;
+            icon.innerHTML = `${iconArt}
         <div style="font-size:11.5px;font-weight:700;line-height:1.25;word-break:break-word;min-height:28px">${esc(label.slice(0, 22))}${label.length > 22 ? "…" : ""}</div>
         <div class="small muted" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(String(a.pkg || "").split(".").slice(-2).join("."))}</div>`;
             icon.onclick = () => {
@@ -24627,7 +24639,10 @@
               }
               let ok = false;
               try {
-                ok = n.openApp(a.pkg);
+                ok =
+                  a.activity && typeof n.openAppComponent === "function"
+                    ? n.openAppComponent(a.pkg, a.activity)
+                    : n.openApp(a.pkg);
               } catch (e) {}
               if (ok) m.remove();
               else toast("App khola nahi ja saka — galaxy ya launcher permissions check karo", 3000);
@@ -24653,7 +24668,9 @@
           return;
         }
         if (d) return;
-        d = el("button", null, "📱");
+        d = el("button");
+        d.type = "button";
+        d.innerHTML = `<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="#fff"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="7" cy="17" r="2.6"/><circle cx="17" cy="17" r="2.6"/></svg>`;
         d.id = "launcherDock";
         d.title = "Apps";
         d.setAttribute("aria-label", "Open app drawer");
@@ -24662,8 +24679,19 @@
      launcher mode. The dock now owns the bottom-LEFT slot with a sane
      z-index and safe-area support; the AI fab keeps bottom-right. */
         d.style.cssText =
-          "position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:calc(16px + env(safe-area-inset-left,0px));z-index:54;width:52px;height:52px;border-radius:50%;" +
-          "font-size:24px;border:1px solid var(--line);background:var(--panel);box-shadow:0 4px 16px rgba(0,0,0,.25);cursor:pointer";
+          "position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:calc(16px + env(safe-area-inset-left,0px));z-index:54;width:56px;height:56px;border-radius:18px;" +
+          "display:flex;align-items:center;justify-content:center;border:0;padding:0;cursor:pointer;" +
+          "background:linear-gradient(135deg,#ff8a3d,#f2670a);box-shadow:0 8px 22px rgba(242,103,10,.38);transition:transform .16s ease,box-shadow .16s ease";
+        d.onmouseenter = () => {
+          d.style.transform = "translateY(-2px) scale(1.04)";
+          d.style.boxShadow = "0 12px 28px rgba(242,103,10,.5)";
+        };
+        d.onmouseleave = () => {
+          d.style.transform = "";
+          d.style.boxShadow = "0 8px 22px rgba(242,103,10,.38)";
+        };
+        d.onfocus = () => (d.style.outline = "3px solid rgba(242,103,10,.45)");
+        d.onblur = () => (d.style.outline = "");
         d.onclick = appDrawerOpen;
         document.body.appendChild(d);
       }
