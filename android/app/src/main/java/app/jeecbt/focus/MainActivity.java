@@ -528,7 +528,7 @@ public class MainActivity extends Activity {
         FocusBridge(MainActivity a) { act = a; }
 
         @JavascriptInterface public boolean isApp() { return true; }
-        @JavascriptInterface public String appVersion() { return "3.1"; }
+        @JavascriptInterface public String appVersion() { return "3.2"; }
         @JavascriptInterface public boolean isGuardEnabled() { return guardEnabled(act); }
 
         /* ---- STUDY LAUNCHER bridge (v3.1) ---- */
