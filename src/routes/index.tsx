@@ -26,10 +26,10 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-/** The whole app is a standalone single HTML file served from /jee-cbt.html. */
+/** Entry point for the React learning OS; the legacy tool stays available. */
 function Index() {
   useEffect(() => {
-    window.location.replace("/jee-cbt.html");
+    window.location.replace("/app");
   }, []);
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -38,7 +38,8 @@ function Index() {
           NTACBT — JEE &amp; CBSE Learning OS
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Opening the CBT platform… <a href="/jee-cbt.html">Click here</a> if it doesn't load.
+          Opening Mission Control… <a href="/app">Click here</a> if it doesn't load. The legacy NTA
+          portal remains at <a href="/jee-cbt.html">/jee-cbt.html</a>.
         </p>
       </div>
     </main>

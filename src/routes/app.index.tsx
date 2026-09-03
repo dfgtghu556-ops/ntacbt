@@ -111,12 +111,25 @@ function Dashboard() {
                   <strong>Why:</strong> {snapshot.nextMission.why}
                 </p>
               ) : null}
-              <Link
-                to="/app/studytube"
-                className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary-foreground px-3 py-2 text-sm font-medium text-primary"
-              >
-                <Play className="h-4 w-4" /> Start mission
-              </Link>
+              {snapshot.nextMission.kind.toLowerCase().includes("test") ||
+              snapshot.nextMission.kind.toLowerCase().includes("mock") ? (
+                <Link
+                  to="/cbt"
+                  search={{
+                    name: `${snapshot.nextMission.subject} ${snapshot.nextMission.chapter}`,
+                  }}
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary-foreground px-3 py-2 text-sm font-medium text-primary"
+                >
+                  <Play className="h-4 w-4" /> Start mission (test)
+                </Link>
+              ) : (
+                <Link
+                  to="/app/studytube"
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary-foreground px-3 py-2 text-sm font-medium text-primary"
+                >
+                  <Play className="h-4 w-4" /> Start mission
+                </Link>
+              )}
             </section>
           ) : (
             <EmptyCard />

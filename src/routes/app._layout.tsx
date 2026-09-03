@@ -45,7 +45,7 @@ function AppLayout() {
             href="/jee-cbt.html"
             className="inline-flex items-center rounded-md bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-foreground"
           >
-            Full platform
+            Legacy portal
           </a>
         </div>
       </header>

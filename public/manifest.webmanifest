@@ -1,13 +1,13 @@
 {
-  "name": "NTACBT JEE CBT Platform",
-  "short_name": "JEE CBT",
-  "description": "NTA-style JEE Main computer based test platform with AI doubt solving, analytics and spaced revision.",
-  "start_url": "/jee-cbt.html",
+  "name": "NTACBT JEE & CBSE Learning OS",
+  "short_name": "NTACBT",
+  "description": "Adaptive JEE Main & CBSE learning OS: adaptive planner, StudyTube, PYQ practice, NTA-style CBT, post-test analytics, focus and AI tutoring.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#1b1b4b",
-  "theme_color": "#1b1b4b",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
@@ -15,18 +15,23 @@
   ],
   "shortcuts": [
     {
-      "name": "Start next test",
-      "url": "/jee-cbt.html#library",
+      "name": "Start mock test",
+      "url": "/cbt",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Mistake Notebook",
-      "url": "/jee-cbt.html#notebook",
+      "name": "Mission control",
+      "url": "/app",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Analytics",
-      "url": "/jee-cbt.html#analytics",
+      "name": "Post-test analytics",
+      "url": "/app/analytics",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Adaptive planner",
+      "url": "/app/planner",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]

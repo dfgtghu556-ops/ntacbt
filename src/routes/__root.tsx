@@ -115,6 +115,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/84a87eb0-1c9d-44bc-b9ff-278acebbcdb8",
       },
+      { name: "theme-color", content: "#2563eb" },
+      { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
       {
@@ -122,6 +124,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -146,6 +150,14 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // Offline support is best-effort; never break the app over it.
+      });
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
