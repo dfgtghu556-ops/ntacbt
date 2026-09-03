@@ -26,10 +26,10 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-/** Entry point for the React learning OS; the legacy tool stays available. */
+/** Entry point for the legacy full platform; the React Learning OS stays available. */
 function Index() {
   useEffect(() => {
-    window.location.replace("/app");
+    window.location.replace("/jee-cbt.html");
   }, []);
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -38,8 +38,8 @@ function Index() {
           NTACBT — JEE &amp; CBSE Learning OS
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Opening Mission Control… <a href="/app">Click here</a> if it doesn't load. The legacy NTA
-          portal remains at <a href="/jee-cbt.html">/jee-cbt.html</a>.
+          Opening the full platform… <a href="/jee-cbt.html">Click here</a> if it doesn't load. The
+          new Learning OS is at <a href="/app">/app</a>.
         </p>
       </div>
     </main>

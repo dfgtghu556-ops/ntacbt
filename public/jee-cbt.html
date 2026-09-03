@@ -11471,6 +11471,27 @@
         { id: "ak-aman-dhattarwal", name: "Aman Dhattarwal Sir", instituteId: "apni-kaksha", subject: "Physics", specialization: "CBSE Class 12 Boards & JEE Foundations", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Apni Kaksha Board Animation Series", channelName: "Apni Kaksha" },
       ];
 
+      function aipTargetSupports(t, target) {
+        const norm = String(target || "jeemain").toLowerCase();
+        const arr = t && t.examTarget ? t.examTarget : [];
+        if (norm === "board12" || norm === "cbse27" || norm === "cbse" || norm === "board")
+          return arr.includes("board12") || arr.includes("cbse27");
+        if (norm === "board11") return arr.includes("board11");
+        if (norm === "jeeadv" || norm === "jee-advanced") return arr.includes("jeeadv");
+        return arr.includes("jeemain") || arr.includes("board12") || arr.includes("board11");
+      }
+
+      function aipFitScore(t, target) {
+        const isBoard = t.examTarget.includes("board12") || t.examTarget.includes("cbse27");
+        const isJee = t.examTarget.includes("jeemain") || t.examTarget.includes("jeeadv");
+        const norm = String(target || "jeemain").toLowerCase();
+        if (norm === "board12" || norm === "cbse27" || norm === "cbse" || norm === "board")
+          return isBoard && !isJee ? 0 : isBoard ? 1 : 2;
+        if (norm === "board11") return t.examTarget.includes("board11") && !isJee ? 0 : t.examTarget.includes("board11") ? 1 : 2;
+        if (norm === "jeeadv" || norm === "jee-advanced") return isJee && t.examTarget.includes("jeeadv") ? 0 : isJee ? 1 : 2;
+        return isJee && !isBoard ? 0 : isJee ? 1 : 2;
+      }
+
       function aipGetFaculties(instituteId, subject, examTarget) {
         let list = AIP_TEACHERS.filter((t) => t.subject === subject);
         if (instituteId && instituteId !== "all" && instituteId !== "auto") {
@@ -11487,7 +11508,38 @@
             return true;
           });
         }
-        return list;
+        return list
+          .slice()
+          .sort((a, b) => aipFitScore(a, examTarget) - aipFitScore(b, examTarget) || a.name.localeCompare(b.name));
+      }
+
+      function aipInstituteHasTarget(instituteId, subject, target) {
+        return aipGetFaculties(instituteId, subject, target).length > 0;
+      }
+      function aipClearIncompatibleTeacher(w, subject, target) {
+        const id = (w.teachers || {})[subject];
+        if (!id) return;
+        const rec = AIP_TEACHERS.find((t) => t.id === id);
+        if (!rec || !aipTargetSupports(rec, target)) {
+          delete w.teachers[subject];
+          delete w.teacherNames[subject];
+        }
+      }
+      function aipOnTargetChanged(w, target) {
+        w.target = target;
+        delete w.examFilters;
+        (w.subjects || []).forEach((s) => {
+          aipClearIncompatibleTeacher(w, s, target);
+          if (w.institutes[s] && !aipInstituteHasTarget(w.institutes[s], s, target)) {
+            delete w.institutes[s];
+            delete w.channels[s];
+          }
+        });
+      }
+      function aipOnExamFilterChanged(w, subject, target) {
+        w.examFilters = w.examFilters || {};
+        w.examFilters[subject] = target;
+        aipClearIncompatibleTeacher(w, subject, target);
       }
 
       const AIP_CHANNELS = {
@@ -12213,7 +12265,7 @@
             const on = (w.target || "jeemain") === v;
             const b = el("button", "btn sm" + (on ? "" : " ghost"), l);
             b.onclick = () => {
-              w.target = v;
+              aipOnTargetChanged(w, v);
               render(0);
             };
             tgrid.appendChild(b);
@@ -12504,6 +12556,7 @@
                 { id: "jeemain", label: "🎯 JEE Main" },
                 { id: "jeeadv", label: "🔥 JEE Adv" },
                 { id: "board12", label: "📘 Board 12" },
+                { id: "cbse27", label: "📘 CBSE 27" },
                 { id: "board11", label: "📗 Class 11" },
                 { id: "all", label: "All Faculties" },
               ];
@@ -12516,7 +12569,7 @@
                 );
                 fb.style.cssText = `font-size:11px;padding:3px 8px;height:auto;${isActive ? "font-weight:600;" : "opacity:0.75"}`;
                 fb.onclick = () => {
-                  w.examFilters[s] = opt.id;
+                  aipOnExamFilterChanged(w, s, opt.id);
                   render(0);
                 };
                 filterRow.appendChild(fb);

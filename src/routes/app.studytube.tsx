@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Play, Search, Video } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
+import { getLegacyTeachers } from "@/data/sot/legacy-inline";
 import { discover } from "@/features/studytube/service";
 import type {
   StudyTubeRequest,
@@ -79,6 +80,33 @@ function sectionForWeak(
   return sections;
 }
 
+const LEGACY_TEACHERS = getLegacyTeachers();
+
+function targetLabel(t: StudyTubeRequest["target"]): string {
+  return t === "jeemain"
+    ? "JEE Main"
+    : t === "jeeadv"
+      ? "JEE Advanced"
+      : t === "board12"
+        ? "CBSE 12"
+        : "CBSE 12 (2026-27)";
+}
+
+function teacherSupportsTarget(
+  teacherId: string | undefined,
+  target: StudyTubeRequest["target"],
+): boolean {
+  if (!teacherId) return true;
+  const t = LEGACY_TEACHERS.find((x) => x.id === teacherId);
+  if (!t) return true; // unknown teacher: keep, don't silently destroy user choice
+  const arr = t.examTarget || [];
+  if (target === "board12" || target === "cbse27")
+    return arr.includes("board12") || arr.includes("cbse27");
+  if (target === "board11") return arr.includes("board11");
+  if (target === "jeeadv") return arr.includes("jeeadv");
+  return arr.includes("jeemain");
+}
+
 function Chip({
   active,
   onClick,
@@ -111,6 +139,7 @@ function StudyTube() {
   const [manual, setManual] = useState<StudyTubeResult | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
   const [sections, setSections] = useState<SectionState[]>([]);
+  const [activeTab, setActiveTab] = useState("weak");
   const [todayTopic, setTodayTopic] = useState<{
     subject: string;
     chapter: string;
@@ -118,16 +147,26 @@ function StudyTube() {
   }>();
   const navigate = useNavigate();
 
+  function changeTarget(t: StudyTubeRequest["target"]) {
+    setTarget(t);
+    setTeacher((prev) => (teacherSupportsTarget(prev, t) ? prev : undefined));
+  }
+
   useEffect(() => {
     const store = new DataStore();
     const planner = store.planner;
     const profile = planner?.profile;
-    if (profile?.target) setTarget(profile.target as StudyTubeRequest["target"]);
+    const loadedTarget = (profile?.target || "jeemain") as StudyTubeRequest["target"];
+    if (profile?.target) setTarget(loadedTarget);
     if (profile?.language) setLanguage(profile.language as StudyTubeRequest["language"]);
     const profileTeachers = (profile as Record<string, unknown> | undefined)?.["teachers"] as
       Record<string, unknown> | undefined;
     const preferredPhysics = profileTeachers?.["Physics"];
-    if (typeof preferredPhysics === "string") setTeacher(preferredPhysics);
+    if (
+      typeof preferredPhysics === "string" &&
+      teacherSupportsTarget(preferredPhysics, loadedTarget)
+    )
+      setTeacher(preferredPhysics);
     const readiness = computeReadiness(store);
     if (readiness.weakTopics[0]) setWeak(readiness.weakTopics[0]);
     const first = store.todayTasks()[0];
@@ -189,7 +228,7 @@ function StudyTube() {
 
       <div className="flex flex-wrap gap-2">
         {(["jeemain", "jeeadv", "board12", "cbse27"] as const).map((t) => (
-          <Chip key={t} active={target === t} onClick={() => setTarget(t)}>
+          <Chip key={t} active={target === t} onClick={() => changeTarget(t)}>
             {t === "jeemain"
               ? "JEE Main"
               : t === "jeeadv"
@@ -205,6 +244,13 @@ function StudyTube() {
           </Chip>
         ))}
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Target: {targetLabel(target)} · Teacher:{" "}
+        {teacher
+          ? LEGACY_TEACHERS.find((t) => t.id === teacher)?.name || "Selected"
+          : "Auto (best match for this target)"}
+      </p>
 
       <div className="flex gap-2">
         <input
@@ -227,9 +273,30 @@ function StudyTube() {
         </button>
       </div>
 
-      {manual ? (
+      {(() => {
+        const defs = sectionForWeak(weak, target, language, teacher, todayTopic);
+        const eff = defs.some((d) => d.id === activeTab) ? activeTab : defs[0]?.id;
+        const tabs = defs.map((d) => ({ id: d.id, label: d.title }));
+        const hasSearch = Boolean(manual);
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            {tabs.map((t) => (
+              <Chip key={t.id} active={eff === t.id} onClick={() => setActiveTab(t.id)}>
+                {t.label}
+              </Chip>
+            ))}
+            {hasSearch ? (
+              <Chip active={activeTab === "search"} onClick={() => setActiveTab("search")}>
+                Search results
+              </Chip>
+            ) : null}
+          </div>
+        );
+      })()}
+
+      {activeTab === "search" && manual ? (
         <Section
-          title={query}
+          title={`Search: ${query}`}
           subtitle="Search result"
           loading={manualLoading}
           items={manual.items}
@@ -238,21 +305,28 @@ function StudyTube() {
         />
       ) : null}
 
-      {sections.map((s, i) => {
-        const sectionDefs = sectionForWeak(weak, target, language, teacher, todayTopic);
-        const sec = sectionDefs[i];
+      {(() => {
+        const defs = sectionForWeak(weak, target, language, teacher, todayTopic);
+        const eff = defs.some((d) => d.id === activeTab) ? activeTab : defs[0]?.id;
         return (
-          <Section
-            key={sec?.id ?? i}
-            title={sec?.title ?? "Recommended"}
-            subtitle={sec?.subtitle ?? ""}
-            loading={s.loading}
-            items={s.result?.items ?? []}
-            error={s.result?.error}
-            onPlay={openTheater}
-          />
+          <>
+            {sections
+              .map((s, i) => ({ s, sec: defs[i] as StudyTubeSection | undefined }))
+              .filter((x) => x.sec?.id === eff)
+              .map(({ s, sec }) => (
+                <Section
+                  key={sec?.id}
+                  title={sec?.title ?? "Recommended"}
+                  subtitle={sec?.subtitle ?? ""}
+                  loading={s.loading}
+                  items={s.result?.items ?? []}
+                  error={s.result?.error}
+                  onPlay={openTheater}
+                />
+              ))}
+          </>
         );
-      })}
+      })()}
     </div>
   );
 }
