@@ -77,33 +77,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
+      { title: "NTACBT | JEE & CBSE Learning OS" },
       {
         name: "description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "NTACBT" },
       {
         property: "og:title",
-        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+        content: "NTACBT | JEE & CBSE Learning OS",
       },
       {
         property: "og:description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       {
         name: "twitter:title",
-        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+        content: "NTACBT | JEE & CBSE Learning OS",
       },
       {
         name: "twitter:description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
       {
         property: "og:image",

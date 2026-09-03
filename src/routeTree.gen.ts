@@ -10,6 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppLayoutRouteImport } from './routes/app._layout'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppFocusRouteImport } from './routes/app.focus'
+import { Route as AppPlannerRouteImport } from './routes/app.planner'
+import { Route as AppPyqRouteImport } from './routes/app.pyq'
+import { Route as AppSaarthiRouteImport } from './routes/app.saarthi'
+import { Route as AppStudytubeRouteImport } from './routes/app.studytube'
 import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat'
 import { Route as ApiPublicCloudConfigRouteImport } from './routes/api/public/cloud-config'
 import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/live-classes'
@@ -20,6 +28,46 @@ import { Route as ApiPublicStudyPlannerRouteImport } from './routes/api/public/s
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/app/',
+  path: '/app/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppLayoutRoute = AppLayoutRouteImport.update({
+  id: '/app/_layout',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/app/analytics',
+  path: '/app/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppFocusRoute = AppFocusRouteImport.update({
+  id: '/app/focus',
+  path: '/app/focus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppPlannerRoute = AppPlannerRouteImport.update({
+  id: '/app/planner',
+  path: '/app/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppPyqRoute = AppPyqRouteImport.update({
+  id: '/app/pyq',
+  path: '/app/pyq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSaarthiRoute = AppSaarthiRouteImport.update({
+  id: '/app/saarthi',
+  path: '/app/saarthi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppStudytubeRoute = AppStudytubeRouteImport.update({
+  id: '/app/studytube',
+  path: '/app/studytube',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAiChatRoute = ApiPublicAiChatRouteImport.update({
@@ -55,6 +103,14 @@ const ApiPublicStudyPlannerRoute = ApiPublicStudyPlannerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppLayoutRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/focus': typeof AppFocusRoute
+  '/app/planner': typeof AppPlannerRoute
+  '/app/pyq': typeof AppPyqRoute
+  '/app/saarthi': typeof AppSaarthiRoute
+  '/app/studytube': typeof AppStudytubeRoute
+  '/app/': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
@@ -64,6 +120,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppIndexRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/focus': typeof AppFocusRoute
+  '/app/planner': typeof AppPlannerRoute
+  '/app/pyq': typeof AppPyqRoute
+  '/app/saarthi': typeof AppSaarthiRoute
+  '/app/studytube': typeof AppStudytubeRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
@@ -74,6 +137,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app/_layout': typeof AppLayoutRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/focus': typeof AppFocusRoute
+  '/app/planner': typeof AppPlannerRoute
+  '/app/pyq': typeof AppPyqRoute
+  '/app/saarthi': typeof AppSaarthiRoute
+  '/app/studytube': typeof AppStudytubeRoute
+  '/app/': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
@@ -85,6 +156,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
+    | '/app/analytics'
+    | '/app/focus'
+    | '/app/planner'
+    | '/app/pyq'
+    | '/app/saarthi'
+    | '/app/studytube'
+    | '/app/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
@@ -94,6 +173,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
+    | '/app/analytics'
+    | '/app/focus'
+    | '/app/planner'
+    | '/app/pyq'
+    | '/app/saarthi'
+    | '/app/studytube'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
@@ -103,6 +189,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/app/_layout'
+    | '/app/analytics'
+    | '/app/focus'
+    | '/app/planner'
+    | '/app/pyq'
+    | '/app/saarthi'
+    | '/app/studytube'
+    | '/app/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
@@ -113,6 +207,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppLayoutRoute: typeof AppLayoutRoute
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppFocusRoute: typeof AppFocusRoute
+  AppPlannerRoute: typeof AppPlannerRoute
+  AppPyqRoute: typeof AppPyqRoute
+  AppSaarthiRoute: typeof AppSaarthiRoute
+  AppStudytubeRoute: typeof AppStudytubeRoute
+  AppIndexRoute: typeof AppIndexRoute
   ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
   ApiPublicCloudConfigRoute: typeof ApiPublicCloudConfigRoute
   ApiPublicLiveClassesRoute: typeof ApiPublicLiveClassesRoute
@@ -128,6 +230,62 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/app'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/_layout': {
+      id: '/app/_layout'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/app/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/focus': {
+      id: '/app/focus'
+      path: '/app/focus'
+      fullPath: '/app/focus'
+      preLoaderRoute: typeof AppFocusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/planner': {
+      id: '/app/planner'
+      path: '/app/planner'
+      fullPath: '/app/planner'
+      preLoaderRoute: typeof AppPlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/pyq': {
+      id: '/app/pyq'
+      path: '/app/pyq'
+      fullPath: '/app/pyq'
+      preLoaderRoute: typeof AppPyqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/saarthi': {
+      id: '/app/saarthi'
+      path: '/app/saarthi'
+      fullPath: '/app/saarthi'
+      preLoaderRoute: typeof AppSaarthiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/studytube': {
+      id: '/app/studytube'
+      path: '/app/studytube'
+      fullPath: '/app/studytube'
+      preLoaderRoute: typeof AppStudytubeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ai-chat': {
@@ -177,6 +335,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppLayoutRoute: AppLayoutRoute,
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppFocusRoute: AppFocusRoute,
+  AppPlannerRoute: AppPlannerRoute,
+  AppPyqRoute: AppPyqRoute,
+  AppSaarthiRoute: AppSaarthiRoute,
+  AppStudytubeRoute: AppStudytubeRoute,
+  AppIndexRoute: AppIndexRoute,
   ApiPublicAiChatRoute: ApiPublicAiChatRoute,
   ApiPublicCloudConfigRoute: ApiPublicCloudConfigRoute,
   ApiPublicLiveClassesRoute: ApiPublicLiveClassesRoute,

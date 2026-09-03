@@ -4,20 +4,20 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
+      { title: "NTACBT | JEE & CBSE Learning OS" },
       {
         name: "description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
       {
         property: "og:title",
-        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+        content: "NTACBT | JEE & CBSE Learning OS",
       },
       {
         property: "og:description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -34,9 +34,11 @@ function Index() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
-        <h1 className="text-xl font-semibold text-foreground">Someshwar JEE Main CBT Platform</h1>
+        <h1 className="text-xl font-semibold text-foreground">
+          NTACBT — JEE &amp; CBSE Learning OS
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Opening the exam portal… <a href="/jee-cbt.html">Click here</a> if it doesn't load.
+          Opening the CBT platform… <a href="/jee-cbt.html">Click here</a> if it doesn't load.
         </p>
       </div>
     </main>

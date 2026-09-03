@@ -23,8 +23,8 @@ interface Candidate {
   published: string;
   score: number;
   why: string;
-  teacher?: string;
-  institute?: string;
+  teacher?: string | undefined;
+  institute?: string | undefined;
 }
 
 /** Walk arbitrary JSON and collect every object under a given key. */

@@ -14,12 +14,13 @@
     "test": "node scripts/robot-test.mjs",
     "test:robot": "node scripts/robot-test.mjs",
     "validate:jee2026": "node scripts/validate-jee2026.mjs",
+    "validate:sot": "node scripts/validate-sot.mjs",
     "validate:syllabus": "node scripts/validate-syllabus.mjs",
     "validate:teachers": "node scripts/validate-teachers.mjs",
     "validate:videos": "node scripts/validate-videos.mjs",
     "validate:links": "node scripts/validate-links.mjs",
     "validate:analytics": "node scripts/validate-analytics.mjs",
-    "validate:all": "node scripts/validate-jee2026.mjs && node scripts/validate-syllabus.mjs && node scripts/validate-teachers.mjs && node scripts/validate-videos.mjs && node scripts/validate-links.mjs && node scripts/validate-analytics.mjs"
+    "validate:all": "node scripts/validate-jee2026.mjs && node scripts/validate-sot.mjs && node scripts/validate-syllabus.mjs && node scripts/validate-teachers.mjs && node scripts/validate-videos.mjs && node scripts/validate-links.mjs && node scripts/validate-analytics.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
