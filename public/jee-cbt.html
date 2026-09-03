@@ -3092,6 +3092,27 @@
         }
       }
 
+      /* ═══ DASHBOARD TODAY-AT-A-GLANCE ═══ */
+      .ov-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        align-items: stretch;
+      }
+      .ov-grid .ov-cell {
+        min-width: 0;
+      }
+      @media (max-width: 860px) {
+        .ov-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 480px) {
+        .ov-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       /* ═══ AI PLANNER STEPPER ═══ */
       .aip-steps {
         display: flex;
@@ -10282,12 +10303,12 @@
         ["pyq", "PYQ Papers", "bank"],
         ["planner", "Planner", "calendar"],
         ["youtube", "StudyTube", "play"],
+        ["live", "Live Classes", "wave"],
         ["practice", "Practice", "pencil"],
         ["review", "Review", "repeat"],
         ["notebook", "Mistake Notebook", "notebook"],
         ["mastery", "Mastery", "target"],
         ["formulas", "Formulas", "formula"],
-        ["live", "Live Classes", "wave"],
         ["analytics", "Analytics", "chart"],
         ["upload", "Upload PDFs", "upload"],
         ["search", "Search", "search"],
@@ -24539,6 +24560,121 @@
           qa.appendChild(c);
         });
         root.appendChild(qa);
+
+        // ── TODAY AT A GLANCE: the 4 things that matter right now, above the fold.
+        //    Research-based hierarchy: status/targets top → trends middle → details
+        //    bottom. 4 metrics + weak topic target, all with one tap. ──
+        (() => {
+          const ov = el("div", "card ov-grid");
+          ov.style.cssText = "border-color:color-mix(in srgb,var(--accent-text) 30%,var(--line))";
+          const goal = Math.max(1, S.settings.dailyGoal || 20);
+          const doneToday = S.dailyQuestions[todayKey(Date.now())] || 0;
+          const goalPct = Math.min(100, Math.round((doneToday / goal) * 100));
+          const focus = Math.max(0, pomoLog()[todayKey(Date.now())] || 0);
+          const focusGoal = Math.max(10, S.settings.focusGoal || 100);
+          const focusPct = Math.min(100, Math.round((focus / focusGoal) * 100));
+          const weak = (() => {
+            try {
+              return chapterPriorities().slice(0, 3);
+            } catch (e) {
+              return [];
+            }
+          })();
+          const dueN = (() => {
+            try {
+              return dueReviewQuestions().length;
+            } catch (e) {
+              return 0;
+            }
+          })();
+          let examDays = null;
+          let examTxt = "";
+          if (S.settings.examDate) {
+            examDays = Math.ceil((new Date(S.settings.examDate) - Date.now()) / 86400000);
+            if (examDays >= 0)
+              examTxt =
+                examDays === 0
+                  ? "AAJ"
+                  : examDays <= 14
+                    ? examDays + "d"
+                    : examDays + "d · " + S.settings.targetPercentile
+                      ? examDays + "d · " + S.settings.targetPercentile + "%ile"
+                      : examDays + "d";
+          }
+          const card = (icon, label, val, sub, onClick) => {
+            const c = el("button");
+            c.type = "button";
+            c.className = "ov-cell";
+            c.style.cssText =
+              "text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;min-width:0;transition:all .18s ease";
+            c.onmouseenter = () => {
+              c.style.borderColor = "var(--accent-text)";
+              c.style.transform = "translateY(-2px)";
+            };
+            c.onmouseleave = () => {
+              c.style.borderColor = "var(--line)";
+              c.style.transform = "";
+            };
+            c.innerHTML = `<div class="small muted">${icon} ${esc(label)}</div>
+        <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:22px;margin-top:3px">${val}</div>
+        <div class="small muted">${sub}</div>
+        ${onClick ? `<div class="small" style="margin-top:6px;color:var(--accent-text);font-weight:700">Open →</div>` : ""}`;
+            if (onClick) c.onclick = onClick;
+            return c;
+          };
+          ov.appendChild(
+            card("🎯", "Today's goal", `${goalPct}%`, `${doneToday}/${goal} Q`, () =>
+              go("practice"),
+            ),
+          );
+          ov.appendChild(
+            card("🔒", "Focus", `${focusPct}%`, `${Math.round(focus)}/${focusGoal} min`, () =>
+              go("analytics"),
+            ),
+          );
+          ov.appendChild(
+            card("📅", "Exam", examTxt || "—", S.settings.examDate || "Set exam date", () =>
+              go("settings"),
+            ),
+          );
+          ov.appendChild(
+            card(
+              "🔁",
+              "Due review",
+              String(dueN),
+              dueN ? "questions due today" : "all clear",
+              dueN ? () => go("review") : undefined,
+            ),
+          );
+          if (weak.length) {
+            const w = el("div", "ov-weak");
+            w.style.cssText = "grid-column:1/-1;margin-top:2px";
+            w.innerHTML = `<div class="small" style="color:var(--accent-text);font-weight:700;margin-bottom:6px">🎯 Aaj ka target — weak chapter</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${weak
+            .map(
+              (x) =>
+                `<button class="pill" style="cursor:pointer" data-wc="${esc(x.name)}">${esc(x.name)} · ${x.acc}%</button>`,
+            )
+            .join("")}</div>`;
+            w.querySelectorAll("[data-wc]").forEach((b) => {
+              b.onclick = () => {
+                S.aiPlanner = S.aiPlanner || { profile: { target: "jeemain" } };
+                go("youtube");
+                setTimeout(() => {
+                  try {
+                    const si = document.querySelector("[data-ytSearch]");
+                    const sb = document.querySelector("[data-ytSubmit]");
+                    if (si) si.value = b.getAttribute("data-wc") || "";
+                    if (sb) sb.click();
+                  } catch (e) {}
+                }, 160);
+              };
+            });
+            ov.appendChild(w);
+          }
+          root.appendChild(ov);
+        })();
+
         // ── launcher order: ONE next action → mentor → aaj ka mission ──
         // ERROR ISOLATION (graceful degradation): one broken card must never
         // blank the whole dashboard — the CBT/library below still work.
