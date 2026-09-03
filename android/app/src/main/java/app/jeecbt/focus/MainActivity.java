@@ -14,15 +14,21 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.util.Base64;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -42,10 +48,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -350,7 +360,25 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** All launchable apps (for the dock/drawer), sorted by label. */
+    /** Small base64 PNG data URI of a real app icon (72x72), or null. */
+    private String iconDataUri(Drawable d) {
+        if (d == null) return null;
+        try {
+            int size = 72;
+            Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmp);
+            d.setBounds(0, 0, size, size);
+            d.draw(c);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+            bmp.recycle();
+            return "data:image/png;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+        } catch (Throwable t) { return null; }
+    }
+
+    /** All launchable apps (for the dock/drawer), sorted by label.
+     *  Each row: pkg, label, activity (component) and — for the first ~120
+     *  apps — a base64 PNG of the REAL launcher icon. */
     String listLaunchableApps() {
         JSONArray arr = new JSONArray();
         try {
@@ -364,37 +392,84 @@ public class MainActivity extends Activity {
                 if ("app.jeecbt.focus".equals(pkg)) continue;
                 JSONObject o = new JSONObject();
                 o.put("pkg", pkg);
+                o.put("activity", ri.activityInfo.name);
                 o.put("label", String.valueOf(ri.loadLabel(pm)));
+                o.put("_ri", rows.size());
                 rows.add(o);
+                // keep a parallel handle so we can load icons after sorting
+                riCache.add(ri);
             }
             Collections.sort(rows, (a, b) ->
                     a.optString("label").compareToIgnoreCase(b.optString("label")));
-            for (JSONObject o : rows) arr.put(o);
+            int withIcons = 0;
+            for (JSONObject o : rows) {
+                if (withIcons < 120) {
+                    try {
+                        ResolveInfo ri = riCache.get(o.optInt("_ri", -1));
+                        String uri = iconDataUri(ri.loadIcon(pm));
+                        if (uri != null) { o.put("icon", uri); withIcons++; }
+                    } catch (Throwable ignored) {}
+                }
+                o.remove("_ri");
+                arr.put(o);
+            }
+            riCache.clear();
         } catch (Exception ignored) {}
         return arr.toString();
     }
 
-    /** Open another app from the dock. During Focus Lock only the guard's
-     *  ALLOW list opens — everything else gets an honest refusal. */
-    boolean openApp(String pkg) {
+    private final List<ResolveInfo> riCache = new ArrayList<>();
+
+    /** During Focus Lock only essential apps may open. */
+    private boolean allowedDuringLock(String pkg) {
+        if (!FocusGuardService.isLocked(this)) return true;
+        String low = pkg.toLowerCase();
+        return low.contains("dialer") || low.contains("phone")
+                || low.contains("emergency") || low.contains("telecom")
+                || low.contains("camera") || low.contains("settings");
+    }
+
+    /** Open another app from the dock/drawer. The JS bridge calls this on a
+     *  background thread, so the actual startActivity() is hopped onto the
+     *  main thread and we wait for the result before answering JS. */
+    boolean openApp(String pkg) { return openAppComponent(pkg, null); }
+
+    boolean openAppComponent(String pkg, String activity) {
         if (pkg == null || pkg.isEmpty()) return false;
-        if (FocusGuardService.isLocked(this)) {
-            String low = pkg.toLowerCase();
-            boolean ok = low.contains("dialer") || low.contains("phone")
-                    || low.contains("emergency") || low.contains("telecom")
-                    || low.contains("camera") || low.contains("settings");
-            if (!ok) {
-                Toast.makeText(this, "🔒 Focus Lock: pehle padhai — app baad mein", Toast.LENGTH_SHORT).show();
-                return false;
-            }
+        if (!allowedDuringLock(pkg)) {
+            new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(this, "🔒 Focus Lock: pehle padhai — app baad mein", Toast.LENGTH_SHORT).show());
+            return false;
         }
-        try {
-            Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
-            if (i == null) return false;
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(i);
-            return true;
-        } catch (Exception e) { return false; }
+        final AtomicBoolean ok = new AtomicBoolean(false);
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                Intent i = null;
+                if (activity != null && !activity.isEmpty()) {
+                    i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+                    i.setComponent(new ComponentName(pkg, activity));
+                }
+                if (i == null) i = getPackageManager().getLaunchIntentForPackage(pkg);
+                if (i != null) {
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                    startActivity(i);
+                    ok.set(true);
+                }
+            } catch (Exception e) {
+                // explicit component can fail (renamed activity) — retry generic
+                try {
+                    Intent f = getPackageManager().getLaunchIntentForPackage(pkg);
+                    if (f != null) {
+                        f.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                        startActivity(f);
+                        ok.set(true);
+                    }
+                } catch (Exception ignored) {}
+            } finally { latch.countDown(); }
+        });
+        try { latch.await(3, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
+        return ok.get();
     }
 
     static void scheduleReminder(Context c, int hour, int minute) {
@@ -466,6 +541,9 @@ public class MainActivity extends Activity {
         }
         @JavascriptInterface public String listApps() { return act.listLaunchableApps(); }
         @JavascriptInterface public boolean openApp(String pkg) { return act.openApp(pkg); }
+        @JavascriptInterface public boolean openAppComponent(String pkg, String activity) {
+            return act.openAppComponent(pkg, activity);
+        }
 
         @JavascriptInterface
         public void startLock(int minutes) {
