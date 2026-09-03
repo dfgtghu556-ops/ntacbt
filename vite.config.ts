@@ -5,7 +5,6 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   tanstackStart: {
@@ -15,40 +14,9 @@ export default defineConfig({
   },
   vite: {
     server: { allowedHosts: true },
-    plugins: [
-      // Offline mode: the exam portal keeps working with no network.
-      VitePWA({
-        registerType: "autoUpdate",
-        injectRegister: null,
-        devOptions: { enabled: false },
-        filename: "sw.js",
-        manifest: false,
-        workbox: {
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
-          navigateFallback: null,
-          runtimeCaching: [
-            {
-              urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
-              handler: "NetworkFirst",
-              options: { cacheName: "pages", networkTimeoutSeconds: 5 },
-            },
-            {
-              urlPattern: /^https:\/\/cdnjs\.cloudflare\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "cdn-libs",
-                expiration: { maxEntries: 20, maxAgeSeconds: 2592000 },
-              },
-            },
-            {
-              urlPattern: ({ url, request }: { url: URL; request: Request }) =>
-                url.origin === self.location.origin && request.destination !== "document",
-              handler: "StaleWhileRevalidate",
-              options: { cacheName: "assets" },
-            },
-          ],
-        },
-      }),
-    ],
+    // The lightweight offline service worker lives in public/sw.js and is
+    // registered from the root route. It uses runtime caching (network-first
+    // pages, cache-first assets) so the Vite build stays warning-free and the
+    // shell still works without a network after the first load.
   },
 });

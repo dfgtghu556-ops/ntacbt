@@ -1,0 +1,2264 @@
+{
+  "extractedAt": "2026-09-03T05:38:07.790Z",
+  "sourceFile": "public/jee-cbt.html",
+  "schema": 1,
+  "data": {
+    "jeeTopics": {
+      "Physics": [
+        [
+          "Units & Measurement",
+          1,
+          2,
+          11
+        ],
+        [
+          "Kinematics",
+          2,
+          2,
+          11
+        ],
+        [
+          "Laws of Motion",
+          2,
+          2,
+          11
+        ],
+        [
+          "Work, Energy & Power",
+          2,
+          2,
+          11
+        ],
+        [
+          "Circular Motion",
+          2,
+          2,
+          11
+        ],
+        [
+          "Centre of Mass & Collisions",
+          2,
+          2,
+          11
+        ],
+        [
+          "Rotational Motion",
+          3,
+          3,
+          11
+        ],
+        [
+          "Gravitation",
+          2,
+          2,
+          11
+        ],
+        [
+          "Mechanical Properties of Solids",
+          1,
+          1,
+          11
+        ],
+        [
+          "Fluid Mechanics",
+          2,
+          2,
+          11
+        ],
+        [
+          "Thermal Properties of Matter",
+          1,
+          2,
+          11
+        ],
+        [
+          "Thermodynamics",
+          2,
+          3,
+          11
+        ],
+        [
+          "Kinetic Theory of Gases",
+          1,
+          1,
+          11
+        ],
+        [
+          "Oscillations (SHM)",
+          2,
+          3,
+          11
+        ],
+        [
+          "Waves & Sound",
+          2,
+          2,
+          11
+        ],
+        [
+          "Electrostatics",
+          3,
+          3,
+          12
+        ],
+        [
+          "Capacitance",
+          2,
+          2,
+          12
+        ],
+        [
+          "Current Electricity",
+          2,
+          3,
+          12
+        ],
+        [
+          "Magnetic Effects of Current",
+          3,
+          3,
+          12
+        ],
+        [
+          "Magnetism & Matter",
+          1,
+          1,
+          12
+        ],
+        [
+          "EMI (Electromagnetic Induction)",
+          3,
+          3,
+          12
+        ],
+        [
+          "Alternating Current",
+          2,
+          2,
+          12
+        ],
+        [
+          "Electromagnetic Waves",
+          1,
+          2,
+          12
+        ],
+        [
+          "Ray Optics",
+          2,
+          3,
+          12
+        ],
+        [
+          "Wave Optics",
+          2,
+          2,
+          12
+        ],
+        [
+          "Dual Nature of Matter",
+          1,
+          2,
+          12
+        ],
+        [
+          "Atoms",
+          1,
+          2,
+          12
+        ],
+        [
+          "Nuclei",
+          1,
+          2,
+          12
+        ],
+        [
+          "Semiconductors & Electronics",
+          1,
+          3,
+          12
+        ],
+        [
+          "Experimental Physics & Errors",
+          1,
+          2,
+          11
+        ]
+      ],
+      "Chemistry": [
+        [
+          "Some Basic Concepts (Mole Concept)",
+          1,
+          1,
+          11
+        ],
+        [
+          "Atomic Structure",
+          2,
+          2,
+          11
+        ],
+        [
+          "Chemical Bonding",
+          3,
+          3,
+          11
+        ],
+        [
+          "States of Matter (Gaseous & Liquid)",
+          1,
+          1,
+          11
+        ],
+        [
+          "Chemical Thermodynamics",
+          2,
+          2,
+          11
+        ],
+        [
+          "Equilibrium (Chemical & Ionic)",
+          3,
+          2,
+          11
+        ],
+        [
+          "Redox Reactions",
+          1,
+          2,
+          11
+        ],
+        [
+          "Solid State",
+          1,
+          1,
+          12
+        ],
+        [
+          "Solutions",
+          2,
+          2,
+          12
+        ],
+        [
+          "Electrochemistry",
+          2,
+          3,
+          12
+        ],
+        [
+          "Chemical Kinetics",
+          2,
+          2,
+          12
+        ],
+        [
+          "Surface Chemistry",
+          1,
+          1,
+          12
+        ],
+        [
+          "Classification & Periodicity",
+          1,
+          1,
+          11
+        ],
+        [
+          "Hydrogen & s-Block",
+          1,
+          1,
+          11
+        ],
+        [
+          "p-Block Elements",
+          2,
+          3,
+          12
+        ],
+        [
+          "d & f Block Elements",
+          2,
+          2,
+          12
+        ],
+        [
+          "Coordination Compounds",
+          3,
+          3,
+          12
+        ],
+        [
+          "Metallurgy (Isolation of Elements)",
+          1,
+          1,
+          12
+        ],
+        [
+          "General Organic Chemistry (GOC)",
+          3,
+          3,
+          11
+        ],
+        [
+          "Isomerism",
+          2,
+          2,
+          11
+        ],
+        [
+          "Hydrocarbons",
+          2,
+          2,
+          11
+        ],
+        [
+          "Haloalkanes & Haloarenes",
+          2,
+          2,
+          12
+        ],
+        [
+          "Alcohols, Phenols & Ethers",
+          2,
+          2,
+          12
+        ],
+        [
+          "Aldehydes, Ketones & Carboxylic Acids",
+          3,
+          3,
+          12
+        ],
+        [
+          "Amines & Diazonium Salts",
+          2,
+          2,
+          12
+        ],
+        [
+          "Biomolecules",
+          1,
+          2,
+          12
+        ],
+        [
+          "Polymers",
+          1,
+          1,
+          12
+        ],
+        [
+          "Chemistry in Everyday Life",
+          1,
+          1,
+          12
+        ],
+        [
+          "Environmental Chemistry",
+          1,
+          1,
+          11
+        ],
+        [
+          "Practical/Analytical Chemistry",
+          1,
+          2,
+          12
+        ]
+      ],
+      "Mathematics": [
+        [
+          "Sets, Relations & Functions",
+          1,
+          2,
+          11
+        ],
+        [
+          "Complex Numbers",
+          2,
+          2,
+          11
+        ],
+        [
+          "Quadratic Equations",
+          2,
+          2,
+          11
+        ],
+        [
+          "Matrices & Determinants",
+          2,
+          3,
+          12
+        ],
+        [
+          "Permutations & Combinations",
+          2,
+          2,
+          11
+        ],
+        [
+          "Binomial Theorem",
+          1,
+          2,
+          11
+        ],
+        [
+          "Sequences & Series (AP/GP)",
+          2,
+          3,
+          11
+        ],
+        [
+          "Trigonometric Ratios & Identities",
+          2,
+          2,
+          11
+        ],
+        [
+          "Trigonometric Equations",
+          2,
+          1,
+          11
+        ],
+        [
+          "Inverse Trigonometric Functions",
+          2,
+          2,
+          12
+        ],
+        [
+          "Heights & Distances",
+          1,
+          1,
+          11
+        ],
+        [
+          "Straight Lines",
+          2,
+          2,
+          11
+        ],
+        [
+          "Circles",
+          2,
+          2,
+          11
+        ],
+        [
+          "Conic Sections (Parabola/Ellipse/Hyperbola)",
+          3,
+          3,
+          11
+        ],
+        [
+          "Limits, Continuity & Differentiability",
+          3,
+          3,
+          12
+        ],
+        [
+          "Differentiation (Methods)",
+          2,
+          2,
+          12
+        ],
+        [
+          "Applications of Derivatives",
+          2,
+          2,
+          12
+        ],
+        [
+          "Indefinite Integration",
+          3,
+          3,
+          12
+        ],
+        [
+          "Definite Integration & Area",
+          3,
+          3,
+          12
+        ],
+        [
+          "Differential Equations",
+          2,
+          2,
+          12
+        ],
+        [
+          "Vector Algebra",
+          2,
+          3,
+          12
+        ],
+        [
+          "3D Geometry",
+          2,
+          3,
+          12
+        ],
+        [
+          "Probability",
+          2,
+          2,
+          12
+        ],
+        [
+          "Statistics",
+          1,
+          2,
+          11
+        ],
+        [
+          "Mathematical Reasoning",
+          1,
+          1,
+          11
+        ]
+      ]
+    },
+    "boardExtraTopics": {
+      "English": [
+        [
+          "Flamingo: The Last Lesson",
+          1,
+          2
+        ],
+        [
+          "Flamingo: Lost Spring",
+          1,
+          2
+        ],
+        [
+          "Flamingo: Deep Water",
+          1,
+          2
+        ],
+        [
+          "Flamingo: The Rattrap",
+          1,
+          2
+        ],
+        [
+          "Flamingo: Indigo",
+          1,
+          2
+        ],
+        [
+          "Flamingo: Poets and Pancakes",
+          1,
+          1
+        ],
+        [
+          "Flamingo: The Interview",
+          1,
+          1
+        ],
+        [
+          "Flamingo: Going Places",
+          1,
+          1
+        ],
+        [
+          "Poetry: My Mother at Sixty-six",
+          1,
+          2
+        ],
+        [
+          "Poetry: Keeping Quiet",
+          1,
+          2
+        ],
+        [
+          "Poetry: A Thing of Beauty",
+          1,
+          2
+        ],
+        [
+          "Poetry: A Roadside Stand",
+          1,
+          1
+        ],
+        [
+          "Poetry: Aunt Jennifer's Tigers",
+          1,
+          2
+        ],
+        [
+          "Vistas: The Third Level",
+          1,
+          2
+        ],
+        [
+          "Vistas: The Tiger King",
+          1,
+          2
+        ],
+        [
+          "Vistas: Journey to the End of the Earth",
+          1,
+          1
+        ],
+        [
+          "Vistas: The Enemy",
+          1,
+          2
+        ],
+        [
+          "Vistas: On the Face of It",
+          1,
+          2
+        ],
+        [
+          "Vistas: Memories of Childhood",
+          1,
+          1
+        ],
+        [
+          "Writing: Notice & Advertisement",
+          1,
+          3
+        ],
+        [
+          "Writing: Letter Writing (Formal)",
+          1,
+          3
+        ],
+        [
+          "Writing: Article & Report Writing",
+          2,
+          3
+        ],
+        [
+          "Reading: Comprehension Practice",
+          2,
+          3
+        ]
+      ]
+    },
+    "advExtraTopics": {
+      "Physics": [
+        [
+          "Rotational Dynamics (Advanced)",
+          3,
+          3
+        ],
+        [
+          "Errors & Instruments (Advanced)",
+          2,
+          2
+        ]
+      ],
+      "Chemistry": [
+        [
+          "Qualitative Salt Analysis",
+          3,
+          3
+        ],
+        [
+          "Stereochemistry (Advanced)",
+          3,
+          2
+        ]
+      ],
+      "Mathematics": [
+        [
+          "Functions & Functional Equations (Adv)",
+          3,
+          2
+        ],
+        [
+          "Inequalities & Max-Min (Adv)",
+          3,
+          2
+        ]
+      ]
+    },
+    "cbse27Topics": {
+      "Physics": [
+        [
+          "Electric Charges and Fields",
+          2,
+          3,
+          12
+        ],
+        [
+          "Electrostatic Potential and Capacitance",
+          2,
+          3,
+          12
+        ],
+        [
+          "Current Electricity",
+          2,
+          3,
+          12
+        ],
+        [
+          "Moving Charges and Magnetism",
+          3,
+          3,
+          12
+        ],
+        [
+          "Magnetism and Matter",
+          1,
+          1,
+          12
+        ],
+        [
+          "Electromagnetic Induction",
+          3,
+          3,
+          12
+        ],
+        [
+          "Alternating Current",
+          2,
+          2,
+          12
+        ],
+        [
+          "Electromagnetic Waves",
+          1,
+          2,
+          12
+        ],
+        [
+          "Ray Optics and Optical Instruments",
+          2,
+          3,
+          12
+        ],
+        [
+          "Wave Optics",
+          2,
+          2,
+          12
+        ],
+        [
+          "Dual Nature of Radiation and Matter",
+          1,
+          2,
+          12
+        ],
+        [
+          "Atoms",
+          1,
+          2,
+          12
+        ],
+        [
+          "Nuclei",
+          1,
+          2,
+          12
+        ],
+        [
+          "Semiconductor Electronics: Materials, Devices and Simple Circuits",
+          1,
+          3,
+          12
+        ]
+      ],
+      "Chemistry": [
+        [
+          "Solutions",
+          2,
+          2,
+          12
+        ],
+        [
+          "Electrochemistry",
+          2,
+          3,
+          12
+        ],
+        [
+          "Chemical Kinetics",
+          2,
+          2,
+          12
+        ],
+        [
+          "The d- and f-Block Elements",
+          2,
+          2,
+          12
+        ],
+        [
+          "Coordination Compounds",
+          3,
+          3,
+          12
+        ],
+        [
+          "Haloalkanes and Haloarenes",
+          2,
+          2,
+          12
+        ],
+        [
+          "Alcohols, Phenols and Ethers",
+          2,
+          2,
+          12
+        ],
+        [
+          "Aldehydes, Ketones and Carboxylic Acids",
+          3,
+          3,
+          12
+        ],
+        [
+          "Amines",
+          2,
+          2,
+          12
+        ],
+        [
+          "Biomolecules",
+          1,
+          2,
+          12
+        ]
+      ],
+      "Mathematics": [
+        [
+          "Relations and Functions",
+          1,
+          2,
+          12
+        ],
+        [
+          "Inverse Trigonometric Functions",
+          2,
+          2,
+          12
+        ],
+        [
+          "Matrices",
+          2,
+          3,
+          12
+        ],
+        [
+          "Determinants",
+          2,
+          3,
+          12
+        ],
+        [
+          "Continuity and Differentiability",
+          3,
+          3,
+          12
+        ],
+        [
+          "Applications of Derivatives",
+          2,
+          2,
+          12
+        ],
+        [
+          "Integrals",
+          3,
+          3,
+          12
+        ],
+        [
+          "Applications of the Integrals",
+          2,
+          1,
+          12
+        ],
+        [
+          "Differential Equations",
+          2,
+          2,
+          12
+        ],
+        [
+          "Vector Algebra",
+          2,
+          3,
+          12
+        ],
+        [
+          "Three Dimensional Geometry",
+          2,
+          3,
+          12
+        ],
+        [
+          "Linear Programming",
+          2,
+          1,
+          12
+        ],
+        [
+          "Probability",
+          2,
+          2,
+          12
+        ]
+      ]
+    },
+    "aipDepths": {
+      "crash": {
+        "label": "CRASH",
+        "icon": "⚡",
+        "color": "var(--red)",
+        "kind": "oneshot",
+        "est": [
+          0,
+          45,
+          60,
+          80
+        ],
+        "pr": [
+          0,
+          0,
+          30,
+          40
+        ],
+        "prMin": 3,
+        "adv": false,
+        "rev": [
+          [
+            3,
+            15
+          ]
+        ],
+        "hi": "One-shots + PYQ sprints, high-weightage chapters first — the proven <45-day comeback formula."
+      },
+      "focused": {
+        "label": "FOCUSED",
+        "icon": "🎯",
+        "color": "var(--amber)",
+        "kind": "oneshot",
+        "est": [
+          0,
+          60,
+          85,
+          110
+        ],
+        "pr": [
+          0,
+          30,
+          35,
+          45
+        ],
+        "prMin": 2,
+        "adv": false,
+        "rev": [
+          [
+            3,
+            20
+          ],
+          [
+            7,
+            15
+          ]
+        ],
+        "hi": "Long one-shots + practice on medium/hard chapters, weightage-ordered — solid coverage at speed."
+      },
+      "standard": {
+        "label": "STANDARD",
+        "icon": "📘",
+        "color": "var(--blue)",
+        "kind": "lecture",
+        "est": [
+          0,
+          90,
+          120,
+          150
+        ],
+        "pr": [
+          0,
+          35,
+          40,
+          55
+        ],
+        "prMin": 2,
+        "adv": false,
+        "rev": [
+          [
+            3,
+            20
+          ],
+          [
+            7,
+            15
+          ]
+        ],
+        "hi": "Full chapter lectures + dedicated problem-solving — the balanced full-syllabus preparation."
+      },
+      "mastery": {
+        "label": "MASTERY",
+        "icon": "🏆",
+        "color": "var(--green)",
+        "kind": "detailed",
+        "est": [
+          0,
+          110,
+          150,
+          200
+        ],
+        "pr": [
+          0,
+          35,
+          50,
+          65
+        ],
+        "prMin": 1,
+        "adv": true,
+        "rev": [
+          [
+            3,
+            20
+          ],
+          [
+            7,
+            15
+          ],
+          [
+            21,
+            15
+          ]
+        ],
+        "hi": "Detailed lectures, practice on EVERY chapter, advanced-level problems on hard ones, triple revision — topper-grade depth."
+      }
+    },
+    "aipTeachers": [
+      {
+        "id": "pw-pankaj-sir",
+        "name": "Pankaj Sijairya Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Organic Chemistry Maestro",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "board11",
+          "cbse27"
+        ],
+        "batchInfo": "Lakshya / Prayas / Pankaj Sir Chemistry",
+        "channelName": "Pankaj Sir Chemistry"
+      },
+      {
+        "id": "pw-sarvesh-sir",
+        "name": "Sarvesh Dixit Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Physical Chemistry Expert",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas / Manzil JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-amit-mahajan-sir",
+        "name": "Amit Mahajan Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Inorganic Chemistry Expert",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Prayas / Lakshya JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-faisal-sir",
+        "name": "Faisal Razaq Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Physical & Inorganic Chemistry",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Manzil / Prayas JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-harsh-tyagi-sir",
+        "name": "Harsh Tyagi Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Organic Reactions & Mechanisms",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Board Booster / NCERT Wallah",
+        "channelName": "NCERT Wallah"
+      },
+      {
+        "id": "pw-rahul-dudi-sir",
+        "name": "Rahul Dudi Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Physical Chemistry Kota Faculty",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "board11"
+        ],
+        "batchInfo": "Lakshya JEE / Board 12",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-om-pandey-sir",
+        "name": "Om Pandey Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Inorganic Chemistry NCERT Line-by-Line",
+        "examTarget": [
+          "board12",
+          "board11",
+          "cbse27",
+          "jeemain"
+        ],
+        "batchInfo": "NCERT Line by Line / CBSE Board",
+        "channelName": "NCERT Wallah"
+      },
+      {
+        "id": "pw-sudhanshu-sir",
+        "name": "Sudhanshu Tomar Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Physical Chemistry & Numericals",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas Fastrack / JEE Main",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-shivam-sir",
+        "name": "Shivam Bhargava Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Organic Chemistry Synthesis",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Manzil Legend / JEE Main & Adv",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-rohit-agarwal-sir",
+        "name": "Rohit Agarwal Sir (RA Sir)",
+        "instituteId": "physics-wallah",
+        "subject": "Chemistry",
+        "specialization": "Advanced Organic Chemistry",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas / Advanced Special",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-alakh-pandey",
+        "name": "Alakh Pandey Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Physics Fundamentals & Concepts",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "board11",
+          "cbse27"
+        ],
+        "batchInfo": "Old Whiteboard Legend Series / Foundation",
+        "channelName": "Physics Wallah - Alakh Pandey"
+      },
+      {
+        "id": "pw-rajwant-sir",
+        "name": "Rajwant Singh Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Mechanics & Electrodynamics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas / Lakshya JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-saleem-sir",
+        "name": "Saleem Ahmed Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Thermal Physics & Modern Physics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas / Manzil JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-manish-raj-sir",
+        "name": "Manish Raj Sir (MR Sir)",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Problem Solving & Speed Tricks",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "board11"
+        ],
+        "batchInfo": "Yakeen / Manzil Series",
+        "channelName": "Competition Wallah"
+      },
+      {
+        "id": "pw-abhishek-gupta-sir",
+        "name": "Abhishek Gupta Sir (AG Sir)",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "JEE Advanced Mechanics & Waves",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Varun Advanced Batch",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-nitin-sachan-sir",
+        "name": "Nitin Sachan Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Olympiad & Top Rankers Advanced",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Air Rankers Batch / JEE Advanced",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-rohit-mishra-sir",
+        "name": "Rohit Mishra Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Optics & Electromagnetism",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "NCERT Wallah / Board Special",
+        "channelName": "NCERT Wallah"
+      },
+      {
+        "id": "pw-ashish-gupta-sir",
+        "name": "Ashish Gupta Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Formula Revision & Speed PYQs",
+        "examTarget": [
+          "jeemain",
+          "board12"
+        ],
+        "batchInfo": "Manzil Rapid / JEE Main",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-shivendu-sir",
+        "name": "Shivendu Mishra Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "IIT KGP / Deep Mechanics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas 2.0",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-satish-sir",
+        "name": "Satish Mishra Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Physics",
+        "specialization": "Class 11 Mechanics & Waves",
+        "examTarget": [
+          "jeemain",
+          "board11"
+        ],
+        "batchInfo": "Arjuna JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-sachin-sir",
+        "name": "Sachin Jhajharia Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Calculus & Algebra",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas / Manzil Legend",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-tarun-sir",
+        "name": "Tarun Khandelwal Sir (TK Sir)",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Calculus & Coordinate Geometry",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Lakshya / Manzil",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-ashish-agarwal-sir",
+        "name": "Ashish Agarwal Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Advanced Algebra & Geometry",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Prayas 1.0 / Advanced",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-rajeev-rastogi-sir",
+        "name": "Rajeev Rastogi Sir (RR Sir)",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Calculus & Trigonometry",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Manzil Fastrack",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-kundan-sir",
+        "name": "Kundan Manchanda Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "NCERT & Board 12 Score Booster",
+        "examTarget": [
+          "board12",
+          "board11",
+          "cbse27",
+          "jeemain"
+        ],
+        "batchInfo": "Board Booster / NCERT Wallah",
+        "channelName": "NCERT Wallah"
+      },
+      {
+        "id": "pw-rohit-gupta-sir",
+        "name": "Rohit Gupta Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Vectors & 3D Geometry",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Manzil / Prayas",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-ms-sir",
+        "name": "Mohan Sir (MS Sir)",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Algebra & Probability",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Prayas / Arjuna",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-sanyam-sir",
+        "name": "Sanyam Badola Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Coordinate Geometry & Calculus",
+        "examTarget": [
+          "jeemain",
+          "board12"
+        ],
+        "batchInfo": "Lakshya JEE",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-vikas-sir",
+        "name": "Vikas Gupta Sir (PW)",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "Advanced Problem Solving",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Varun Advanced Series",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "pw-anurag-sir",
+        "name": "Anurag Chauhan Sir",
+        "instituteId": "physics-wallah",
+        "subject": "Mathematics",
+        "specialization": "JEE Main Speed & Accuracy Tricks",
+        "examTarget": [
+          "jeemain",
+          "board11"
+        ],
+        "batchInfo": "Arjuna Fastrack",
+        "channelName": "JEE Wallah"
+      },
+      {
+        "id": "un-sakshi-vora",
+        "name": "Sakshi Vora Ma'am",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Inorganic & Physical BounceBack",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "board11",
+          "cbse27"
+        ],
+        "batchInfo": "BounceBack Chemistry / Atoms One Shot",
+        "channelName": "Unacademy Atoms"
+      },
+      {
+        "id": "un-piyush-maheshwari",
+        "name": "Piyush Maheshwari Sir (PMS Sir)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Inorganic Chemistry Legend",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Nucleus Kota HOD Series",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-brijesh-jindal",
+        "name": "Brijesh Jindal Sir (BJ Sir)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Physical Chemistry Legend",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Nucleus Kota HOD Series",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-mka-sir",
+        "name": "Mohammad Kashif Alam Sir (MKA Sir)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Organic Chemistry Maestro",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Brainanza / Master Organic",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-monica-bedi",
+        "name": "Monica Bedi Ma'am (Shaurya Mam)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "CBSE Board 12 & NCERT One-Shots",
+        "examTarget": [
+          "board12",
+          "board11",
+          "cbse27",
+          "jeemain"
+        ],
+        "batchInfo": "Shaurya Batch / Board 12 Score 100",
+        "channelName": "Unacademy Class 11 & 12"
+      },
+      {
+        "id": "un-paras-thakur",
+        "name": "Paras Thakur Sir",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Conceptual Chemistry & Mechanisms",
+        "examTarget": [
+          "jeemain",
+          "board12"
+        ],
+        "batchInfo": "JEE Live Daily",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-skm-sir",
+        "name": "Surendra K Mishra Sir (SKM Sir)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Organic Chemistry God (Ex-Nucleus Kota)",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Super Achievers Advanced",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-akk-sir",
+        "name": "Akhilesh Kanther Sir (AKK Sir)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Physical Chemistry Kota HOD",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Super Achievers Advanced",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-vj-sir",
+        "name": "Vishal Joshi Sir (VJ Sir)",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "Inorganic Chemistry Kota HOD",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Super Achievers Advanced",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-paaras-verma",
+        "name": "Paaras Verma Sir",
+        "instituteId": "unacademy",
+        "subject": "Chemistry",
+        "specialization": "IITian / Physical Chemistry Numericals",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "JEE Live Daily",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-namo-kaul",
+        "name": "Namo Kaul Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Visual Physics & Mechanics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "JEE Live Daily / All Stars",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-jayant-nagda",
+        "name": "Jayant Nagda Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Modern Physics & Current Electricity",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "JEE Live Daily / Emerge",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-kailash-sharma",
+        "name": "Kailash Sharma Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Ex-Allen Kota HOD / Mechanics",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Super 30 / Advanced Batch",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-prateek-jain",
+        "name": "Prateek Jain Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "IITian / Electrodynamics & Optics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Rank Refiner Batch",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-amit-gupta",
+        "name": "Amit Gupta Sir (AG Sir Kota)",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Kota Legend / Advanced Problem Solving",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Nucleus Kota Legend Batch",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-pankaj-singh",
+        "name": "Pankaj Singh Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Olympiad & Advanced Concept Physics",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Olympiad Master Batch",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-ajit-lulla",
+        "name": "Ajit Lulla Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "BounceBack Physics / One-Shots",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "BounceBack 2.0 / Atoms",
+        "channelName": "Unacademy Atoms"
+      },
+      {
+        "id": "un-luv-mehan",
+        "name": "Luv Mehan Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "CBSE Board 12 & Foundation",
+        "examTarget": [
+          "board12",
+          "board11",
+          "cbse27",
+          "jeemain"
+        ],
+        "batchInfo": "Board 12 Booster / English",
+        "channelName": "Unacademy JEE English"
+      },
+      {
+        "id": "un-dc-pandey",
+        "name": "D.C. Pandey Sir",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Arihant Author / Master Mentor",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Understanding Physics Masterclass",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-abhishekh-jain",
+        "name": "Abhishekh Jain Sir (AJ Sir)",
+        "instituteId": "unacademy",
+        "subject": "Physics",
+        "specialization": "Kota IITian Veteran",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Emerge 2.0",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-nishant-vora",
+        "name": "Nishant Vora Sir (NV Sir)",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "BounceBack Series / Calculus & Vectors",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "BounceBack 1.0 & 2.0 / 45 Days Crash Course",
+        "channelName": "Unacademy Atoms"
+      },
+      {
+        "id": "un-prashant-jain",
+        "name": "Prashant Jain Sir (PJ Sir)",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "IIT Bombay AIR 42 / Advanced Algebra",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Target Top 100 JEE Advanced",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-sameer-chincholikar",
+        "name": "Sameer Chincholikar Sir",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "Calculus & Functions",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "JEE Live Daily / All Stars",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-vineet-loomba",
+        "name": "Vineet Loomba Sir",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "IIT Roorkee / Coordinate Geometry",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Excel Batch / Rank Booster",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-manoj-chauhan",
+        "name": "Manoj Chauhan Sir (MC Sir)",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "Ex-Bansal Kota HOD / Advanced Calculus",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "Super 30 Advanced Kota Batch",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-om-sharma",
+        "name": "Om Sharma Sir",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "IIT Bombay / Algebra & Calculus",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Lakshya JEE Main & Adv",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-neha-agrawal",
+        "name": "Neha Agrawal Ma'am",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "Mathematically Inclined / Fast Shortcuts",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Minute Tricks / Board 12 Booster",
+        "channelName": "Mathematically Inclined"
+      },
+      {
+        "id": "un-arvind-suthar",
+        "name": "Arvind Suthar Sir",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "Algebra & Coordinate Geometry",
+        "examTarget": [
+          "jeemain",
+          "board12"
+        ],
+        "batchInfo": "Sprint Revision Series",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-vikas-gupta",
+        "name": "Vikas Gupta Sir (VG Sir)",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "Yellow Book Author / Advanced Problem Solving",
+        "examTarget": [
+          "jeeadv"
+        ],
+        "batchInfo": "Apex JEE Advanced Problem Series",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "un-purnima-kaul",
+        "name": "Purnima Kaul Ma'am",
+        "instituteId": "unacademy",
+        "subject": "Mathematics",
+        "specialization": "IITian / Fast Formula Revision & PYQs",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "board11"
+        ],
+        "batchInfo": "JEE Live Daily / PYQ Marathons",
+        "channelName": "Unacademy JEE"
+      },
+      {
+        "id": "comp-mohit-tyagi",
+        "name": "Mohit Tyagi Sir",
+        "instituteId": "competishun",
+        "subject": "Mathematics",
+        "specialization": "Complete IIT Curriculum / Deep Calculus & Algebra",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Praveen / Pratham / Complete Playlist",
+        "channelName": "Mohit Tyagi"
+      },
+      {
+        "id": "comp-abj-sir",
+        "name": "Alok Babu Sir (ABJ Sir)",
+        "instituteId": "competishun",
+        "subject": "Physics",
+        "specialization": "Deep Conceptual Mechanics & Electromagnetism",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Complete Classroom Lectures / Praveen",
+        "channelName": "Mohit Tyagi"
+      },
+      {
+        "id": "comp-alk-sir",
+        "name": "Alok Soni Sir (ALK Sir)",
+        "instituteId": "competishun",
+        "subject": "Chemistry",
+        "specialization": "Physical & Inorganic Chemistry Kota Veteran",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Complete Classroom Lectures / Praveen",
+        "channelName": "Mohit Tyagi"
+      },
+      {
+        "id": "comp-ns-sir",
+        "name": "Neeraj Saini Sir (NS Sir)",
+        "instituteId": "competishun",
+        "subject": "Chemistry",
+        "specialization": "Organic Chemistry Mechanisms Maestro",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Complete Organic Lectures / Praveen",
+        "channelName": "Mohit Tyagi"
+      },
+      {
+        "id": "comp-prateek-sir",
+        "name": "Prateek Sir (Competishun)",
+        "instituteId": "competishun",
+        "subject": "Physics",
+        "specialization": "PYQ Solving & Revision",
+        "examTarget": [
+          "jeemain",
+          "board12"
+        ],
+        "batchInfo": "Champ Series / C3 Crash Course",
+        "channelName": "Competishun - JEE"
+      },
+      {
+        "id": "comp-anuj-sir",
+        "name": "Anuj Sir (Competishun)",
+        "instituteId": "competishun",
+        "subject": "Chemistry",
+        "specialization": "Inorganic & NCERT Deep Dive",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Champ / Board Booster",
+        "channelName": "Competishun - JEE"
+      },
+      {
+        "id": "comp-vivek-sir",
+        "name": "Vivek Sir (Competishun)",
+        "instituteId": "competishun",
+        "subject": "Mathematics",
+        "specialization": "Vectors, 3D and Coordinate Geometry",
+        "examTarget": [
+          "jeemain",
+          "board12"
+        ],
+        "batchInfo": "Champ Series / Fastrack",
+        "channelName": "Competishun - JEE"
+      },
+      {
+        "id": "ved-vinay-shur",
+        "name": "Vinay Shur Sir",
+        "instituteId": "vedantu",
+        "subject": "Physics",
+        "specialization": "IITian / Visual Physics & Mechanics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Eklavya / Vedantu JEE Sprint",
+        "channelName": "Vedantu JEE"
+      },
+      {
+        "id": "ved-suri-sir",
+        "name": "Suri Sir (Mugambo Sir)",
+        "instituteId": "vedantu",
+        "subject": "Physics",
+        "specialization": "High Weightage Problem Solving",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Vedantu JEE One Shot / Sprint",
+        "channelName": "Vedantu JEE"
+      },
+      {
+        "id": "ved-arvind-kalia",
+        "name": "Arvind Kalia Sir",
+        "instituteId": "vedantu",
+        "subject": "Mathematics",
+        "specialization": "Sprint Series / Calculus & Vectors",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Vedantu JEE Sprint / One Shot",
+        "channelName": "Vedantu JEE"
+      },
+      {
+        "id": "ved-pulkit-jain",
+        "name": "Pulkit Jain Sir",
+        "instituteId": "vedantu",
+        "subject": "Mathematics",
+        "specialization": "Co-Founder Vedantu / IIT Roorkee Algebra",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Master Series",
+        "channelName": "Vedantu Master Talk"
+      },
+      {
+        "id": "ved-mohit-ryan",
+        "name": "Mohit Ryan Sir",
+        "instituteId": "vedantu",
+        "subject": "Chemistry",
+        "specialization": "IITian / Organic & Inorganic One-Shots",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Vedantu JEE Sprint / One Shot",
+        "channelName": "Vedantu JEE"
+      },
+      {
+        "id": "ved-harsh-maheshwari",
+        "name": "Harsh Maheshwari Sir",
+        "instituteId": "vedantu",
+        "subject": "Chemistry",
+        "specialization": "Captain Chemistry / Physical Chemistry",
+        "examTarget": [
+          "jeemain",
+          "board12",
+          "board11"
+        ],
+        "batchInfo": "Captain Chemistry Series",
+        "channelName": "Vedantu JEE"
+      },
+      {
+        "id": "ved-anubha-gaur",
+        "name": "Anubha Gaur Ma'am",
+        "instituteId": "vedantu",
+        "subject": "Chemistry",
+        "specialization": "CBSE Board 12 & 11 NCERT",
+        "examTarget": [
+          "board12",
+          "board11",
+          "cbse27"
+        ],
+        "batchInfo": "Board NCERT Mastery",
+        "channelName": "Vedantu 9 & 10"
+      },
+      {
+        "id": "esaral-saransh-sir",
+        "name": "Saransh Gupta Sir",
+        "instituteId": "esaral",
+        "subject": "Physics",
+        "specialization": "AIR 41 IIT Bombay / Mechanics & Electrodynamics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Brahmastra / Prahaar Batch",
+        "channelName": "eSaral - JEE, NEET, Class 9 & 10"
+      },
+      {
+        "id": "esaral-nk-gupta",
+        "name": "NK Gupta Sir",
+        "instituteId": "esaral",
+        "subject": "Mathematics",
+        "specialization": "M.Tech IIT Kanpur (30+ yrs exp) / Calculus",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Brahmastra / Prahaar Batch",
+        "channelName": "eSaral - JEE, NEET, Class 9 & 10"
+      },
+      {
+        "id": "esaral-prateek-gupta",
+        "name": "Prateek Gupta Sir",
+        "instituteId": "esaral",
+        "subject": "Chemistry",
+        "specialization": "IIT Bombay / Complete Chemistry Revision",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Brahmastra / Prahaar Batch",
+        "channelName": "eSaral - JEE, NEET, Class 9 & 10"
+      },
+      {
+        "id": "motion-nv-sir",
+        "name": "Nitin Vijay Sir (NV Sir Motion)",
+        "instituteId": "motion",
+        "subject": "Physics",
+        "specialization": "Kota's Iconic Physics Educator / Mechanics",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Drona Batch / Motion Kota Classroom",
+        "channelName": "Motion JEE"
+      },
+      {
+        "id": "motion-brajesh-sir",
+        "name": "Brajesh Maheshwari Sir",
+        "instituteId": "motion",
+        "subject": "Chemistry",
+        "specialization": "Inorganic & Physical Chemistry",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Motion Kota Classroom",
+        "channelName": "Motion JEE"
+      },
+      {
+        "id": "motion-amit-verma-sir",
+        "name": "Amit Verma Sir",
+        "instituteId": "motion",
+        "subject": "Mathematics",
+        "specialization": "Calculus & Algebra",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Motion Kota Classroom",
+        "channelName": "Motion JEE"
+      },
+      {
+        "id": "allen-bm-sharma",
+        "name": "B.M. Sharma Sir",
+        "instituteId": "allen",
+        "subject": "Physics",
+        "specialization": "Cengage Author / Master Problem Solving",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Cengage Author Series / ALLEN Score",
+        "channelName": "ALLEN JEE"
+      },
+      {
+        "id": "allen-shishir-mittal",
+        "name": "Shishir Mittal Sir",
+        "instituteId": "allen",
+        "subject": "Chemistry",
+        "specialization": "IIT Bombay / Organic Chemistry Legend",
+        "examTarget": [
+          "jeeadv",
+          "jeemain"
+        ],
+        "batchInfo": "ALLEN Kota HOD Series",
+        "channelName": "ALLEN JEE"
+      },
+      {
+        "id": "allen-kc-sinha",
+        "name": "Dr. K.C. Sinha",
+        "instituteId": "allen",
+        "subject": "Mathematics",
+        "specialization": "Eminent Author / Algebra & Calculus",
+        "examTarget": [
+          "jeemain",
+          "jeeadv",
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "ALLEN Master Series",
+        "channelName": "ALLEN JEE"
+      },
+      {
+        "id": "pg-ashish-arora",
+        "name": "Ashish Arora Sir",
+        "instituteId": "physics-galaxy",
+        "subject": "Physics",
+        "specialization": "Revision Checklists & Advanced Illustrations",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Revision Checklist / 700+ Adv Illustrations",
+        "channelName": "Physics Galaxy"
+      },
+      {
+        "id": "eduniti-mohit-goenka",
+        "name": "Mohit Goenka Sir",
+        "instituteId": "eduniti",
+        "subject": "Physics",
+        "specialization": "Formula Checklists & PYQ Marathons",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Formula Checklist / Rank Booster PYQs",
+        "channelName": "Eduniti - Physics for JEE"
+      },
+      {
+        "id": "mathongo-anup-sir",
+        "name": "Anup Gupta Sir",
+        "instituteId": "mathongo",
+        "subject": "Mathematics",
+        "specialization": "JEE Main Marks Booster & PYQ Priority",
+        "examTarget": [
+          "jeemain",
+          "jeeadv"
+        ],
+        "batchInfo": "Marks App / JEE Main Marks Booster",
+        "channelName": "MathonGo"
+      },
+      {
+        "id": "ak-aman-dhattarwal",
+        "name": "Aman Dhattarwal Sir",
+        "instituteId": "apni-kaksha",
+        "subject": "Physics",
+        "specialization": "CBSE Class 12 Boards & JEE Foundations",
+        "examTarget": [
+          "board12",
+          "board11",
+          "cbse27",
+          "jeemain"
+        ],
+        "batchInfo": "Apni Kaksha Board Animation Series",
+        "channelName": "Apni Kaksha"
+      },
+      {
+        "id": "sf-ashu-ghai",
+        "name": "Ashu Ghai Sir (Ashu Sir)",
+        "instituteId": "science-fun",
+        "subject": "Physics",
+        "specialization": "NCERT Class 12 Physics & Board Revision",
+        "examTarget": [
+          "board12",
+          "cbse27",
+          "board11"
+        ],
+        "batchInfo": "Science and Fun / 11th & 12th Board Series",
+        "channelName": "Science and Fun"
+      },
+      {
+        "id": "sf-ushank-sir",
+        "name": "Ushank Sir",
+        "instituteId": "science-fun",
+        "subject": "Mathematics",
+        "specialization": "Class 12 Maths NCERT & Board One-Shots",
+        "examTarget": [
+          "board12",
+          "cbse27"
+        ],
+        "batchInfo": "Class 12 Maths Marathon / NCERT",
+        "channelName": "Science and Fun"
+      }
+    ],
+    "aipChannels": {
+      "Physics": [
+        "Physics Wallah",
+        "JEE Wallah",
+        "Vedantu JEE",
+        "Unacademy JEE",
+        "eSaral",
+        "Competishun"
+      ],
+      "Chemistry": [
+        "Physics Wallah",
+        "JEE Wallah",
+        "Vedantu JEE",
+        "Unacademy JEE",
+        "eSaral",
+        "Competishun"
+      ],
+      "Mathematics": [
+        "Physics Wallah",
+        "JEE Wallah",
+        "Mohit Tyagi",
+        "Vedantu JEE",
+        "Unacademy JEE",
+        "eSaral"
+      ]
+    }
+  }
+}

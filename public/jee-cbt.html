@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <title>Someshwar JEE Main CBT Platform</title>
+    <title>NTACBT JEE CBT Platform</title>
     <meta
       name="description"
       content="Offline NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs and get a full 75-question CBT with analytics."
@@ -54,6 +54,7 @@
      accents now use the dark shade in light mode and the light shade in
      dark mode, automatically. */
         --accent-text: var(--blue-d);
+        --accent: var(--blue);
         --sub-phy: #0b57a4;
         --sub-che: #178a4c;
         --sub-mat: #6d34b8;
@@ -61,6 +62,7 @@
       }
       html.dark {
         --accent-text: var(--blue-l);
+        --accent: var(--blue-l);
         --amber-text: #e8c258;
         --sub-phy: #5aa2e8;
         --sub-che: #4cc98a;
@@ -2587,7 +2589,7 @@
         letter-spacing: -0.5px;
       }
       .yt-brand .yt-badge {
-        background: #ff0000;
+        background: linear-gradient(135deg, var(--blue), var(--blue-d));
         color: #ffffff;
         border-radius: 6px;
         padding: 3px 8px;
@@ -2596,7 +2598,7 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        box-shadow: 0 2px 6px rgba(255, 0, 0, 0.35);
+        box-shadow: 0 2px 6px rgba(242, 103, 34, 0.35);
       }
       .yt-chips {
         display: flex;
@@ -2658,7 +2660,7 @@
       .yt-thumb-wrap {
         position: relative;
         aspect-ratio: 16 / 9;
-        background: #0f172a;
+        background: linear-gradient(135deg, var(--ink-nav-a, #1b1b4b), var(--ink-nav-b, #2b2b7a));
         overflow: hidden;
       }
       .yt-thumb-img {
@@ -2674,7 +2676,7 @@
         position: absolute;
         bottom: 8px;
         right: 8px;
-        background: rgba(0, 0, 0, 0.82);
+        background: rgba(27, 27, 58, 0.85);
         color: #ffffff;
         font-size: 11px;
         font-weight: 700;
@@ -2688,8 +2690,8 @@
         bottom: 0;
         left: 0;
         height: 4px;
-        background: #ff0000;
-        box-shadow: 0 0 4px #ff0000;
+        background: linear-gradient(90deg, var(--blue), var(--blue-d));
+        box-shadow: 0 0 4px rgba(242, 103, 34, 0.55);
       }
       .yt-progress-track {
         position: absolute;
@@ -2705,7 +2707,7 @@
         justify-content: center;
         width: 14px;
         height: 14px;
-        background: #3b82f6;
+        background: var(--blue);
         color: #ffffff;
         border-radius: 50%;
         font-size: 9px;
@@ -2721,6 +2723,444 @@
         .yt-theater-grid {
           grid-template-columns: 1fr;
         }
+      }
+
+      /* ══════════════════════════════════════════════════════════
+         REAL YOUTUBE-STYLE STUDY HUB (orange platform StudyTube)
+         ══════════════════════════════════════════════════════════ */
+      .yt-app {
+        display: grid;
+        grid-template-columns: 224px 1fr;
+        gap: 20px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+        color: var(--ink);
+      }
+      .yt-sidebar {
+        background: color-mix(in srgb, var(--panel) 75%, var(--blue-soft));
+        border-right: 1px solid var(--line);
+        padding: 12px 8px;
+        min-height: 560px;
+      }
+      .yt-sb-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--ink);
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+      }
+      .yt-sb-item:hover {
+        background: var(--blue-soft);
+        color: var(--accent-text);
+      }
+      .yt-sb-item.active {
+        background: color-mix(in srgb, var(--blue) 14%, var(--panel));
+        color: var(--accent-text);
+        font-weight: 700;
+      }
+      .yt-sb-ic {
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .yt-main {
+        padding: 12px 20px 28px 0;
+        min-width: 0;
+      }
+      .yt-topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .yt-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.6px;
+        color: var(--ink);
+      }
+      .yt-logo .yt-playbox {
+        width: 34px;
+        height: 24px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--blue), var(--blue-d));
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(242, 103, 34, 0.35);
+      }
+      .yt-search-box {
+        flex: 1;
+        min-width: 220px;
+        display: flex;
+        align-items: center;
+      }
+      .yt-search-input {
+        flex: 1;
+        height: 40px;
+        border: 1px solid var(--line);
+        border-right: 0;
+        border-radius: 40px 0 0 40px;
+        padding: 0 18px;
+        font-size: 15px;
+        background: var(--bg);
+        color: var(--ink);
+        outline: none;
+        min-width: 0;
+      }
+      .yt-search-input:focus {
+        border-color: var(--blue);
+      }
+      .yt-search-btn {
+        height: 40px;
+        width: 62px;
+        border: 1px solid var(--line);
+        background: var(--blue-soft);
+        border-radius: 0 40px 40px 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .yt-search-btn:hover {
+        background: color-mix(in srgb, var(--blue-soft) 70%, var(--panel));
+        color: var(--accent-text);
+      }
+      .yt-topicon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 0;
+        background: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .yt-topicon:hover {
+        background: var(--blue-soft);
+        color: var(--accent-text);
+      }
+      .yt-chips {
+        margin-bottom: 4px;
+        padding-left: 0;
+      }
+      .yt-chip {
+        background: var(--blue-soft);
+        border-color: transparent;
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .yt-chip:hover {
+        background: color-mix(in srgb, var(--blue-soft) 70%, var(--panel));
+        color: var(--accent-text);
+        border-color: transparent;
+      }
+      .yt-chip.active {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+        box-shadow: none;
+      }
+      .yt-shelf {
+        margin-top: 22px;
+      }
+      .yt-shelf-h {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .yt-shelf-h h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .yt-shelf-h .small {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .yt-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 18px 14px;
+      }
+      /* YouTube-style card: transparent, rounded thumb, avatar + title + meta below */
+      .yt-card {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+        padding: 0;
+        cursor: pointer;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      .yt-card:hover {
+        transform: none !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+      }
+      /* PERF: hundreds of video cards — off-screen ones skip layout/paint
+         until scrolled into view (big first-paint win on long shelves). */
+      .yt-card {
+        content-visibility: auto;
+        contain-intrinsic-size: 280px 205px;
+      }
+      .yt-thumb-wrap {
+        border-radius: 12px;
+        background: var(--line);
+        box-shadow: 0 1px 2px rgba(27, 27, 58, 0.1);
+      }
+      .yt-card:hover .yt-thumb-img {
+        transform: scale(1.04);
+      }
+      .yt-thumb-img {
+        transition: transform 0.25s ease;
+      }
+      .yt-duration {
+        bottom: 8px;
+        right: 8px;
+        background: rgba(27, 27, 58, 0.85);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 2px 5px;
+        border-radius: 4px;
+        letter-spacing: 0.2px;
+      }
+      .yt-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex: none;
+      }
+      .yt-body {
+        padding: 10px 2px 0;
+        display: flex;
+        gap: 10px;
+      }
+      .yt-body-main {
+        min-width: 0;
+        flex: 1;
+      }
+      .yt-title {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.35;
+        color: var(--ink);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .yt-meta {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .yt-meta b {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .yt-ready {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+      .yt-actions {
+        margin-top: 6px;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .yt-actions .btn {
+        border: 1px solid color-mix(in srgb, var(--blue) 35%, var(--line));
+        background: var(--blue-soft);
+        color: var(--accent-text);
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 5px 10px;
+      }
+      .yt-actions .btn:hover {
+        background: color-mix(in srgb, var(--blue-soft) 70%, var(--panel));
+      }
+      .yt-more {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex: none;
+      }
+      .yt-more:hover {
+        background: var(--blue-soft);
+        color: var(--accent-text);
+      }
+      .yt-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 28px 12px;
+        color: var(--muted);
+        font-size: 14px;
+        background: var(--bg);
+        border-radius: 14px;
+        border: 1px dashed var(--line);
+      }
+      .yt-note-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .yt-note-card b {
+        color: var(--ink);
+      }
+      @media (max-width: 900px) {
+        .yt-app {
+          grid-template-columns: 1fr;
+          overflow-x: hidden;
+        }
+        .yt-sidebar {
+          display: flex;
+          overflow-x: auto;
+          gap: 4px;
+          min-height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          padding: 6px 8px;
+          overscroll-behavior-x: contain;
+        }
+        .yt-sb-item {
+          flex: none;
+          width: auto;
+          gap: 6px;
+          padding: 6px 10px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+        .yt-main {
+          padding: 8px 10px 20px;
+        }
+        /* Slideable shelves: horizontal carousel with snap. Global app-swipe
+           is disabled inside .yt-app so this scrolls smoothly. */
+        .yt-shelf .yt-grid {
+          display: flex;
+          gap: 14px;
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          scroll-snap-type: x mandatory;
+          padding: 4px 2px 8px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .yt-shelf .yt-grid::-webkit-scrollbar {
+          display: none;
+        }
+        .yt-shelf .yt-grid > .yt-card,
+        .yt-shelf .yt-grid > .yt-note-card {
+          flex: 0 0 auto;
+          width: min(250px, 72vw);
+          scroll-snap-align: start;
+        }
+        .yt-shelf .yt-grid > .yt-empty {
+          width: 100%;
+          flex: 0 0 100%;
+        }
+      }
+
+      /* ═══ DASHBOARD TODAY-AT-A-GLANCE ═══ */
+      .ov-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        align-items: stretch;
+      }
+      .ov-grid .ov-cell {
+        min-width: 0;
+      }
+      @media (max-width: 860px) {
+        .ov-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 480px) {
+        .ov-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ═══ AI PLANNER STEPPER ═══ */
+      .aip-steps {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 14px;
+        padding: 10px 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .aip-steps .st {
+        flex: 1;
+        text-align: center;
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--muted);
+        padding: 5px 2px;
+        border-radius: 8px;
+        line-height: 1.2;
+      }
+      .aip-steps .st.on {
+        background: var(--accent-text);
+        color: #fff;
+      }
+      .aip-steps .st.done {
+        color: var(--green);
+      }
+      .aip-steps .st .n {
+        display: block;
+        font-size: 12px;
       }
 
       /* ============================================================
@@ -5688,8 +6128,16 @@
     <header class="topbar">
       <div class="logo">JEE</div>
       <div class="brand">
-        Someshwar JEE Main&nbsp;<span style="opacity: 0.8; font-weight: 500">CBT Platform</span>
+        NTACBT&nbsp;<span style="opacity: 0.8; font-weight: 500">JEE CBT Platform</span>
       </div>
+      <a
+        class="iconbtn"
+        href="/app"
+        title="Open the new React Learning OS (planner, StudyTube, CBT, analytics, focus, Saarthi)"
+        style="text-decoration:none"
+      >
+        <span>🧠</span> Learning OS
+      </a>
       <div class="spacer"></div>
       <button
         class="ckbtn"
@@ -5911,6 +6359,15 @@
           <span data-ic="bulb"></span>
         </button>
         <button
+          id="aiVoiceBtn"
+          class="iconbtn"
+          type="button"
+          title="Mentor ka jawab suno (voice output)"
+          aria-label="Toggle voice output"
+        >
+          <span data-ic="volume"></span>
+        </button>
+        <button
           id="aiChatReset"
           class="iconbtn"
           type="button"
@@ -6008,7 +6465,7 @@
 
     <script>
       /* ============================================================================
-   Someshwar JEE Main CBT Platform — single file, vanilla JS.
+   NTACBT JEE CBT Platform — single file, vanilla JS.
    Sections:
      1. Utilities
       2. Storage (private progress locally + public tests in cloud storage)
@@ -6102,6 +6559,12 @@
           '<path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a2 2 0 0 0 2 4h1M17 6h3a2 2 0 0 1-2 4h-1"/>',
         medal: '<circle cx="12" cy="14" r="5"/><path d="m8.5 9.5-3-6.5H10l2 4 2-4h4.5l-3 6.5"/>',
         bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1.3-1 2.1h-5c0-.8-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/>',
+        volume:
+          '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+        cards:
+          '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M7 6V4h13a1 1 0 0 1 1 1v11h-2"/>',
+        database:
+          '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
         zap: '<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
         clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
         alarm:
@@ -6624,6 +7087,8 @@
           examDate: "",
           dailyReminder: false,
           focusGoal: 100,
+          aiVoice: false,
+          aiVoiceLang: "hi",
           strictMode: false,
           targetPercentile: null,
           examFontScale: 1,
@@ -9871,13 +10336,13 @@
         ["library", "Test Library", "library"],
         ["pyq", "PYQ Papers", "bank"],
         ["planner", "Planner", "calendar"],
-        ["youtube", "YouTube", "play"],
+        ["youtube", "StudyTube", "play"],
+        ["live", "Live Classes", "wave"],
         ["practice", "Practice", "pencil"],
         ["review", "Review", "repeat"],
         ["notebook", "Mistake Notebook", "notebook"],
         ["mastery", "Mastery", "target"],
         ["formulas", "Formulas", "formula"],
-        ["live", "Live Classes", "wave"],
         ["analytics", "Analytics", "chart"],
         ["upload", "Upload PDFs", "upload"],
         ["search", "Search", "search"],
@@ -10143,7 +10608,7 @@
             t &&
             t.closest &&
             t.closest(
-              "input,textarea,select,canvas,table,.heatgrid,.nav,.ptabs,.qtabs,.subtabs,.viewtabs,.pace-strip,.quad-wrap,[data-noswipe]",
+              "input,textarea,select,canvas,table,.heatgrid,.nav,.ptabs,.qtabs,.subtabs,.viewtabs,.pace-strip,.quad-wrap,.yt-app,[data-noswipe]",
             )
           );
         };
@@ -11344,6 +11809,23 @@
               ? AIP_DEPTHS.standard
               : AIP_DEPTHS.mastery;
       }
+      /** Hours-aware depth choice: prefers the DEEPEST mode that fits the
+       *  student's daily budget inside the chosen days. This is what makes
+       *  "30 days + more hours/day" automatically switch to best one-shots
+       *  (crash/focused = oneshot tasks = one-shot video discovery). If even
+       *  crash doesn't fit, returns feasible:false so the UI says so honestly. */
+      function aipChooseDepth(days, dailyMin, subjects, topics, speed) {
+        const order = ["mastery", "standard", "focused", "crash"];
+        for (const key of order) {
+          const D = AIP_DEPTHS[key];
+          const total = aipTotalEff(subjects, topics, speed, D);
+          const perDay = total / Math.max(1, days);
+          if (perDay <= dailyMin) return { depth: D, key, total, perDay, feasible: true };
+        }
+        const D = AIP_DEPTHS.crash;
+        const total = aipTotalEff(subjects, topics, speed, D);
+        return { depth: D, key: "crash", total, perDay: total / Math.max(1, days), feasible: false };
+      }
       const AIP_INSTITUTES = [
         { id: "physics-wallah", name: "Physics Wallah", short: "PW", icon: "⚡", subjects: ["Physics", "Chemistry", "Mathematics"] },
         { id: "unacademy", name: "Unacademy", short: "Unacademy", icon: "🎓", subjects: ["Physics", "Chemistry", "Mathematics"] },
@@ -11356,6 +11838,7 @@
         { id: "eduniti", name: "Eduniti", short: "Eduniti", icon: "⚡", subjects: ["Physics"] },
         { id: "mathongo", name: "MathonGo", short: "MathonGo", icon: "📐", subjects: ["Mathematics"] },
         { id: "apni-kaksha", name: "Apni Kaksha", short: "Apni Kaksha", icon: "📚", subjects: ["Physics", "Chemistry", "Mathematics"] },
+        { id: "science-fun", name: "Science & Fun (Ashu Sir / Ushank Sir)", short: "Science & Fun", icon: "🧪", subjects: ["Physics", "Chemistry", "Mathematics"] },
       ];
 
       const AIP_TEACHERS = [
@@ -11400,7 +11883,7 @@
         { id: "un-piyush-maheshwari", name: "Piyush Maheshwari Sir (PMS Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Inorganic Chemistry Legend", examTarget: ["jeemain", "jeeadv"], batchInfo: "Nucleus Kota HOD Series", channelName: "Unacademy JEE" },
         { id: "un-brijesh-jindal", name: "Brijesh Jindal Sir (BJ Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Physical Chemistry Legend", examTarget: ["jeemain", "jeeadv"], batchInfo: "Nucleus Kota HOD Series", channelName: "Unacademy JEE" },
         { id: "un-mka-sir", name: "Mohammad Kashif Alam Sir (MKA Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Organic Chemistry Maestro", examTarget: ["jeemain", "jeeadv"], batchInfo: "Brainanza / Master Organic", channelName: "Unacademy JEE" },
-        { id: "un-monica-bedi", name: "Monica Bedi Ma'am", instituteId: "unacademy", subject: "Chemistry", specialization: "CBSE Board 12 & NCERT One-Shots", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Shaurya Batch / Board 12 Score 100", channelName: "Unacademy Class 11 & 12" },
+        { id: "un-monica-bedi", name: "Monica Bedi Ma'am (Shaurya Mam)", instituteId: "unacademy", subject: "Chemistry", specialization: "CBSE Board 12 & NCERT One-Shots", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Shaurya Batch / Board 12 Score 100", channelName: "Unacademy Class 11 & 12" },
         { id: "un-paras-thakur", name: "Paras Thakur Sir", instituteId: "unacademy", subject: "Chemistry", specialization: "Conceptual Chemistry & Mechanisms", examTarget: ["jeemain", "board12"], batchInfo: "JEE Live Daily", channelName: "Unacademy JEE" },
         { id: "un-skm-sir", name: "Surendra K Mishra Sir (SKM Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Organic Chemistry God (Ex-Nucleus Kota)", examTarget: ["jeeadv", "jeemain"], batchInfo: "Super Achievers Advanced", channelName: "Unacademy JEE" },
         { id: "un-akk-sir", name: "Akhilesh Kanther Sir (AKK Sir)", instituteId: "unacademy", subject: "Chemistry", specialization: "Physical Chemistry Kota HOD", examTarget: ["jeeadv", "jeemain"], batchInfo: "Super Achievers Advanced", channelName: "Unacademy JEE" },
@@ -11469,7 +11952,36 @@
         { id: "eduniti-mohit-goenka", name: "Mohit Goenka Sir", instituteId: "eduniti", subject: "Physics", specialization: "Formula Checklists & PYQ Marathons", examTarget: ["jeemain", "jeeadv"], batchInfo: "Formula Checklist / Rank Booster PYQs", channelName: "Eduniti - Physics for JEE" },
         { id: "mathongo-anup-sir", name: "Anup Gupta Sir", instituteId: "mathongo", subject: "Mathematics", specialization: "JEE Main Marks Booster & PYQ Priority", examTarget: ["jeemain", "jeeadv"], batchInfo: "Marks App / JEE Main Marks Booster", channelName: "MathonGo" },
         { id: "ak-aman-dhattarwal", name: "Aman Dhattarwal Sir", instituteId: "apni-kaksha", subject: "Physics", specialization: "CBSE Class 12 Boards & JEE Foundations", examTarget: ["board12", "board11", "cbse27", "jeemain"], batchInfo: "Apni Kaksha Board Animation Series", channelName: "Apni Kaksha" },
+        // --- SCIENCE & FUN (Ashu Sir / Ushank Sir) --- BOARD-SPECIFIC CLASS 12 ---
+        { id: "sf-ashu-ghai", name: "Ashu Ghai Sir (Ashu Sir)", instituteId: "science-fun", subject: "Physics", specialization: "NCERT Class 12 Physics & Board Revision", examTarget: ["board12", "cbse27", "board11"], batchInfo: "Science and Fun / 11th & 12th Board Series", channelName: "Science and Fun" },
+        { id: "sf-ushank-sir", name: "Ushank Sir", instituteId: "science-fun", subject: "Mathematics", specialization: "Class 12 Maths NCERT & Board One-Shots", examTarget: ["board12", "cbse27"], batchInfo: "Class 12 Maths Marathon / NCERT", channelName: "Science and Fun" },
       ];
+
+      const AIP_BOARD_PRIORITY = ["sf-ashu-ghai", "un-monica-bedi", "sf-ushank-sir"];
+      function aipBoardPriority(t) {
+        return AIP_BOARD_PRIORITY.indexOf(t.id) >= 0 ? AIP_BOARD_PRIORITY.indexOf(t.id) : 99;
+      }
+
+      function aipTargetSupports(t, target) {
+        const norm = String(target || "jeemain").toLowerCase();
+        const arr = t && t.examTarget ? t.examTarget : [];
+        if (norm === "board12" || norm === "cbse27" || norm === "cbse" || norm === "board")
+          return arr.includes("board12") || arr.includes("cbse27");
+        if (norm === "board11") return arr.includes("board11");
+        if (norm === "jeeadv" || norm === "jee-advanced") return arr.includes("jeeadv");
+        return arr.includes("jeemain") || arr.includes("board12") || arr.includes("board11");
+      }
+
+      function aipFitScore(t, target) {
+        const isBoard = t.examTarget.includes("board12") || t.examTarget.includes("cbse27");
+        const isJee = t.examTarget.includes("jeemain") || t.examTarget.includes("jeeadv");
+        const norm = String(target || "jeemain").toLowerCase();
+        if (norm === "board12" || norm === "cbse27" || norm === "cbse" || norm === "board")
+          return isBoard && !isJee ? 0 : isBoard ? 1 : 2;
+        if (norm === "board11") return t.examTarget.includes("board11") && !isJee ? 0 : t.examTarget.includes("board11") ? 1 : 2;
+        if (norm === "jeeadv" || norm === "jee-advanced") return isJee && t.examTarget.includes("jeeadv") ? 0 : isJee ? 1 : 2;
+        return isJee && !isBoard ? 0 : isJee ? 1 : 2;
+      }
 
       function aipGetFaculties(instituteId, subject, examTarget) {
         let list = AIP_TEACHERS.filter((t) => t.subject === subject);
@@ -11487,8 +11999,49 @@
             return true;
           });
         }
-        return list;
+        const normT = String(examTarget || "jeemain").toLowerCase();
+        const board = normT === "board12" || normT === "cbse27" || normT === "cbse" || normT === "board";
+        return list
+          .slice()
+          .sort((a, b) => {
+            if (board) {
+              const pa = aipBoardPriority(a);
+              const pb = aipBoardPriority(b);
+              if (pa !== pb) return pa - pb;
+            }
+            return aipFitScore(a, examTarget) - aipFitScore(b, examTarget) || a.name.localeCompare(b.name);
+          });
       }
+
+      function aipInstituteHasTarget(instituteId, subject, target) {
+        return aipGetFaculties(instituteId, subject, target).length > 0;
+      }
+      function aipClearIncompatibleTeacher(w, subject, target) {
+        const id = (w.teachers || {})[subject];
+        if (!id) return;
+        const rec = AIP_TEACHERS.find((t) => t.id === id);
+        if (!rec || !aipTargetSupports(rec, target)) {
+          delete w.teachers[subject];
+          delete w.teacherNames[subject];
+        }
+      }
+      function aipOnTargetChanged(w, target) {
+        w.target = target;
+        delete w.examFilters;
+        (w.subjects || []).forEach((s) => {
+          aipClearIncompatibleTeacher(w, s, target);
+          if (w.institutes[s] && !aipInstituteHasTarget(w.institutes[s], s, target)) {
+            delete w.institutes[s];
+            delete w.channels[s];
+          }
+        });
+      }
+      function aipOnExamFilterChanged(w, subject, target) {
+        w.examFilters = w.examFilters || {};
+        w.examFilters[subject] = target;
+        aipClearIncompatibleTeacher(w, subject, target);
+      }
+
 
       const AIP_CHANNELS = {
         // popular free JEE educators on YouTube (Dream Team options)
@@ -12174,7 +12727,23 @@
         };
         const w = aiWiz,
           c = el("div", "card");
+        const STEPS = [
+          ["1", "Exam"],
+          ["2", "Chapters"],
+          ["3", "⛰️ Dream Team"],
+          ["4", "🎯 Dream Teacher"],
+          ["5", "Days \n& depth"],
+          ["6", "Budget"],
+          ["7", "Study \nstyle"],
+        ];
+        const stepBar = () =>
+          `<div class="aip-steps">${STEPS.map(([n, l], i) => {
+            const s = i + 1,
+              cls = s === w.step ? "on" : s < w.step ? "done" : "";
+            return `<span class="st ${cls}"><span class="n">${s < w.step ? "✓" : n}</span>${l.replace(/\n/g, "<br>")}</span>`;
+          }).join("")}</div>`;
         const H = (t2, s2) =>
+          stepBar() +
           `<div class="section-title"><span class="ico">${ic("spark")}</span><div><h3 style="margin:0">${t2}</h3>${s2 ? `<div class="small muted">${s2}</div>` : ""}</div></div>`;
         const nav = (back, next, nextLabel) => {
           const r = el("div", "row");
@@ -12213,7 +12782,7 @@
             const on = (w.target || "jeemain") === v;
             const b = el("button", "btn sm" + (on ? "" : " ghost"), l);
             b.onclick = () => {
-              w.target = v;
+              aipOnTargetChanged(w, v);
               render(0);
             };
             tgrid.appendChild(b);
@@ -12378,10 +12947,10 @@
           );
         }
         if (w.step === 3) {
-          // JEE-360 "Dream Team & Dream Teachers": pick institute & top faculty per subject.
+          // JEE-360 Step 3 — DREAM TEAM ONLY: choose coaching / platform (the team).
           c.innerHTML = H(
-            "Build your Dream Team & Select Dream Teachers",
-            "Choose your favourite institute and pick your <b>Dream Teacher</b> for each subject — filtered perfectly for your target exam (" +
+            "Choose your Dream Team",
+            "Pick the coaching / platform (the team) whose faculty lectures you want prioritised — filtered for your target exam (" +
               (w.target === "jeemain"
                 ? "🎯 JEE Main 2026"
                 : w.target === "jeeadv"
@@ -12391,7 +12960,7 @@
                     : w.target === "board11"
                       ? "📗 Class 11"
                       : "🎯 All Exams") +
-              "). Or keep Auto to let us pick the best verified lecture per chapter.",
+              "). Your Dream Teacher is the next step.",
           );
           w.channels = w.channels || {};
           w.institutes = w.institutes || {};
@@ -12404,14 +12973,17 @@
             sec.style.cssText =
               "margin-top:14px;padding:16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)";
 
-            // Subject Header + Active Summary Pill
-            const curTeacher = w.teachers[s] ? AIP_TEACHERS.find((t) => t.id === w.teachers[s]) : null;
+            // Subject Header + Team Summary Pill
             const curInst = w.institutes[s] ? AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) : null;
-            let statusPillHtml = `<span class="badge" style="font-size:11px;opacity:0.85">✨ Auto (Best available)</span>`;
-            if (curTeacher) {
-              statusPillHtml = `<span class="badge g" style="font-size:11px;font-weight:600">🎯 Dream Teacher: ${esc(curTeacher.name)} (${esc(curInst ? curInst.short : "Verified")})</span>`;
-            } else if (curInst) {
-              statusPillHtml = `<span class="badge" style="font-size:11px;font-weight:600">⚡ ${esc(curInst.name)} (Any Top Faculty)</span>`;
+            const selectedTeacherForTeam = w.teachers[s]
+              ? AIP_TEACHERS.find((t) => t.id === w.teachers[s])
+              : null;
+            let statusPillHtml = `<span class="badge" style="font-size:11px;opacity:0.85">✨ Auto (Best available team)</span>`;
+            if (curInst) {
+              statusPillHtml = `<span class="badge g" style="font-size:11px;font-weight:600">🏆 ${esc(curInst.name)} (${esc(curInst.short)})</span>`;
+            }
+            if (selectedTeacherForTeam) {
+              statusPillHtml += ` <span class="badge" style="font-size:11px;opacity:0.9">🎯 ${esc(selectedTeacherForTeam.name)}</span>`;
             }
 
             sec.innerHTML = `
@@ -12421,7 +12993,8 @@
                 </div>
                 ${statusPillHtml}
               </div>
-              <div style="font-size:12px;font-weight:600;margin-top:12px;margin-bottom:6px;color:var(--text-muted, #64748b)">SELECT COACHING / PLATFORM:</div>
+              <div style="margin-top:12px;font-size:12px;font-weight:800;letter-spacing:0.02em">🏆 DREAM TEAM — Coaching / Platform</div>
+              <div style="font-size:11.5px;margin-bottom:8px;color:var(--text-muted, #64748b)">Pick the team / coaching you trust most for ${s}. You will choose your favourite faculty (Dream Teacher) on the next screen.</div>
             `;
 
             // Institute button row
@@ -12472,7 +13045,128 @@
             });
             sec.appendChild(instRow);
 
-            // If an institute is selected, display TOP FACULTIES (Dream Teacher) selection block!
+            c.appendChild(sec);
+          });
+
+          // Dream Team summary (only: coaching / platform per subject)
+          const teamItems = w.subjects
+            .map((s) => {
+              const instId = w.institutes[s];
+              const inst = instId ? AIP_INSTITUTES.find((i) => i.id === instId) : null;
+              const txt = inst
+                ? `⚡ <b>${esc(inst.name)}</b> (${esc(inst.short)})`
+                : `✨ Auto (Best available)`;
+              return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span style="color:${SUBCOLOR[s]};font-weight:600">${s}:</span> <span>${txt}</span></div>`;
+            })
+            .join("");
+
+          const teamCard = el("div", "card");
+          teamCard.style.cssText = "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
+          teamCard.innerHTML = `
+            <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
+              <span>🏆</span> <span>Your Dream Team (Coaching / Platform)</span>
+            </div>
+            <div style="margin-top:8px">${teamItems}</div>
+          `;
+          c.appendChild(teamCard);
+
+          c.appendChild(
+            nav(true, () => {
+              w.step = 4;
+              render(0);
+            }, "Continue to Dream Teacher →"),
+          );
+        }
+        if (w.step === 4) {
+          // JEE-360 Step 4 — DREAM TEACHER ONLY: favourite single faculty per subject.
+          c.innerHTML = H(
+            "Choose your Dream Teacher",
+            "One favourite faculty per subject. If you picked a team, these are the top faculty from that team; if not, it shows the best available across platforms — filtered for your target (" +
+              (w.target === "jeemain"
+                ? "🎯 JEE Main 2026"
+                : w.target === "jeeadv"
+                  ? "🔥 JEE Advanced"
+                  : w.target === "board12" || w.target === "cbse27"
+                    ? "📘 Class 12 Boards"
+                    : w.target === "board11"
+                      ? "📗 Class 11"
+                      : "🎯 All Exams") +
+              ").",
+          );
+          w.channels = w.channels || {};
+          w.institutes = w.institutes || {};
+          w.teachers = w.teachers || {};
+          w.teacherNames = w.teacherNames || {};
+          w.examFilters = w.examFilters || {};
+
+          w.subjects.forEach((s) => {
+            const sec = el("div", "card");
+            sec.style.cssText =
+              "margin-top:14px;padding:16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)";
+
+            // Subject Header + Dream Teacher Summary Pill
+            const curTeacher = w.teachers[s] ? AIP_TEACHERS.find((t) => t.id === w.teachers[s]) : null;
+            const curInst = w.institutes[s] ? AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) : null;
+            let statusPillHtml = `<span class="badge" style="font-size:11px;opacity:0.85">✨ Auto (Best available)</span>`;
+            if (curTeacher) {
+              statusPillHtml = `<span class="badge g" style="font-size:11px;font-weight:600">🎯 Dream Teacher: ${esc(curTeacher.name)} (${esc(curInst ? curInst.short : "Verified")})</span>`;
+            } else if (curInst) {
+              statusPillHtml = `<span class="badge" style="font-size:11px;font-weight:600">⚡ ${esc(curInst.name)} (Any Top Faculty)</span>`;
+            }
+
+            sec.innerHTML = `
+              <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <div class="row" style="align-items:center;gap:8px">
+                  <span class="chip" style="color:${SUBCOLOR[s]};font-weight:700;font-size:13px;padding:4px 10px">${s}</span>
+                </div>
+                ${statusPillHtml}
+              </div>
+              <div style="margin-top:12px;font-size:12px;font-weight:800;letter-spacing:0.02em">🎯 DREAM TEACHER — Preferred Faculty</div>
+              <div style="font-size:11.5px;margin-bottom:8px;color:var(--text-muted, #64748b)">${
+                w.institutes[s]
+                  ? `Top ${s} faculty from ${esc((AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) || {}).name || "your team")}.`
+                  : "No team chosen yet — shown below are best available faculty across platforms. Go Back if you want to pick a team first."
+              }</div>
+            `;
+
+            // DREAM TEACHER (automatic): shown when no institute/team chosen
+            if (!w.institutes[s]) {
+              const activeExamFilter = w.examFilters[s] || w.target || "jeemain";
+              const autoTeachers = aipGetFaculties(null, s, activeExamFilter).slice(0, 8);
+              if (autoTeachers.length) {
+                const dtBox = el("div");
+                dtBox.style.cssText = "margin-top:14px;padding:14px;background:var(--bg, #f8fafc);border:1px solid var(--line);border-radius:10px";
+                const targetText = activeExamFilter === "board12" || activeExamFilter === "cbse27" ? "CBSE Class 12" : activeExamFilter === "board11" ? "CBSE Class 11" : activeExamFilter === "jeeadv" ? "JEE Advanced" : "JEE Main";
+                dtBox.innerHTML = `
+                  <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">🎯 Dream Teacher — Best for ${targetText}</div>
+                  <div class="small muted" style="margin-top:2px">Pick your favourite single ${s} teacher across platforms for this class.</div>
+                `;
+                const dtGrid = el("div", "grid");
+                dtGrid.style.cssText = "grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:10px;margin-top:10px";
+                autoTeachers.forEach((f) => {
+                  const isTeacherSelected = w.teachers[s] === f.id;
+                  const tc = el("div");
+                  let tcStyle = "padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--panel)";
+                  if (isTeacherSelected) tcStyle += ";border:1.5px solid var(--accent, #3b82f6);box-shadow:0 0 0 1px var(--accent)";
+                  tc.style.cssText = tcStyle;
+                  const bdg = (f.examTarget || []).map(function (ex) { const tag = ex === "jeemain" ? "JEE Main" : ex === "jeeadv" ? "JEE Adv" : ex === "board12" || ex === "cbse27" ? "Board 12" : "Class 11"; return `<span class="badge" style="font-size:9px;padding:2px 5px;margin-right:3px">${tag}</span>`; }).join("");
+                  tc.innerHTML = `<div style="font-weight:700;font-size:13px">${f.name}${isTeacherSelected ? " ✓" : ""}</div><div style="color:var(--accent,#3b82f6);font-size:11px;margin-top:2px">${esc(f.specialization)}</div><div class="small muted" style="font-size:11px;margin-top:4px">${esc(f.batchInfo || "")} · ${esc(f.channelName)}</div><div style="margin-top:6px">${bdg}</div>`;
+                  tc.onclick = function () {
+                    if (isTeacherSelected) {
+                      delete w.teachers[s]; delete w.teacherNames[s];
+                    } else {
+                      w.teachers[s] = f.id; w.teacherNames[s] = f.name; w.institutes[s] = f.instituteId; w.channels[s] = f.channelName || "Any";
+                    }
+                    render(0);
+                  };
+                  dtGrid.appendChild(tc);
+                });
+                dtBox.appendChild(dtGrid);
+                sec.appendChild(dtBox);
+              }
+            }
+
+            // If an institute/team is selected, show TOP FACULTIES (Dream Teacher) block
             if (w.institutes[s]) {
               const selectedInst = AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) || {
                 name: "Selected Institute",
@@ -12493,7 +13187,7 @@
                   <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
                     <span>${selectedInst.icon}</span> <span>Top Faculties of ${esc(selectedInst.name)} (${s})</span>
                   </div>
-                  <div class="small muted" style="margin-top:2px">Select your dream teacher — or leave unselected to use any top ${esc(selectedInst.name)} educator.</div>
+                  <div class="small muted" style="margin-top:2px">Select your single Dream Teacher from this team — or leave unselected to use any top ${esc(selectedInst.name)} educator.</div>
                 </div>
               `;
 
@@ -12504,6 +13198,7 @@
                 { id: "jeemain", label: "🎯 JEE Main" },
                 { id: "jeeadv", label: "🔥 JEE Adv" },
                 { id: "board12", label: "📘 Board 12" },
+                { id: "cbse27", label: "📘 CBSE 27" },
                 { id: "board11", label: "📗 Class 11" },
                 { id: "all", label: "All Faculties" },
               ];
@@ -12516,7 +13211,7 @@
                 );
                 fb.style.cssText = `font-size:11px;padding:3px 8px;height:auto;${isActive ? "font-weight:600;" : "opacity:0.75"}`;
                 fb.onclick = () => {
-                  w.examFilters[s] = opt.id;
+                  aipOnExamFilterChanged(w, s, opt.id);
                   render(0);
                 };
                 filterRow.appendChild(fb);
@@ -12531,7 +13226,7 @@
                 const emptyMsg = el(
                   "div",
                   "small muted",
-                  `No faculties listed for this exam filter in ${selectedInst.name}. Switch to "All Faculties" above or pick another platform.`,
+                  `No faculties listed for this exam filter in ${selectedInst.name}. Switch to "All Faculties" above or go back and pick another team.`,
                 );
                 emptyMsg.style.padding = "10px 0";
                 teacherBox.appendChild(emptyMsg);
@@ -12604,44 +13299,39 @@
             c.appendChild(sec);
           });
 
-          // Assembled Dream Team Summary Card
-          const summaryCard = el("div", "card");
-          summaryCard.style.cssText =
-            "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
-          const rosterItems = w.subjects
+          // Dream Teachers summary (only: preferred faculty per subject)
+          const teacherItems = w.subjects
             .map((s) => {
               const tName = w.teacherNames[s];
               const instId = w.institutes[s];
               const inst = instId ? AIP_INSTITUTES.find((i) => i.id === instId) : null;
-              let txt = `✨ Auto (Best available)`;
-              if (tName) {
-                txt = `🎯 <b>${esc(tName)}</b> (${esc(inst ? inst.short : "Verified")})`;
-              } else if (inst) {
-                txt = `⚡ <b>${esc(inst.name)}</b> (Top Faculty)`;
-              }
+              let txt = inst ? `⚡ <b>${esc(inst.short || inst.name)}</b> (Top Faculty)` : `✨ Auto (Best available)`;
+              if (tName) txt = `🎯 <b>${esc(tName)}</b> (${esc(inst ? inst.short : "Verified")})`;
               return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span style="color:${SUBCOLOR[s]};font-weight:600">${s}:</span> <span>${txt}</span></div>`;
             })
             .join("");
 
-          summaryCard.innerHTML = `
+          const teacherCard = el("div", "card");
+          teacherCard.style.cssText = "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
+          teacherCard.innerHTML = `
             <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
-              <span>🏆</span> <span>Your Assembled Dream Team</span>
+              <span>🎯</span> <span>Your Dream Teachers (Preferred Faculty)</span>
             </div>
-            <div style="margin-top:8px">${rosterItems}</div>
+            <div style="margin-top:8px">${teacherItems}</div>
             <div class="small muted" style="margin-top:8px;line-height:1.4">
               ${ic("bulb")} Dream Team & Teacher choices prioritize their lectures in your daily study tasks, while retaining smart fallbacks for any chapter not covered.
             </div>
           `;
-          c.appendChild(summaryCard);
+          c.appendChild(teacherCard);
 
           c.appendChild(
             nav(true, () => {
-              w.step = 4;
+              w.step = 5;
               render(0);
-            }),
+            }, "Continue →"),
           );
         }
-        if (w.step === 4) {
+        if (w.step === 5) {
           // JEE-360 core screen, now DEPTH-AWARE: every window shows not just the
           // hours/day cost but WHAT KIND of preparation it buys (crash one-shots
           // vs full mastery). Different timelines = genuinely different plans.
@@ -12723,12 +13413,101 @@
               w.depth = Object.keys(AIP_DEPTHS).find((k) => AIP_DEPTHS[k] === D2);
               w.dailyMin =
                 Math.ceil(aipTotalEff(w.subjects, w.topics, w.speed, D2) / w.days / 5) * 5;
-              w.step = 5;
+              w.step = 6;
               render(0);
-            }),
+            }, "Set daily budget →"),
           );
         }
-        if (w.step === 5) {
+        if (w.step === 6) {
+          // JEE-360 Step 6 — DAILY STUDY BUDGET: hours/day the student can really study.
+          // Raising the budget on a tight timeline re-resolves the mode so the plan
+          // automatically picks best one-shots + high-weightage-first.
+          c.innerHTML = H(
+            "Set your daily study budget",
+            "Honest hours/day = the single biggest lever. More hours on a tight timeline switches the plan to <b>best one-shot videos + high-weightage-first</b>; fewer hours keeps full lectures — or honestly tells you it won't fit. Target: (" +
+              (w.target === "jeemain"
+                ? "🎯 JEE Main 2026"
+                : w.target === "jeeadv"
+                  ? "🔥 JEE Advanced"
+                  : w.target === "board12" || w.target === "cbse27"
+                    ? "📘 Class 12 Boards"
+                    : w.target === "board11"
+                      ? "📗 Class 11"
+                      : "🎯 All Exams") +
+              ").",
+          );
+          const budgetOptions = [240, 300, 360, 420, 480, 600, 720];
+          if (!w.dailyBudget) {
+            const target = w.dailyMin || 360;
+            w.dailyBudget = budgetOptions.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a), budgetOptions[0]);
+          }
+          w.dailyMin = w.dailyBudget;
+          const plans = {};
+          const bgrid = el("div", "grid");
+          bgrid.style.cssText = "grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:12px";
+          budgetOptions.forEach((mins) => {
+            const res = aipChooseDepth(w.days, mins, w.subjects, w.topics, w.speed);
+            plans[mins] = res;
+            const on = w.dailyBudget === mins;
+            const hh = Math.floor(mins / 60),
+              mm = mins % 60;
+            const perHh = Math.floor(res.perDay / 60),
+              perMm = Math.round(res.perDay % 60);
+            const status = res.feasible
+              ? res.key === "mastery" || res.key === "standard"
+                ? `<span class="badge g">✅ Comfortable</span>`
+                : `<span class="badge" style="color:var(--amber);font-weight:600">⚠️ Tight but doable</span>`
+              : `<span class="badge" style="background:var(--red);color:#fff;font-weight:600">❌ Won't fit honestly</span>`;
+            const b = el("button", "optrow" + (on ? " sel" : ""));
+            b.style.cssText = "width:100%;text-align:left;cursor:pointer;margin-top:6px;padding:12px";
+            b.innerHTML = `
+              <div style="font-weight:800;font-size:14px">${hh}h${mm ? " " + mm + "m" : ""}/day</div>
+              <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="badge" style="color:${res.depth.color}">${res.depth.icon} ${res.depth.label}</span>
+                ${res.depth.kind === "oneshot" ? `<span class="badge">⚡ Best one-shots</span>` : ""}
+              </div>
+              <div class="small muted" style="margin-top:6px">Needs ~${perHh}h ${String(perMm).padStart(2, "0")}m/day · ${Math.round(res.total / 60)}h total</div>
+              <div style="margin-top:6px">${status}</div>
+              ${!res.feasible ? `<div class="small" style="color:var(--red);margin-top:4px">Even crash mode needs ${perHh}h/day — raise hours or days, or drop chapters.</div>` : ""}
+            `;
+            b.onclick = () => {
+              w.dailyBudget = mins;
+              w.dailyMin = mins;
+              w.depth = res.key;
+              render(0);
+            };
+            bgrid.appendChild(b);
+          });
+          c.appendChild(bgrid);
+
+          // Explain what the selected budget buys
+          const selMins = w.dailyBudget || 360;
+          const selRes = plans[selMins] || aipChooseDepth(w.days, selMins, w.subjects, w.topics, w.speed);
+          const Dsel = selRes.depth;
+          const dcard = el("div", "card");
+          dcard.style.cssText = "margin-top:12px;border-color:" + Dsel.color;
+          dcard.innerHTML = `
+            <b style="color:${Dsel.color}">${Dsel.icon} ${Dsel.label} MODE — ${w.days} days × ${Math.floor(selMins / 60)}h/day</b>
+            <div class="small" style="margin-top:6px;line-height:1.7">${selRes.feasible ? Dsel.hi : "This budget can't honestly finish the selected chapters in " + w.days + " days. Choose more hours, more days, or fewer chapters."}</div>
+            <div class="small muted" style="margin-top:6px">${Dsel.kind === "oneshot" ? "⚡ Videos: best one-shot lectures · " : "📹 Videos: full " + Dsel.kind + " lectures · "}✍️ practice mix: ${Dsel.prMin === 1 ? "every chapter" : Dsel.prMin === 2 ? "medium + hard" : "hard only"} · 🔁 ${Dsel.rev.length}× revision</div>
+          `;
+          if (Dsel.kind === "oneshot")
+            dcard.appendChild(
+              el("div", "small", "🎯 Best one-shot videos will be picked per chapter (target-matched, Dream Teacher/Team preferred)."),
+            );
+          c.appendChild(dcard);
+
+          c.appendChild(
+            nav(true, () => {
+              w.dailyBudget = selMins;
+              w.dailyMin = selMins;
+              w.depth = selRes.key;
+              w.step = 7;
+              render(0);
+            }, "Continue →"),
+          );
+        }
+        if (w.step === 7) {
           // JEE-360 "how do you want to study?" + language, then reality check.
           const Dw = AIP_DEPTHS[w.depth] || aipDepthFor(w.days, w.subjects, w.topics);
           const total = aipTotalEff(w.subjects, w.topics, w.speed, Dw);
@@ -13900,7 +14679,7 @@
         c.textAlign = "left";
         c.fillStyle = "rgba(255,255,255,.75)";
         c.font = "600 30px 'Nunito Sans',sans-serif";
-        c.fillText("Someshwar JEE Main CBT Platform", 60, 90);
+        c.fillText("NTACBT JEE CBT Platform", 60, 90);
         c.fillStyle = "#fff";
         c.font = "800 46px 'Nunito Sans',sans-serif";
         wrapText(c, t.name, 60, 170, W - 120, 52);
@@ -13980,7 +14759,7 @@
         c.textAlign = "center";
         c.fillStyle = "rgba(255,255,255,.45)";
         c.font = "500 22px 'Nunito Sans',sans-serif";
-        c.fillText("Made with the Eklavya/Someshwar JEE CBT platform", W / 2, H - 40);
+        c.fillText("Made with NTACBT", W / 2, H - 40);
         return new Promise((res) => cv.toBlob(res, "image/png", 0.95));
       }
       function wrapText(c, text, x, y, maxW, lh) {
@@ -14272,6 +15051,63 @@
             : "";
         return { p1, p2, p3, p4, lastAi: ai };
       }
+      /* ═══ CORE-OBJECTIVE ENGINE: syllabus coverage + exam readiness ═══
+   Directly answers "am I actually going to clear this exam?" with one
+   number built from coverage, accuracy, consistency and projected target. */
+      function syllabusStats() {
+        const target =
+          (S.aiPlanner && S.aiPlanner.profile && S.aiPlanner.profile.target) || "jeemain";
+        let syl;
+        try { syl = topicsForTarget(target); } catch (e) { syl = JEE_TOPICS; }
+        const SUB_SET = new Set(["Physics", "Chemistry", "Mathematics"]);
+        const chapterSub = {};
+        let total = 0;
+        Object.keys(syl || {}).forEach((s) => {
+          if (!SUB_SET.has(s)) return;
+          (syl[s] || []).forEach((t) => {
+            chapterSub[t[0]] = s;
+            total++;
+          });
+        });
+        const bankIdx = new Set(), touchedIdx = new Set();
+        S.tests.forEach((t) =>
+          (t.questions || []).forEach((q) => {
+            const k = q.chapter || q.subject;
+            if (chapterSub[k]) bankIdx.add(k);
+          }),
+        );
+        const accMap = {}, nMap = {};
+        S.attempts
+          .filter((a) => a.submittedAt)
+          .forEach((a) => {
+            const t = testById(a.testId);
+            if (!t) return;
+            (t.questions || []).forEach((q) => {
+              const k = q.chapter || q.subject;
+              if (!chapterSub[k]) return;
+              touchedIdx.add(k);
+              const r = a.responses[q.id] || {};
+              if (r.ans == null || r.ans === "") return;
+              accMap[k] = (accMap[k] || 0) + (isRight(q, r.ans) ? 1 : 0);
+              nMap[k] = (nMap[k] || 0) + 1;
+            });
+          });
+        let mastered = 0;
+        [...touchedIdx].forEach((k) => {
+          if (nMap[k] && pct(accMap[k], nMap[k]) >= 75) mastered++;
+        });
+        return {
+          target,
+          total,
+          bankCount: bankIdx.size,
+          touched: touchedIdx.size,
+          mastered,
+          chapterSub,
+          bankIdx,
+          touchedIdx,
+        };
+      }
+
       function viewAnalytics(root) {
         const done = S.attempts
           .filter((a) => a.submittedAt)
@@ -14339,6 +15175,99 @@
             );
           }
         }
+        /* ═══ EXAM READINESS — the honest "am I clearing the exam?" score ═══
+   One number + one click. Built from: coverage 30% · accuracy 25% ·
+   consistency 25% · projection 20%. Below it: the single highest-payoff
+   action for TODAY, not ten generic tips. */
+        try {
+          const sylS = syllabusStats();
+          const trendR = percentileTrend();
+          const targetPct = S.settings.targetPercentile;
+          const proj = trendR.projected;
+          const qGoal = Math.max(10, S.settings.dailyGoal || 20);
+          let q7 = 0, active7 = 0;
+          for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const k = todayKey(d);
+            const n = S.dailyQuestions[k] || 0;
+            q7 += n;
+            if (n > 0) active7++;
+          }
+          const covScore = sylS.total ? Math.min(100, Math.round((sylS.touched / sylS.total) * 100)) : 0;
+          const accScore = done.length
+            ? Math.round(done.slice(-5).reduce((s, a) => s + a.result.all.accuracy, 0) / Math.min(5, done.length))
+            : 0;
+          const conScore = Math.min(100, Math.round((active7 / 7) * 100));
+          const projScore = proj != null && targetPct ? Math.min(100, Math.round((proj / targetPct) * 100)) : null;
+          const rScore =
+            projScore != null
+              ? Math.round(covScore * 0.3 + accScore * 0.25 + conScore * 0.25 + projScore * 0.2)
+              : Math.round(covScore * 0.35 + accScore * 0.3 + conScore * 0.35);
+          const rlvl =
+            rScore >= 85
+              ? ["🔥", "Exam ready", "Aap target ke bahut paas ho — bas yeh pace 40 din tak pakdo."]
+              : rScore >= 70
+                ? ["💪", "On the right track", "Base strong hai. Ab sirf weak chapters ka targeted fix chahiye."]
+                : rScore >= 50
+                  ? ["🌱", "Building", "Coverage + consistency badhane par hi yeh number upar jayega."]
+                  : ["🚀", "Starting / risk", "Pehle daily goal aur ek mock. Phir yeh number khud improve hoga."];
+          const unt = sylS.total - sylS.touched;
+          let act;
+          if (!done.length)
+            act = { t: "Take your first mock", s: "Tab tak score aur readiness dono banege", p: () => go("library") };
+          else if (conScore < 50)
+            act = {
+              t: "Complete today's goal",
+              s: `${S.dailyQuestions[todayKey(Date.now())] || 0}/${qGoal} Q — consistency sabse bada lever hai`,
+              p: () => go("practice"),
+            };
+          else if (unt > 0 && sylS.touched / sylS.total < 0.5)
+            act = { t: `Cover next untouched chapter (${unt} baaki)`, s: "Syllabus gap = direct marks loss", p: () => go("youtube") };
+          else if (proj != null && targetPct && proj < targetPct)
+            act = { t: "Take one more full mock", s: `Projection ${proj} vs target ${targetPct}`, p: () => go("library") };
+          else
+            act = { t: "Fix your weakest chapter", s: "Highest-payoff practice yahi hai", p: () => go("mastery") };
+          const rc = el("div", "card");
+          rc.style.cssText =
+            "border-color:color-mix(in srgb,var(--accent-text) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent-text) 8%,var(--panel)),var(--panel))";
+          rc.innerHTML = `<div class="section-title"><span class="ico">${ic("gauge")}</span>
+      <div><h3 style="margin:0">🎯 Exam Readiness</h3>
+      <div class="small muted">Coverage 30% · accuracy 25% · consistency 25% · projection 20%. Ek number, clear answer.</div></div></div>
+      <div class="row" style="align-items:center;gap:16px;margin-top:10px">
+        <div style="position:relative;width:92px;height:92px;flex:none">
+          <svg viewBox="0 0 36 36" style="width:92px;height:92px;transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--line)" stroke-width="3.6"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="${rScore >= 70 ? "var(--green)" : rScore >= 50 ? "var(--amber)" : "var(--red)"}" stroke-width="3.6" stroke-dasharray="${rScore} 100" stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:grid;place-items:center"><b style="font-size:24px">${rScore}</b></div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="small" style="font-weight:700;font-size:16px">${rlvl[0]} ${rlvl[1]}</div>
+          <div class="small muted">${rlvl[2]}</div>
+          <div class="small muted" style="margin-top:5px">Syllabus ${sylS.touched}/${sylS.total} chapters · accuracy ${accScore}% · ${active7}/7 active days${projScore != null ? ` · proj ${proj} vs target ${targetPct}` : ""}</div>
+        </div>
+      </div>
+      <div class="bar" style="margin-top:10px;height:8px;background:var(--line);border-radius:4px;overflow:hidden"><i style="display:block;width:${covScore}%;height:100%;background:var(--blue);border-radius:4px"></i></div>
+      <div class="row" style="justify-content:space-between;margin-top:4px"><span class="small muted">Syllabus coverage</span><span class="small">${sylS.touched}/${sylS.total} chapters</span></div>
+      <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" data-act>${ic("play")} ${esc(act.t)}</button>
+        <div class="small muted" style="align-self:center">${esc(act.s)}</div>
+      </div>`;
+          rc.querySelector("[data-act]").onclick = act.p;
+          root.appendChild(rc);
+        } catch (e) {}
+
+        /* ═══ TARGET TIMELINE + COLLEGE BENCHMARK (pinned with readiness) ═══ */
+        try {
+          const tt = targetTimelineCard();
+          if (tt) root.appendChild(tt);
+        } catch (e) {}
+        try {
+          const cb = collegeBenchmarkCard();
+          if (cb) root.appendChild(cb);
+        } catch (e) {}
+
         if (!done.length) {
           root.appendChild(el("div", "card", `<p class="muted">No attempts yet.</p>`));
           return;
@@ -14739,12 +15668,84 @@
           ),
         );
 
+        /* ═══ SYLLABUS COVERAGE — direct link between syllabus & score ═══ */
+        try {
+          const sylS = syllabusStats();
+          if (sylS.total) {
+            const cov = el("div", "card");
+            const subJee = ["Physics", "Chemistry", "Mathematics"];
+            const rows = subJee.map((sub) => {
+              const all = Object.entries(sylS.chapterSub).filter(([, v]) => v === sub);
+              const total2 = all.length;
+              const done2 = all.filter(([k]) => sylS.touchedIdx.has(k)).length;
+              return { sub, total: total2, done: done2 };
+            });
+            const remaining = [...sylS.bankIdx].filter((k) => !sylS.touchedIdx.has(k));
+            const nextCh = remaining[0] || null;
+            cov.innerHTML = `<div class="section-title"><span class="ico">${ic("book")}</span>
+        <div><h3 style="margin:0">Syllabus Coverage</h3>
+        <div class="small muted">Direct link: jitne chapters tumne actually attempt kiye, full ${sylS.target.toUpperCase()} syllabus ke against. Bank me ${sylS.bankCount}/${sylS.total} chapters ka data hai.</div></div></div>
+        <div class="grid g4" style="margin-top:10px">
+          ${statCard("Covered", sylS.touched)}
+          ${statCard("Mastered ≥75%", sylS.mastered)}
+          ${statCard("Remaining", sylS.total - sylS.touched)}
+          ${statCard("Bank", sylS.bankCount + "/" + sylS.total)}
+        </div>
+        ${rows
+          .map(
+            (r) => `<div style="margin-top:12px">
+          <div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="small" style="font-weight:700">${r.sub}</span><span class="small muted">${r.done}/${r.total} chapters</span></div>
+          <div class="bar"><i style="width:${r.total ? pct(r.done, r.total) : 0}%;background:${SUBCOLOR[r.sub] || "var(--blue)"}"></i></div>
+        </div>`,
+          )
+          .join("")}
+        <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" data-coverNext>${nextCh ? ic("zap") + " Cover next: " + esc(nextCh).slice(0, 40) : ic("check") + " Saare bank chapters touched"}</button>
+          <button class="btn sm ghost" data-goYt>${ic("play")} StudyTube syllabus</button>
+        </div>`;
+            cov.querySelector("[data-coverNext]").onclick = () => {
+              if (!nextCh) {
+                go("youtube");
+                return;
+              }
+              const pool = [];
+              const seen = new Set();
+              S.tests.forEach((t) =>
+                (t.questions || []).forEach((q) => {
+                  if (seen.has(q.id)) return;
+                  if ((q.chapter || q.subject) !== nextCh) return;
+                  seen.add(q.id);
+                  pool.push({ q });
+                }),
+              );
+              if (pool.length)
+                startDrill(
+                  nextCh + " · Coverage",
+                  pool.sort(() => Math.random() - 0.5).slice(0, 10),
+                  100,
+                );
+              else toast("Is chapter ke questions locally nahi mile — StudyTube se concept pick karo", 3000);
+            };
+            cov.querySelector("[data-goYt]").onclick = () => go("youtube");
+            root.appendChild(cov);
+          }
+        } catch (e) {}
+
+        /* ═══ CONSISTENCY HEATMAP (habits tab) ═══ */
+        try {
+          const hm2 = studyHeatmapCard();
+          if (hm2) root.appendChild(hm2);
+        } catch (e) {}
+
         /* ── organize the page: pinned coach summary + readiness, then tabs ── */
         organizeIntoTabs(root, "jeecbt.tab.analytics", {
           pin: (node, txt) =>
             txt.includes("Analytics Dashboard") ||
             txt.includes("Coach's summary") ||
-            txt.includes("Current Percentile"),
+            txt.includes("Current Percentile") ||
+            txt.includes("Exam Readiness") ||
+            txt.includes("Target Timeline") ||
+            txt.includes("College Benchmark"),
           assign: (node, txt) => {
             if (
               txt.includes("Percentile Trajectory") ||
@@ -14756,10 +15757,12 @@
               return "trends";
             if (txt.includes("Subject Evolution") || txt.includes("Subject Wise Average"))
               return "subjects";
+            if (txt.includes("Consistency Heatmap")) return "consistency";
             if (
               txt.includes("Speed × Accuracy") ||
               txt.includes("Chapter Wise Accuracy") ||
               txt.includes("Weakness Heatmap") ||
+              txt.includes("Syllabus Coverage") ||
               txt.includes("Fix these first")
             )
               return "chapters";
@@ -14771,12 +15774,243 @@
             { id: "trends", label: ic("trendup") + " Trends" },
             { id: "subjects", label: ic("chart") + " Subjects" },
             { id: "chapters", label: ic("target") + " Chapters" },
+            { id: "consistency", label: ic("calendar") + " Consistency" },
             { id: "mistakes", label: ic("dna") + " Mistakes" },
           ],
         });
       }
 
       /* ------------------------------- PRACTICE -------------------------------- */
+      /* ═══ ADAPTIVE MOCK BUILDER — real error-pattern targeting ═══
+   ~60% weakest chapters + ~30% rest + fill from mistakes, in exam-like
+   timing. One tap → a practice paper that's actually YOUR paper. */
+      function adaptiveMockItems(n) {
+        n = Math.max(10, n || 25);
+        const seen = new Set(),
+          out = [];
+        const add = (arr, cap) => {
+          let c = 0;
+          const a = (arr || []).slice().sort(() => Math.random() - 0.5);
+          for (const x of a) {
+            if (c >= cap) break;
+            const q = x.q || x;
+            if (seen.has(q.id) || !validQuestion(q)) continue;
+            seen.add(q.id);
+            out.push({ q });
+            c++;
+          }
+        };
+        let weak = [];
+        try {
+          weak = chapterPriorities()
+            .slice(0, 6)
+            .map((p) => p.name);
+        } catch (e) {}
+        const all = [];
+        S.tests.forEach((t) => (t.questions || []).forEach((q) => all.push({ q })));
+        const w = all.filter((x) => weak.includes(x.q.chapter || x.q.subject));
+        const rest = all.filter((x) => !weak.includes(x.q.chapter || x.q.subject));
+        add(w, Math.round(n * 0.6));
+        add(rest, Math.round(n * 0.3));
+        try {
+          add(wrongQuestions().map((x) => ({ q: x.q })), n - out.length);
+        } catch (e) {}
+        add(rest, n - out.length);
+        return out;
+      }
+      /* ═══ FORMULA FLASHCARDS — front: topic, back: formula. Revise the sheet
+   in recall mode instead of just reading it (research: active recall wins). */
+      function flashcardsOpen(subject) {
+        const deck = [];
+        (FORMULAS[subject] || []).forEach(([k, v]) => deck.push({ k, v }));
+        if (!deck.length) {
+          toast("Is subject me flashcards nahi mile");
+          return;
+        }
+        let i = 0,
+          reveal = false,
+          known = 0,
+          again = 0;
+        const m = el("div", "modal");
+        m.setAttribute("data-static", "1");
+        m.innerHTML = `<div class="box" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div><h3 style="margin:0">🃏 ${esc(subject)} Flashcards</h3>
+      <div class="small muted">Front = topic, Back = formula. Pehle khud yaad karo, phir flip.</div></div>
+      <button class="iconbtn" data-x style="font-size:16px">✕</button>
+    </div>
+    <div class="small muted" data-count style="margin-bottom:8px"></div>
+    <div data-card style="min-height:180px;flex:1;border:1px solid var(--line);border-radius:14px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,.06);cursor:pointer"></div>
+    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      <button class="btn sm ghost" data-not>🔁 Again</button>
+      <button class="btn sm" data-yes>✅ Yad tha</button>
+      <button class="btn sm" data-flip>↔️ Flip</button>
+    </div>
+  </div>`;
+        document.body.appendChild(m);
+        const card = m.querySelector("[data-card]"),
+          cnt = m.querySelector("[data-count]"),
+          flip = () => {
+            reveal = !reveal;
+            draw();
+          };
+        const draw = () => {
+          if (i >= deck.length) {
+            cnt.textContent = "Done! " + known + " yaad · " + again + " dobara";
+            card.innerHTML = `<div style="font-size:34px">${ic("medal")}</div><b style="margin-top:8px">Round complete</b>
+        <div class="small muted">Achha! Ab jo 'Again' the unhe turant ek aur baar dekho — memory lock karne ke liye.</div>
+        <button class="btn sm" style="margin-top:12px" data-restart>🔄 Restart</button>`;
+            card.querySelector("[data-restart]").onclick = () => {
+              i = 0;
+              known = 0;
+              again = 0;
+              draw();
+            };
+            return;
+          }
+          const c = deck[i];
+          cnt.textContent = "Card " + (i + 1) + " / " + deck.length;
+          card.innerHTML = reveal
+            ? `<div class="small muted">${esc(c.k)}</div><b style="font-size:20px;margin-top:8px">${esc(c.v)}</b><div class="small muted" style="margin-top:10px">${ic("check")} formula — khud likh ker dekho</div>`
+            : `<div class="small muted">Topic · tap to reveal</div><b style="font-size:22px;margin-top:8px">${esc(c.k)}</b><div class="small muted" style="margin-top:10px">pehle formula yaad karo, phir flip</div>`;
+        };
+        card.onclick = flip;
+        m.querySelector("[data-flip]").onclick = flip;
+        m.querySelector("[data-x]").onclick = () => m.remove();
+        m.querySelector("[data-yes]").onclick = () => {
+          if (!reveal) flip();
+          known++;
+          i++;
+          reveal = false;
+          draw();
+        };
+        m.querySelector("[data-not]").onclick = () => {
+          if (!reveal) flip();
+          again++;
+          i++;
+          reveal = false;
+          draw();
+        };
+        draw();
+      }
+      /* ═══ STREAK BANK — freeze tokens protect the streak on off-days ═══ */
+      function streakBank() {
+        const b = S.streakBank || (S.streakBank = { tokens: 0, used: 0, day: todayKey(Date.now()) });
+        if (b.day !== todayKey(Date.now())) {
+          b.day = todayKey(Date.now());
+          b.usedToday = false;
+        }
+        // earn roughly 1 token per 2 active days in 14-day window (cap 7)
+        let active = 0;
+        for (let i = 0; i < 14; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          if (S.studyLog[todayKey(d.getTime())] || S.dailyQuestions[todayKey(d.getTime())]) active++;
+        }
+        b.tokens = Math.max(b.tokens, Math.min(7, Math.floor(active / 2)));
+        b.used = b.used || 0;
+        return b;
+      }
+      function streakBankCard() {
+        const b = streakBank();
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("flame")}</span>
+      <div><h3 style="margin:0">Streak Bank</h3>
+      <div class="small muted">Freeze tokens — ek din chhute to streak tootne nahi dete. Har 2 active din par 1 token (max 7).</div></div>
+      <span class="pill g">${b.tokens - (b.used || 0)} left</span></div>
+      <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+        <button class="btn sm ghost" data-conflict>Iss question ki jado</button>
+        <button class="btn sm ghost" data-use ${b.usedToday ? "disabled" : ""}>${b.usedToday ? "🛡️ Aaj freeze use ho gaya" : "🛡️ Aaj freeze use karo"}</button>
+      </div>`;
+        c.querySelector("[data-use]").onclick = () => {
+          if (b.tokens - (b.used || 0) <= 0) {
+            toast("Aaj koi token nahi bacha — ek active din aur.");
+            return;
+          }
+          if (b.usedToday) return;
+          b.used = (b.used || 0) + 1;
+          b.usedToday = true;
+          save();
+          toast("🛡️ Aaj ki streak freeze ho gayi (0 questions ke saath bhi streak safe)");
+          render(0);
+        };
+        c.querySelector("[data-conflict]").style.display = "none";
+        return c;
+      }
+      /* ═══ BACKUP & SYNC (local-first, honest) — export/import/code ═══ */
+      function backupPayload() {
+        return JSON.stringify({ v: 1, savedAt: Date.now(), state: S });
+      }
+      function backupFileName() {
+        return "ntacbt-backup-" + todayKey(Date.now()) + ".json";
+      }
+      function downloadBackup() {
+        const blob = new Blob([backupPayload()], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = backupFileName();
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast("Backup download ho gaya ✅");
+      }
+      function importBackupText(txt) {
+        try {
+          const data = JSON.parse(txt);
+          const st = data && data.state;
+          if (!st || !Array.isArray(st.attempts) || !Array.isArray(st.tests)) throw new Error("bad");
+          const incoming = st;
+          const mine = S.attempts.filter((a) => a.submittedAt).length;
+          const theirs = (incoming.attempts || []).filter((a) => a && a.submittedAt).length;
+          if (theirs < mine) {
+            toast("Aapke paas is se naya data hai — kuch overwrite nahi hua.");
+            return false;
+          }
+          S = Object.assign({}, S, incoming);
+          S.settings = Object.assign({}, DEFAULT.settings, incoming.settings || {});
+          save();
+          render(0);
+          toast("Backup restored ✅ (" + theirs + " attempts)");
+          return true;
+        } catch (e) {
+          toast("Invalid backup file");
+          return false;
+        }
+      }
+      function importBackupFile(file) {
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = () => importBackupText(String(r.result || ""));
+        r.onerror = () => toast("File read nahi ho paya");
+        r.readAsText(file);
+      }
+      async function copyBackupCode() {
+        const code = encodeURIComponent(backupPayload());
+        try {
+          await navigator.clipboard.writeText(code);
+          toast("Backup code copied ✅ kisi bhi device me Import se paste karo");
+        } catch (e) {
+          window.prompt("Copy karo (backup code):", code);
+        }
+      }
+      /* ═══ SAARTHI VOICE OUTPUT 🇮🇳 — mentor ko sunna bhi (Web Speech) ═══ */
+      function speakSaarthi(text) {
+        try {
+          if (!window.speechSynthesis || !text) return;
+          if (!S.settings || !S.settings.aiVoice) return;
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text.replace(/[*_`#>]/g, "").slice(0, 500));
+          const voices = window.speechSynthesis.getVoices();
+          const hi = voices.find((v) => /hi-IN/i.test(v.lang));
+          const en = voices.find((v) => /en-IN/i.test(v.lang));
+          u.lang = (S.settings.aiVoiceLang === "hi" && hi) ? "hi-IN" : en ? "en-IN" : "en-US";
+          u.rate = 1.05;
+          u.pitch = 1;
+          if (hi && S.settings.aiVoiceLang === "hi") u.voice = hi;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
       function collectQuestions(kind) {
         const out = [];
         const seen = new Set();
@@ -15127,6 +16361,120 @@
     <div class="muted small">Auto-generated revision papers built from your own history.</div>`,
           ),
         );
+        // ── ADAPTIVE MOCK BUILDER — exam-like paper from YOUR weak chapters ──
+        (() => {
+          const mc = el("div", "card");
+          mc.style.borderColor = "color-mix(in srgb,var(--accent-text) 40%,var(--line))";
+          mc.innerHTML = `<div class="section-title"><span class="ico">${ic("zap")}</span>
+        <div><h3 style="margin:0">⚙️ Adaptive Mock Builder</h3>
+        <div class="small muted">~60% weakest chapters · ~30% rest · mistakes se fill. Exam jaisa timing (60s/question) — sirf tumhare data se.</div></div>
+        <span class="pill n">25 Q</span></div>
+        <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" data-am>${ic("play")} Build my adaptive mock →</button>
+          <button class="btn sm ghost" data-am10>10-Q quick sprint</button>
+        </div>`;
+          mc.querySelector("[data-am]").onclick = () => {
+            const items = adaptiveMockItems(25);
+            if (!items.length) toast("Aapke data se questions nahi bane — pehle library se paper download karo.");
+            else startDrill("Adaptive Mock · " + fmtDate(Date.now()), items, 60);
+          };
+          mc.querySelector("[data-am10]").onclick = () => {
+            const items = adaptiveMockItems(10);
+            if (!items.length) toast("Aapke data se questions nahi bane — pehle library se paper download karo.");
+            else startDrill("Adaptive Sprint · " + fmtDate(Date.now()), items, 50);
+          };
+          root.appendChild(mc);
+        })();
+
+        // ── Empty-bank rescue: practice needs at least one paper in the bank.
+        //    Download a baked PYQ paper in one tap (or automatically) so the
+        //    section never dead-ends. It fills the bank WITHOUT starting the exam.
+        if (allUniqueQuestions().length === 0) {
+          const fp = el("div", "card");
+          fp.style.borderColor = "var(--accent-text)";
+          fp.innerHTML = `<div class="section-title"><span class="ico">${ic("bank")}</span>
+      <div><h3 style="margin:0">📥 Pehle ek paper download karo</h3>
+      <div class="small muted">Question bank abhi khali hai — practice isi se banti hai. Ek official-style JEE Main PYQ paper download karte hi Smart Practice, sectional aur speed drill unlock ho jayenge.</div></div></div>`;
+          const fb = el("button", "btn sm", ic("download") + " Load a 2026 PYQ paper");
+          fb.style.marginTop = "10px";
+          const loadPracticeBank = async () => {
+            fb.disabled = true;
+            fb.innerHTML = ic("clock") + " Loading paper bank…";
+            try {
+              await pyqLoadIndex(true);
+              const meta = (pyqState.index || []).find((p) => !p.user);
+              if (!meta) {
+                toast("PYQ library khali hai — thodi der baad try karo.");
+                fb.disabled = false;
+                fb.innerHTML = ic("download") + " Load a 2026 PYQ paper";
+                return;
+              }
+              // already in bank? (e.g. a second render) — just refresh the page
+              if (allUniqueQuestions().length === 0) {
+                let data = null;
+                try {
+                  const rs = await fetch("/pyq/" + encodeURIComponent(meta.id) + ".json");
+                  if (rs.ok) data = await rs.json().catch(() => null);
+                } catch (e) {}
+                if (!data || !data.paper) {
+                  const r = await fetch(
+                    "/api/public/pyq-papers?paper=" + encodeURIComponent(meta.id),
+                  );
+                  data = await r.json().catch(() => null);
+                }
+                const qs = data && data.paper && data.paper.questions;
+                if (!qs || !qs.length) {
+                  toast("Paper download nahi hua — connection check karo.");
+                  fb.disabled = false;
+                  fb.innerHTML = ic("download") + " Load a 2026 PYQ paper";
+                  return;
+                }
+                const durMin = qs.length >= 70 ? 180 : Math.max(30, Math.round(qs.length * 2.4));
+                const t = {
+                  id: uid(),
+                  name: "JEE Main " + meta.year + " · " + meta.label,
+                  createdAt: Date.now(),
+                  date: new Date().toISOString(),
+                  duration: durMin * 60,
+                  questions: qs.map((q, i) => ({
+                    id: meta.id + "-q" + (i + 1),
+                    no: q.no,
+                    index: i,
+                    subject: q.subject,
+                    chapter: q.chapter || "",
+                    topic: q.topic || "",
+                    type: q.type,
+                    text: q.text,
+                    options: (q.options || []).map((o) => ({ label: o.label, text: o.text })),
+                    answer: q.answer,
+                    ...(q.accept ? { accept: q.accept } : {}),
+                    solText: q.sol || "",
+                  })),
+                  chapter: {},
+                  pyqId: meta.id,
+                  pyq: true,
+                };
+                S.tests.push(t);
+                save();
+                toast("✅ Paper bank ready — Smart Practice unlock ho gaya!");
+              }
+              // refresh this page so every drill/button now has questions
+              setTimeout(() => {
+                if (route === "practice") render(0);
+              }, 60);
+            } catch (e) {
+              toast("Paper load nahi hua — connection check karo.");
+              fb.disabled = false;
+              fb.innerHTML = ic("download") + " Load a 2026 PYQ paper";
+            }
+          };
+          fb.onclick = loadPracticeBank;
+          fp.appendChild(fb);
+          root.appendChild(fp);
+          // Auto-load once: the user just opened Practice with an empty bank, so
+          // fetch the baked paper for them and refresh the section when done.
+          setTimeout(loadPracticeBank, 180);
+        }
 
         // ── Target-marks planner: kitne questions attempt karne hain target hits ──
         (() => {
@@ -15399,7 +16747,7 @@
     <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:12px">
       <div style="min-width:0;flex:1">
         <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
-          <span style="background:#ff0000;color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;letter-spacing:0.3px">▶ STUDYTUBE</span>
+          <span style="background:var(--blue);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;letter-spacing:0.3px">▶ STUDY<span style="color:#ffe3d2">TUBE</span></span>
           ${subject ? `<span class="chip" style="color:${SUBCOLOR[subject] || "var(--accent-text)"}">${esc(subject)}</span>` : ""}
           ${topic ? `<span class="chip">${esc(topic)}</span>` : ""}
           <span class="chip" style="background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3)">✓ 100% Syllabus Verified</span>
@@ -15428,7 +16776,7 @@
         <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
           <button class="btn ghost sm" data-save>${saved ? "💔 Remove Saved" : "❤️ Save Playlist"}</button>
           <button class="btn ghost sm" data-wl>${ytWatchLater().some((x) => x.id === v.id) ? "⏳ Remove Queue" : "⏳ Watch Later"}</button>
-          ${topic ? `<button class="btn sm" style="background:#2563eb;color:#fff;font-weight:700" data-practice>✍️ Solve 10 PYQs on this Chapter →</button>` : ""}
+          ${topic ? `<button class="btn sm" style="background:var(--blue);color:#fff;font-weight:700" data-practice>✍️ Solve 10 PYQs on this Chapter →</button>` : ""}
         </div>
         <div class="small muted" style="margin-top:8px">🛡️ Zero clickbait, zero toxic comments. Only pure concept clarity & Kota problem techniques.</div>
       </div>
@@ -15462,7 +16810,7 @@
             <div class="small" style="font-weight:700;color:var(--accent-text)">🎯 Available in 11,392 PYQ Bank:</div>
             <div class="small muted" style="margin-top:4px">JEE Main 2019-2025 past papers & chapter-wise high-yield questions.</div>
           </div>
-          <button class="btn sm" style="width:100%;background:#2563eb;color:#fff;padding:10px;font-weight:700" data-practice-tab>🚀 Launch 10-Question Drill Now</button>
+          <button class="btn sm" style="width:100%;background:var(--blue);color:#fff;padding:10px;font-weight:700" data-practice-tab>🚀 Launch 10-Question Drill Now</button>
         </div>
 
         <!-- TAB 3: FACULTY DOSSIER -->
@@ -15470,7 +16818,7 @@
           <div class="small" style="font-weight:700;margin-bottom:6px">🎓 Verified Educator Profile</div>
           <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
             <div class="row" style="gap:10px;align-items:center;margin-bottom:8px">
-              <div style="width:40px;height:40px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">
+              <div style="width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">
                 ${esc((teacherName[0] || "T").toUpperCase())}
               </div>
               <div>
@@ -15482,7 +16830,7 @@
               <b>Pedagogy & Coverage:</b> Complete chapter derivation, exam-tested shortcuts, and 100% syllabus alignment for JEE Main / Advanced & Board exams.
             </div>
             <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
-              <span class="chip" style="background:rgba(59,130,246,0.1);color:#3b82f6">Kota Standard</span>
+              <span class="chip" style="background:rgba(242,103,34,0.1);color:var(--accent-text)">Kota Standard</span>
               <span class="chip" style="background:rgba(34,197,94,0.1);color:var(--green)">100% Derivations</span>
               <span class="chip">Zero Missing Topics</span>
             </div>
@@ -15673,55 +17021,85 @@
         }
       }
 
-      /* ═══ MODERN YOUTUBE-STYLE VIDEO CARD ═══ */
+            /* ═══ MODERN YOUTUBE-STYLE VIDEO CARD ═══ */
+      function ytIsRealId(id) {
+        return /^[A-Za-z0-9_-]{11}$/.test(id || "");
+      }
+      function ytOfflinePicks(topic, subject, lang, target, channel) {
+        const q = `${topic || subject || "Physics"} ${subject || ""} ${channel || ""}`.trim();
+        const ext = "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+        const subColor = SUBCOLOR[subject] || "var(--blue)";
+        const labels = [
+          [topic || subject, "Full chapter lecture", 150],
+          [topic || subject, "One-shot revision", 55],
+          [topic || subject, "PYQ + MCQ practice", 90],
+          [topic || subject, "Board-level explanation", 60],
+          [topic || subject, "Advanced / tough problems", 95],
+        ];
+        return labels.map(([tp, label, min], i) => ({
+          id: "st-" + i + "-" + Math.random().toString(36).slice(2, 8),
+          title: `${tp} — ${label}`,
+          channel: channel || "Top Verified Educator",
+          durationSec: min * 60,
+          subject: subject,
+          topic: tp,
+          externalUrl: ext,
+          offline: true,
+          color: subColor,
+          why: "Offline StudyTube pick — opens a targeted verified-educator search (network unreachable right now).",
+        }));
+      }
+      function ytAvatarColor(name) {
+        let h = 0;
+        for (let i = 0; i < String(name).length; i++) h = (h * 31 + String(name).charCodeAt(i)) % 360;
+        return "hsl(" + h + " 55% 42%)";
+      }
       function ytVideoCard(v, ctx) {
         const prog = vwProgress(v.id);
         const card = el("div", "yt-card");
         const teacherName = v.teacher || v.channel || "Top Educator";
         const topic = (ctx && ctx.topic) || v.topic || "";
         const subject = (ctx && ctx.subject) || v.subject || "";
-        const subColor = SUBCOLOR[subject] || "var(--blue)";
+        const subColor = v.color || SUBCOLOR[subject] || "var(--blue)";
+        const real = ytIsRealId(v.id);
+        const avatarBg = ytAvatarColor(teacherName);
+        const thumb = real
+          ? `<img loading="lazy" decoding="async" class="yt-thumb-img" src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" onerror="this.src='https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg'" alt="${esc(v.title)}">`
+          : `<div class="yt-thumb-img" style="width:100%;height:100%;display:flex;align-items:flex-end;padding:12px;background:linear-gradient(135deg, ${subColor} 0%, var(--ink-nav-b, #2b2b7a) 100%);color:#fff"><b style="font-size:15px;line-height:1.35">${esc(topic || v.title)}</b></div>`;
 
         card.innerHTML = `
-    <div class="yt-thumb-wrap">
-      <img loading="lazy" class="yt-thumb-img" src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" onerror="this.src='https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg'" alt="${esc(v.title)}">
+    <div class="yt-thumb-wrap" data-open>
+      ${thumb}
       ${v.durationSec ? `<div class="yt-duration">${fmtTime(v.durationSec)}</div>` : ""}
-      ${prog && prog.pct ? `
-        <div class="yt-progress-track">
-          <div class="yt-progress-bar" style="width:${Math.min(100, prog.pct)}%"></div>
-        </div>
-      ` : ""}
-      ${prog && prog.done ? `<div style="position:absolute;top:8px;left:8px;background:rgba(34,197,94,0.92);color:#fff;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:4px">✓ COMPLETED</div>` : ""}
+      ${prog && prog.pct ? `<div class="yt-progress-track"><div class="yt-progress-bar" style="width:${Math.min(100, prog.pct)}%"></div></div>` : ""}
+      ${prog && prog.done ? `<div style="position:absolute;top:8px;left:8px;background:rgba(34,197,94,0.92);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px">✓ COMPLETED</div>` : ""}
     </div>
-    <div style="padding:12px;display:flex;flex-direction:column;flex:1">
-      <div class="row" style="gap:6px;align-items:center;margin-bottom:6px">
-        ${subject ? `<span class="chip" style="font-size:10.5px;color:${subColor}">${esc(subject)}</span>` : ""}
-        ${topic ? `<span class="chip" style="font-size:10.5px">${esc(topic.slice(0, 18))}</span>` : ""}
-        <span class="chip" style="font-size:10px;background:rgba(59,130,246,0.1);color:#3b82f6;border-color:rgba(59,130,246,0.25)">Kota Verified</span>
-      </div>
-      <b style="font-size:13.5px;line-height:1.35;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(v.title)}</b>
-      <div class="row" style="gap:6px;align-items:center;margin-top:auto">
-        <div style="width:24px;height:24px;border-radius:50%;background:${subColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:none">
-          ${esc((teacherName[0] || "T").toUpperCase())}
-        </div>
-        <div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">
-          <b>${esc(teacherName)}</b> <span class="yt-verified-badge" title="Verified Faculty">✓</span>
+    <div class="yt-body">
+      <span class="yt-avatar" style="background:${avatarBg}">${esc((teacherName[0] || "T").toUpperCase())}</span>
+      <div class="yt-body-main">
+        <div class="yt-title" title="${esc(v.title)}">${esc(v.title)}</div>
+        <div class="yt-meta"><b>${esc(teacherName)}</b>${v.channel || v.teacher ? " · " + esc(v.channel || v.teacher) : ""}${subject ? " · " + esc(subject) : ""}${topic ? " · " + esc(topic.slice(0, 34)) : ""}</div>
+        ${v.why ? `<div class="yt-ready">💡 ${esc(v.why)}</div>` : ""}
+        <div class="yt-actions">
+          <button class="btn" data-open>${real ? "▶ Watch" : "🔍 Find on YouTube"}</button>
+          ${real ? `<button class="btn" data-wl title="Watch Later">⏳ Save</button>` : ""}
+          ${topic ? `<button class="btn" data-pyq>✍️ PYQs</button>` : ""}
         </div>
       </div>
-      <div class="row" style="margin-top:10px;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
-        <button class="btn ghost sm" style="flex:1;font-size:11.5px;padding:4px 6px" data-play>▶ Watch</button>
-        ${topic ? `<button class="btn ghost sm" style="flex:1;font-size:11.5px;padding:4px 6px;color:#2563eb" data-pyq>✍️ PYQs</button>` : ""}
-        <button class="btn ghost sm" style="padding:4px 8px;font-size:11.5px" data-wl title="Watch Later">⏳</button>
-      </div>
+      ${real ? `<button class="yt-more" data-wl title="Watch Later">⋮</button>` : ""}
     </div>`;
 
-        card.querySelector("[data-play]").onclick = (e) => {
+        card.querySelector("[data-open]").onclick = (e) => {
           e.stopPropagation();
-          ytPlay(v, ctx);
+          if (real) ytPlay(v, ctx);
+          else window.open(v.externalUrl || "", "_blank", "noopener,noreferrer");
         };
-        card.querySelector(".yt-thumb-wrap").onclick = () => ytPlay(v, ctx);
+        card.querySelector(".yt-thumb-wrap").onclick = (e) => {
+          if (real) ytPlay(v, ctx);
+          else window.open(v.externalUrl || "", "_blank", "noopener,noreferrer");
+        };
         const pyqBtn = card.querySelector("[data-pyq]");
-        if (pyqBtn) {
+        if (pyqBtn)
           pyqBtn.onclick = (e) => {
             e.stopPropagation();
             ytPlay(v, ctx);
@@ -15730,13 +17108,13 @@
               if (modalPractice) modalPractice.click();
             }, 50);
           };
-        }
-        card.querySelector("[data-wl]").onclick = (e) => {
-          e.stopPropagation();
-          const added = ytWatchLaterToggle(v, ctx || {});
-          toast(added ? "Added to Watch Later queue" : "Removed from queue");
-        };
-
+        card.querySelectorAll("[data-wl]").forEach((b) => {
+          b.onclick = (e) => {
+            e.stopPropagation();
+            const added = ytWatchLaterToggle(v, ctx || {});
+            toast(added ? "Added to Watch Later queue" : "Removed from queue");
+          };
+        });
         return card;
       }
 
@@ -15752,473 +17130,304 @@
           board11: "Class 11 Foundation",
         }[target] || "JEE Main 2026";
 
-        // ── 1. STUDYTUBE HEADER WITH SELECTION GUARANTEE ──
-        const headerCard = el("div", "card");
-        headerCard.style.cssText = "padding:16px 20px;border-left:4px solid #ff0000;background:var(--panel)";
-        headerCard.innerHTML = `
-    <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-      <div class="yt-brand">
-        <span class="yt-badge">▶ STUDYTUBE</span>
-        <span>YouTube for Serious Aspirants</span>
-      </div>
-      <div class="row" style="gap:8px;align-items:center">
-        <span class="chip" style="background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3);font-weight:700">
-          🛡️ 0% Distraction · 100% Syllabus Aligned
-        </span>
-        <span class="chip" style="background:rgba(59,130,246,0.12);color:#3b82f6;font-weight:700">
-          🎯 ${esc(targetLabel)}
-        </span>
-      </div>
+        const wrap = el("div", "yt-app");
+        wrap.style.cssText = "width:100%";
+
+        // ── 1. SIDEBAR (YouTube left rail) ──
+        const sb = el("div", "yt-sidebar");
+        const sbItems = [
+          ["🏠", "Home", "home"],
+          ["⚡", "One-shot", "oneshot"],
+          ["🔁", "Revision", "revision"],
+          ["🚀", "PYQ Marathons", "pyq"],
+          ["🧠", "Dream Teams", "dream"],
+          ["⏳", "Watch Later", "wl"],
+          ["❤️", "Saved", "saved"],
+          ["📝", "My Notes", "notes"],
+        ];
+        const sbBtns = [];
+        sbItems.forEach(([ic, name, key]) => {
+          const b = el("button", "yt-sb-item" + (key === "home" ? " active" : ""));
+          b.innerHTML = `<span class="yt-sb-ic">${ic}</span><span>${esc(name)}</span>`;
+          b.onclick = () => {
+            sbBtns.forEach((x) => x.classList.remove("active"));
+            b.classList.add("active");
+            const t = wrap.querySelector('[data-scroll="' + key + '"]');
+            if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (key === "oneshot") doSearch("One Shot Full Chapter Complete Revision");
+            if (key === "revision") doSearch("Quick Revision One Shot Mind Map JEE");
+            if (key === "pyq") doSearch("JEE Main PYQ Marathon Past 5 Years");
+            if (key === "dream") doSearch("");
+          };
+          sbBtns.push(b);
+          sb.appendChild(b);
+        });
+        wrap.appendChild(sb);
+
+        // ── 2. MAIN COLUMN ──
+        const main = el("div", "yt-main");
+        main.innerHTML = `
+    <div class="yt-topbar">
+      <span class="yt-logo"><span class="yt-playbox">▶</span>StudyTube</span>
+      <span class="chip" style="background:rgba(34,197,94,0.1);color:var(--green);border-color:rgba(34,197,94,0.25);font-weight:700">🚫 0% Distraction · ${esc(targetLabel)}</span>
+      <span class="chip" style="background:rgba(242,103,34,0.1);color:var(--accent-text);font-weight:700">🎯 ${esc(targetLabel)}</span>
     </div>
-    <div class="small muted" style="margin-top:6px;line-height:1.45">
-      No algorithmic rabbit holes, no entertainment shorts, no comment toxicity. Only Kota's top faculties (PW, Unacademy, Competishun, Physics Galaxy, Eduniti, MathonGo, Allen) synchronized with your real test weakness.
-    </div>`;
-        root.appendChild(headerCard);
-
-        // ── 2. SELECTION & SCORE CONFIDENCE BLUEPRINT (Solves User's Doubt) ──
-        const trustCard = el("div", "card");
-        trustCard.style.cssText = "border:1px solid rgba(59,130,246,0.3);background:linear-gradient(135deg, var(--panel) 0%, rgba(59,130,246,0.04) 100%)";
-        
-        // Calculate real readiness metrics
-        const tests = S.tests || [];
-        const attempts = tests.filter((t2) => t2.result);
-        const avgAcc = attempts.length ? Math.round(attempts.reduce((a, b) => a + (b.result.accuracy || 0), 0) / attempts.length) : 0;
-        const totalWatchedSec = Object.values(videoLog()).reduce((a, b) => a + (b.watchedSec || 0), 0);
-        const watchedHours = (totalWatchedSec / 3600).toFixed(1);
-        const predPercentile = avgAcc >= 85 ? "99.4 - 99.8" : avgAcc >= 70 ? "98.2 - 99.1" : avgAcc >= 50 ? "95.5 - 97.8" : "90.0 - 94.5";
-        const predBoard = avgAcc >= 80 ? "95% - 98%" : avgAcc >= 60 ? "88% - 94%" : "78% - 87%";
-
-        trustCard.innerHTML = `
-    <div class="row" style="justify-content:space-between;align-items:center;cursor:pointer" data-toggleTrust>
-      <div class="row" style="gap:8px;align-items:center">
-        <span style="font-size:22px">🏆</span>
-        <div>
-          <b style="font-size:15px;color:var(--text)">Why Your Selection & 95%+ Board Score is Mathematically Guaranteed</b>
-          <div class="small muted">Click to inspect the 4-Step Mastery Engine & your live percentile predictor</div>
-        </div>
+    <div class="yt-topbar">
+      <div class="yt-search-box">
+        <input type="text" class="yt-search-input" data-ytSearch placeholder="Search StudyTube — topic, chapter ya teacher…">
+        <button class="yt-search-btn" data-ytSubmit>🔍</button>
       </div>
-      <button class="btn ghost sm" style="font-size:12px" data-trustBtn>Inspect Blueprint ▾</button>
+      <button class="yt-topicon" data-ytClear title="Clear search">✕</button>
+      <button class="yt-topicon" data-wlBtn title="Watch later">⏳</button>
+      <button class="yt-topicon" data-saveBtn title="Saved">❤️</button>
     </div>
-    <div data-trustBody hidden style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px">
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:#3b82f6">1. 👨‍🏫 Top Faculty Only</div>
-          <div class="small muted" style="margin-top:4px">Only verified teachers from Kota & top platforms. Zero missing prerequisites or amateur coverage.</div>
-        </div>
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:var(--green)">2. ✍️ 1-Click PYQ Drill</div>
-          <div class="small muted" style="margin-top:4px">Watching is only 20% of learning. Every video directly connects to 10 real NTA PYQs to cement concepts.</div>
-        </div>
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:var(--amber)">3. 🔄 Auto-Fix Backlogs</div>
-          <div class="small muted" style="margin-top:4px">If accuracy < 70%, the AI automatically reschedules a targeted revision slot in your plan.</div>
-        </div>
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:#ec4899">4. 🛡️ Focus Guard Lock</div>
-          <div class="small muted" style="margin-top:4px">Regain-style friction and launcher mode lock you into uninterrupted flow states.</div>
-        </div>
-      </div>
-      <!-- LIVE READINESS PREDICTOR -->
-      <div style="padding:12px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-        <div>
-          <div class="small" style="font-weight:700">📊 Your Live Exam Readiness Meter:</div>
-          <div class="small muted">Based on ${watchedHours} hrs focused video study · ${attempts.length} mock tests · ${avgAcc}% PYQ accuracy</div>
-        </div>
-        <div class="row" style="gap:12px">
-          <div style="text-align:right">
-            <div class="small muted">Est. JEE Percentile</div>
-            <b style="font-size:16px;color:#3b82f6">${predPercentile}%ile</b>
-          </div>
-          <div style="text-align:right">
-            <div class="small muted">Est. Board 12th</div>
-            <b style="font-size:16px;color:var(--green)">${predBoard}</b>
-          </div>
-        </div>
-      </div>
-    </div>`;
-        root.appendChild(trustCard);
-
-        const trustToggle = trustCard.querySelector("[data-toggleTrust]");
-        const trustBody = trustCard.querySelector("[data-trustBody]");
-        const trustBtn = trustCard.querySelector("[data-trustBtn]");
-        trustToggle.onclick = () => {
-          trustBody.hidden = !trustBody.hidden;
-          trustBtn.textContent = trustBody.hidden ? "Inspect Blueprint ▾" : "Collapse ▲";
-        };
-
-        // ── 3. YOUTUBE-STYLE SEARCH & HORIZONTAL FILTER CHIPS ──
-        const searchCard = el("div", "card");
-        searchCard.style.padding = "14px 16px";
-        searchCard.innerHTML = `
-    <div class="row" style="gap:8px;align-items:center;margin-bottom:10px">
-      <div style="position:relative;flex:1">
-        <input type="text" data-ytSearch placeholder="Search any topic, chapter, or teacher (e.g. Rotational Motion, Organic Chemistry, ABJ Sir, NV Sir)..." 
-          style="width:100%;box-sizing:border-box;padding:10px 40px 10px 14px;border-radius:999px;font-size:13.5px;border:1px solid var(--line);background:var(--bg)">
-        <button class="iconbtn" data-ytClear style="position:absolute;right:10px;top:50%;transform:translateY(-50%);display:none">✕</button>
-      </div>
-      <button class="btn sm" data-ytSubmit style="background:#ff0000;color:#fff;border-radius:999px;padding:8px 18px;font-weight:700">🔍 Search</button>
-    </div>
-    <!-- CHIPS BAR -->
     <div class="yt-chips" data-chipsContainer>
-      <button class="yt-chip active" data-filter="all">🌟 All Top Lectures</button>
-      <button class="yt-chip" data-filter="pw">🔥 Physics Wallah</button>
-      <button class="yt-chip" data-filter="unacademy">🎓 Unacademy Atoms</button>
-      <button class="yt-chip" data-filter="competishun">🏛️ Competishun (Mohit Tyagi)</button>
-      <button class="yt-chip" data-filter="physicsgalaxy">🌌 Physics Galaxy (Ashish Arora)</button>
-      <button class="yt-chip" data-filter="mathongo">📐 MathonGo (Anup Sir)</button>
-      <button class="yt-chip" data-filter="eduniti">⚡ Eduniti (Mohit Goenka)</button>
-      <button class="yt-chip" data-filter="esaral">🎯 eSaral</button>
-      <button class="yt-chip" data-filter="motion">🔥 Motion Kota (NV Sir)</button>
-      <button class="yt-chip" data-filter="allen">⭐ ALLEN JEE</button>
-      <button class="yt-chip" data-filter="oneshot">⚡ Full Chapter One-Shots</button>
-      <button class="yt-chip" data-filter="ncert">📖 NCERT 100/100 (Boards)</button>
-      <button class="yt-chip" data-filter="pyq">🎯 PYQ Solving Marathons</button>
-      <button class="yt-chip" data-filter="formula">📝 Formula Checklists</button>
-    </div>`;
-        root.appendChild(searchCard);
+      <button class="yt-chip active" data-filter="all">All</button>
+      <button class="yt-chip" data-filter="pw">Physics Wallah</button>
+      <button class="yt-chip" data-filter="unacademy">Unacademy Atoms</button>
+      <button class="yt-chip" data-filter="competishun">Competishun</button>
+      <button class="yt-chip" data-filter="physicsgalaxy">Physics Galaxy</button>
+      <button class="yt-chip" data-filter="mathongo">MathonGo</button>
+      <button class="yt-chip" data-filter="eduniti">Eduniti</button>
+      <button class="yt-chip" data-filter="esaral">eSaral</button>
+      <button class="yt-chip" data-filter="motion">Motion Kota</button>
+      <button class="yt-chip" data-filter="allen">ALLEN JEE</button>
+      <button class="yt-chip" data-filter="oneshot">⚡ One-shots</button>
+      <button class="yt-chip" data-filter="ncert">📖 NCERT Boards</button>
+      <button class="yt-chip" data-filter="pyq">🎯 PYQ Marathons</button>
+      <button class="yt-chip" data-filter="formula">📝 Formula Lists</button>
+    </div>
+    <div data-searchResults class="yt-grid" style="margin-top:14px"></div>
+    <section class="yt-shelf" data-scroll="home">
+      <div class="yt-shelf-h"><h3>Continue watching</h3><span class="small">Resume karo, abhi yahin se</span></div>
+      <div class="yt-grid" data-cw></div>
+    </section>
+    <section class="yt-shelf" data-scroll="today" style="display:none">
+      <div class="yt-shelf-h"><h3>Today's planned lessons</h3><span class="small">From your AI plan</span></div>
+      <div data-todayGrid class="yt-grid"></div>
+    </section>
+    <section class="yt-shelf" data-scroll="dream">
+      <div class="yt-shelf-h"><h3>Recommended for you</h3><span class="small">Weak-topic + Dream Team matched</span></div>
+      <div class="yt-grid" data-rec></div>
+    </section>
+    <section class="yt-shelf" data-scroll="oneshot">
+      <div class="yt-shelf-h"><h3>⚡ Quick one-shot revision</h3><span class="small">Tight timeline ke liye</span></div>
+      <div class="yt-grid" data-oneshot></div>
+    </section>
+    <section class="yt-shelf" data-scroll="revision">
+      <div class="yt-shelf-h"><h3>🔁 Revision due</h3><span class="small">Spaced recall — kabhi dοna mat bhaoolo</span></div>
+      <div class="yt-grid" data-rev></div>
+    </section>
+    <section class="yt-shelf" data-scroll="wl">
+      <div class="yt-shelf-h"><h3>⏳ Watch Later</h3><span class="small">Saved queue</span></div>
+      <div class="yt-grid" data-wl></div>
+    </section>
+    <section class="yt-shelf" data-scroll="saved">
+      <div class="yt-shelf-h"><h3>❤️ Saved Playlists</h3><span class="small">Keep for revision</span></div>
+      <div class="yt-grid" data-saved></div>
+    </section>
+    <section class="yt-shelf" data-scroll="notes">
+      <div class="yt-shelf-h"><h3>📝 My Study Notes</h3><span class="small">Lesson notes attached</span></div>
+      <div data-notes class="yt-grid"></div>
+    </section>`;
+        wrap.appendChild(main);
+        root.appendChild(wrap);
 
-        // ── SEARCH RESULTS CONTAINER ──
-        const searchResultsGrid = el("div", "yt-grid");
-        searchResultsGrid.style.marginBottom = "20px";
-        searchResultsGrid.hidden = true;
-        root.appendChild(searchResultsGrid);
+        const searchInput = wrap.querySelector("[data-ytSearch]");
+        const searchClear = wrap.querySelector("[data-ytClear]");
+        const searchSubmit = wrap.querySelector("[data-ytSubmit]");
+        const searchGrid = wrap.querySelector("[data-searchResults]");
+        const chips = wrap.querySelectorAll(".yt-chip");
 
-        const searchInput = searchCard.querySelector("[data-ytSearch]");
-        const searchClear = searchCard.querySelector("[data-ytClear]");
-        const searchSubmit = searchCard.querySelector("[data-ytSubmit]");
-        const chips = searchCard.querySelectorAll(".yt-chip");
-
-        const executeSearch = async (queryTerm, channelFilter = "") => {
+        // ── SEARCH ──
+        const doSearch = async (queryTerm, channelFilter = "") => {
+          queryTerm = (queryTerm || "").trim();
           if (!queryTerm && !channelFilter) {
-            searchResultsGrid.hidden = true;
+            searchGrid.innerHTML = "";
+            searchGrid.style.display = "none";
             return;
           }
-          searchResultsGrid.hidden = false;
-          searchResultsGrid.innerHTML = `<div class="small muted" style="grid-column:1/-1;padding:20px;text-align:center">🔍 Searching verified lectures from top educators…</div>`;
-          
-          const items = await ytFetch({
+          searchGrid.style.display = "";
+          searchGrid.innerHTML = `<div class="yt-empty">🔍 Searching verified lectures…</div>`;
+          const req = {
             topic: queryTerm || "Physics Chemistry Maths",
             subject: "Physics",
             language: lang,
             kind: "learn",
             depth: "lecture",
-            target: target,
+            target,
             minMinutes: 5,
             maxMinutes: 360,
             channel: channelFilter,
-          });
-
-          if (!items.length) {
-            searchResultsGrid.innerHTML = `
-              <div class="card" style="grid-column:1/-1;text-align:center;padding:24px">
-                <div style="font-size:24px;margin-bottom:8px">🔍</div>
-                <b>No lectures found for "${esc(queryTerm || channelFilter)}"</b>
-                <div class="small muted" style="margin:6px 0 12px">Try searching a general chapter name or topic.</div>
-              </div>`;
-            return;
-          }
-
-          searchResultsGrid.innerHTML = `
-            <div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <b style="font-size:15px">Showing ${items.length} Curated Lectures for "${esc(queryTerm || channelFilter)}"</b>
-              <button class="btn ghost sm" data-closeSearch style="font-size:12px">✕ Close Search</button>
-            </div>`;
-          
-          searchResultsGrid.querySelector("[data-closeSearch]").onclick = () => {
-            searchResultsGrid.hidden = true;
-            searchInput.value = "";
-            searchClear.style.display = "none";
-            chips.forEach((c) => c.classList.remove("active"));
-            searchCard.querySelector('[data-filter="all"]').classList.add("active");
           };
-
-          items.forEach((v) => {
-            searchResultsGrid.appendChild(ytVideoCard(v, { topic: queryTerm || v.topic, subject: v.subject }));
-          });
+          let items = await ytFetch(req);
+          if (!items.length) items = ytOfflinePicks(queryTerm || channelFilter, "Physics", lang, target, channelFilter);
+          searchGrid.innerHTML = `<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b style="font-size:15px">Showing ${items.length} lectures for "${esc(queryTerm || channelFilter)}"</b><button class="btn ghost sm" data-closeSearch>✕ Close</button></div>`;
+          searchGrid.querySelector("[data-closeSearch]").onclick = () => {
+            searchGrid.innerHTML = "";
+            searchGrid.style.display = "none";
+            searchInput.value = "";
+            chips.forEach((c) => c.classList.remove("active"));
+            chips[0] && chips[0].classList.add("active");
+          };
+          items.forEach((v) => searchGrid.appendChild(ytVideoCard(v, { topic: queryTerm || v.topic, subject: v.subject || "Physics" })));
         };
-
-        searchSubmit.onclick = () => executeSearch(searchInput.value.trim());
+        searchSubmit.onclick = () => doSearch(searchInput.value);
         searchInput.onkeydown = (e) => {
-          if (e.key === "Enter") executeSearch(searchInput.value.trim());
-        };
-        searchInput.oninput = () => {
-          searchClear.style.display = searchInput.value ? "inline-flex" : "none";
+          if (e.key === "Enter") doSearch(searchInput.value);
         };
         searchClear.onclick = () => {
           searchInput.value = "";
-          searchClear.style.display = "none";
-          searchResultsGrid.hidden = true;
+          searchGrid.innerHTML = "";
+          searchGrid.style.display = "none";
         };
-
-        // Chips Filter Click Handlers
         chips.forEach((chip) => {
           chip.onclick = () => {
             chips.forEach((c) => c.classList.remove("active"));
             chip.classList.add("active");
-            const filt = chip.getAttribute("data-filter");
-            if (filt === "all") {
-              searchResultsGrid.hidden = true;
-            } else if (filt === "pw") {
-              executeSearch("", "Physics Wallah");
-            } else if (filt === "unacademy") {
-              executeSearch("", "Unacademy Atoms");
-            } else if (filt === "competishun") {
-              executeSearch("", "Mohit Tyagi Competishun");
-            } else if (filt === "physicsgalaxy") {
-              executeSearch("", "Physics Galaxy");
-            } else if (filt === "mathongo") {
-              executeSearch("", "MathonGo");
-            } else if (filt === "eduniti") {
-              executeSearch("", "Eduniti Mohit Goenka");
-            } else if (filt === "esaral") {
-              executeSearch("", "eSaral");
-            } else if (filt === "motion") {
-              executeSearch("", "Motion JEE");
-            } else if (filt === "allen") {
-              executeSearch("", "ALLEN JEE");
-            } else if (filt === "oneshot") {
-              executeSearch("One Shot Full Chapter Complete Revision");
-            } else if (filt === "ncert") {
-              executeSearch("NCERT Line by Line Class 12 Boards");
-            } else if (filt === "pyq") {
-              executeSearch("JEE Main PYQ Marathon Past 5 Years");
-            } else if (filt === "formula") {
-              executeSearch("Formula Revision Checklist Short Notes");
-            }
+            const f = chip.getAttribute("data-filter");
+            if (f === "all") {
+              searchGrid.innerHTML = "";
+              searchGrid.style.display = "none";
+            } else if (f === "pw") doSearch("", "Physics Wallah");
+            else if (f === "unacademy") doSearch("", "Unacademy Atoms");
+            else if (f === "competishun") doSearch("", "Mohit Tyagi Competishun");
+            else if (f === "physicsgalaxy") doSearch("", "Physics Galaxy");
+            else if (f === "mathongo") doSearch("", "MathonGo");
+            else if (f === "eduniti") doSearch("", "Eduniti Mohit Goenka");
+            else if (f === "esaral") doSearch("", "eSaral");
+            else if (f === "motion") doSearch("", "Motion JEE");
+            else if (f === "allen") doSearch("", "ALLEN JEE");
+            else if (f === "oneshot") doSearch("One Shot Full Chapter Complete Revision");
+            else if (f === "ncert") doSearch("NCERT Line by Line Class 12 Boards");
+            else if (f === "pyq") doSearch("JEE Main PYQ Marathon Past 5 Years");
+            else if (f === "formula") doSearch("Formula Revision Checklist Short Notes");
           };
         });
 
-        // ── 4. CONTINUE WATCHING SECTION ──
-        const cw = continueWatching();
+        // ── HELPERS ──
+        const cwSlot = wrap.querySelector("[data-cw]");
+        const cw = continueWatching().filter((x) => x && x.id);
         if (cw.length) {
-          const cwSection = el("div");
-          cwSection.style.marginBottom = "24px";
-          cwSection.innerHTML = `
-            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div class="row" style="gap:8px;align-items:center">
-                <span style="font-size:18px">⏯️</span>
-                <h3 style="margin:0;font-size:16px">Continue Watching</h3>
-              </div>
-              <div class="small muted">${cw.length} in progress · click to resume</div>
-            </div>`;
-          const cwGrid = el("div", "yt-grid");
-          cw.slice(0, 6).forEach((r) => {
-            cwGrid.appendChild(
-              ytVideoCard(
-                { id: r.id, title: r.title, channel: r.channel, durationSec: r.durationSec },
-                { topic: r.topic, subject: r.subject },
-              ),
-            );
-          });
-          cwSection.appendChild(cwGrid);
-          root.appendChild(cwSection);
+          cw.slice(0, 8).forEach((r) => cwSlot.appendChild(ytVideoCard(r, { topic: r.topic, subject: r.subject })));
+        } else {
+          cwSlot.innerHTML = `<div class="yt-empty">No lesson in progress. Koi bhi lecture start karo — wahi se resume hoga.</div>`;
         }
 
-        // ── 5. TODAY'S STUDY VIDEOS (From Planner) ──
+        // Today's planned lessons
+        const todaySection = wrap.querySelector("[data-scroll='today']");
         if (p && p.tasks) {
           const tk = todayKey(Date.now());
-          const todayTasks = p.tasks.filter((t2) => t2.date === tk && t2.status === "todo" && t2.kind !== "revision").slice(0, 4);
+          const todayTasks = p.tasks
+            .filter((t) => t.date === tk && t.status === "todo" && t.kind !== "revision")
+            .slice(0, 6);
           if (todayTasks.length) {
-            const todayCard = el("div", "card");
-            todayCard.style.cssText = "border-left:4px solid var(--accent, #3b82f6);margin-bottom:24px";
-            todayCard.innerHTML = `
-              <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div class="row" style="gap:8px;align-items:center">
-                  <span style="font-size:18px">📅</span>
-                  <h3 style="margin:0;font-size:16px">Today's Scheduled Video Lessons</h3>
-                </div>
-                <span class="chip" style="background:rgba(59,130,246,0.1);color:#3b82f6;font-weight:700">From Your Active Study Plan</span>
-              </div>
-              <div data-todayGrid class="yt-grid"></div>`;
-            root.appendChild(todayCard);
-
-            const tGrid = todayCard.querySelector("[data-todayGrid]");
-            todayTasks.forEach((t2) => {
-              const opt = el("div", "optrow");
-              opt.style.cssText = "cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)";
+            todaySection.style.display = "";
+            const tg = wrap.querySelector("[data-todayGrid]");
+            todayTasks.forEach((t) => {
+              const opt = el("div", "yt-card");
               opt.innerHTML = `
-                <div style="font-size:22px;flex:none">📹</div>
-                <div style="flex:1;min-width:0">
-                  <b style="font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t2.topic)}</b>
-                  <div class="small muted">${esc(t2.subject)} · ~${aipEff(t2.estMin, p.profile)} min · ${t2.teacher || "Kota Faculty"}</div>
-                </div>
-                <button class="btn sm" style="background:#ff0000;color:#fff;font-weight:700;padding:4px 10px">▶ Start</button>`;
-              opt.onclick = () => aipOpenLesson(t2);
-              tGrid.appendChild(opt);
+    <div class="yt-thumb-wrap" style="height:auto;padding:16px;background:linear-gradient(135deg, var(--ink-nav-a, #1b1b4b) 0%, var(--ink-nav-b, #2b2b7a) 100%);color:#fff;display:flex;flex-direction:column;justify-content:flex-end">
+      <span style="font-size:12px;color:var(--muted)">${esc(t.subject)} · ~${aipEff(t.estMin, p.profile)} min</span>
+      <b style="font-size:15px;line-height:1.35;margin-top:4px">${esc(t.topic)}</b>
+      <span style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, var(--blue), var(--blue-d));color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;width:max-content">▶ Start</span>
+    </div>
+    <div class="yt-body">
+      <span class="yt-avatar" style="background:var(--blue)">S</span>
+      <div class="yt-body-main">
+        <div class="yt-title">${esc(t.topic)}</div>
+        <div class="yt-meta"><b>${esc(t.teacher || "Kota Faculty")}</b> · ${esc(t.subject)} · From your plan</div>
+      </div>
+    </div>`;
+              opt.querySelector(".yt-thumb-wrap").onclick = () => aipOpenLesson(t);
+              tg.appendChild(opt);
             });
           }
         }
 
-        // ── 6. WEAK TOPICS HIGH-YIELD CURATION (Weakness Doctor) ──
-        const weakSection = el("div");
-        weakSection.style.marginBottom = "24px";
-        weakSection.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="row" style="gap:8px;align-items:center">
-              <span style="font-size:18px">💪</span>
-              <h3 style="margin:0;font-size:16px">Weak Topic Doctor (Recommended for You)</h3>
-            </div>
-            <div class="small muted">Synchronized with your real test accuracy</div>
-          </div>
-          <div data-weakGrid class="yt-grid">
-            <div class="small muted" style="grid-column:1/-1;padding:16px;text-align:center">Diagnosing your test attempts to fetch exact recovery lectures…</div>
-          </div>`;
-        root.appendChild(weakSection);
-
-        (async () => {
-          let weak = [];
-          try {
-            weak = chapterPriorities().slice(0, 4);
-          } catch (e) {}
-          const grid = weakSection.querySelector("[data-weakGrid]");
-          if (!grid) return;
-          if (!weak.length) {
-            grid.innerHTML = `
-              <div class="card" style="grid-column:1/-1;padding:16px;text-align:center">
-                <b>No test weaknesses detected yet!</b>
-                <div class="small muted" style="margin-top:4px">Attempt 1-2 CBT mocks or PYQ papers — your exact weakest chapters will automatically surface with targeted lectures here.</div>
-              </div>`;
+        // ── SHELF LOADER ──
+        const loadShelf = async (gridSel, params, offline) => {
+          const grid = wrap.querySelector(gridSel);
+          grid.innerHTML = `<div class="yt-empty">Loading…</div>`;
+          let items = await ytFetch(params);
+          if (!items.length) items = offline || [];
+          grid.innerHTML = "";
+          if (!items.length) {
+            grid.innerHTML = `<div class="yt-empty">No verified lectures right now — network issue, thodi der me dobara try karo.</div>`;
             return;
           }
-          grid.innerHTML = "";
-          for (const w2 of weak) {
-            if (!weakSection.isConnected) return;
-            const items = await ytFetch({
-              topic: w2.name,
-              subject: w2.sub || "Physics",
-              language: lang,
-              kind: "revision",
-              depth: "lecture",
-              target,
-              minMinutes: 5,
-              maxMinutes: 90,
-              channel: "",
-            });
-            if (items.length) {
-              const v = {
-                ...items[0],
-                why: `Diagnosed from tests: ${w2.name} has ${w2.acc}% accuracy (${w2.n} questions tested). Watch this recovery lesson then attempt the chapter drill!`,
-              };
-              grid.appendChild(ytVideoCard(v, { topic: w2.name, subject: w2.sub }));
-            }
+          items.slice(0, 8).forEach((v) => grid.appendChild(ytVideoCard(v, { topic: params.topic, subject: params.subject })));
+        };
+
+        // Recommended (weak topic first)
+        const weakTopic = (function () {
+          try {
+            const w = chapterPriorities().slice(0, 3);
+            return w.length ? w[0].name : "";
+          } catch (e) {
+            return "";
           }
         })();
+        const recTopic = weakTopic || "Electrostatics";
+        loadShelf(
+          "[data-rec]",
+          { topic: recTopic, subject: "Physics", language: lang, kind: "learn", depth: "lecture", target, minMinutes: 5, maxMinutes: 300, channel: "" },
+          ytOfflinePicks(recTopic, "Physics", lang, target, ""),
+        );
 
-        // ── 7. SAVED PLAYLISTS & WATCH LATER (2-Column Section) ──
-        const playlistsSection = el("div");
-        playlistsSection.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;margin-bottom:24px";
+        loadShelf(
+          "[data-oneshot]",
+          { topic: "One Shot Full Chapter Complete Revision", subject: "Physics", language: lang, kind: "revision", depth: "oneshot", target, minMinutes: 5, maxMinutes: 240, channel: "" },
+          ytOfflinePicks("One Shot Revision", "Physics", lang, target, ""),
+        );
 
-        // Watch Later Card
-        const wl = ytWatchLater();
-        const wlCard = el("div", "card");
-        wlCard.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="row" style="gap:8px;align-items:center">
-              <span>⏳</span>
-              <h3 style="margin:0;font-size:15px">Watch Later Queue</h3>
-            </div>
-            <span class="chip">${wl.length} videos</span>
-          </div>
-          <div data-wlList style="display:flex;flex-direction:column;gap:8px"></div>`;
-        const wlList = wlCard.querySelector("[data-wlList]");
-        if (wl.length) {
-          wl.slice(0, 5).forEach((v) => {
-            const row = el("div", "row");
-            row.style.cssText = "justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)";
-            row.innerHTML = `
-              <div style="min-width:0;flex:1">
-                <b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title || v.id)}</b>
-                <div class="small muted">${esc(v.channel || "")}${v.durationSec ? " · " + fmtTime(v.durationSec) : ""}</div>
-              </div>
-              <div class="row" style="gap:4px">
-                <button class="btn ghost sm" data-open style="padding:2px 8px">▶</button>
-                <button class="btn ghost sm" data-del style="padding:2px 8px">✕</button>
-              </div>`;
-            row.querySelector("[data-open]").onclick = () => ytPlay(v, { topic: v.topic, subject: v.subject });
-            row.querySelector("[data-del]").onclick = () => {
-              const q = ytWatchLater();
-              const i = q.findIndex((x) => x.id === v.id);
-              if (i >= 0) {
-                q.splice(i, 1);
-                save();
-                render(0);
-              }
-            };
-            wlList.appendChild(row);
+        loadShelf(
+          "[data-rev]",
+          { topic: recTopic + " Quick Revision One Shot", subject: "Physics", language: lang, kind: "revision", depth: "oneshot", target, minMinutes: 5, maxMinutes: 90, channel: "" },
+          ytOfflinePicks(recTopic + " Revision", "Physics", lang, target, ""),
+        );
+
+        // Watch later
+        const wlList = ytWatchLater();
+        const wlGrid = wrap.querySelector("[data-wl]");
+        if (wlList.length) {
+          wlList.slice(0, 8).forEach((v) => wlGrid.appendChild(ytVideoCard(v, { topic: v.topic, subject: v.subject })));
+        } else {
+          wlGrid.innerHTML = `<div class="yt-empty">Watch later khali hai — kisi card ke ⏳ par tap karke save karo.</div>`;
+        }
+
+        // Saved
+        const savedList = ytSaved();
+        const savedGrid = wrap.querySelector("[data-saved]");
+        if (savedList.length) {
+          savedList.slice(0, 8).forEach((v) => savedGrid.appendChild(ytVideoCard(v, { topic: v.topic, subject: v.subject })));
+        } else {
+          savedGrid.innerHTML = `<div class="yt-empty">No saved playlists yet — kisi lecture ko ❤️ karo.</div>`;
+        }
+
+        // Notes
+        const noteList = ytNoteList().slice(0, 6);
+        const notesGrid = wrap.querySelector("[data-notes]");
+        if (noteList.length) {
+          noteList.forEach((n) => {
+            const c = el("div", "yt-note-card");
+            c.innerHTML = `<b>${esc(n.videoTitle || n.topic || n.id)}</b><div class="small muted" style="margin:4px 0">${esc(n.subject || "")} · ${esc(n.channel || "")}</div><div class="small" style="white-space:pre-wrap;max-height:90px;overflow-y:auto;line-height:1.5">${esc(n.text)}</div><button class="btn ghost sm" style="margin-top:8px" data-playNote>▶ Re-watch</button>`;
+            c.querySelector("[data-playNote]").onclick = () => ytPlay({ id: n.id, title: n.videoTitle || n.topic || n.id, channel: n.channel || "", subject: n.subject || "" }, { topic: n.topic, subject: n.subject });
+            notesGrid.appendChild(c);
           });
         } else {
-          wlList.innerHTML = `<div class="small muted" style="padding:10px;text-align:center">No videos in queue. Tap ⏳ on any video card to save for later.</div>`;
+          notesGrid.innerHTML = `<div class="yt-empty">Notes khali — player ke andar 📝 Notes me likho, yahan save rahenge.</div>`;
         }
-        playlistsSection.appendChild(wlCard);
 
-        // Saved Playlists Card
-        const sv = ytSaved();
-        const svCard = el("div", "card");
-        svCard.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="row" style="gap:8px;align-items:center">
-              <span>❤️</span>
-              <h3 style="margin:0;font-size:15px">Saved Playlists</h3>
-            </div>
-            <span class="chip">${sv.length} saved</span>
-          </div>
-          <div data-svList style="display:flex;flex-direction:column;gap:8px"></div>`;
-        const svList = svCard.querySelector("[data-svList]");
-        if (sv.length) {
-          sv.slice(0, 5).forEach((v) => {
-            const row = el("div", "row");
-            row.style.cssText = "justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)";
-            row.innerHTML = `
-              <div style="min-width:0;flex:1">
-                <b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title || v.id)}</b>
-                <div class="small muted">${esc(v.subject || "")} · ${esc(v.channel || "")}</div>
-              </div>
-              <button class="btn ghost sm" data-open style="padding:2px 8px">▶</button>`;
-            row.querySelector("[data-open]").onclick = () => ytPlay(v, { topic: v.topic, subject: v.subject });
-            svList.appendChild(row);
-          });
-        } else {
-          svList.innerHTML = `<div class="small muted" style="padding:10px;text-align:center">No saved playlists yet. Tap ❤️ on any lecture to bookmark.</div>`;
-        }
-        playlistsSection.appendChild(svCard);
-        root.appendChild(playlistsSection);
-
-        // ── 8. MY VIDEO NOTES ──
-        const notes = ytNoteList();
-        if (notes.length) {
-          const notesCard = el("div", "card");
-          notesCard.style.cssText = "border-left:4px solid var(--amber);margin-bottom:24px";
-          notesCard.innerHTML = `
-            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div class="row" style="gap:8px;align-items:center">
-                <span>📝</span>
-                <h3 style="margin:0;font-size:16px">My Video Study Notes & Takeaways</h3>
-              </div>
-              <span class="chip">${notes.length} lessons annotated</span>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px">
-              ${notes.slice(0, 6).map((n) => `
-                <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column">
-                  <b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">${esc(n.videoTitle || n.topic || n.id)}</b>
-                  <div class="small muted" style="margin-bottom:8px">${esc(n.subject || "")} · ${esc(n.channel || "")}</div>
-                  <div class="small" style="line-height:1.4;white-space:pre-wrap;background:var(--panel);padding:8px;border-radius:6px;border:1px solid var(--line);flex:1;max-height:90px;overflow-y:auto">${esc(n.text)}</div>
-                  <div class="row" style="margin-top:8px;justify-content:flex-end">
-                    <button class="btn ghost sm" data-playNote="${esc(n.id)}" style="font-size:11.5px">▶ Re-watch Lesson</button>
-                  </div>
-                </div>
-              `).join("")}
-            </div>`;
-          notes.slice(0, 6).forEach((n) => {
-            const btn = notesCard.querySelector(`[data-playNote="${esc(n.id)}"]`);
-            if (btn) {
-              btn.onclick = () => ytPlay(
-                { id: n.id, title: n.videoTitle || n.topic || n.id, channel: n.channel || "", subject: n.subject || "" },
-                { topic: n.topic, subject: n.subject },
-              );
-            }
-          });
-          root.appendChild(notesCard);
-        }
+        // Header quick actions
+        wrap.querySelector("[data-wlBtn]").onclick = () => {
+          const t = wrap.querySelector('[data-scroll="wl"]');
+          if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+        wrap.querySelector("[data-saveBtn]").onclick = () => {
+          const t = wrap.querySelector('[data-scroll="saved"]');
+          if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
       }
       /* ======================= LIVE CLASSES (free, YouTube) =======================
    The server (/api/public/live-classes) scans YouTube's public live-filtered
@@ -17507,7 +18716,7 @@
           doc.setFontSize(8.5);
           doc.setTextColor(150, 150, 150);
           doc.text(
-            "Percentile/AIR from real NTA JEE Main 2025 data (14,75,103 candidates). Generated by Someshwar JEE CBT Platform.",
+            "Percentile/AIR from real NTA JEE Main 2025 data (14,75,103 candidates). Generated by NTACBT JEE CBT Platform.",
             M,
             y,
           );
@@ -20025,6 +21234,42 @@
           root.appendChild(lc);
         }
 
+        // ---- Launcher app drawer preview (web-friendly) ----
+        const lpd = el("div", "card");
+        lpd.innerHTML = `<div class="section-title"><span class="ico">${ic("home")}</span>
+        <div><h3 style="margin:0">📱 Launcher app drawer</h3>
+        <div class="small muted" style="margin-top:4px">Study launcher ka app grid — icon cards, search, category chips, pinned essential apps. Web pe bhi preview dekh sakte ho.</div></div></div>`;
+        const lr2 = el("div", "row");
+        lr2.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
+        const lpv = el("button", "btn sm", "🧪 Preview launcher UI");
+        lpv.onclick = () => appDrawerOpen(true);
+        lr2.appendChild(lpv);
+        lpd.appendChild(lr2);
+        root.appendChild(lpd);
+
+        // ---- Backup & Sync (local-first, honest) ----
+        const bk = el("div", "card");
+        bk.innerHTML = `<div class="section-title"><span class="ico">${ic("database")}</span>
+        <div><h3 style="margin:0">💾 Backup &amp; Sync</h3>
+        <div class="small muted" style="margin-top:4px">Data local-first hai (private). Export ya copy-code karke doosre device pe wapas lao — koi cloud account nahi chahiye.</div></div></div>`;
+        const bkRow = el("div", "row");
+        bkRow.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
+        const bkD = el("button", "btn sm", "⬇️ Export backup");
+        bkD.onclick = downloadBackup;
+        const bkIm = el("button", "btn sm ghost", "⬆️ Import backup");
+        bkIm.onclick = () => {
+          const inp = document.createElement("input");
+          inp.type = "file";
+          inp.accept = "application/json,.json";
+          inp.onchange = () => importBackupFile(inp.files && inp.files[0]);
+          inp.click();
+        };
+        const bkCc = el("button", "btn sm ghost", "📋 Copy backup code");
+        bkCc.onclick = copyBackupCode;
+        bkRow.append(bkD, bkIm, bkCc);
+        bk.appendChild(bkRow);
+        root.appendChild(bk);
+
         const hm = el("div", "card");
         const { heat } = streakInfo();
         const maxC = Math.max(1, ...heat.map((h) => h.count));
@@ -21157,7 +22402,19 @@
           ),
         );
         const wf = weakFormulaCard();
-        if (wf) root.appendChild(wf);
+        if (wf) root.appendChild(wf);        // ── FLASHCARDS — active-recall revision instead of just reading the sheet ──
+        const fc = el("div", "card");
+        fc.innerHTML = `<div class="section-title"><span class="ico">${ic("cards")}</span>
+      <div><h3 style="margin:0">🃏 Flashcard Revision</h3>
+      <div class="small muted">Front: topic · Back: formula. Khud pehle yaad karo, phir flip.</div></div></div>
+      <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+        ${SUBJECTS.map((s2) => `<button class="btn sm ghost" data-flash="${esc(s2)}">${s2.slice(0, 4)} Flashcards</button>`).join("")}
+      </div>`;
+        fc.querySelectorAll("[data-flash]").forEach((b) => {
+          b.onclick = () => flashcardsOpen(b.getAttribute("data-flash"));
+        });
+        root.appendChild(fc);
+
 
         // ---- revise-first: formula rows whose topic matches your weak chapters ----
         const weak = chapterMastery().filter((c) => c.acc < 70);
@@ -23208,55 +24465,184 @@
       /** Minimal app drawer — the "dock" of the study launcher. Zaroori apps
        *  (Phone/Camera/WhatsApp…) yahin se khulti hain; Focus Lock ke दौरान
        *  blocked apps ko native side hi mana kar deta hai. */
-      function appDrawerOpen() {
-        const n = nativeLauncher();
-        if (!n) return;
+      /** App grid colours — deterministic from label/pkg so the drawer looks
+       *  like a real launcher (each app keeps its own icon colour). */
+      function appIconColor(label, pkg) {
+        const s2 = String(label || pkg || "A");
+        let h = 0;
+        for (let i = 0; i < s2.length; i++) h = (h * 31 + s2.charCodeAt(i)) % 360;
+        return "linear-gradient(135deg, hsl(" + h + " 60% 52%), hsl(" + ((h + 40) % 360) + " 65% 42%))";
+      }
+      function appEmoji(label, pkg) {
+        const t = (String(label || "") + " " + String(pkg || "")).toLowerCase();
+        if (/phone|dial|call/.test(t)) return "📞";
+        if (/camera/.test(t)) return "📷";
+        if (/whatsapp|message|sms/.test(t)) return "💬";
+        if (/insta|instagram|social/.test(t)) return "📸";
+        if (/youtube|video|watch/.test(t)) return "▶️";
+        if (/chrome|browser|internet/.test(t)) return "🌐";
+        if (/settings|setup/.test(t)) return "⚙️";
+        if (/file|doc|drive/.test(t)) return "📁";
+        if (/calculator|calc/.test(t)) return "🧮";
+        if (/clock|time|alarm/.test(t)) return "⏰";
+        if (/note|memo/.test(t)) return "📝";
+        if (/music|sound|audio/.test(t)) return "🎧";
+        if (/map|location|gps/.test(t)) return "📍";
+        if (/mail|gmail|email/.test(t)) return "✉️";
+        if (/bank|payment|upi|pay/.test(t)) return "🏦";
+        if (/learn|study|edu|exam|course|class/.test(t)) return "🎓";
+        if (/game/.test(t)) return "🎮";
+        return "📱";
+      }
+      /** The study launcher app drawer — improved to a real launcher look:
+       *  icon grid, category chips, search, essential apps pinned, and a
+       *  --preview mode so it can be seen/inspected from the website too. */
+      function appDrawerOpen(preview) {
+        const n = preview ? null : nativeLauncher();
         let apps = [];
-        try {
-          apps = JSON.parse(n.listApps() || "[]");
-        } catch (e) {}
+        if (n) {
+          try {
+            apps = JSON.parse(n.listApps() || "[]");
+          } catch (e) {}
+        } else {
+          apps = [
+            { label: "Phone", pkg: "com.android.dialer" },
+            { label: "WhatsApp", pkg: "com.whatsapp" },
+            { label: "Camera", pkg: "com.android.camera" },
+            { label: "Messages", pkg: "com.android.mms" },
+            { label: "Chrome", pkg: "com.android.chrome" },
+            { label: "YouTube", pkg: "com.google.android.youtube" },
+            { label: "Settings", pkg: "com.android.settings" },
+            { label: "Files", pkg: "com.google.android.documentsui" },
+            { label: "Calculator", pkg: "com.google.android.calculator" },
+            { label: "Clock", pkg: "com.google.android.deskclock" },
+            { label: "Notes", pkg: "com.samsung.android.app.notes" },
+            { label: "Instagram", pkg: "com.instagram.android" },
+            { label: "Gmail", pkg: "com.google.android.gm" },
+            { label: "Maps", pkg: "com.google.android.apps.maps" },
+            { label: "Music", pkg: "com.google.android.apps.youtube.music" },
+            { label: "Play Store", pkg: "com.android.vending" },
+          ];
+        }
+        if (!apps.length) {
+          toast("Koi app list nahi mili (native launcher me apps khul gayi hain)");
+          return;
+        }
         const m = el("div", "modal");
         m.setAttribute("data-static", "1");
-        m.innerHTML = `<div class="box" style="max-width:560px;max-height:82vh;display:flex;flex-direction:column">
-    <h3 style="margin:0 0 4px">📱 Apps${focusActive() ? ' <span class="badge" style="color:var(--red)">🔒 Focus Lock — sirf zaroori apps</span>' : ""}</h3>
-    <div class="small muted">Study launcher mode: yahan se koi bhi app kholo. Padhai ke time distraction apps khud block ho jayenge.</div>
-    <input type="text" placeholder="App dhundo…" data-q style="width:100%;margin:10px 0">
-    <div data-list style="overflow:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"></div>
-    <button class="btn ghost sm" data-close style="margin-top:10px">Band karo</button></div>`;
+        m.innerHTML = `<div class="box" style="max-width:600px;max-height:86vh;display:flex;flex-direction:column;padding:16px 18px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">
+      <div style="min-width:0">
+        <h3 style="margin:0 0 4px">📱 Apps <span class="small muted">· ${apps.length}</span>${preview ? ' <span class="badge" style="background:var(--blue-soft);color:var(--accent-text)">preview</span>' : ""}</h3>
+        <div class="small muted">Study launcher mode — padhai ke time distraction apps Block mode me khud chipko jaate hain.</div>
+      </div>
+      <button class="iconbtn" data-close aria-label="Band karo" style="font-size:16px;flex:none">✕</button>
+    </div>
+    <input type="text" placeholder="App dhundo… (Phone, WhatsApp, YouTube…)" data-q style="width:100%;margin:10px 0 8px">
+    <div data-cats style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+    <div data-list style="overflow:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;padding:2px"></div>
+    <div class="small muted" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)">${preview ? "Web preview — asli launcher me apps ke saath yahi grid dikhega." : "Tap = app kholo. Focus Lock chalte waqt sirf essential apps enabled."}</div>
+  </div>`;
         document.body.appendChild(m);
         const list = m.querySelector("[data-list]"),
-          q = m.querySelector("[data-q]");
+          q = m.querySelector("[data-q]"),
+          cats = m.querySelector("[data-cats]");
+        const CATS = [
+          ["all", "All"],
+          ["essential", "Essential"],
+          ["social", "Social"],
+          ["learn", "Learning"],
+          ["utility", "Utility"],
+        ];
+        let activeCat = "all";
+        const catFor = (a) => {
+          const t = (String(a.label || "") + " " + String(a.pkg || "")).toLowerCase();
+          if (/phone|dial|call|camera|message|sms|calculator|clock|time|note|settings|file|doc|drive|maps|mail|bank|payment|upi|play store|vending/.test(t))
+            return "essential";
+          if (/whatsapp|insta|instagram|social|facebook|twitter|snap|telegram|discord/.test(t)) return "social";
+          if (/learn|study|edu|exam|course|class|video|youtube|browser|chrome|music|audio/.test(t)) return "learn";
+          return "utility";
+        };
+        const isEssential = (a) => {
+          const t = (String(a.label || "") + " " + String(a.pkg || "")).toLowerCase();
+          return /phone|dial|call|camera|message|sms|calculator|clock|time|settings|file|doc|drive|maps|mail|bank|payment|upi|play store|vending|emergency/.test(t);
+        };
+        CATS.forEach(([id, l]) => {
+          const b = el("button", "chip");
+          b.textContent = l;
+          b.style.cursor = "pointer";
+          b.onclick = () => {
+            activeCat = id;
+            cats.querySelectorAll("button").forEach((x) => (x.style.opacity = x === b ? "1" : ".55"));
+            draw2();
+          };
+          cats.appendChild(b);
+        });
+        const ESC = { escape: () => m.remove() };
+        m.setAttribute("data-esc", "1");
         const draw2 = () => {
           const term = (q.value || "").trim().toLowerCase();
-          list.innerHTML = "";
-          apps
-            .filter(
-              (a) =>
-                !term ||
-                String(a.label || "")
-                  .toLowerCase()
-                  .includes(term),
-            )
-            .slice(0, 200)
-            .forEach((a) => {
-              const b = el("button", "optrow");
-              b.style.cssText = "cursor:pointer;text-align:left;padding:10px";
-              b.innerHTML = `<b style="font-size:13px">${esc(String(a.label || a.pkg).slice(0, 26))}</b>`;
-              b.onclick = () => {
-                let ok = false;
-                try {
-                  ok = n.openApp(a.pkg);
-                } catch (e) {}
-                if (ok) m.remove();
-              };
-              list.appendChild(b);
+          let rows = apps.filter((a) => {
+            const probe = String(a.label || "") + " " + String(a.pkg || "");
+            if (term && !probe.toLowerCase().includes(term)) return false;
+            const c = catFor(a);
+            if (activeCat === "social" && c !== "social") return false;
+            if (activeCat === "learn" && c !== "learn") return false;
+            if (activeCat === "utility" && c === "social") return false;
+            if (activeCat === "essential" && !isEssential(a)) return false;
+            return true;
+          });
+          if (activeCat === "all" && !term) {
+            rows = rows.slice().sort((a, b) => {
+              const ea = isEssential(a) ? 0 : 1;
+              const eb = isEssential(b) ? 0 : 1;
+              return ea - eb || String(a.label || "").localeCompare(String(b.label || ""));
             });
+          }
+          list.innerHTML = "";
+          rows.slice(0, 200).forEach((a) => {
+            const label = String(a.label || a.pkg || "App");
+            const icon = el("button");
+            icon.type = "button";
+            icon.className = "launch-app";
+            icon.style.cssText =
+              "cursor:pointer;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 6px 8px;transition:all .18s ease;box-shadow:0 2px 8px rgba(0,0,0,.04)";
+            icon.onmouseenter = () => {
+              icon.style.transform = "translateY(-2px)";
+              icon.style.borderColor = "var(--accent-text)";
+              icon.style.boxShadow = "0 8px 18px rgba(0,0,0,.1)";
+            };
+            icon.onmouseleave = () => {
+              icon.style.transform = "";
+              icon.style.borderColor = "var(--line)";
+              icon.style.boxShadow = "0 2px 8px rgba(0,0,0,.04)";
+            };
+            icon.innerHTML = `<div style="width:42px;height:42px;margin:0 auto 6px;border-radius:12px;background:${appIconColor(label, a.pkg)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 8px rgba(0,0,0,.15)">${appEmoji(label, a.pkg)}</div>
+        <div style="font-size:11.5px;font-weight:700;line-height:1.25;word-break:break-word;min-height:28px">${esc(label.slice(0, 22))}${label.length > 22 ? "…" : ""}</div>
+        <div class="small muted" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(String(a.pkg || "").split(".").slice(-2).join("."))}</div>`;
+            icon.onclick = () => {
+              if (preview) {
+                toast("🧪 Preview: kal is app ko isi tile se kholenge (native bridge me)");
+                return;
+              }
+              let ok = false;
+              try {
+                ok = n.openApp(a.pkg);
+              } catch (e) {}
+              if (ok) m.remove();
+              else toast("App khola nahi ja saka — galaxy ya launcher permissions check karo", 3000);
+            };
+            list.appendChild(icon);
+          });
           if (!list.children.length)
-            list.innerHTML = `<div class="small muted">Kuch nahi mila.</div>`;
+            list.innerHTML = `<div class="small muted" style="grid-column:1/-1;padding:20px;text-align:center">Kuch nahi mila — search ya category change karo.</div>`;
         };
         q.oninput = draw2;
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && m.isConnected) m.remove();
+        });
         draw2();
-        m.querySelector("[data-close]").onclick = () => m.remove();
+        m.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => m.remove()));
       }
       /** Floating dock button — only when we ARE the phone's home screen
        *  (otherwise the normal launcher has its own drawer). */
@@ -23775,6 +25161,262 @@
           : "";
         return c;
       }
+      /* ═══ CONSISTENCY HEATMAP — 12-week study calendar (research: daily
+   consistency + focus-hours heatmap is the #1 habit visual) ═══ */
+      function studyHeatmapCard() {
+        const days = 84;
+        const cells = [];
+        let focusTotal = 0, qTotal = 0, active = 0, bestDay = null;
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date();
+          d.setHours(0, 0, 0, 0);
+          d.setDate(d.getDate() - i);
+          const k = todayKey(d.getTime());
+          const fm = pomoLog()[k] || 0;
+          const q = S.dailyQuestions[k] || 0;
+          const on = !!(fm || q || S.studyLog[k]);
+          if (on) active++;
+          focusTotal += fm;
+          qTotal += q;
+          const score = fm + q * 4;
+          if (!bestDay || score > bestDay.score) bestDay = { k, score, fm, q };
+          cells.push({ k, fm, q, on, score });
+        }
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("calendar")}</span>
+      <div><h3 style="margin:0">Consistency Heatmap</h3>
+      <div class="small muted">Pichhle 12 hafte — kaunsa din sach mein padhai hui. Deep orange = heavy day, blank = gap.</div></div></div>
+      <div class="grid g4" style="margin-top:10px">
+        ${statCard("Focus hours", Math.round(focusTotal / 60) + "h", `${Math.round(focusTotal)} min total`)}
+        ${statCard("Questions", qTotal, "12 hafte")}
+        ${statCard("Active days", active + "/" + days, pct(active, days) + "%")}
+        ${statCard("Best day", bestDay ? bestDay.k.slice(5) : "—", bestDay ? `${Math.round(bestDay.fm / 60)}h · ${bestDay.q} Q` : "")}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px">
+        ${cells
+          .map(
+            (x) => `<div title="${x.k} · ${Math.round(x.fm / 60)}h · ${x.q} Q" style="aspect-ratio:1;border-radius:5px;${x.on ? `background:rgba(242,103,34,${(0.18 + 0.82 * Math.min(1, x.score / 120)).toFixed(2)})` : "background:var(--line)"};box-shadow:inset 0 0 0 1px rgba(0,0,0,.03)"></div>`,
+          )
+          .join("")}
+      </div>
+      <div class="small muted" style="margin-top:8px">Roz ka ek focus block bhi count hota hai — streak se zyada, yeh consistency dikhata hai.</div>`;
+        const view = el("button", "btn sm ghost", "Analytics me details");
+        view.style.marginTop = "10px";
+        view.onclick = () => go("analytics");
+        c.appendChild(view);
+        return c;
+      }
+      /* ═══ TARGET TIMELINE — current vs target + the exact weekly pace needed ═══ */
+      function targetTimelineCard() {
+        const trend = percentileTrend();
+        const targetPct = S.settings.targetPercentile;
+        const latest = trend.pts.length ? trend.pts[trend.pts.length - 1].p : null;
+        const proj = trend.projected;
+        const slope = trend.slope;
+        let daysLeft = null;
+        if (S.settings.examDate) {
+          const dl = Math.ceil((new Date(S.settings.examDate) - Date.now()) / 86400000);
+          if (dl > 0) daysLeft = dl;
+        }
+        let gap = latest != null && targetPct ? targetPct - latest : null;
+        let neededPace = null, readyWeeks = null, onTrack = null;
+        if (gap != null && daysLeft != null) {
+          neededPace = gap / (daysLeft / 7);
+          if (slope > 0 && targetPct != null) readyWeeks = gap / slope;
+          onTrack = gap <= 0 || (slope > 0 && slope * (daysLeft / 7) >= gap);
+        }
+        const pctLine = latest != null && targetPct ? Math.max(2, Math.min(98, (latest / targetPct) * 100)) : 50;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("flag")}</span>
+      <div><h3 style="margin:0">Target Timeline</h3>
+      <div class="small muted">Current percentile ko target tak pahunchane ke liye exact weekly speed — har test se calculation.</div></div></div>
+      <div class="grid g3" style="margin-top:10px">
+        ${statCard("Current", latest != null ? latest : "—", "real 2025 curve")}
+        ${statCard("Target", targetPct || "—", targetPct ? "" : "Settings me set karo")}
+        ${statCard("Projected", proj != null ? proj : "—", proj != null ? "by exam day" : "2+ tests chahiye")}
+      </div>
+      <div class="row" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px;height:12px;background:var(--line);border-radius:6px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${pctLine}%;background:linear-gradient(90deg,var(--blue),var(--blue-d));border-radius:6px"></div>
+          ${targetPct ? `<div style="position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);left:${pctLine}%"></div>` : ""}
+        </div>
+        <span class="small muted">latest ${latest ?? "—"} → target ${targetPct ?? "—"}</span>
+      </div>
+      ${targetPct && latest != null
+        ? `<div style="margin-top:10px;padding:9px 12px;border-radius:9px;border:1px solid ${onTrack ? "var(--green)" : "var(--amber)"};color:${onTrack ? "var(--green)" : "var(--amber)"};font-size:13px">
+      ${onTrack ? "✅" : "⚠️"} ${onTrack ? "On track" : "Gap bacha hai"} — ${gap <= 0 ? "target cross ho chuka hai." : onTrack ? "is speed par exam tak target level pe." : `har hafte ${neededPace.toFixed(1)} percentile aur chahiye${readyWeeks != null ? ` · abhi speed par ~${Math.max(0, Math.ceil(readyWeeks))} hafte laga sakte hain` : ""}.`}</div>`
+        : `<div class="small muted" style="margin-top:10px">Target + kam se kam 2 tests set karo — tab yahan exact weekly plan dikhega.</div>`}`;
+        return c;
+      }
+      /* ═══ COLLEGE BENCHMARK — private, no leaderboard (research: avoid public
+   ranking for young students; show self vs target band instead) ═══ */
+      function collegeBenchmarkCard() {
+        const trend = percentileTrend();
+        const latest = trend.pts.length ? trend.pts[trend.pts.length - 1].p : null;
+        const proj = trend.projected;
+        const bands = [
+          [99.5, "Top NIT / IIIT", "Top-tier CSE/ECE — physics+maths ko depth se"],
+          [99, "NIT CSE / top IIIT-2", "High percentile, high-scoring chapters par payoff"],
+          [98, "NIT top branches", "Accuracy 90%+ aur negatives near-zero chahiye"],
+          [95, "NIT / state NIT", "Consistency + one-shot revision se achievable"],
+          [90, "Good engineering / state", "Base + accuracy — clear cutoff safely"],
+        ];
+        const mark = latest != null ? latest : proj != null ? proj : null;
+        const myBand = mark != null ? bands.findIndex((b) => mark >= b[0]) : 2;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("medal")}</span>
+      <div><h3 style="margin:0">College Benchmark</h3>
+      <div class="small muted">Private self-check — koi leaderboard nahi. Aap current/projected percentile ko general category bands ke against dekho.</div></div></div>
+      <div style="margin-top:8px">${bands
+        .map((b, i) => {
+          const on = i === myBand;
+          const above = mark != null && mark >= b[0];
+          return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;${on ? "background:color-mix(in srgb,var(--blue) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--blue) 40%,var(--line))" : "border:1px solid var(--line)"};margin-top:6px">
+      <span class="pill ${above ? "g" : ""}" style="min-width:48px;text-align:center">${b[0]}+</span>
+      <div style="flex:1;min-width:0"><b style="font-size:13px">${esc(b[1])}</b><div class="small muted">${esc(b[2])}</div></div>
+      <span class="small" style="color:${on ? "var(--accent-text)" : "var(--muted)"}">${on ? (above ? "◆ aap yahan" : "◆ target band") : above ? "✓ crossed" : ""}</span></div>`;
+        })
+        .join("")}</div>
+      <div class="small muted" style="margin-top:8px">Current: ${latest ?? "—"} · Projected: ${proj ?? "—"} · ${mark != null ? (mark >= 95 ? "Top 5% zone" : mark >= 90 ? "Safe cutoff zone" : "Cutoff zone se neeche — abhi turant pace badhao") : "2+ tests ke baad benchmark bane"}</div>`;
+        return c;
+      }
+      /* ═══ AI DAILY SPRINT — the exact numbers for today, one card ═══ */
+      function aiDailySprintCard() {
+        const tk = todayKey(Date.now());
+        const goal = Math.max(10, S.settings.dailyGoal || 20);
+        const doneQ = S.dailyQuestions[tk] || 0;
+        const leftQ = Math.max(0, goal - doneQ);
+        const focusGoal = Math.max(10, S.settings.focusGoal || 100);
+        const doneF = Math.max(0, pomoLog()[tk] || 0);
+        const leftF = Math.max(0, focusGoal - doneF);
+        let weak = null;
+        try {
+          weak = chapterPriorities()[0] || null;
+        } catch (e) {}
+        let due = 0;
+        try {
+          due = dueReviewQuestions().length;
+        } catch (e) {}
+        const totalMin = (weak ? 20 : 25) + (leftQ * 1.2) + (due ? 12 : 0) + Math.min(leftF, 60) * 0.5;
+        const c = el("div", "card");
+        c.style.borderColor = "color-mix(in srgb,var(--accent-text) 45%,var(--line))";
+        const sprintRows = [
+          weak ? { ico: "📖", t: weak.name, s: `${weak.acc}% accuracy · ${weak.n} questions`, a: "StudyTube" } : null,
+          leftQ ? { ico: "✍️", t: `${leftQ} questions left`, s: `${doneQ}/${goal} today`, a: "Practice" } : null,
+          leftF ? { ico: "🔒", t: `${Math.round(leftF)} focus-min left`, s: `${Math.round(doneF)}/${focusGoal} today`, a: "Focus" } : null,
+          due ? { ico: "🔁", t: `${due} review due`, s: "bhoolne se pehle", a: "Review" } : null,
+        ].filter(Boolean);
+        if (!sprintRows.length)
+          return el(
+            "div",
+            "card",
+            `<div class="section-title"><span class="ico">${ic("check")}</span><h3 style="margin:0">AI Daily Sprint</h3></div><div class="small" style="margin-top:8px;color:var(--green)">${ic("check")} Aaj ka plan — practice + focus + review — done hai. Ab ek aur PYQ ya Daily 10 lo.</div>`,
+          );
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("zap")}</span>
+      <div><h3 style="margin:0">AI Daily Sprint — aaj ke exact numbers</h3>
+      <div class="small muted">Weak chapter + practice + focus + review from your real data. Har row tap karo.</div></div></div>
+      <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+        <span class="pill">~${Math.round(totalMin)} min estimated</span>
+        <span class="pill n">${weak ? weak.name : ""}</span>
+      </div>
+      <div style="margin-top:8px">${sprintRows
+        .map(
+          (r) => `<button class="optrow" style="width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-top:6px;background:var(--bg)">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:19px">${r.ico}</span>
+      <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(r.t)}</b><div class="small muted">${esc(r.s)}</div></div>
+      <span class="badge">${ic("play")} ${esc(r.a)}</span></div></button>`,
+        )
+        .join("")}</div>`;
+        const runMap = {
+          StudyTube: () => go("youtube"),
+          Practice: () => go("practice"),
+          Focus: () => go("analytics"),
+          Review: () => go("review"),
+        };
+        c.querySelectorAll("button.optrow").forEach((b) => {
+          const key = b.querySelector(".badge") ? b.querySelector(".badge").textContent.trim() : "";
+          const k = Object.keys(runMap).find((x) => key.includes(x));
+          b.onclick = k ? runMap[k] : () => go("practice");
+        });
+        return c;
+      }
+      /* ═══ ZERO BACKLOG — nothing silently drops (research: tracker apps win by
+   carrying missed items forward, never hiding them) ═══ */
+      function zeroBacklogCard() {
+        const tk = todayKey(Date.now());
+        const items = [];
+        const p = aip();
+        if (p && p.tasks) {
+          p.tasks
+            .filter((t) => t.status === "todo" && t.date < tk)
+            .slice(0, 5)
+            .forEach((t) => {
+              items.push({
+                ico: "📅",
+                t: t.topic + " (" + t.kind + ")",
+                s: t.date + " se pending",
+                run: () => aipOpenLesson(t),
+              });
+            });
+        }
+        try {
+          const due = wrongQuestions().filter((x) => {
+            const sch = S.reviewSchedule[x.q.id];
+            return !sch || sch.due <= Date.now();
+          });
+          if (due.length)
+            items.push({
+              ico: "🔁",
+              t: due.length + " review questions pending",
+              s: "spaced repetition — pehle inko",
+              run: () =>
+                startDrill("Backlog Review · " + fmtDate(Date.now()), due.slice(0, 15), 100),
+            });
+        } catch (e) {}
+        try {
+          const overdue = (S.schedules || []).filter((s2) => s2.when < Date.now());
+          if (overdue.length)
+            items.push({
+              ico: "⏰",
+              t: overdue.length + " scheduled mock(s) miss hue",
+              s: "re-schedule karo ya abhi do",
+              run: () => go("planner"),
+            });
+        } catch (e) {}
+        try {
+          const sylS = syllabusStats();
+          const remaining = [...sylS.bankIdx].filter((k) => !sylS.touchedIdx.has(k));
+          if (remaining.length)
+            items.push({
+              ico: "📖",
+              t: remaining.length + " syllabus chapter(s) abhi untouched",
+              s: "bank me data hai — cover karo",
+              run: () => go("mastery"),
+            });
+        } catch (e) {}
+        if (!items.length) return null;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("flag")}</span>
+      <div><h3 style="margin:0">Zero Backlog</h3>
+      <div class="small muted">Missed items yahan hide nahi hote — clear karo, warna streak aur score dono girte hain.</div></div>
+      <span class="pill r" style="align-self:flex-start">${items.length}</span></div>
+      ${items
+        .map(
+          (it) => `<button class="optrow" style="width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;background:var(--bg)">
+      <div style="display:flex;align-items:center;gap:9px"><span style="font-size:18px">${it.ico}</span>
+      <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(it.t)}</b><div class="small muted">${esc(it.s)}</div></div>
+      <span class="badge">→</span></div></button>`,
+        )
+        .join("")}`;
+        c.querySelectorAll("button.optrow").forEach((b, i) => {
+          const it = items[i];
+          if (it) b.onclick = it.run;
+        });
+        return c;
+      }
+      /* ═══ ANALYTICS WRAPPER — heatmap + timeline + benchmark appended by the
+   analytics view; these functions are reused by viewAnalytics below. ═══ */
+
       function viewDash(root) {
         const g = globalStats(),
           st = streakInfo();
@@ -23835,6 +25477,150 @@
         acts.append(two, qs, lb);
         hero.appendChild(acts);
         root.appendChild(hero);
+        // ── one-glance quick launcher: everyday actions at finger reach ──
+        const qa = el("div", "grid g4");
+        qa.style.cssText = "margin-top:12px;gap:10px";
+        const qab = [
+          ["youtube", "▶ StudyTube", "YouTube-style study hub", "red"],
+          ["pyq", "📑 PYQ Papers", "Official full-length papers", "blue"],
+          ["practice", "✍️ Practice", "Smart + sectional drills", "green"],
+          ["planner", "📅 AI Planner", "Tumhare hours ka real plan", "violet"],
+        ];
+        qab.forEach(([r2, t2, s2, tone]) => {
+          const c = el("button", "card");
+          c.style.cssText =
+            "text-align:left;cursor:pointer;padding:14px 16px;border-radius:14px;border:1px solid var(--line);transition:all .18s ease";
+          c.onmouseenter = () => {
+            c.style.transform = "translateY(-2px)";
+            c.style.borderColor = "var(--accent-text)";
+            c.style.boxShadow = "0 6px 18px rgba(0,0,0,.08)";
+          };
+          c.onmouseleave = () => {
+            c.style.transform = "";
+            c.style.borderColor = "var(--line)";
+            c.style.boxShadow = "";
+          };
+          c.innerHTML = `<div style="font-size:20px;font-weight:800;margin-bottom:4px">${t2}</div>
+          <div class="small muted">${s2}</div>`;
+          c.onclick = () => go(r2);
+          qa.appendChild(c);
+        });
+        root.appendChild(qa);
+
+        // ── TODAY AT A GLANCE: the 4 things that matter right now, above the fold.
+        //    Research-based hierarchy: status/targets top → trends middle → details
+        //    bottom. 4 metrics + weak topic target, all with one tap. ──
+        (() => {
+          const ov = el("div", "card ov-grid");
+          ov.style.cssText = "border-color:color-mix(in srgb,var(--accent-text) 30%,var(--line))";
+          const goal = Math.max(1, S.settings.dailyGoal || 20);
+          const doneToday = S.dailyQuestions[todayKey(Date.now())] || 0;
+          const goalPct = Math.min(100, Math.round((doneToday / goal) * 100));
+          const focus = Math.max(0, pomoLog()[todayKey(Date.now())] || 0);
+          const focusGoal = Math.max(10, S.settings.focusGoal || 100);
+          const focusPct = Math.min(100, Math.round((focus / focusGoal) * 100));
+          const weak = (() => {
+            try {
+              return chapterPriorities().slice(0, 3);
+            } catch (e) {
+              return [];
+            }
+          })();
+          const dueN = (() => {
+            try {
+              return dueReviewQuestions().length;
+            } catch (e) {
+              return 0;
+            }
+          })();
+          let examDays = null;
+          let examTxt = "";
+          if (S.settings.examDate) {
+            examDays = Math.ceil((new Date(S.settings.examDate) - Date.now()) / 86400000);
+            if (examDays >= 0)
+              examTxt =
+                examDays === 0
+                  ? "AAJ"
+                  : examDays <= 14
+                    ? examDays + "d"
+                    : examDays + "d · " + S.settings.targetPercentile
+                      ? examDays + "d · " + S.settings.targetPercentile + "%ile"
+                      : examDays + "d";
+          }
+          const card = (icon, label, val, sub, onClick) => {
+            const c = el("button");
+            c.type = "button";
+            c.className = "ov-cell";
+            c.style.cssText =
+              "text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;min-width:0;transition:all .18s ease";
+            c.onmouseenter = () => {
+              c.style.borderColor = "var(--accent-text)";
+              c.style.transform = "translateY(-2px)";
+            };
+            c.onmouseleave = () => {
+              c.style.borderColor = "var(--line)";
+              c.style.transform = "";
+            };
+            c.innerHTML = `<div class="small muted">${icon} ${esc(label)}</div>
+        <div style="font-family:var(--font-display,inherit);font-weight:800;font-size:22px;margin-top:3px">${val}</div>
+        <div class="small muted">${sub}</div>
+        ${onClick ? `<div class="small" style="margin-top:6px;color:var(--accent-text);font-weight:700">Open →</div>` : ""}`;
+            if (onClick) c.onclick = onClick;
+            return c;
+          };
+          ov.appendChild(
+            card("🎯", "Today's goal", `${goalPct}%`, `${doneToday}/${goal} Q`, () =>
+              go("practice"),
+            ),
+          );
+          ov.appendChild(
+            card("🔒", "Focus", `${focusPct}%`, `${Math.round(focus)}/${focusGoal} min`, () =>
+              go("analytics"),
+            ),
+          );
+          ov.appendChild(
+            card("📅", "Exam", examTxt || "—", S.settings.examDate || "Set exam date", () =>
+              go("settings"),
+            ),
+          );
+          ov.appendChild(
+            card(
+              "🔁",
+              "Due review",
+              String(dueN),
+              dueN ? "questions due today" : "all clear",
+              dueN ? () => go("review") : undefined,
+            ),
+          );
+          if (weak.length) {
+            const w = el("div", "ov-weak");
+            w.style.cssText = "grid-column:1/-1;margin-top:2px";
+            w.innerHTML = `<div class="small" style="color:var(--accent-text);font-weight:700;margin-bottom:6px">🎯 Aaj ka target — weak chapter</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${weak
+            .map(
+              (x) =>
+                `<button class="pill" style="cursor:pointer" data-wc="${esc(x.name)}">${esc(x.name)} · ${x.acc}%</button>`,
+            )
+            .join("")}</div>`;
+            w.querySelectorAll("[data-wc]").forEach((b) => {
+              b.onclick = () => {
+                S.aiPlanner = S.aiPlanner || { profile: { target: "jeemain" } };
+                go("youtube");
+                setTimeout(() => {
+                  try {
+                    const si = document.querySelector("[data-ytSearch]");
+                    const sb = document.querySelector("[data-ytSubmit]");
+                    if (si) si.value = b.getAttribute("data-wc") || "";
+                    if (sb) sb.click();
+                  } catch (e) {}
+                }, 160);
+              };
+            });
+            ov.appendChild(w);
+          }
+          root.appendChild(ov);
+        })();
+
         // ── launcher order: ONE next action → mentor → aaj ka mission ──
         // ERROR ISOLATION (graceful degradation): one broken card must never
         // blank the whole dashboard — the CBT/library below still work.
@@ -23849,6 +25635,9 @@
         safeCard(nextBestActionCard);
         safeCard(mentorPingCard);
         safeCard(missionControlCard);
+        safeCard(aiDailySprintCard);
+        safeCard(zeroBacklogCard);
+        safeCard(streakBankCard);
         // today's promise (implementation intention) — kept above everything
         intentionCards(root);
         // urgency order: an unfinished attempt outranks everything else on the page
@@ -24736,6 +26525,7 @@
           aiChatRenderMsgs();
           aiChatRenderChips();
           save_aiChatHistory();
+          speakSaarthi(fullText);
           return;
         }
         /* PERF: during typing we update ONLY the last bubble's innerHTML in
@@ -24788,6 +26578,7 @@
             aiChatRenderMsgs();
             aiChatRenderChips();
             save_aiChatHistory();
+            speakSaarthi(fullText);
             return;
           }
           bubble.innerHTML = mdLite(modelMsg.text) + '<span class="ai-caret"></span>';
@@ -25312,7 +27103,8 @@
           fileInp = $("#aiChatFile"),
           micBtn = $("#aiChatMic"),
           socBtn = $("#aiChatSocratic"),
-          socLine = $("#aiChatSocLine");
+          socLine = $("#aiChatSocLine"),
+          voiceBtn = $("#aiVoiceBtn");
         if (!btn) return;
         if (aiChatHistory.length) btn.classList.remove("pulse"); // returning user — skip the "look here" cue
         btn.onclick = aiChatOpen;
@@ -25342,6 +27134,21 @@
             socSync();
           };
         socSync();
+        // Voice output toggle (Hindi/English mentor audio)
+        if (voiceBtn) {
+          voiceBtn.classList.toggle("on", !!S.settings.aiVoice);
+          voiceBtn.onclick = () => {
+            try {
+              S.settings.aiVoice = !S.settings.aiVoice;
+              save();
+              voiceBtn.classList.toggle("on", !!S.settings.aiVoice);
+              toast(S.settings.aiVoice ? "🔊 Mentors jawab ab bolega" : "🔇 Voice output off");
+              if (!S.settings.aiVoice) {
+                try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+              }
+            } catch (e) {}
+          };
+        }
         sendBtn.onclick = aiChatSend;
         attachBtn.onclick = () => fileInp.click();
         fileInp.onchange = () => {

@@ -77,33 +77,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
+      { title: "NTACBT | JEE & CBSE Learning OS" },
       {
         name: "description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "NTACBT" },
       {
         property: "og:title",
-        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+        content: "NTACBT | JEE & CBSE Learning OS",
       },
       {
         property: "og:description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       {
         name: "twitter:title",
-        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+        content: "NTACBT | JEE & CBSE Learning OS",
       },
       {
         name: "twitter:description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "Adaptive JEE Main & CBSE learning OS: planner, StudyTube, PYQ practice, NTA-style CBT, analytics, focus and AI tutoring.",
       },
       {
         property: "og:image",
@@ -115,6 +115,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/84a87eb0-1c9d-44bc-b9ff-278acebbcdb8",
       },
+      { name: "theme-color", content: "#2563eb" },
+      { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
       {
@@ -122,6 +124,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "preconnect", href: "https://i.ytimg.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://www.youtube.com" },
+      { rel: "preconnect", href: "https://www.youtube-nocookie.com" },
+      { rel: "dns-prefetch", href: "https://i.ytimg.com" },
+      { rel: "dns-prefetch", href: "https://www.youtube.com" },
     ],
   }),
   shellComponent: RootShell,
@@ -146,6 +155,14 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // Offline support is best-effort; never break the app over it.
+      });
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -4,20 +4,20 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal" },
+      { title: "NTACBT | JEE & CBSE CBT Platform" },
       {
         name: "description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "NTA-style JEE Main & CBSE computer based test platform with AI planning, StudyTube, PYQ, analytics and revision.",
       },
       {
         property: "og:title",
-        content: "Someshwar JEE Main CBT Platform | Offline Mock Test Portal",
+        content: "NTACBT | JEE & CBSE CBT Platform",
       },
       {
         property: "og:description",
         content:
-          "NTA-style JEE Main computer based test platform. Upload Physics, Chemistry and Maths PDFs to auto-generate a 75-question mock test with analytics.",
+          "NTA-style JEE Main & CBSE computer based test platform with AI planning, StudyTube, PYQ, analytics and revision.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-/** The whole app is a standalone single HTML file served from /jee-cbt.html. */
+/** Entry point — opens the original orange CBT platform by default. */
 function Index() {
   useEffect(() => {
     window.location.replace("/jee-cbt.html");
@@ -34,9 +34,22 @@ function Index() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
-        <h1 className="text-xl font-semibold text-foreground">Someshwar JEE Main CBT Platform</h1>
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500 text-lg font-bold text-white">
+          N
+        </div>
+        <h1 className="mt-4 text-xl font-semibold text-foreground">
+          NTACBT — JEE &amp; CBSE CBT Platform
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Opening the exam portal… <a href="/jee-cbt.html">Click here</a> if it doesn't load.
+          Opening the full platform…{" "}
+          <a href="/jee-cbt.html" className="text-orange-500 underline">
+            Click here
+          </a>{" "}
+          if it doesn't load. The new Learning OS is at{" "}
+          <a href="/app" className="text-orange-500 underline">
+            /app
+          </a>
+          .
         </p>
       </div>
     </main>
