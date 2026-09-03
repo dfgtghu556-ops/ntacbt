@@ -9,6 +9,20 @@ Wait for user confirmation after verifying on the live preview.
 - Dashboard (orange `/jee-cbt.html`): added a one-glance quick-launcher grid (StudyTube / PYQ / Practice / AI Planner) right under the hero.
 - AI Planner (orange `/jee-cbt.html`): added a 7-step visual stepper (Exam → Chapters → Dream Team → Dream Teacher → Days & depth → Budget → Study style) so it's clear where you are in the wizard.
 
+## Full feature round (added)
+- **Consistency Heatmap** (Analytics → Consistency tab): 12-week study calendar from focus-min,
+  daily questions and study blocks; focus hours / questions / active-days / best-day stats.
+- **Target Timeline** (Analytics, pinned): current vs target percentile + the exact weekly
+  percentile pace needed and whether on track by exam day.
+- **College Benchmark** (Analytics, pinned): private self-check against General-category
+  percentile bands (99.5 / 99 / 98 / 95 / 90). No public leaderboard.
+- **AI Daily Sprint** (Dashboard): exact numbers for today derived from real data — weak
+  chapter, remaining questions, remaining focus-min, due reviews; each row starts the
+  right action.
+- **Zero Backlog** (Dashboard): nothing silently drops — overdue planner tasks, due review
+  questions, missed scheduled mocks, and untouched syllabus chapters all appear with a
+  one-tap clear action.
+
 ## Validation (this round)
 - HTML inline-script syntax check: ok
 - `npm run build`: ok

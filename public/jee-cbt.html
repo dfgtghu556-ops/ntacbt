@@ -15235,6 +15235,16 @@
           root.appendChild(rc);
         } catch (e) {}
 
+        /* ═══ TARGET TIMELINE + COLLEGE BENCHMARK (pinned with readiness) ═══ */
+        try {
+          const tt = targetTimelineCard();
+          if (tt) root.appendChild(tt);
+        } catch (e) {}
+        try {
+          const cb = collegeBenchmarkCard();
+          if (cb) root.appendChild(cb);
+        } catch (e) {}
+
         if (!done.length) {
           root.appendChild(el("div", "card", `<p class="muted">No attempts yet.</p>`));
           return;
@@ -15698,13 +15708,21 @@
           }
         } catch (e) {}
 
+        /* ═══ CONSISTENCY HEATMAP (habits tab) ═══ */
+        try {
+          const hm2 = studyHeatmapCard();
+          if (hm2) root.appendChild(hm2);
+        } catch (e) {}
+
         /* ── organize the page: pinned coach summary + readiness, then tabs ── */
         organizeIntoTabs(root, "jeecbt.tab.analytics", {
           pin: (node, txt) =>
             txt.includes("Analytics Dashboard") ||
             txt.includes("Coach's summary") ||
             txt.includes("Current Percentile") ||
-            txt.includes("Exam Readiness"),
+            txt.includes("Exam Readiness") ||
+            txt.includes("Target Timeline") ||
+            txt.includes("College Benchmark"),
           assign: (node, txt) => {
             if (
               txt.includes("Percentile Trajectory") ||
@@ -15716,6 +15734,7 @@
               return "trends";
             if (txt.includes("Subject Evolution") || txt.includes("Subject Wise Average"))
               return "subjects";
+            if (txt.includes("Consistency Heatmap")) return "consistency";
             if (
               txt.includes("Speed × Accuracy") ||
               txt.includes("Chapter Wise Accuracy") ||
@@ -15732,6 +15751,7 @@
             { id: "trends", label: ic("trendup") + " Trends" },
             { id: "subjects", label: ic("chart") + " Subjects" },
             { id: "chapters", label: ic("target") + " Chapters" },
+            { id: "consistency", label: ic("calendar") + " Consistency" },
             { id: "mistakes", label: ic("dna") + " Mistakes" },
           ],
         });
@@ -24687,6 +24707,262 @@
           : "";
         return c;
       }
+      /* ═══ CONSISTENCY HEATMAP — 12-week study calendar (research: daily
+   consistency + focus-hours heatmap is the #1 habit visual) ═══ */
+      function studyHeatmapCard() {
+        const days = 84;
+        const cells = [];
+        let focusTotal = 0, qTotal = 0, active = 0, bestDay = null;
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date();
+          d.setHours(0, 0, 0, 0);
+          d.setDate(d.getDate() - i);
+          const k = todayKey(d.getTime());
+          const fm = pomoLog()[k] || 0;
+          const q = S.dailyQuestions[k] || 0;
+          const on = !!(fm || q || S.studyLog[k]);
+          if (on) active++;
+          focusTotal += fm;
+          qTotal += q;
+          const score = fm + q * 4;
+          if (!bestDay || score > bestDay.score) bestDay = { k, score, fm, q };
+          cells.push({ k, fm, q, on, score });
+        }
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("calendar")}</span>
+      <div><h3 style="margin:0">Consistency Heatmap</h3>
+      <div class="small muted">Pichhle 12 hafte — kaunsa din sach mein padhai hui. Deep orange = heavy day, blank = gap.</div></div></div>
+      <div class="grid g4" style="margin-top:10px">
+        ${statCard("Focus hours", Math.round(focusTotal / 60) + "h", `${Math.round(focusTotal)} min total`)}
+        ${statCard("Questions", qTotal, "12 hafte")}
+        ${statCard("Active days", active + "/" + days, pct(active, days) + "%")}
+        ${statCard("Best day", bestDay ? bestDay.k.slice(5) : "—", bestDay ? `${Math.round(bestDay.fm / 60)}h · ${bestDay.q} Q` : "")}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px">
+        ${cells
+          .map(
+            (x) => `<div title="${x.k} · ${Math.round(x.fm / 60)}h · ${x.q} Q" style="aspect-ratio:1;border-radius:5px;${x.on ? `background:rgba(242,103,34,${(0.18 + 0.82 * Math.min(1, x.score / 120)).toFixed(2)})` : "background:var(--line)"};box-shadow:inset 0 0 0 1px rgba(0,0,0,.03)"></div>`,
+          )
+          .join("")}
+      </div>
+      <div class="small muted" style="margin-top:8px">Roz ka ek focus block bhi count hota hai — streak se zyada, yeh consistency dikhata hai.</div>`;
+        const view = el("button", "btn sm ghost", "Analytics me details");
+        view.style.marginTop = "10px";
+        view.onclick = () => go("analytics");
+        c.appendChild(view);
+        return c;
+      }
+      /* ═══ TARGET TIMELINE — current vs target + the exact weekly pace needed ═══ */
+      function targetTimelineCard() {
+        const trend = percentileTrend();
+        const targetPct = S.settings.targetPercentile;
+        const latest = trend.pts.length ? trend.pts[trend.pts.length - 1].p : null;
+        const proj = trend.projected;
+        const slope = trend.slope;
+        let daysLeft = null;
+        if (S.settings.examDate) {
+          const dl = Math.ceil((new Date(S.settings.examDate) - Date.now()) / 86400000);
+          if (dl > 0) daysLeft = dl;
+        }
+        let gap = latest != null && targetPct ? targetPct - latest : null;
+        let neededPace = null, readyWeeks = null, onTrack = null;
+        if (gap != null && daysLeft != null) {
+          neededPace = gap / (daysLeft / 7);
+          if (slope > 0 && targetPct != null) readyWeeks = gap / slope;
+          onTrack = gap <= 0 || (slope > 0 && slope * (daysLeft / 7) >= gap);
+        }
+        const pctLine = latest != null && targetPct ? Math.max(2, Math.min(98, (latest / targetPct) * 100)) : 50;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("flag")}</span>
+      <div><h3 style="margin:0">Target Timeline</h3>
+      <div class="small muted">Current percentile ko target tak pahunchane ke liye exact weekly speed — har test se calculation.</div></div></div>
+      <div class="grid g3" style="margin-top:10px">
+        ${statCard("Current", latest != null ? latest : "—", "real 2025 curve")}
+        ${statCard("Target", targetPct || "—", targetPct ? "" : "Settings me set karo")}
+        ${statCard("Projected", proj != null ? proj : "—", proj != null ? "by exam day" : "2+ tests chahiye")}
+      </div>
+      <div class="row" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px;height:12px;background:var(--line);border-radius:6px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${pctLine}%;background:linear-gradient(90deg,var(--blue),var(--blue-d));border-radius:6px"></div>
+          ${targetPct ? `<div style="position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);left:${pctLine}%"></div>` : ""}
+        </div>
+        <span class="small muted">latest ${latest ?? "—"} → target ${targetPct ?? "—"}</span>
+      </div>
+      ${targetPct && latest != null
+        ? `<div style="margin-top:10px;padding:9px 12px;border-radius:9px;border:1px solid ${onTrack ? "var(--green)" : "var(--amber)"};color:${onTrack ? "var(--green)" : "var(--amber)"};font-size:13px">
+      ${onTrack ? "✅" : "⚠️"} ${onTrack ? "On track" : "Gap bacha hai"} — ${gap <= 0 ? "target cross ho chuka hai." : onTrack ? "is speed par exam tak target level pe." : `har hafte ${neededPace.toFixed(1)} percentile aur chahiye${readyWeeks != null ? ` · abhi speed par ~${Math.max(0, Math.ceil(readyWeeks))} hafte laga sakte hain` : ""}.`}</div>`
+        : `<div class="small muted" style="margin-top:10px">Target + kam se kam 2 tests set karo — tab yahan exact weekly plan dikhega.</div>`}`;
+        return c;
+      }
+      /* ═══ COLLEGE BENCHMARK — private, no leaderboard (research: avoid public
+   ranking for young students; show self vs target band instead) ═══ */
+      function collegeBenchmarkCard() {
+        const trend = percentileTrend();
+        const latest = trend.pts.length ? trend.pts[trend.pts.length - 1].p : null;
+        const proj = trend.projected;
+        const bands = [
+          [99.5, "Top NIT / IIIT", "Top-tier CSE/ECE — physics+maths ko depth se"],
+          [99, "NIT CSE / top IIIT-2", "High percentile, high-scoring chapters par payoff"],
+          [98, "NIT top branches", "Accuracy 90%+ aur negatives near-zero chahiye"],
+          [95, "NIT / state NIT", "Consistency + one-shot revision se achievable"],
+          [90, "Good engineering / state", "Base + accuracy — clear cutoff safely"],
+        ];
+        const mark = latest != null ? latest : proj != null ? proj : null;
+        const myBand = mark != null ? bands.findIndex((b) => mark >= b[0]) : 2;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("medal")}</span>
+      <div><h3 style="margin:0">College Benchmark</h3>
+      <div class="small muted">Private self-check — koi leaderboard nahi. Aap current/projected percentile ko general category bands ke against dekho.</div></div></div>
+      <div style="margin-top:8px">${bands
+        .map((b, i) => {
+          const on = i === myBand;
+          const above = mark != null && mark >= b[0];
+          return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;${on ? "background:color-mix(in srgb,var(--blue) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--blue) 40%,var(--line))" : "border:1px solid var(--line)"};margin-top:6px">
+      <span class="pill ${above ? "g" : ""}" style="min-width:48px;text-align:center">${b[0]}+</span>
+      <div style="flex:1;min-width:0"><b style="font-size:13px">${esc(b[1])}</b><div class="small muted">${esc(b[2])}</div></div>
+      <span class="small" style="color:${on ? "var(--accent-text)" : "var(--muted)"}">${on ? (above ? "◆ aap yahan" : "◆ target band") : above ? "✓ crossed" : ""}</span></div>`;
+        })
+        .join("")}</div>
+      <div class="small muted" style="margin-top:8px">Current: ${latest ?? "—"} · Projected: ${proj ?? "—"} · ${mark != null ? (mark >= 95 ? "Top 5% zone" : mark >= 90 ? "Safe cutoff zone" : "Cutoff zone se neeche — abhi turant pace badhao") : "2+ tests ke baad benchmark bane"}</div>`;
+        return c;
+      }
+      /* ═══ AI DAILY SPRINT — the exact numbers for today, one card ═══ */
+      function aiDailySprintCard() {
+        const tk = todayKey(Date.now());
+        const goal = Math.max(10, S.settings.dailyGoal || 20);
+        const doneQ = S.dailyQuestions[tk] || 0;
+        const leftQ = Math.max(0, goal - doneQ);
+        const focusGoal = Math.max(10, S.settings.focusGoal || 100);
+        const doneF = Math.max(0, pomoLog()[tk] || 0);
+        const leftF = Math.max(0, focusGoal - doneF);
+        let weak = null;
+        try {
+          weak = chapterPriorities()[0] || null;
+        } catch (e) {}
+        let due = 0;
+        try {
+          due = dueReviewQuestions().length;
+        } catch (e) {}
+        const totalMin = (weak ? 20 : 25) + (leftQ * 1.2) + (due ? 12 : 0) + Math.min(leftF, 60) * 0.5;
+        const c = el("div", "card");
+        c.style.borderColor = "color-mix(in srgb,var(--accent-text) 45%,var(--line))";
+        const sprintRows = [
+          weak ? { ico: "📖", t: weak.name, s: `${weak.acc}% accuracy · ${weak.n} questions`, a: "StudyTube" } : null,
+          leftQ ? { ico: "✍️", t: `${leftQ} questions left`, s: `${doneQ}/${goal} today`, a: "Practice" } : null,
+          leftF ? { ico: "🔒", t: `${Math.round(leftF)} focus-min left`, s: `${Math.round(doneF)}/${focusGoal} today`, a: "Focus" } : null,
+          due ? { ico: "🔁", t: `${due} review due`, s: "bhoolne se pehle", a: "Review" } : null,
+        ].filter(Boolean);
+        if (!sprintRows.length)
+          return el(
+            "div",
+            "card",
+            `<div class="section-title"><span class="ico">${ic("check")}</span><h3 style="margin:0">AI Daily Sprint</h3></div><div class="small" style="margin-top:8px;color:var(--green)">${ic("check")} Aaj ka plan — practice + focus + review — done hai. Ab ek aur PYQ ya Daily 10 lo.</div>`,
+          );
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("zap")}</span>
+      <div><h3 style="margin:0">AI Daily Sprint — aaj ke exact numbers</h3>
+      <div class="small muted">Weak chapter + practice + focus + review from your real data. Har row tap karo.</div></div></div>
+      <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+        <span class="pill">~${Math.round(totalMin)} min estimated</span>
+        <span class="pill n">${weak ? weak.name : ""}</span>
+      </div>
+      <div style="margin-top:8px">${sprintRows
+        .map(
+          (r) => `<button class="optrow" style="width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-top:6px;background:var(--bg)">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:19px">${r.ico}</span>
+      <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(r.t)}</b><div class="small muted">${esc(r.s)}</div></div>
+      <span class="badge">${ic("play")} ${esc(r.a)}</span></div></button>`,
+        )
+        .join("")}</div>`;
+        const runMap = {
+          StudyTube: () => go("youtube"),
+          Practice: () => go("practice"),
+          Focus: () => go("analytics"),
+          Review: () => go("review"),
+        };
+        c.querySelectorAll("button.optrow").forEach((b) => {
+          const key = b.querySelector(".badge") ? b.querySelector(".badge").textContent.trim() : "";
+          const k = Object.keys(runMap).find((x) => key.includes(x));
+          b.onclick = k ? runMap[k] : () => go("practice");
+        });
+        return c;
+      }
+      /* ═══ ZERO BACKLOG — nothing silently drops (research: tracker apps win by
+   carrying missed items forward, never hiding them) ═══ */
+      function zeroBacklogCard() {
+        const tk = todayKey(Date.now());
+        const items = [];
+        const p = aip();
+        if (p && p.tasks) {
+          p.tasks
+            .filter((t) => t.status === "todo" && t.date < tk)
+            .slice(0, 5)
+            .forEach((t) => {
+              items.push({
+                ico: "📅",
+                t: t.topic + " (" + t.kind + ")",
+                s: t.date + " se pending",
+                run: () => aipOpenLesson(t),
+              });
+            });
+        }
+        try {
+          const due = wrongQuestions().filter((x) => {
+            const sch = S.reviewSchedule[x.q.id];
+            return !sch || sch.due <= Date.now();
+          });
+          if (due.length)
+            items.push({
+              ico: "🔁",
+              t: due.length + " review questions pending",
+              s: "spaced repetition — pehle inko",
+              run: () =>
+                startDrill("Backlog Review · " + fmtDate(Date.now()), due.slice(0, 15), 100),
+            });
+        } catch (e) {}
+        try {
+          const overdue = (S.schedules || []).filter((s2) => s2.when < Date.now());
+          if (overdue.length)
+            items.push({
+              ico: "⏰",
+              t: overdue.length + " scheduled mock(s) miss hue",
+              s: "re-schedule karo ya abhi do",
+              run: () => go("planner"),
+            });
+        } catch (e) {}
+        try {
+          const sylS = syllabusStats();
+          const remaining = [...sylS.bankIdx].filter((k) => !sylS.touchedIdx.has(k));
+          if (remaining.length)
+            items.push({
+              ico: "📖",
+              t: remaining.length + " syllabus chapter(s) abhi untouched",
+              s: "bank me data hai — cover karo",
+              run: () => go("mastery"),
+            });
+        } catch (e) {}
+        if (!items.length) return null;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">${ic("flag")}</span>
+      <div><h3 style="margin:0">Zero Backlog</h3>
+      <div class="small muted">Missed items yahan hide nahi hote — clear karo, warna streak aur score dono girte hain.</div></div>
+      <span class="pill r" style="align-self:flex-start">${items.length}</span></div>
+      ${items
+        .map(
+          (it) => `<button class="optrow" style="width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;background:var(--bg)">
+      <div style="display:flex;align-items:center;gap:9px"><span style="font-size:18px">${it.ico}</span>
+      <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(it.t)}</b><div class="small muted">${esc(it.s)}</div></div>
+      <span class="badge">→</span></div></button>`,
+        )
+        .join("")}`;
+        c.querySelectorAll("button.optrow").forEach((b, i) => {
+          const it = items[i];
+          if (it) b.onclick = it.run;
+        });
+        return c;
+      }
+      /* ═══ ANALYTICS WRAPPER — heatmap + timeline + benchmark appended by the
+   analytics view; these functions are reused by viewAnalytics below. ═══ */
+
       function viewDash(root) {
         const g = globalStats(),
           st = streakInfo();
@@ -24905,6 +25181,8 @@
         safeCard(nextBestActionCard);
         safeCard(mentorPingCard);
         safeCard(missionControlCard);
+        safeCard(aiDailySprintCard);
+        safeCard(zeroBacklogCard);
         // today's promise (implementation intention) — kept above everything
         intentionCards(root);
         // urgency order: an unfinished attempt outranks everything else on the page
