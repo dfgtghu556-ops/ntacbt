@@ -16,6 +16,10 @@ export interface StudyTubeVideo {
   institute?: string;
   subject?: string;
   topic?: string;
+  depth?: string;
+  kind?: string;
+  /** When set, the item is an offline "search pick" that opens YouTube search (no single video id). */
+  externalUrl?: string | undefined;
 }
 
 export interface StudyTubeRequest {

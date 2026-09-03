@@ -15434,6 +15434,35 @@
           ),
         );
 
+        // ── Empty-bank rescue: practice needs at least one paper in the bank.
+        //    Download a baked PYQ paper in one tap so the section never dead-ends.
+        if (allUniqueQuestions().length === 0) {
+          const fp = el("div", "card");
+          fp.style.borderColor = "var(--accent-text)";
+          fp.innerHTML = `<div class="section-title"><span class="ico">${ic("bank")}</span>
+      <div><h3 style="margin:0">📥 Pehle ek paper download karo</h3>
+      <div class="small muted">Question bank abhi khali hai — practice isi se banti hai. Ek official-style JEE Main PYQ paper download karte hi Smart Practice, sectional aur speed drill unlock ho jayenge.</div></div></div>`;
+          const fb = el("button", "btn sm", ic("download") + " Load a 2026 PYQ paper");
+          fb.style.marginTop = "10px";
+          fb.onclick = async () => {
+            fb.disabled = true;
+            fb.innerHTML = ic("clock") + " Loading…";
+            try {
+              await pyqLoadIndex(true);
+              const meta = (pyqState.index || []).find((p) => !p.user);
+              if (meta) await pyqStart(meta, fb);
+              else toast("PYQ library khali hai — thodi der baad try karo.");
+            } catch (e) {
+              toast("Paper load nahi hua — connection check karo.");
+            } finally {
+              fb.disabled = false;
+              fb.innerHTML = ic("download") + " Load a 2026 PYQ paper";
+            }
+          };
+          fp.appendChild(fb);
+          root.appendChild(fp);
+        }
+
         // ── Target-marks planner: kitne questions attempt karne hain target hits ──
         (() => {
           const tc = el("div", "card");

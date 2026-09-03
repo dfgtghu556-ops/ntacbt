@@ -41,6 +41,24 @@ interface CbtSearch {
   name?: string | undefined;
 }
 
+interface DiagnosticPaper {
+  questions?: Array<{
+    no: number;
+    subject: string;
+    chapter?: string;
+    topic?: string;
+    type: "mcq" | "integer";
+    text: string;
+    options: Array<{ label: string; text: string }>;
+    answer: string;
+    sol?: string;
+  }>;
+  paper?: { questions?: DiagnosticPaper["questions"] };
+}
+
+const DIAGNOSTIC_PAPER = "jee-main-2026-online-22-january-morning-shift";
+const DIAGNOSTIC_PER_SUBJECT = 5;
+
 function emptyResponse(): CbtResponseState {
   return { ans: null, status: "notvisited", time: 0, changes: 0 };
 }
@@ -70,9 +88,104 @@ function buildInlineTest(
   };
 }
 
+function diagnosticSubject(s: string): CbtQuestion["subject"] {
+  if (s === "Physics" || s === "Chemistry" || s === "Mathematics") return s;
+  return "Physics";
+}
+
+function buildDiagnostic(
+  questions: DiagnosticPaper["questions"] | undefined,
+  name: string,
+): CbtTest | null {
+  const qs = questions || [];
+  if (!qs.length) return null;
+  const buckets: Record<CbtQuestion["subject"], DiagnosticPaper["questions"]> = {
+    Physics: [],
+    Chemistry: [],
+    Mathematics: [],
+  };
+  for (const q of qs) {
+    if (!q.text || !q.answer) continue;
+    (buckets[diagnosticSubject(q.subject)] ||= []).push({
+      ...q,
+      options: Array.isArray(q.options) ? q.options : [],
+    });
+  }
+  const selected: NonNullable<DiagnosticPaper["questions"]> = [];
+  for (const sub of ["Physics", "Chemistry", "Mathematics"] as const) {
+    for (const q of buckets[sub] || []) {
+      if (selected.filter((x) => x.subject === sub).length >= DIAGNOSTIC_PER_SUBJECT) break;
+      selected.push(q);
+    }
+  }
+  const byNo = [...selected].sort((a, b) => a.no - b.no);
+  if (byNo.length < 6) return null;
+  return {
+    id: `diag-${Date.now().toString(36)}`,
+    name,
+    createdAt: Date.now(),
+    durationSec: 45 * 60,
+    practice: true,
+    questions: byNo.map((q, i) => ({
+      id: `diag-${i}-${q.no}`,
+      no: i + 1,
+      subject: diagnosticSubject(q.subject),
+      chapter: q.chapter,
+      topic: q.topic,
+      type: q.type === "integer" ? "integer" : "mcq",
+      text: q.text,
+      options: q.options,
+      answer: q.answer,
+      sol: q.sol,
+    })),
+  };
+}
+
+async function loadDiagnosticTest(name: string): Promise<CbtTest | null> {
+  // 1) Baked paper (offline-friendly). Start from the fullest 2026 paper we ship.
+  try {
+    const r = await fetch(`/pyq/${DIAGNOSTIC_PAPER}.json`, { cache: "no-store" });
+    if (r.ok) {
+      const data = (await r.json()) as DiagnosticPaper;
+      const t = buildDiagnostic(data.questions ?? data.paper?.questions, name);
+      if (t) return t;
+    }
+  } catch {
+    /* fall through */
+  }
+  // 2) Full historical API (older years / more sessions if the server can reach it).
+  try {
+    const r = await fetch(`/api/public/pyq-papers?paper=${encodeURIComponent(DIAGNOSTIC_PAPER)}`, {
+      cache: "no-store",
+    });
+    if (r.ok) {
+      const data = (await r.json()) as { paper?: { questions?: DiagnosticPaper["questions"] } };
+      const t = buildDiagnostic(data.paper?.questions, name);
+      if (t) return t;
+    }
+  } catch {
+    /* fall through */
+  }
+  // 3) Last-resort demo so the practice page never dead-ends.
+  const demo = buildDiagnostic(
+    demoQuestions().map((q, i) => ({
+      no: i + 1,
+      subject: q.subject,
+      type: q.type,
+      text: q.text,
+      options: q.options,
+      answer: q.answer,
+    })),
+    name,
+  );
+  return demo;
+}
+
 function Cbt() {
   const search = useSearch({ from: Route.id });
   const [test, setTest] = useState<CbtTest | null>(null);
+  const [loadingTest, setLoadingTest] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [mode, setMode] = useState<Mode>("instructions");
   const [cur, setCur] = useState(0);
   const [responses, setResponses] = useState<Record<string, CbtResponseState>>({});
@@ -96,6 +209,43 @@ function Cbt() {
   useEffect(() => {
     testRef.current = test;
   }, [test]);
+
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      setLoadingTest(true);
+      setLoadError("");
+      // A saved full-length test (created by the PYQ browser) wins.
+      if (search.testId) {
+        const saved = getCbtTest(search.testId);
+        if (saved) {
+          setTest(saved);
+          setLoadingTest(false);
+          return;
+        }
+      }
+      const name = search.name || search.testId || "Quick mixed diagnostic drill";
+      try {
+        const t = await loadDiagnosticTest(name);
+        if (alive && t) {
+          setTest(t);
+          setMode("instructions");
+        } else if (alive) {
+          setLoadError(
+            "No questions could be loaded on this device yet. Open a paper from the PYQ browser.",
+          );
+        }
+      } catch (e) {
+        if (alive) setLoadError(e instanceof Error ? e.message : "Could not prepare this test.");
+      } finally {
+        if (alive) setLoadingTest(false);
+      }
+    }
+    void load();
+    return () => {
+      alive = false;
+    };
+  }, [search.testId, search.name]);
 
   useEffect(() => {
     if (mode !== "exam" || !test) return;
@@ -183,7 +333,7 @@ function Cbt() {
   }
 
   if (!test) {
-    return <CbtEmpty />;
+    return loadingTest ? <CbtLoading /> : <CbtEmpty error={loadError} />;
   }
 
   if (mode === "instructions") {
@@ -708,21 +858,45 @@ function CbtResultView({
   );
 }
 
-function CbtEmpty() {
+function CbtEmpty({ error }: { error?: string }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
       <div className="max-w-md rounded-xl border border-dashed p-8 text-center">
         <h1 className="text-lg font-semibold">No paper loaded</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Open a paper from the PYQ browser to start a full-length NTA-style test, or use the
-          diagnostic drill on this page.
+          {error ||
+            "Open a paper from the PYQ browser to start a full-length NTA-style test, or use the diagnostic drill on this page."}
         </p>
-        <Link
-          to="/app/pyq"
-          className="mt-4 inline-flex rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Open PYQ browser
-        </Link>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <Link
+            to="/app/pyq"
+            className="inline-flex rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Open PYQ browser
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex rounded-md border border-input px-3 py-2 text-sm"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CbtLoading() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-3">
+        <div className="h-6 w-2/3 animate-pulse rounded bg-muted" />
+        <div className="h-40 animate-pulse rounded-xl border bg-muted/40" />
+        <div className="h-10 w-1/2 animate-pulse rounded bg-muted" />
+        <p className="text-center text-xs text-muted-foreground">
+          Preparing your test from the verified question bank…
+        </p>
       </div>
     </div>
   );

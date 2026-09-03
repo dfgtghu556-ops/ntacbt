@@ -7,6 +7,7 @@
  */
 
 import type { StudyTubeRequest, StudyTubeResult, StudyTubeVideo } from "./types";
+import { offlineCatalog } from "./catalog";
 
 const ENDPOINT = "/api/public/study-planner";
 const TIMEOUT_MS = 12_000;
@@ -52,12 +53,13 @@ export async function discover(req: StudyTubeRequest): Promise<StudyTubeResult> 
     clearTimeout(timer);
 
     if (!r.ok) {
+      const items = offlineCatalog(req);
       const result: StudyTubeResult = {
-        items: [],
+        items,
         fetchedAt: Date.now(),
         fallback: true,
         cached: false,
-        error: `Discovery failed (${r.status}).`,
+        error: `Live discovery unavailable (${r.status}) — showing offline StudyTube picks.`,
       };
       cache.set(key, { at: Date.now(), value: result, ttl: 60_000 });
       return result;
@@ -68,21 +70,28 @@ export async function discover(req: StudyTubeRequest): Promise<StudyTubeResult> 
       fetchedAt?: number;
       fallback?: boolean;
     };
+    const liveItems = data.items || [];
+    // An empty live response means the sandbox/network couldn't reach YouTube.
+    // Keep the StudyTube experience alive with offline, study-matched picks.
+    const items = liveItems.length ? liveItems : offlineCatalog(req);
     const result: StudyTubeResult = {
-      items: data.items || [],
+      items,
       fetchedAt: data.fetchedAt || Date.now(),
-      fallback: !!data.fallback,
+      fallback: !!data.fallback || !liveItems.length,
       cached: false,
     };
+    if (!liveItems.length)
+      result.error = "Live discovery returned nothing — showing offline StudyTube picks.";
     cache.set(key, { at: Date.now(), value: result, ttl: TTL });
     return result;
   } catch {
+    const items = offlineCatalog(req);
     const result: StudyTubeResult = {
-      items: [],
+      items,
       fetchedAt: Date.now(),
       fallback: true,
       cached: false,
-      error: "Couldn't reach the video service. Try again in a moment.",
+      error: "Couldn't reach the video service — showing offline StudyTube picks.",
     };
     cache.set(key, { at: Date.now(), value: result, ttl: 60_000 });
     return result;

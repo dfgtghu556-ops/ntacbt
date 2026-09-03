@@ -20,6 +20,21 @@ import {
 } from "@/features/studytube/progress";
 
 export const Route = createFileRoute("/app/studytube/$video")({
+  validateSearch: (search: Record<string, unknown>): TheaterSearch => {
+    const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
+    const out: TheaterSearch = {};
+    const title = str(search["title"]);
+    const subject = str(search["subject"]);
+    const topic = str(search["topic"]);
+    const teacher = str(search["teacher"]);
+    const channel = str(search["channel"]);
+    if (title) out.title = title;
+    if (subject) out.subject = subject;
+    if (topic) out.topic = topic;
+    if (teacher) out.teacher = teacher;
+    if (channel) out.channel = channel;
+    return out;
+  },
   component: StudyTheater,
 });
 

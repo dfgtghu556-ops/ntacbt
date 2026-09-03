@@ -131,8 +131,8 @@ function Dashboard() {
               <QuickAction
                 href="/cbt?name=Quick%20mixed%20diagnostic%20drill"
                 icon={BarChart3}
-                title="Test"
-                sub="NTA-style CBT"
+                title="Practice"
+                sub="Quick diagnostic CBT"
               />
               <QuickAction
                 href="/app/planner"
