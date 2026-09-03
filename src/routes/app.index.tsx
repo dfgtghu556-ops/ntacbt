@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
+import { loadFocusStore, todayFocusSeconds, focusStreak } from "@/features/focus/focus";
 import type { ReadinessSnapshot } from "@/features/dashboard/types";
 
 export const Route = createFileRoute("/app/")({
@@ -51,10 +52,15 @@ function targetLabel(target: string): string {
 function Dashboard() {
   const [ready, setReady] = useState(false);
   const [snapshot, setSnapshot] = useState<ReadinessSnapshot>(EMPTY_SNAPSHOT);
+  const [streak, setStreak] = useState(0);
+  const [focusMin, setFocusMin] = useState(0);
 
   useEffect(() => {
     const store = new DataStore();
     setSnapshot(computeReadiness(store));
+    const f = loadFocusStore();
+    setStreak(focusStreak(f.sessions, Date.now()));
+    setFocusMin(Math.round(todayFocusSeconds(f.sessions, Date.now()) / 60));
     setReady(true);
   }, []);
 
@@ -76,18 +82,25 @@ function Dashboard() {
 
       {ready ? (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
-            <StatCard
-              icon={Clock}
-              label="Planned today"
-              value={`${today.plannedMinutes}m`}
-              sub={`${today.completedMinutes}m completed · ${planPct}%`}
-            />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-xl border p-4">
+              <ProgressRing value={planPct} />
+              <div className="mt-2 text-center text-xs text-muted-foreground">
+                Today's plan
+                <span className="mt-0.5 block font-semibold">{planPct}%</span>
+              </div>
+            </div>
             <StatCard
               icon={Flame}
-              label="Attempts"
-              value={String(snapshot.attempts)}
-              sub={`${snapshot.totalQuestions} questions attempted`}
+              label="Streak"
+              value={`${streak}d`}
+              sub="focused days (not screen time guilt)"
+            />
+            <StatCard
+              icon={Clock}
+              label="Focus today"
+              value={`${focusMin}m`}
+              sub="real tracked focus"
             />
             <StatCard
               icon={Target}
@@ -95,7 +108,40 @@ function Dashboard() {
               value={`${snapshot.accuracy}%`}
               sub={`${snapshot.marks}/${snapshot.maxMarks} marks`}
             />
+            <StatCard
+              icon={TestTube2}
+              label="Attempts"
+              value={String(snapshot.attempts)}
+              sub={`${snapshot.totalQuestions} questions attempted`}
+            />
           </div>
+
+          <section className="rounded-xl border p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" /> Quick actions
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              <QuickAction
+                href="/app/studytube"
+                icon={Play}
+                title="StudyTube"
+                sub="Watch + practice"
+              />
+              <QuickAction href="/app/pyq" icon={TestTube2} title="PYQ papers" sub="Full length" />
+              <QuickAction
+                href="/cbt?name=Quick%20mixed%20diagnostic%20drill"
+                icon={BarChart3}
+                title="Test"
+                sub="NTA-style CBT"
+              />
+              <QuickAction
+                href="/app/planner"
+                icon={BookOpen}
+                title="Planner"
+                sub="Adaptive plan"
+              />
+            </div>
+          </section>
 
           {snapshot.nextMission ? (
             <section className="rounded-xl bg-primary p-5 text-primary-foreground">
@@ -293,6 +339,52 @@ function StatCard({
       <div className="mt-2 text-2xl font-semibold">{value}</div>
       <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
     </div>
+  );
+}
+
+function ProgressRing({ value }: { value: number }) {
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, value || 0));
+  const off = c - (pct / 100) * c;
+  return (
+    <div className="mx-auto h-16 w-16">
+      <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90">
+        <circle cx="32" cy="32" r={r} fill="none" className="stroke-muted" strokeWidth="7" />
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={off}
+          className="text-primary transition-all duration-500"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function QuickAction({
+  href,
+  icon: Icon,
+  title,
+  sub,
+}: {
+  href: string;
+  icon: typeof Play;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <a href={href} className="rounded-xl border p-3 transition-colors hover:bg-accent/60">
+      <Icon className="h-4 w-4 text-primary" />
+      <div className="mt-2 text-sm font-semibold">{title}</div>
+      <div className="text-xs text-muted-foreground">{sub}</div>
+    </a>
   );
 }
 

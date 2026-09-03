@@ -11352,6 +11352,23 @@
               ? AIP_DEPTHS.standard
               : AIP_DEPTHS.mastery;
       }
+      /** Hours-aware depth choice: prefers the DEEPEST mode that fits the
+       *  student's daily budget inside the chosen days. This is what makes
+       *  "30 days + more hours/day" automatically switch to best one-shots
+       *  (crash/focused = oneshot tasks = one-shot video discovery). If even
+       *  crash doesn't fit, returns feasible:false so the UI says so honestly. */
+      function aipChooseDepth(days, dailyMin, subjects, topics, speed) {
+        const order = ["mastery", "standard", "focused", "crash"];
+        for (const key of order) {
+          const D = AIP_DEPTHS[key];
+          const total = aipTotalEff(subjects, topics, speed, D);
+          const perDay = total / Math.max(1, days);
+          if (perDay <= dailyMin) return { depth: D, key, total, perDay, feasible: true };
+        }
+        const D = AIP_DEPTHS.crash;
+        const total = aipTotalEff(subjects, topics, speed, D);
+        return { depth: D, key: "crash", total, perDay: total / Math.max(1, days), feasible: false };
+      }
       const AIP_INSTITUTES = [
         { id: "physics-wallah", name: "Physics Wallah", short: "PW", icon: "⚡", subjects: ["Physics", "Chemistry", "Mathematics"] },
         { id: "unacademy", name: "Unacademy", short: "Unacademy", icon: "🎓", subjects: ["Physics", "Chemistry", "Mathematics"] },
@@ -12925,10 +12942,99 @@
                 Math.ceil(aipTotalEff(w.subjects, w.topics, w.speed, D2) / w.days / 5) * 5;
               w.step = 6;
               render(0);
-            }),
+            }, "Set daily budget →"),
           );
         }
         if (w.step === 6) {
+          // JEE-360 Step 6 — DAILY STUDY BUDGET: hours/day the student can really study.
+          // Raising the budget on a tight timeline re-resolves the mode so the plan
+          // automatically picks best one-shots + high-weightage-first.
+          c.innerHTML = H(
+            "Set your daily study budget",
+            "Honest hours/day = the single biggest lever. More hours on a tight timeline switches the plan to <b>best one-shot videos + high-weightage-first</b>; fewer hours keeps full lectures — or honestly tells you it won't fit. Target: (" +
+              (w.target === "jeemain"
+                ? "🎯 JEE Main 2026"
+                : w.target === "jeeadv"
+                  ? "🔥 JEE Advanced"
+                  : w.target === "board12" || w.target === "cbse27"
+                    ? "📘 Class 12 Boards"
+                    : w.target === "board11"
+                      ? "📗 Class 11"
+                      : "🎯 All Exams") +
+              ").",
+          );
+          const budgetOptions = [240, 300, 360, 420, 480, 600, 720];
+          if (!w.dailyBudget) {
+            const target = w.dailyMin || 360;
+            w.dailyBudget = budgetOptions.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a), budgetOptions[0]);
+          }
+          w.dailyMin = w.dailyBudget;
+          const plans = {};
+          const bgrid = el("div", "grid");
+          bgrid.style.cssText = "grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:12px";
+          budgetOptions.forEach((mins) => {
+            const res = aipChooseDepth(w.days, mins, w.subjects, w.topics, w.speed);
+            plans[mins] = res;
+            const on = w.dailyBudget === mins;
+            const hh = Math.floor(mins / 60),
+              mm = mins % 60;
+            const perHh = Math.floor(res.perDay / 60),
+              perMm = Math.round(res.perDay % 60);
+            const status = res.feasible
+              ? res.key === "mastery" || res.key === "standard"
+                ? `<span class="badge g">✅ Comfortable</span>`
+                : `<span class="badge" style="color:var(--amber);font-weight:600">⚠️ Tight but doable</span>`
+              : `<span class="badge" style="background:var(--red);color:#fff;font-weight:600">❌ Won't fit honestly</span>`;
+            const b = el("button", "optrow" + (on ? " sel" : ""));
+            b.style.cssText = "width:100%;text-align:left;cursor:pointer;margin-top:6px;padding:12px";
+            b.innerHTML = `
+              <div style="font-weight:800;font-size:14px">${hh}h${mm ? " " + mm + "m" : ""}/day</div>
+              <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="badge" style="color:${res.depth.color}">${res.depth.icon} ${res.depth.label}</span>
+                ${res.depth.kind === "oneshot" ? `<span class="badge">⚡ Best one-shots</span>` : ""}
+              </div>
+              <div class="small muted" style="margin-top:6px">Needs ~${perHh}h ${String(perMm).padStart(2, "0")}m/day · ${Math.round(res.total / 60)}h total</div>
+              <div style="margin-top:6px">${status}</div>
+              ${!res.feasible ? `<div class="small" style="color:var(--red);margin-top:4px">Even crash mode needs ${perHh}h/day — raise hours or days, or drop chapters.</div>` : ""}
+            `;
+            b.onclick = () => {
+              w.dailyBudget = mins;
+              w.dailyMin = mins;
+              w.depth = res.key;
+              render(0);
+            };
+            bgrid.appendChild(b);
+          });
+          c.appendChild(bgrid);
+
+          // Explain what the selected budget buys
+          const selMins = w.dailyBudget || 360;
+          const selRes = plans[selMins] || aipChooseDepth(w.days, selMins, w.subjects, w.topics, w.speed);
+          const Dsel = selRes.depth;
+          const dcard = el("div", "card");
+          dcard.style.cssText = "margin-top:12px;border-color:" + Dsel.color;
+          dcard.innerHTML = `
+            <b style="color:${Dsel.color}">${Dsel.icon} ${Dsel.label} MODE — ${w.days} days × ${Math.floor(selMins / 60)}h/day</b>
+            <div class="small" style="margin-top:6px;line-height:1.7">${selRes.feasible ? Dsel.hi : "This budget can't honestly finish the selected chapters in " + w.days + " days. Choose more hours, more days, or fewer chapters."}</div>
+            <div class="small muted" style="margin-top:6px">${Dsel.kind === "oneshot" ? "⚡ Videos: best one-shot lectures · " : "📹 Videos: full " + Dsel.kind + " lectures · "}✍️ practice mix: ${Dsel.prMin === 1 ? "every chapter" : Dsel.prMin === 2 ? "medium + hard" : "hard only"} · 🔁 ${Dsel.rev.length}× revision</div>
+          `;
+          if (Dsel.kind === "oneshot")
+            dcard.appendChild(
+              el("div", "small", "🎯 Best one-shot videos will be picked per chapter (target-matched, Dream Teacher/Team preferred)."),
+            );
+          c.appendChild(dcard);
+
+          c.appendChild(
+            nav(true, () => {
+              w.dailyBudget = selMins;
+              w.dailyMin = selMins;
+              w.depth = selRes.key;
+              w.step = 7;
+              render(0);
+            }, "Continue →"),
+          );
+        }
+        if (w.step === 7) {
           // JEE-360 "how do you want to study?" + language, then reality check.
           const Dw = AIP_DEPTHS[w.depth] || aipDepthFor(w.days, w.subjects, w.topics);
           const total = aipTotalEff(w.subjects, w.topics, w.speed, Dw);
