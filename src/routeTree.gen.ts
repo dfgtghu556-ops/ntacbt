@@ -24,6 +24,7 @@ import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/li
 import { Route as ApiPublicPdfReformatRouteImport } from './routes/api/public/pdf-reformat'
 import { Route as ApiPublicPyqPapersRouteImport } from './routes/api/public/pyq-papers'
 import { Route as ApiPublicStudyPlannerRouteImport } from './routes/api/public/study-planner'
+import { Route as AppStudytubeVideoRouteImport } from './routes/app.studytube.$video'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -100,6 +101,11 @@ const ApiPublicStudyPlannerRoute = ApiPublicStudyPlannerRouteImport.update({
   path: '/api/public/study-planner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppStudytubeVideoRoute = AppStudytubeVideoRouteImport.update({
+  id: '/$video',
+  path: '/$video',
+  getParentRoute: () => AppStudytubeRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -109,7 +115,7 @@ export interface FileRoutesByFullPath {
   '/app/planner': typeof AppPlannerRoute
   '/app/pyq': typeof AppPyqRoute
   '/app/saarthi': typeof AppSaarthiRoute
-  '/app/studytube': typeof AppStudytubeRoute
+  '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/app/': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/studytube/$video': typeof AppStudytubeVideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,13 +133,14 @@ export interface FileRoutesByTo {
   '/app/planner': typeof AppPlannerRoute
   '/app/pyq': typeof AppPyqRoute
   '/app/saarthi': typeof AppSaarthiRoute
-  '/app/studytube': typeof AppStudytubeRoute
+  '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/studytube/$video': typeof AppStudytubeVideoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,7 +151,7 @@ export interface FileRoutesById {
   '/app/planner': typeof AppPlannerRoute
   '/app/pyq': typeof AppPyqRoute
   '/app/saarthi': typeof AppSaarthiRoute
-  '/app/studytube': typeof AppStudytubeRoute
+  '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/app/': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/studytube/$video': typeof AppStudytubeVideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/studytube/$video'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/studytube/$video'
   id:
     | '__root__'
     | '/'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/studytube/$video'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -213,7 +225,7 @@ export interface RootRouteChildren {
   AppPlannerRoute: typeof AppPlannerRoute
   AppPyqRoute: typeof AppPyqRoute
   AppSaarthiRoute: typeof AppSaarthiRoute
-  AppStudytubeRoute: typeof AppStudytubeRoute
+  AppStudytubeRoute: typeof AppStudytubeRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
   ApiPublicCloudConfigRoute: typeof ApiPublicCloudConfigRoute
@@ -330,8 +342,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStudyPlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/studytube/$video': {
+      id: '/app/studytube/$video'
+      path: '/$video'
+      fullPath: '/app/studytube/$video'
+      preLoaderRoute: typeof AppStudytubeVideoRouteImport
+      parentRoute: typeof AppStudytubeRoute
+    }
   }
 }
+
+interface AppStudytubeRouteChildren {
+  AppStudytubeVideoRoute: typeof AppStudytubeVideoRoute
+}
+
+const AppStudytubeRouteChildren: AppStudytubeRouteChildren = {
+  AppStudytubeVideoRoute: AppStudytubeVideoRoute,
+}
+
+const AppStudytubeRouteWithChildren = AppStudytubeRoute._addFileChildren(
+  AppStudytubeRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -341,7 +372,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppPlannerRoute: AppPlannerRoute,
   AppPyqRoute: AppPyqRoute,
   AppSaarthiRoute: AppSaarthiRoute,
-  AppStudytubeRoute: AppStudytubeRoute,
+  AppStudytubeRoute: AppStudytubeRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   ApiPublicAiChatRoute: ApiPublicAiChatRoute,
   ApiPublicCloudConfigRoute: ApiPublicCloudConfigRoute,

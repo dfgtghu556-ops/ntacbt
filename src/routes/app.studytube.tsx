@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, Play, Search, Video } from "lucide-react";
 import { DataStore } from "@/lib/store";
@@ -116,6 +116,7 @@ function StudyTube() {
     chapter: string;
     topic?: string;
   }>();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const store = new DataStore();
@@ -161,6 +162,20 @@ function StudyTube() {
     const result = await discover(req);
     setManual(result);
     setManualLoading(false);
+  }
+
+  function openTheater(v: StudyTubeVideo) {
+    navigate({
+      to: "/app/studytube/$video",
+      params: { video: v.id },
+      search: {
+        title: v.title,
+        subject: (weak?.subject as string) || v.subject || "",
+        topic: v.topic || weak?.chapter || "",
+        teacher: v.teacher || teacher || "",
+        channel: v.channel,
+      },
+    });
   }
 
   return (
@@ -219,6 +234,7 @@ function StudyTube() {
           loading={manualLoading}
           items={manual.items}
           error={manual.error}
+          onPlay={openTheater}
         />
       ) : null}
 
@@ -233,6 +249,7 @@ function StudyTube() {
             loading={s.loading}
             items={s.result?.items ?? []}
             error={s.result?.error}
+            onPlay={openTheater}
           />
         );
       })}
@@ -246,12 +263,14 @@ function Section({
   loading,
   items,
   error,
+  onPlay,
 }: {
   title: string;
   subtitle: string;
   loading: boolean;
   items: StudyTubeVideo[];
   error?: string | undefined;
+  onPlay: (v: StudyTubeVideo) => void;
 }) {
   return (
     <section>
@@ -270,7 +289,7 @@ function Section({
       ) : items.length ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.slice(0, 6).map((v) => (
-            <VideoCard key={v.id} video={v} onPlay={(shown) => play(shown)} />
+            <VideoCard key={v.id} video={v} onPlay={onPlay} />
           ))}
         </div>
       ) : (
@@ -278,8 +297,4 @@ function Section({
       )}
     </section>
   );
-}
-
-function play(v: StudyTubeVideo) {
-  window.open(`https://www.youtube.com/watch?v=${v.id}`, "_blank", "noopener,noreferrer");
 }

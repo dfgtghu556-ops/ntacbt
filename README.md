@@ -4,7 +4,7 @@ NTACBT is a single integrated learning system for JEE Main, JEE Advanced, and CB
 
 **GOAL → SYLLABUS → DIAGNOSTIC → PLAN → LEARN → PRACTICE → PYQ → TEST → ANALYSE → FIX WEAKNESS → REVISE → RETEST → ADAPT**
 
-## Current technical state (Phases 0–2 in progress)
+## Current technical state (Phases 0–3 landed)
 
 - **Framework:** TanStack Start + Vite + React 19 + TypeScript + Tailwind v4 + shadcn/ui.
 - **React app shell (`/app`):** Mission Control dashboard, adaptive planner view, StudyTube discovery, PYQ paper browser, analytics, focus timer, and Saarthi AI chat — all reading the existing legacy data without destroying it.
@@ -13,6 +13,7 @@ NTACBT is a single integrated learning system for JEE Main, JEE Advanced, and CB
 - **Data:** structured official JEE syllabus (`src/data/syllabus.ts`), verified faculty catalog (`src/data/teachers.ts`), baked PYQ papers (`public/pyq/`), Supabase public test library + planner imports + anonymous score leaderboard.
 - **New persistence contracts:** `src/lib/store.ts` (versioned, read-only bridge over legacy state), `src/features/academics/*` (source-of-truth types), `src/features/readiness/readiness.ts` (deterministic mission/readiness engine).
 - **Academic source of truth (Phase 2):** `src/features/academics/index.ts` now adapts official syllabus + verified faculty + the legacy planner literals (`src/data/sot/legacy-inline.json`). The legacy literals are extracted non-destructively by `npm run extract:legacy` and validated by `npm run validate:sot`. React StudyTube reads the legacy planner/faculty data for today's topic, weak topic and teacher preference.
+- **StudyTube (Phase 3):** `src/features/studytube/progress.ts` stores watched/notes/watch-later/handshake state under `ntacbt.studytube.v1`. `/app/studytube/$video` is Study Theater: embedded official YouTube player + learning workspace (Notes, Chapter, Formulae, PYQs, Saarthi, Progress) and the watch→practice handshake (active recall → targeted PYQs → mastery → schedule revision). List cards now navigate into the theater instead of opening a raw YouTube tab.
 - **Android:** Focus-Guard accessibility app with launcher mode and reminders (`android/`).
 - **PWA:** offline-capable service worker (note: precache currently reports empty; runtime caching still works after first load — a known Phase 8 item).
 
