@@ -20,6 +20,11 @@ import {
   type TeacherRecord,
 } from "../../data/teachers";
 import {
+  getLegacyTeachers,
+  getLegacyTopics,
+  type LegacyTeacher,
+} from "../../data/sot/legacy-inline";
+import {
   EXAM_IDS,
   SUBJECTS,
   type AcademicRecord,
@@ -44,6 +49,71 @@ export const JEE_SYLLABUS_SOURCE: SourceRef = {
   verificationStatus: JEE_MAIN_2026_SYLLABUS?.verificationStatus ?? "provisional",
   verifiedAt: JEE_MAIN_2026_SYLLABUS?.fetchedAt,
 };
+
+/** Legacy planner source ref: the authoritative faculty/topic list the legacy
+ *  planner + StudyTube UI already uses. Marked `verified` because it's the
+ *  repo's curated list, but its per-record source is the legacy app itself. */
+export const LEGACY_PLANNER_SOURCE: SourceRef = {
+  category: "verified",
+  source: "NTACBT legacy planner catalog (public/jee-cbt.html)",
+  sourceType: "verified_curated",
+  verificationStatus: "provisional",
+};
+
+function legacyTopicRecords(): AcademicRecord[] {
+  const records: AcademicRecord[] = [];
+  const topics = getLegacyTopics();
+  for (const subject of SUBJECTS) {
+    const list = topics[subject] ?? [];
+    for (const [name, , , classLevel] of list) {
+      records.push({
+        id: `legacy-${subject.toLowerCase()}-${name}`,
+        exam: "JEE_MAIN",
+        academicYear: "2025-26",
+        classLevel: (classLevel === 11 ? 11 : 12) as 11 | 12,
+        subject,
+        chapter: name,
+        name,
+        source: LEGACY_PLANNER_SOURCE,
+        note: "Legacy planner topic list (used by the built-in adaptive planner).",
+      });
+    }
+  }
+  return records;
+}
+
+function mapLegacyTeacherTarget(target: string): ExamId | null {
+  const t = target.toLowerCase();
+  if (t === "jeemain") return "JEE_MAIN";
+  if (t === "jeeadv") return "JEE_ADVANCED";
+  if (t === "board11") return "CBSE_11";
+  if (t === "board12" || t === "cbse27") return "CBSE_12";
+  return null;
+}
+
+function legacyTeacherRecords(): AcademicRecord[] {
+  const records: AcademicRecord[] = [];
+  for (const t of getLegacyTeachers()) {
+    for (const target of t.examTarget ?? []) {
+      const exam = mapLegacyTeacherTarget(target);
+      if (!exam) continue;
+      const academicYear = exam === "CBSE_11" || exam === "CBSE_12" ? "2026-27" : "2025-26";
+      records.push({
+        id: `legacy-${t.id}:${exam}`,
+        exam,
+        academicYear,
+        classLevel: exam === "CBSE_11" ? 11 : 12,
+        subject: t.subject,
+        chapter: t.specialization ?? "General",
+        topic: t.batchInfo,
+        name: t.name,
+        source: LEGACY_PLANNER_SOURCE,
+        note: `Legacy faculty match: ${t.instituteId} · ${t.channelName}`,
+      });
+    }
+  }
+  return records;
+}
 
 function toAcademicRecords(): AcademicRecord[] {
   const records: AcademicRecord[] = [];
@@ -97,6 +167,10 @@ function toAcademicRecords(): AcademicRecord[] {
   return records;
 }
 
+function collectLegacy(): AcademicRecord[] {
+  return [...legacyTopicRecords(), ...legacyTeacherRecords()];
+}
+
 function mapTeacherTarget(target: string): ExamId | null {
   const t = target.toLowerCase();
   if (t === "jeemain") return "JEE_MAIN";
@@ -114,7 +188,7 @@ function targetScopeForTeacher(target: string): ExamScope | null {
 }
 
 /** All known academic fragments in the repo, tagged with provenance. */
-export const ACADEMIC_RECORDS: AcademicRecord[] = toAcademicRecords();
+export const ACADEMIC_RECORDS: AcademicRecord[] = [...toAcademicRecords(), ...collectLegacy()];
 
 /** Filter records to one exam/year scope. Throws instead of silently returning nothing. */
 export function forScope(scope: ExamScope): AcademicRecord[] {
@@ -157,4 +231,6 @@ export const ACADEMIC_GOVERNANCE = {
   officialSyllabus: JEE_MAIN_2026_SYLLABUS,
   institutes: INSTITUTES as unknown as InstituteRecord[],
   teachers: TEACHERS as unknown as TeacherRecord[],
+  legacyTopics: getLegacyTopics(),
+  legacyTeachers: getLegacyTeachers() as unknown as LegacyTeacher[],
 } as const;

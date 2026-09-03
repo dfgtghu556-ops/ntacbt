@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, Loader2, Play, Search, Video } from "lucide-react";
+import { Loader2, Play, Search, Video } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
 import { discover } from "@/features/studytube/service";
@@ -26,8 +26,10 @@ function sectionForWeak(
   target: StudyTubeRequest["target"],
   language: StudyTubeRequest["language"],
   teacher?: string,
+  today?: { subject: string; chapter: string; topic?: string },
 ): StudyTubeSection[] {
   const sections: StudyTubeSection[] = [];
+  const weakSubject = (weak?.subject as StudyTubeRequest["subject"]) || "Physics";
   if (weak) {
     sections.push({
       id: "weak",
@@ -35,7 +37,23 @@ function sectionForWeak(
       subtitle: `${weak.subject} — ${weak.chapter}`,
       request: {
         topic: weak.topic ? `${weak.chapter} ${weak.topic}` : weak.chapter,
-        subject: weak.subject,
+        subject: weakSubject,
+        language,
+        kind: "learn",
+        depth: "lecture",
+        target,
+        teacher,
+      },
+    });
+  }
+  if (today) {
+    sections.push({
+      id: "today",
+      title: "Today's recommended lecture",
+      subtitle: `${today.subject} — ${today.chapter} (from your plan)`,
+      request: {
+        topic: today.topic ? `${today.chapter} ${today.topic}` : today.chapter,
+        subject: today.subject as StudyTubeRequest["subject"],
         language,
         kind: "learn",
         depth: "lecture",
@@ -45,26 +63,12 @@ function sectionForWeak(
     });
   }
   sections.push({
-    id: "today",
-    title: "Today's recommended lecture",
-    subtitle: "Based on your current plan",
-    request: {
-      topic: "Current Electricity",
-      subject: "Physics",
-      language,
-      kind: "learn",
-      depth: "lecture",
-      target,
-      teacher,
-    },
-  });
-  sections.push({
     id: "revision",
     title: "Revision due",
     subtitle: "Spaced recall for recently learned topics",
     request: {
-      topic: "Electrostatics",
-      subject: "Physics",
+      topic: weak?.chapter ?? "Electrostatics",
+      subject: weakSubject,
       language,
       kind: "revision",
       depth: "oneshot",
@@ -107,6 +111,11 @@ function StudyTube() {
   const [manual, setManual] = useState<StudyTubeResult | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
   const [sections, setSections] = useState<SectionState[]>([]);
+  const [todayTopic, setTodayTopic] = useState<{
+    subject: string;
+    chapter: string;
+    topic?: string;
+  }>();
 
   useEffect(() => {
     const store = new DataStore();
@@ -120,10 +129,13 @@ function StudyTube() {
     if (typeof preferredPhysics === "string") setTeacher(preferredPhysics);
     const readiness = computeReadiness(store);
     if (readiness.weakTopics[0]) setWeak(readiness.weakTopics[0]);
+    const first = store.todayTasks()[0];
+    if (first?.subject && first?.chapter)
+      setTodayTopic({ subject: first.subject, chapter: first.chapter, topic: first.topic });
   }, []);
 
   useEffect(() => {
-    const sections = sectionForWeak(weak, target, language, teacher);
+    const sections = sectionForWeak(weak, target, language, teacher, todayTopic);
     const initial = sections.map(() => ({ loading: true, result: null }));
     setSections(initial);
     sections.forEach((section, i) => {
@@ -131,14 +143,14 @@ function StudyTube() {
         setSections((prev) => prev.map((s, j) => (j === i ? { loading: false, result } : s)));
       });
     });
-  }, [weak, target, language, teacher]);
+  }, [weak, target, language, teacher, todayTopic]);
 
   async function search() {
     const topic = query.trim();
     if (!topic) return;
     const req: StudyTubeRequest = {
       topic,
-      subject: "Physics",
+      subject: (weak?.subject as StudyTubeRequest["subject"]) || "Physics",
       language,
       kind: "learn",
       depth: "lecture",
@@ -211,7 +223,8 @@ function StudyTube() {
       ) : null}
 
       {sections.map((s, i) => {
-        const sec = sectionForWeak(weak, target, language, teacher)[i];
+        const sectionDefs = sectionForWeak(weak, target, language, teacher, todayTopic);
+        const sec = sectionDefs[i];
         return (
           <Section
             key={sec?.id ?? i}

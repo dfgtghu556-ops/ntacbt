@@ -1,6 +1,6 @@
 # NTACBT — Phase 0 Audit
 
-> **Status:** Audit as of 2026-09-02; **Phase 0 + Phase 1 completed** (see "Phase 1 status" at the bottom).
+> **Status:** Audit as of 2026-09-02; **Phases 0–2 in progress** (Phase 1 React app foundation and Phase 2 academic source-of-truth bridging are landed; see "Phase status" at the bottom).
 > **Scope:** Full read-only audit of the repository at commit `2a3bb5f2` before any architectural work.
 > **Method:** Repository inspection + reproduce build / lint / validators. No code was changed to produce this audit.
 

@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "bake-pyq": "node scripts/build-pyq.mjs",
+    "extract:legacy": "node scripts/extract-legacy-data.mjs",
     "test": "node scripts/robot-test.mjs",
     "test:robot": "node scripts/robot-test.mjs",
     "validate:jee2026": "node scripts/validate-jee2026.mjs",

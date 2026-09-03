@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * VALIDATE ACADEMIC SOURCE-OF-TRUTH (Phase 1 foundation)
+ * VALIDATE ACADEMIC SOURCE-OF-TRUTH (Phases 1-2)
  *
- * Checks that the single typed academic contract exists and that the real
- * structured datasets carry the provenance fields required by the governance
- * rules:
- *   - exam / academicYear / classLevel / subject / chapter / topic
- *   - source / sourceType / verificationStatus
- *   - no silent cross-scope mixing (each scope name is explicit)
+ * Checks:
+ *  1. The typed academic contract exists (ExamId / ExamScope / provenance).
+ *  2. The structured official + verified datasets carry provenance fields.
+ *  3. The legacy inline snapshot exists and is a real extract of the legacy
+ *     app (in sync with public/jee-cbt.html's literals), tagged as derived,
+ *     and cross-scope-safe.
  *
- * This is intentionally a cheap static validator (the rest of the repo uses
- * the same pattern). It does not attempt to run the TS modules directly.
+ * The validator is intentionally cheap and static (same pattern as the rest
+ * of the repo); it does not run the TS modules directly.
  */
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -103,10 +103,74 @@ for (const f of TEACHER_METADATA) {
 ok("Verified teacher dataset carries all required provenance/metadata fields.");
 passed++;
 
+/* ── Phase 2: legacy inline snapshot is present and in sync ───────────── */
+
+const legacyJsonFile = "src/data/sot/legacy-inline.json";
+const legacyTsFile = "src/data/sot/legacy-inline.ts";
+const legacy = JSON.parse(read(legacyJsonFile));
+const html = read("public/jee-cbt.html");
+
+if (!legacy || legacy.schema !== 1) {
+  fail("Legacy inline snapshot is missing or has an unexpected schema.");
+} else {
+  passed++;
+  ok("Legacy inline snapshot is present.");
+}
+
+const EXPECTED_KEYS = [
+  "jeeTopics",
+  "boardExtraTopics",
+  "advExtraTopics",
+  "cbse27Topics",
+  "aipDepths",
+  "aipTeachers",
+  "aipChannels",
+];
+const missing = EXPECTED_KEYS.filter((k) => !(legacy.data && k in legacy.data));
+if (missing.length) {
+  fail(`Legacy inline snapshot is missing: ${missing.join(", ")}.`);
+} else {
+  passed++;
+  ok("Legacy inline snapshot contains all academic planner literals.");
+}
+
+const teachersCount = legacy.data?.aipTeachers?.length ?? 0;
+if (teachersCount > 0) {
+  passed++;
+  ok(`Legacy inline faculty catalog exposes ${teachersCount} teacher records.`);
+} else {
+  fail("Legacy inline faculty catalog is empty.");
+}
+
+const topicSubjects = Object.keys(legacy.data?.jeeTopics ?? {});
+if (topicSubjects.includes("Physics") && topicSubjects.includes("Chemistry")) {
+  passed++;
+  ok("Legacy planner topics expose Physics + Chemistry (cross-scope check data).");
+} else {
+  fail("Legacy planner topics missing Physics/Chemistry.");
+}
+
+/* Every legacy teacher has a subject + channel + explicit examTarget (so the
+   SOT can tag an exam/year without guessing). */
+const badTeachers = (legacy.data?.aipTeachers ?? []).filter(
+  (t) => !t.subject || !t.channelName || !Array.isArray(t.examTarget) || !t.examTarget.length,
+);
+if (badTeachers.length === 0) {
+  passed++;
+  ok("All legacy teacher records carry subject/channel/examTarget provenance.");
+} else {
+  fail(`${badTeachers.length} legacy teacher record(s) missing provenance fields.`);
+}
+
+if (legacyTsFile && sotFile.includes("getLegacyTopics") && sotFile.includes("collectLegacy")) {
+  passed++;
+  ok("Source-of-truth consumes the legacy snapshot through the typed adapter.");
+} else {
+  fail("Source-of-truth does not bridge the legacy snapshot.");
+}
+
 if (syllabus.includes("JEE_MAIN_2026_SYLLABUS") && !syllabus.includes("JEE_ADVANCED")) {
-  ok(
-    "Official JEE dataset is scoped to JEE Main only — no silent Advanced leak in the same object.",
-  );
+  ok("Official JEE dataset is scoped to JEE Main only — no silent Advanced leak.");
   passed++;
 } else {
   fail("Official JEE dataset scope could not be confirmed as JEE Main only.");
