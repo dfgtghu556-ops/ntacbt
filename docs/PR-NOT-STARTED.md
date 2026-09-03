@@ -15,6 +15,15 @@ Wait for user confirmation after verifying on the live preview.
 - `npm test`: 112 passed / 0 failed
 - `npx tsc --noEmit`: ok
 
+## StudyTube theme fix (added so the hub is orange, not black/white)
+- Defined the previously-undefined `--accent` token as orange (`var(--blue)`), so every
+  `var(--accent, ...)` now resolves orange instead of silently falling back to blue.
+- Replaced StudyTube's hard-coded YouTube gray/black/red values with the site's orange tokens:
+  app panel, sidebar, chips, active chip, search box/buttons, shelf headings, cards, notes,
+  empty state, brand badge, progress bar, verified badge, thumb fallbacks, duration pill,
+  watch-modal buttons/avatar/chips and the Planned-lessons "Start" pill.
+- No black/white/gray/red StudyTube hardcoded colors remain in served HTML.
+
 ## User's checklist before I open a PR
 1. Orange website opens by default (`/` -> `/jee-cbt.html`), orange color intact.
 2. StudyTube horizontal/sidebar sliding feels smooth (no page jumping).

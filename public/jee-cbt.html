@@ -54,6 +54,7 @@
      accents now use the dark shade in light mode and the light shade in
      dark mode, automatically. */
         --accent-text: var(--blue-d);
+        --accent: var(--blue);
         --sub-phy: #0b57a4;
         --sub-che: #178a4c;
         --sub-mat: #6d34b8;
@@ -61,6 +62,7 @@
       }
       html.dark {
         --accent-text: var(--blue-l);
+        --accent: var(--blue-l);
         --amber-text: #e8c258;
         --sub-phy: #5aa2e8;
         --sub-che: #4cc98a;
@@ -2587,7 +2589,7 @@
         letter-spacing: -0.5px;
       }
       .yt-brand .yt-badge {
-        background: #ff0000;
+        background: linear-gradient(135deg, var(--blue), var(--blue-d));
         color: #ffffff;
         border-radius: 6px;
         padding: 3px 8px;
@@ -2596,7 +2598,7 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        box-shadow: 0 2px 6px rgba(255, 0, 0, 0.35);
+        box-shadow: 0 2px 6px rgba(242, 103, 34, 0.35);
       }
       .yt-chips {
         display: flex;
@@ -2658,7 +2660,7 @@
       .yt-thumb-wrap {
         position: relative;
         aspect-ratio: 16 / 9;
-        background: #0f172a;
+        background: linear-gradient(135deg, var(--ink-nav-a, #1b1b4b), var(--ink-nav-b, #2b2b7a));
         overflow: hidden;
       }
       .yt-thumb-img {
@@ -2674,7 +2676,7 @@
         position: absolute;
         bottom: 8px;
         right: 8px;
-        background: rgba(0, 0, 0, 0.82);
+        background: rgba(27, 27, 58, 0.85);
         color: #ffffff;
         font-size: 11px;
         font-weight: 700;
@@ -2688,8 +2690,8 @@
         bottom: 0;
         left: 0;
         height: 4px;
-        background: #ff0000;
-        box-shadow: 0 0 4px #ff0000;
+        background: linear-gradient(90deg, var(--blue), var(--blue-d));
+        box-shadow: 0 0 4px rgba(242, 103, 34, 0.55);
       }
       .yt-progress-track {
         position: absolute;
@@ -2705,7 +2707,7 @@
         justify-content: center;
         width: 14px;
         height: 14px;
-        background: #3b82f6;
+        background: var(--blue);
         color: #ffffff;
         border-radius: 50%;
         font-size: 9px;
@@ -2730,14 +2732,15 @@
         display: grid;
         grid-template-columns: 224px 1fr;
         gap: 20px;
-        background: #f9f9f9;
+        background: var(--panel);
+        border: 1px solid var(--line);
         border-radius: 18px;
         overflow: hidden;
-        color: #0f0f0f;
+        color: var(--ink);
       }
       .yt-sidebar {
-        background: #ffffff;
-        border-right: 1px solid #e5e5e5;
+        background: color-mix(in srgb, var(--panel) 75%, var(--blue-soft));
+        border-right: 1px solid var(--line);
         padding: 12px 8px;
         min-height: 560px;
       }
@@ -2750,17 +2753,19 @@
         border-radius: 10px;
         font-size: 13.5px;
         font-weight: 500;
-        color: #0f0f0f;
+        color: var(--ink);
         border: 0;
         background: transparent;
         cursor: pointer;
         text-align: left;
       }
       .yt-sb-item:hover {
-        background: #f2f2f2;
+        background: var(--blue-soft);
+        color: var(--accent-text);
       }
       .yt-sb-item.active {
-        background: #f2f2f2;
+        background: color-mix(in srgb, var(--blue) 14%, var(--panel));
+        color: var(--accent-text);
         font-weight: 700;
       }
       .yt-sb-ic {
@@ -2789,19 +2794,19 @@
         font-size: 21px;
         font-weight: 800;
         letter-spacing: -0.6px;
-        color: #0f0f0f;
+        color: var(--ink);
       }
       .yt-logo .yt-playbox {
         width: 34px;
         height: 24px;
         border-radius: 8px;
-        background: #ff0000;
+        background: linear-gradient(135deg, var(--blue), var(--blue-d));
         color: #fff;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 13px;
-        box-shadow: 0 2px 8px rgba(255, 0, 0, 0.35);
+        box-shadow: 0 2px 8px rgba(242, 103, 34, 0.35);
       }
       .yt-search-box {
         flex: 1;
@@ -2812,34 +2817,35 @@
       .yt-search-input {
         flex: 1;
         height: 40px;
-        border: 1px solid #cfcfcf;
+        border: 1px solid var(--line);
         border-right: 0;
         border-radius: 40px 0 0 40px;
         padding: 0 18px;
         font-size: 15px;
-        background: #fff;
-        color: #0f0f0f;
+        background: var(--bg);
+        color: var(--ink);
         outline: none;
         min-width: 0;
       }
       .yt-search-input:focus {
-        border-color: #1c62b9;
+        border-color: var(--blue);
       }
       .yt-search-btn {
         height: 40px;
         width: 62px;
-        border: 1px solid #cfcfcf;
-        background: #f8f8f8;
+        border: 1px solid var(--line);
+        background: var(--blue-soft);
         border-radius: 0 40px 40px 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 16px;
         cursor: pointer;
-        color: #0f0f0f;
+        color: var(--ink);
       }
       .yt-search-btn:hover {
-        background: #f2f2f2;
+        background: color-mix(in srgb, var(--blue-soft) 70%, var(--panel));
+        color: var(--accent-text);
       }
       .yt-topicon {
         width: 40px;
@@ -2852,29 +2858,31 @@
         justify-content: center;
         font-size: 18px;
         cursor: pointer;
-        color: #0f0f0f;
+        color: var(--ink);
       }
       .yt-topicon:hover {
-        background: #f2f2f2;
+        background: var(--blue-soft);
+        color: var(--accent-text);
       }
       .yt-chips {
         margin-bottom: 4px;
         padding-left: 0;
       }
       .yt-chip {
-        background: #f2f2f2;
+        background: var(--blue-soft);
         border-color: transparent;
-        color: #0f0f0f;
+        color: var(--ink);
         font-weight: 500;
       }
       .yt-chip:hover {
-        background: #e5e5e5;
+        background: color-mix(in srgb, var(--blue-soft) 70%, var(--panel));
+        color: var(--accent-text);
         border-color: transparent;
       }
       .yt-chip.active {
-        background: #0f0f0f;
+        background: var(--blue);
         color: #fff;
-        border-color: #0f0f0f;
+        border-color: var(--blue);
         box-shadow: none;
       }
       .yt-shelf {
@@ -2890,20 +2898,20 @@
         margin: 0;
         font-size: 18px;
         font-weight: 700;
-        color: #0f0f0f;
+        color: var(--ink);
         display: inline-flex;
         align-items: center;
         gap: 8px;
       }
       .yt-shelf-h .small {
-        color: #606060;
+        color: var(--muted);
         font-size: 12.5px;
       }
       .yt-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 18px 14px;
       }
-      /* YouTube card: transparent, rounded thumb, avatar + title + meta below */
+      /* YouTube-style card: transparent, rounded thumb, avatar + title + meta below */
       .yt-card {
         background: transparent;
         border: 0;
@@ -2921,8 +2929,8 @@
       }
       .yt-thumb-wrap {
         border-radius: 12px;
-        background: #e5e5e5;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        background: var(--line);
+        box-shadow: 0 1px 2px rgba(27, 27, 58, 0.1);
       }
       .yt-card:hover .yt-thumb-img {
         transform: scale(1.04);
@@ -2933,7 +2941,7 @@
       .yt-duration {
         bottom: 8px;
         right: 8px;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(27, 27, 58, 0.85);
         color: #fff;
         font-size: 12px;
         font-weight: 500;
@@ -2966,7 +2974,7 @@
         font-size: 15px;
         font-weight: 600;
         line-height: 1.35;
-        color: #0f0f0f;
+        color: var(--ink);
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -2974,17 +2982,17 @@
       }
       .yt-meta {
         margin-top: 4px;
-        color: #606060;
+        color: var(--muted);
         font-size: 13px;
         line-height: 1.4;
       }
       .yt-meta b {
-        color: #606060;
+        color: var(--muted);
         font-weight: 500;
       }
       .yt-ready {
         margin-top: 4px;
-        color: #606060;
+        color: var(--muted);
         font-size: 12.5px;
         line-height: 1.5;
       }
@@ -2995,13 +3003,16 @@
         flex-wrap: wrap;
       }
       .yt-actions .btn {
-        border: 1px solid #e5e5e5;
-        background: #fff;
-        color: #0f0f0f;
+        border: 1px solid color-mix(in srgb, var(--blue) 35%, var(--line));
+        background: var(--blue-soft);
+        color: var(--accent-text);
         font-size: 12px;
         font-weight: 600;
         border-radius: 999px;
         padding: 5px 10px;
+      }
+      .yt-actions .btn:hover {
+        background: color-mix(in srgb, var(--blue-soft) 70%, var(--panel));
       }
       .yt-more {
         width: 36px;
@@ -3009,7 +3020,7 @@
         border: 0;
         border-radius: 50%;
         background: transparent;
-        color: #0f0f0f;
+        color: var(--ink);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -3017,26 +3028,27 @@
         flex: none;
       }
       .yt-more:hover {
-        background: #f2f2f2;
+        background: var(--blue-soft);
+        color: var(--accent-text);
       }
       .yt-empty {
         grid-column: 1 / -1;
         text-align: center;
         padding: 28px 12px;
-        color: #606060;
+        color: var(--muted);
         font-size: 14px;
-        background: #fff;
+        background: var(--bg);
         border-radius: 14px;
-        border: 1px dashed #d9d9d9;
+        border: 1px dashed var(--line);
       }
       .yt-note-card {
-        background: #fff;
-        border: 1px solid #e5e5e5;
+        background: var(--panel);
+        border: 1px solid var(--line);
         border-radius: 14px;
         padding: 14px;
       }
       .yt-note-card b {
-        color: #0f0f0f;
+        color: var(--ink);
       }
       @media (max-width: 900px) {
         .yt-app {
@@ -3049,7 +3061,7 @@
           gap: 4px;
           min-height: auto;
           border-right: 0;
-          border-bottom: 1px solid #e5e5e5;
+          border-bottom: 1px solid var(--line);
           padding: 6px 8px;
           overscroll-behavior-x: contain;
         }
@@ -3064,9 +3076,8 @@
         .yt-main {
           padding: 8px 10px 20px;
         }
-        /* YouTube-style slideable shelves: each shelf becomes a horizontal
-           carousel with snap. The global app-swipe is disabled inside .yt-app
-           so this scrolls smoothly instead of trying to change section. */
+        /* Slideable shelves: horizontal carousel with snap. Global app-swipe
+           is disabled inside .yt-app so this scrolls smoothly. */
         .yt-shelf .yt-grid {
           display: flex;
           gap: 14px;
@@ -16234,7 +16245,7 @@
     <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:12px">
       <div style="min-width:0;flex:1">
         <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
-          <span style="background:#ff0000;color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;letter-spacing:0.3px">▶ STUDYTUBE</span>
+          <span style="background:var(--blue);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;letter-spacing:0.3px">▶ STUDY<span style="color:#ffe3d2">TUBE</span></span>
           ${subject ? `<span class="chip" style="color:${SUBCOLOR[subject] || "var(--accent-text)"}">${esc(subject)}</span>` : ""}
           ${topic ? `<span class="chip">${esc(topic)}</span>` : ""}
           <span class="chip" style="background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3)">✓ 100% Syllabus Verified</span>
@@ -16263,7 +16274,7 @@
         <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
           <button class="btn ghost sm" data-save>${saved ? "💔 Remove Saved" : "❤️ Save Playlist"}</button>
           <button class="btn ghost sm" data-wl>${ytWatchLater().some((x) => x.id === v.id) ? "⏳ Remove Queue" : "⏳ Watch Later"}</button>
-          ${topic ? `<button class="btn sm" style="background:#2563eb;color:#fff;font-weight:700" data-practice>✍️ Solve 10 PYQs on this Chapter →</button>` : ""}
+          ${topic ? `<button class="btn sm" style="background:var(--blue);color:#fff;font-weight:700" data-practice>✍️ Solve 10 PYQs on this Chapter →</button>` : ""}
         </div>
         <div class="small muted" style="margin-top:8px">🛡️ Zero clickbait, zero toxic comments. Only pure concept clarity & Kota problem techniques.</div>
       </div>
@@ -16297,7 +16308,7 @@
             <div class="small" style="font-weight:700;color:var(--accent-text)">🎯 Available in 11,392 PYQ Bank:</div>
             <div class="small muted" style="margin-top:4px">JEE Main 2019-2025 past papers & chapter-wise high-yield questions.</div>
           </div>
-          <button class="btn sm" style="width:100%;background:#2563eb;color:#fff;padding:10px;font-weight:700" data-practice-tab>🚀 Launch 10-Question Drill Now</button>
+          <button class="btn sm" style="width:100%;background:var(--blue);color:#fff;padding:10px;font-weight:700" data-practice-tab>🚀 Launch 10-Question Drill Now</button>
         </div>
 
         <!-- TAB 3: FACULTY DOSSIER -->
@@ -16305,7 +16316,7 @@
           <div class="small" style="font-weight:700;margin-bottom:6px">🎓 Verified Educator Profile</div>
           <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
             <div class="row" style="gap:10px;align-items:center;margin-bottom:8px">
-              <div style="width:40px;height:40px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">
+              <div style="width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">
                 ${esc((teacherName[0] || "T").toUpperCase())}
               </div>
               <div>
@@ -16317,7 +16328,7 @@
               <b>Pedagogy & Coverage:</b> Complete chapter derivation, exam-tested shortcuts, and 100% syllabus alignment for JEE Main / Advanced & Board exams.
             </div>
             <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
-              <span class="chip" style="background:rgba(59,130,246,0.1);color:#3b82f6">Kota Standard</span>
+              <span class="chip" style="background:rgba(242,103,34,0.1);color:var(--accent-text)">Kota Standard</span>
               <span class="chip" style="background:rgba(34,197,94,0.1);color:var(--green)">100% Derivations</span>
               <span class="chip">Zero Missing Topics</span>
             </div>
@@ -16552,7 +16563,7 @@
         const avatarBg = ytAvatarColor(teacherName);
         const thumb = real
           ? `<img loading="lazy" decoding="async" class="yt-thumb-img" src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" onerror="this.src='https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg'" alt="${esc(v.title)}">`
-          : `<div class="yt-thumb-img" style="width:100%;height:100%;display:flex;align-items:flex-end;padding:12px;background:linear-gradient(135deg, ${subColor} 0%, #0f172a 100%);color:#fff"><b style="font-size:15px;line-height:1.35">${esc(topic || v.title)}</b></div>`;
+          : `<div class="yt-thumb-img" style="width:100%;height:100%;display:flex;align-items:flex-end;padding:12px;background:linear-gradient(135deg, ${subColor} 0%, var(--ink-nav-b, #2b2b7a) 100%);color:#fff"><b style="font-size:15px;line-height:1.35">${esc(topic || v.title)}</b></div>`;
 
         card.innerHTML = `
     <div class="yt-thumb-wrap" data-open>
@@ -16657,7 +16668,7 @@
     <div class="yt-topbar">
       <span class="yt-logo"><span class="yt-playbox">▶</span>StudyTube</span>
       <span class="chip" style="background:rgba(34,197,94,0.1);color:var(--green);border-color:rgba(34,197,94,0.25);font-weight:700">🚫 0% Distraction · ${esc(targetLabel)}</span>
-      <span class="chip" style="background:rgba(59,130,246,0.1);color:#3b82f6;font-weight:700">🎯 ${esc(targetLabel)}</span>
+      <span class="chip" style="background:rgba(242,103,34,0.1);color:var(--accent-text);font-weight:700">🎯 ${esc(targetLabel)}</span>
     </div>
     <div class="yt-topbar">
       <div class="yt-search-box">
@@ -16814,13 +16825,13 @@
             todayTasks.forEach((t) => {
               const opt = el("div", "yt-card");
               opt.innerHTML = `
-    <div class="yt-thumb-wrap" style="height:auto;padding:16px;background:linear-gradient(135deg, #0f172a 0%, #24324a 100%);color:#fff;display:flex;flex-direction:column;justify-content:flex-end">
-      <span style="font-size:12px;color:#94a3b8">${esc(t.subject)} · ~${aipEff(t.estMin, p.profile)} min</span>
+    <div class="yt-thumb-wrap" style="height:auto;padding:16px;background:linear-gradient(135deg, var(--ink-nav-a, #1b1b4b) 0%, var(--ink-nav-b, #2b2b7a) 100%);color:#fff;display:flex;flex-direction:column;justify-content:flex-end">
+      <span style="font-size:12px;color:var(--muted)">${esc(t.subject)} · ~${aipEff(t.estMin, p.profile)} min</span>
       <b style="font-size:15px;line-height:1.35;margin-top:4px">${esc(t.topic)}</b>
-      <span style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:#ff0000;color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;width:max-content">▶ Start</span>
+      <span style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, var(--blue), var(--blue-d));color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;width:max-content">▶ Start</span>
     </div>
     <div class="yt-body">
-      <span class="yt-avatar" style="background:#ff0000">S</span>
+      <span class="yt-avatar" style="background:var(--blue)">S</span>
       <div class="yt-body-main">
         <div class="yt-title">${esc(t.topic)}</div>
         <div class="yt-meta"><b>${esc(t.teacher || "Kota Faculty")}</b> · ${esc(t.subject)} · From your plan</div>
