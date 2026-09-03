@@ -26,10 +26,12 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-/** Entry point for the legacy full platform; the React Learning OS stays available. */
+/** Entry point — the React Learning OS (YouTube-style StudyTube, planner,
+ *  PYQ, CBT, analytics, focus, Saarthi). The legacy full platform stays
+ *  available as "Full platform" from the app header. */
 function Index() {
   useEffect(() => {
-    window.location.replace("/jee-cbt.html");
+    window.location.replace("/app");
   }, []);
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">

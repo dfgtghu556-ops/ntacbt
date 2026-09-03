@@ -452,13 +452,13 @@ function StudyTube() {
     <div className="space-y-6">
       <section className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Play className="h-4 w-4" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white">
+            <Play className="h-4 w-4 fill-current" />
           </span>
           <div>
             <h1 className="text-lg font-semibold tracking-tight">StudyTube</h1>
             <p className="text-xs text-muted-foreground">
-              Study-first discovery · YouTube interface
+              Study-first discovery · zero-distraction study hub
             </p>
           </div>
         </div>
