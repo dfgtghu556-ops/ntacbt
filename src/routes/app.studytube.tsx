@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Loader2, Play, Search, Video } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
-import { getLegacyTeachers } from "@/data/sot/legacy-inline";
+import { getLegacyTeachers, type LegacyTeacher } from "@/data/sot/legacy-inline";
+import { INSTITUTES, findInstituteById } from "@/data/teachers";
 import { discover } from "@/features/studytube/service";
 import type {
   StudyTubeRequest,
@@ -27,6 +28,7 @@ function sectionForWeak(
   target: StudyTubeRequest["target"],
   language: StudyTubeRequest["language"],
   teacher?: string,
+  institute?: string,
   today?: { subject: string; chapter: string; topic?: string },
 ): StudyTubeSection[] {
   const sections: StudyTubeSection[] = [];
@@ -44,6 +46,7 @@ function sectionForWeak(
         depth: "lecture",
         target,
         teacher,
+        institute,
       },
     });
   }
@@ -60,6 +63,7 @@ function sectionForWeak(
         depth: "lecture",
         target,
         teacher,
+        institute,
       },
     });
   }
@@ -75,12 +79,55 @@ function sectionForWeak(
       depth: "oneshot",
       target,
       teacher,
+      institute,
     },
   });
   return sections;
 }
 
 const LEGACY_TEACHERS = getLegacyTeachers();
+
+/** Dream Team = the coaching/platform whose faculty you want prioritised. */
+interface DreamTeamOption {
+  id: string;
+  name: string;
+  shortName: string;
+  icon: string;
+  subjects: StudyTubeRequest["subject"][];
+}
+
+const DREAM_TEAMS: DreamTeamOption[] = [
+  ...INSTITUTES.map((i) => ({
+    id: i.id,
+    name: i.name,
+    shortName: i.shortName,
+    icon: i.id === "science-fun" ? "🧪" : "🏛️",
+    subjects: ["Physics", "Chemistry", "Mathematics"],
+  })),
+].sort((a, b) => a.name.localeCompare(b.name));
+
+function dreamTeamName(id: string | undefined): string {
+  if (!id) return "Auto (best available)";
+  return (
+    DREAM_TEAMS.find((i) => i.id === id)?.name ?? findInstituteById(id)?.name ?? "Selected group"
+  );
+}
+
+function teacherSupportsInstitute(
+  teacherId: string | undefined,
+  instituteId: string | undefined,
+): boolean {
+  if (!teacherId || !instituteId) return true;
+  const t = LEGACY_TEACHERS.find((x) => x.id === teacherId);
+  if (!t) return true; // unknown teacher: keep, don't silently destroy user choice
+  return t.instituteId === instituteId;
+}
+
+function subjectOf(weak: { subject: string } | undefined): StudyTubeRequest["subject"] {
+  const s = weak?.subject;
+  if (s === "Physics" || s === "Chemistry" || s === "Mathematics") return s;
+  return "Physics";
+}
 
 function targetLabel(t: StudyTubeRequest["target"]): string {
   return t === "jeemain"
@@ -132,6 +179,7 @@ function StudyTube() {
   const [target, setTarget] = useState<StudyTubeRequest["target"]>("jeemain");
   const [language, setLanguage] = useState<StudyTubeRequest["language"]>("hinglish");
   const [teacher, setTeacher] = useState<string | undefined>(undefined);
+  const [institute, setInstitute] = useState<string | undefined>(undefined);
   const [weak, setWeak] = useState<
     { subject: string; chapter: string; topic: string } | undefined
   >();
@@ -150,6 +198,20 @@ function StudyTube() {
   function changeTarget(t: StudyTubeRequest["target"]) {
     setTarget(t);
     setTeacher((prev) => (teacherSupportsTarget(prev, t) ? prev : undefined));
+  }
+
+  function changeInstitute(id: string | undefined) {
+    setInstitute(id || undefined);
+    setTeacher((prev) => (teacherSupportsInstitute(prev, id) ? prev : undefined));
+  }
+
+  function toggleTeacher(t: LegacyTeacher) {
+    if (teacher === t.id) {
+      setTeacher(undefined);
+    } else {
+      setTeacher(t.id);
+      setInstitute(t.instituteId);
+    }
   }
 
   useEffect(() => {
@@ -175,7 +237,7 @@ function StudyTube() {
   }, []);
 
   useEffect(() => {
-    const sections = sectionForWeak(weak, target, language, teacher, todayTopic);
+    const sections = sectionForWeak(weak, target, language, teacher, institute, todayTopic);
     const initial = sections.map(() => ({ loading: true, result: null }));
     setSections(initial);
     sections.forEach((section, i) => {
@@ -183,19 +245,20 @@ function StudyTube() {
         setSections((prev) => prev.map((s, j) => (j === i ? { loading: false, result } : s)));
       });
     });
-  }, [weak, target, language, teacher, todayTopic]);
+  }, [weak, target, language, teacher, institute, todayTopic]);
 
   async function search() {
     const topic = query.trim();
     if (!topic) return;
     const req: StudyTubeRequest = {
       topic,
-      subject: (weak?.subject as StudyTubeRequest["subject"]) || "Physics",
+      subject: subjectOf(weak),
       language,
       kind: "learn",
       depth: "lecture",
       target,
       teacher,
+      institute,
     };
     setManualLoading(true);
     const result = await discover(req);
@@ -246,34 +309,121 @@ function StudyTube() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Target: {targetLabel(target)} · Teacher:{" "}
+        Target: {targetLabel(target)} · Dream Team: {dreamTeamName(institute)} · Dream Teacher:{" "}
         {teacher
           ? LEGACY_TEACHERS.find((t) => t.id === teacher)?.name || "Selected"
           : "Auto (best match for this target)"}
       </p>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor="pref-teacher">
-          Preferred teacher
-        </label>
-        <select
-          id="pref-teacher"
-          value={teacher ?? ""}
-          onChange={(e) => setTeacher(e.target.value || undefined)}
-          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none"
-        >
-          <option value="">Auto (best match)</option>
-          {LEGACY_TEACHERS.filter(
+      {(() => {
+        const currentSubject = subjectOf(weak);
+        const dreamTeamOptions = DREAM_TEAMS.filter((i) =>
+          LEGACY_TEACHERS.some(
             (t) =>
-              t.subject === ((weak?.subject as StudyTubeRequest["subject"]) || "Physics") &&
+              t.instituteId === i.id &&
+              t.subject === currentSubject &&
               teacherSupportsTarget(t.id, target),
-          ).map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name} · {t.channelName}
-            </option>
-          ))}
-        </select>
-      </div>
+          ),
+        );
+        const dreamTeachers = LEGACY_TEACHERS.filter(
+          (t) =>
+            t.subject === currentSubject &&
+            teacherSupportsTarget(t.id, target) &&
+            (!institute || t.instituteId === institute),
+        );
+        return (
+          <div className="grid gap-3 lg:grid-cols-2">
+            <section className="rounded-xl border p-3">
+              <h2 className="text-sm font-semibold">🏆 Dream Team</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Coaching / platform whose faculty lectures you want prioritised. This is separate
+                from picking a single favourite teacher.
+              </p>
+              <select
+                value={institute ?? ""}
+                onChange={(e) => changeInstitute(e.target.value || undefined)}
+                className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none"
+                aria-label="Dream Team — coaching / platform"
+              >
+                <option value="">Auto (best available)</option>
+                {dreamTeamOptions.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.icon} {i.name}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <Chip active={!institute} onClick={() => changeInstitute(undefined)}>
+                  Auto
+                </Chip>
+                {dreamTeamOptions.slice(0, 8).map((i) => (
+                  <Chip
+                    key={i.id}
+                    active={institute === i.id}
+                    onClick={() => changeInstitute(i.id)}
+                  >
+                    {i.shortName}
+                  </Chip>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-xl border p-3">
+              <h2 className="text-sm font-semibold">🎯 Dream Teacher</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {institute
+                  ? `Top ${currentSubject} faculty from ${dreamTeamName(institute)}.`
+                  : "Best available faculty across platforms for this subject & target."}
+              </p>
+              <select
+                value={teacher ?? ""}
+                onChange={(e) => {
+                  const id = e.target.value || undefined;
+                  const t = LEGACY_TEACHERS.find((x) => x.id === id);
+                  if (t) toggleTeacher(t);
+                  else setTeacher(undefined);
+                }}
+                className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none"
+                aria-label="Dream Teacher — preferred faculty"
+              >
+                <option value="">Auto (best match)</option>
+                {dreamTeachers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} · {t.channelName}
+                  </option>
+                ))}
+              </select>
+              {dreamTeachers.length ? (
+                <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  {dreamTeachers.slice(0, 6).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => toggleTeacher(t)}
+                      className={`rounded-md border p-2 text-left text-xs transition-colors ${
+                        teacher === t.id
+                          ? "border-primary bg-primary/10"
+                          : "border-input hover:bg-accent/60"
+                      }`}
+                    >
+                      <span className="font-semibold">{t.name}</span>
+                      {t.specialization ? (
+                        <span className="block text-muted-foreground">{t.specialization}</span>
+                      ) : null}
+                      {t.channelName ? (
+                        <span className="block text-muted-foreground">{t.channelName}</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  No verified faculty for this subject and target yet. Switch institute or target.
+                </p>
+              )}
+            </section>
+          </div>
+        );
+      })()}
 
       <div className="flex gap-2">
         <input
@@ -297,7 +447,7 @@ function StudyTube() {
       </div>
 
       {(() => {
-        const defs = sectionForWeak(weak, target, language, teacher, todayTopic);
+        const defs = sectionForWeak(weak, target, language, teacher, institute, todayTopic);
         const eff = defs.some((d) => d.id === activeTab) ? activeTab : defs[0]?.id;
         const tabs = defs.map((d) => ({ id: d.id, label: d.title }));
         const hasSearch = Boolean(manual);
@@ -329,7 +479,7 @@ function StudyTube() {
       ) : null}
 
       {(() => {
-        const defs = sectionForWeak(weak, target, language, teacher, todayTopic);
+        const defs = sectionForWeak(weak, target, language, teacher, institute, todayTopic);
         const eff = defs.some((d) => d.id === activeTab) ? activeTab : defs[0]?.id;
         return (
           <>

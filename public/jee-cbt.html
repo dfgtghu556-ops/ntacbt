@@ -12459,8 +12459,8 @@
         if (w.step === 3) {
           // JEE-360 "Dream Team & Dream Teachers": pick institute & top faculty per subject.
           c.innerHTML = H(
-            "Build your Dream Team & Select Dream Teachers",
-            "Choose your favourite institute and pick your <b>Dream Teacher</b> for each subject — filtered perfectly for your target exam (" +
+            "Build your Dream Team, then pick your Dream Teacher",
+            "Two separate choices per subject: first <b>Dream Team</b> = coaching / platform; then <b>Dream Teacher</b> = favourite single faculty from that team. Both are filtered for your target exam (" +
               (w.target === "jeemain"
                 ? "🎯 JEE Main 2026"
                 : w.target === "jeeadv"
@@ -12500,7 +12500,8 @@
                 </div>
                 ${statusPillHtml}
               </div>
-              <div style="font-size:12px;font-weight:600;margin-top:12px;margin-bottom:6px;color:var(--text-muted, #64748b)">SELECT COACHING / PLATFORM:</div>
+              <div style="margin-top:14px;padding:12px 0 8px;font-size:12px;font-weight:800;letter-spacing:0.02em">🏆 DREAM TEAM — Coaching / Platform</div>
+              <div style="font-size:11.5px;margin-bottom:8px;color:var(--text-muted, #64748b)">Choose the coaching / team whose faculty lectures you want prioritised. Dream Teacher (below) then picks one favourite faculty from that team.</div>
             `;
 
             // Institute button row
@@ -12550,6 +12551,19 @@
               instRow.appendChild(b);
             });
             sec.appendChild(instRow);
+
+            // ── SEPARATE DREAM TEACHER SECTION ──
+            const dtHeader = el("div");
+            dtHeader.style.cssText = "margin-top:14px;padding-top:12px;border-top:1px solid var(--line)";
+            dtHeader.innerHTML = `
+              <div style="font-size:12px;font-weight:800;letter-spacing:0.02em">🎯 DREAM TEACHER — Preferred Faculty</div>
+              <div style="font-size:11.5px;margin-top:2px;color:var(--text-muted, #64748b)">${
+                w.institutes[s]
+                  ? `Top ${s} faculty from ${esc((AIP_INSTITUTES.find((i) => i.id === w.institutes[s]) || {}).name || "your team")}.`
+                  : "No team chosen yet — shown below are best available faculty across platforms. Pick a team above to narrow this list."
+              }</div>
+            `;
+            sec.appendChild(dtHeader);
             // ── DREAM TEACHER (automatic): visible before choosing an institute ──
             if (!w.institutes[s]) {
               const activeExamFilter = w.examFilters[s] || w.target || "jeemain";
@@ -12559,8 +12573,8 @@
                 dtBox.style.cssText = "margin-top:14px;padding:14px;background:var(--bg, #f8fafc);border:1px solid var(--line);border-radius:10px";
                 const targetText = activeExamFilter === "board12" || activeExamFilter === "cbse27" ? "CBSE Class 12" : activeExamFilter === "board11" ? "CBSE Class 11" : activeExamFilter === "jeeadv" ? "JEE Advanced" : "JEE Main";
                 dtBox.innerHTML = `
-                  <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">🎓 Dream Teachers — Best for ${targetText}</div>
-                  <div class="small muted" style="margin-top:2px">Top ${s} teachers across platforms for this class. Pick one, or choose an institute below to narrow the list.</div>
+                  <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">🎯 Dream Teacher — Best for ${targetText}</div>
+                  <div class="small muted" style="margin-top:2px">Pick your favourite single ${s} teacher across platforms for this class. Choose a team above to narrow this list.</div>
                 `;
                 const dtGrid = el("div", "grid");
                 dtGrid.style.cssText = "grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:10px;margin-top:10px";
@@ -12608,7 +12622,7 @@
                   <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
                     <span>${selectedInst.icon}</span> <span>Top Faculties of ${esc(selectedInst.name)} (${s})</span>
                   </div>
-                  <div class="small muted" style="margin-top:2px">Select your dream teacher — or leave unselected to use any top ${esc(selectedInst.name)} educator.</div>
+                  <div class="small muted" style="margin-top:2px">Select your single Dream Teacher from this team — or leave unselected to use any top ${esc(selectedInst.name)} educator.</div>
                 </div>
               `;
 
@@ -12720,35 +12734,50 @@
             c.appendChild(sec);
           });
 
-          // Assembled Dream Team Summary Card
-          const summaryCard = el("div", "card");
-          summaryCard.style.cssText =
-            "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
-          const rosterItems = w.subjects
+          // Assembled Dream Team + Dream Teacher Summary Cards (SEPARATE)
+          const teamItems = w.subjects
+            .map((s) => {
+              const instId = w.institutes[s];
+              const inst = instId ? AIP_INSTITUTES.find((i) => i.id === instId) : null;
+              const txt = inst
+                ? `⚡ <b>${esc(inst.name)}</b> (${esc(inst.short)})`
+                : `✨ Auto (Best available)`;
+              return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span style="color:${SUBCOLOR[s]};font-weight:600">${s}:</span> <span>${txt}</span></div>`;
+            })
+            .join("");
+          const teacherItems = w.subjects
             .map((s) => {
               const tName = w.teacherNames[s];
               const instId = w.institutes[s];
               const inst = instId ? AIP_INSTITUTES.find((i) => i.id === instId) : null;
-              let txt = `✨ Auto (Best available)`;
-              if (tName) {
-                txt = `🎯 <b>${esc(tName)}</b> (${esc(inst ? inst.short : "Verified")})`;
-              } else if (inst) {
-                txt = `⚡ <b>${esc(inst.name)}</b> (Top Faculty)`;
-              }
+              let txt = inst ? `⚡ <b>${esc(inst.short || inst.name)}</b> (Top Faculty)` : `✨ Auto (Best available)`;
+              if (tName) txt = `🎯 <b>${esc(tName)}</b> (${esc(inst ? inst.short : "Verified")})`;
               return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span style="color:${SUBCOLOR[s]};font-weight:600">${s}:</span> <span>${txt}</span></div>`;
             })
             .join("");
 
-          summaryCard.innerHTML = `
+          const teamCard = el("div", "card");
+          teamCard.style.cssText = "margin-top:16px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
+          teamCard.innerHTML = `
             <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
-              <span>🏆</span> <span>Your Assembled Dream Team</span>
+              <span>🏆</span> <span>Your Dream Team (Coaching / Platform)</span>
             </div>
-            <div style="margin-top:8px">${rosterItems}</div>
+            <div style="margin-top:8px">${teamItems}</div>
+          `;
+          c.appendChild(teamCard);
+
+          const teacherCard = el("div", "card");
+          teacherCard.style.cssText = "margin-top:12px;padding:14px;border-radius:12px;background:var(--panel);border:1px dashed var(--accent, #3b82f6)";
+          teacherCard.innerHTML = `
+            <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
+              <span>🎯</span> <span>Your Dream Teachers (Preferred Faculty)</span>
+            </div>
+            <div style="margin-top:8px">${teacherItems}</div>
             <div class="small muted" style="margin-top:8px;line-height:1.4">
               ${ic("bulb")} Dream Team & Teacher choices prioritize their lectures in your daily study tasks, while retaining smart fallbacks for any chapter not covered.
             </div>
           `;
-          c.appendChild(summaryCard);
+          c.appendChild(teacherCard);
 
           c.appendChild(
             nav(true, () => {
