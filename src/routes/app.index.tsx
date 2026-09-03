@@ -12,6 +12,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  TestTube2,
 } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
@@ -182,6 +183,35 @@ function Dashboard() {
               </Link>
             </section>
           </div>
+
+          <section className="rounded-xl border p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1">
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  <TestTube2 className="h-4 w-4 text-muted-foreground" /> NTA-style mock test
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Start a full-length or diagnostic run. Marking follows NTA rules (+4/−1, numerical
+                  carries no penalty) and the result feeds your Mistake Doctor and readiness model.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  to="/cbt"
+                  search={{ name: "Quick mixed diagnostic drill" }}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+                >
+                  <Play className="h-4 w-4" /> Start diagnostic
+                </Link>
+                <Link
+                  to="/app/pyq"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-sm"
+                >
+                  Full-length papers
+                </Link>
+              </div>
+            </div>
+          </section>
 
           <section className="grid gap-3 md:grid-cols-3">
             {(snapshot.messages.good ?? []).map((m) => (

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CbtRouteImport } from './routes/cbt'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppLayoutRouteImport } from './routes/app._layout'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
@@ -29,6 +30,11 @@ import { Route as AppStudytubeVideoRouteImport } from './routes/app.studytube.$v
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CbtRoute = CbtRouteImport.update({
+  id: '/cbt',
+  path: '/cbt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -109,6 +115,7 @@ const AppStudytubeVideoRoute = AppStudytubeVideoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cbt': typeof CbtRoute
   '/app': typeof AppLayoutRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cbt': typeof CbtRoute
   '/app': typeof AppIndexRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
@@ -145,6 +153,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cbt': typeof CbtRoute
   '/app/_layout': typeof AppLayoutRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/cbt'
     | '/app'
     | '/app/analytics'
     | '/app/focus'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/cbt'
     | '/app'
     | '/app/analytics'
     | '/app/focus'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/cbt'
     | '/app/_layout'
     | '/app/analytics'
     | '/app/focus'
@@ -219,6 +231,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CbtRoute: typeof CbtRoute
   AppLayoutRoute: typeof AppLayoutRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppFocusRoute: typeof AppFocusRoute
@@ -242,6 +255,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cbt': {
+      id: '/cbt'
+      path: '/cbt'
+      fullPath: '/cbt'
+      preLoaderRoute: typeof CbtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -366,6 +386,7 @@ const AppStudytubeRouteWithChildren = AppStudytubeRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CbtRoute: CbtRoute,
   AppLayoutRoute: AppLayoutRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppFocusRoute: AppFocusRoute,

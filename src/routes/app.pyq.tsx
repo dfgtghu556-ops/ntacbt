@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw, FileText } from "lucide-react";
+import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
+import { DEFAULT_TEST_MINUTES, type CbtTest, type Subject } from "@/features/cbt/types";
+import { saveCbtTest } from "@/features/cbt/store";
 
 export const Route = createFileRoute("/app/pyq")({
   component: Pyq,
@@ -29,7 +31,14 @@ interface PyqQuestion {
   sol: string;
 }
 
+function toSubject(s: string): Subject {
+  if (s === "Physics") return "Physics";
+  if (s === "Chemistry") return "Chemistry";
+  return "Mathematics";
+}
+
 function Pyq() {
+  const navigate = useNavigate();
   const [papers, setPapers] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -71,6 +80,31 @@ function Pyq() {
     } finally {
       setQLoading(false);
     }
+  }
+
+  function openReactCbt(paper: Paper) {
+    if (!questions.length) return;
+    const test: CbtTest = {
+      id: `react-${Date.now().toString(36)}`,
+      name: `${paper.label} ${paper.year}`,
+      createdAt: Date.now(),
+      durationSec: DEFAULT_TEST_MINUTES * 60,
+      pyq: true,
+      questions: questions.map((q, i) => ({
+        id: `pyq-${paper.id}-${i}`,
+        no: q.no,
+        subject: toSubject(q.subject),
+        chapter: q.chapter,
+        topic: q.topic,
+        type: q.type === "integer" ? "integer" : "mcq",
+        text: q.text,
+        options: q.options,
+        answer: q.answer,
+        sol: q.sol,
+      })),
+    };
+    saveCbtTest(test);
+    void navigate({ to: "/cbt", search: { testId: test.id, name: test.name } });
   }
 
   return (
@@ -153,12 +187,20 @@ function Pyq() {
               This paper couldn't be loaded on this device.
             </p>
           )}
-          <a
-            href={`/jee-cbt.html#pyq`}
-            className="mt-3 inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Solve this paper (NTA-style interface)
-          </a>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={() => openReactCbt(selected)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+            >
+              <TestTube2 className="h-4 w-4" /> Solve as full-length test (React)
+            </button>
+            <a
+              href={`/jee-cbt.html#pyq`}
+              className="inline-flex items-center rounded-md border border-input px-3 py-2 text-sm"
+            >
+              Open legacy NTA interface
+            </a>
+          </div>
         </section>
       ) : null}
     </div>
