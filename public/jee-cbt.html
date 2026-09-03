@@ -2723,6 +2723,347 @@
         }
       }
 
+      /* ══════════════════════════════════════════════════════════
+         REAL YOUTUBE-STYLE STUDY HUB (orange platform StudyTube)
+         ══════════════════════════════════════════════════════════ */
+      .yt-app {
+        display: grid;
+        grid-template-columns: 224px 1fr;
+        gap: 20px;
+        background: #f9f9f9;
+        border-radius: 18px;
+        overflow: hidden;
+        color: #0f0f0f;
+      }
+      .yt-sidebar {
+        background: #ffffff;
+        border-right: 1px solid #e5e5e5;
+        padding: 12px 8px;
+        min-height: 560px;
+      }
+      .yt-sb-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #0f0f0f;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+      }
+      .yt-sb-item:hover {
+        background: #f2f2f2;
+      }
+      .yt-sb-item.active {
+        background: #f2f2f2;
+        font-weight: 700;
+      }
+      .yt-sb-ic {
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .yt-main {
+        padding: 12px 20px 28px 0;
+        min-width: 0;
+      }
+      .yt-topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .yt-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.6px;
+        color: #0f0f0f;
+      }
+      .yt-logo .yt-playbox {
+        width: 34px;
+        height: 24px;
+        border-radius: 8px;
+        background: #ff0000;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(255, 0, 0, 0.35);
+      }
+      .yt-search-box {
+        flex: 1;
+        min-width: 220px;
+        display: flex;
+        align-items: center;
+      }
+      .yt-search-input {
+        flex: 1;
+        height: 40px;
+        border: 1px solid #cfcfcf;
+        border-right: 0;
+        border-radius: 40px 0 0 40px;
+        padding: 0 18px;
+        font-size: 15px;
+        background: #fff;
+        color: #0f0f0f;
+        outline: none;
+        min-width: 0;
+      }
+      .yt-search-input:focus {
+        border-color: #1c62b9;
+      }
+      .yt-search-btn {
+        height: 40px;
+        width: 62px;
+        border: 1px solid #cfcfcf;
+        background: #f8f8f8;
+        border-radius: 0 40px 40px 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        color: #0f0f0f;
+      }
+      .yt-search-btn:hover {
+        background: #f2f2f2;
+      }
+      .yt-topicon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 0;
+        background: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        color: #0f0f0f;
+      }
+      .yt-topicon:hover {
+        background: #f2f2f2;
+      }
+      .yt-chips {
+        margin-bottom: 4px;
+        padding-left: 0;
+      }
+      .yt-chip {
+        background: #f2f2f2;
+        border-color: transparent;
+        color: #0f0f0f;
+        font-weight: 500;
+      }
+      .yt-chip:hover {
+        background: #e5e5e5;
+        border-color: transparent;
+      }
+      .yt-chip.active {
+        background: #0f0f0f;
+        color: #fff;
+        border-color: #0f0f0f;
+        box-shadow: none;
+      }
+      .yt-shelf {
+        margin-top: 22px;
+      }
+      .yt-shelf-h {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .yt-shelf-h h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f0f0f;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .yt-shelf-h .small {
+        color: #606060;
+        font-size: 12.5px;
+      }
+      .yt-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 18px 14px;
+      }
+      /* YouTube card: transparent, rounded thumb, avatar + title + meta below */
+      .yt-card {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+        padding: 0;
+        cursor: pointer;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      .yt-card:hover {
+        transform: none !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+      }
+      .yt-thumb-wrap {
+        border-radius: 12px;
+        background: #e5e5e5;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+      .yt-card:hover .yt-thumb-img {
+        transform: scale(1.04);
+      }
+      .yt-thumb-img {
+        transition: transform 0.25s ease;
+      }
+      .yt-duration {
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 2px 5px;
+        border-radius: 4px;
+        letter-spacing: 0.2px;
+      }
+      .yt-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex: none;
+      }
+      .yt-body {
+        padding: 10px 2px 0;
+        display: flex;
+        gap: 10px;
+      }
+      .yt-body-main {
+        min-width: 0;
+        flex: 1;
+      }
+      .yt-title {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.35;
+        color: #0f0f0f;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .yt-meta {
+        margin-top: 4px;
+        color: #606060;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .yt-meta b {
+        color: #606060;
+        font-weight: 500;
+      }
+      .yt-ready {
+        margin-top: 4px;
+        color: #606060;
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+      .yt-actions {
+        margin-top: 6px;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .yt-actions .btn {
+        border: 1px solid #e5e5e5;
+        background: #fff;
+        color: #0f0f0f;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 5px 10px;
+      }
+      .yt-more {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #0f0f0f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex: none;
+      }
+      .yt-more:hover {
+        background: #f2f2f2;
+      }
+      .yt-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 28px 12px;
+        color: #606060;
+        font-size: 14px;
+        background: #fff;
+        border-radius: 14px;
+        border: 1px dashed #d9d9d9;
+      }
+      .yt-note-card {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .yt-note-card b {
+        color: #0f0f0f;
+      }
+      @media (max-width: 760px) {
+        .yt-app {
+          grid-template-columns: 1fr;
+        }
+        .yt-sidebar {
+          display: flex;
+          overflow-x: auto;
+          gap: 4px;
+          min-height: auto;
+          border-right: 0;
+          border-bottom: 1px solid #e5e5e5;
+          padding: 6px 8px;
+        }
+        .yt-sb-item {
+          flex: none;
+          width: auto;
+          gap: 6px;
+          padding: 6px 10px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+        .yt-main {
+          padding: 8px 10px 20px;
+        }
+      }
+
       /* ============================================================
    PERSONALIZATION LAYER — accents, density, font size, card style
    ============================================================ */
@@ -16008,55 +16349,85 @@
         }
       }
 
-      /* ═══ MODERN YOUTUBE-STYLE VIDEO CARD ═══ */
+            /* ═══ MODERN YOUTUBE-STYLE VIDEO CARD ═══ */
+      function ytIsRealId(id) {
+        return /^[A-Za-z0-9_-]{11}$/.test(id || "");
+      }
+      function ytOfflinePicks(topic, subject, lang, target, channel) {
+        const q = `${topic || subject || "Physics"} ${subject || ""} ${channel || ""}`.trim();
+        const ext = "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+        const subColor = SUBCOLOR[subject] || "var(--blue)";
+        const labels = [
+          [topic || subject, "Full chapter lecture", 150],
+          [topic || subject, "One-shot revision", 55],
+          [topic || subject, "PYQ + MCQ practice", 90],
+          [topic || subject, "Board-level explanation", 60],
+          [topic || subject, "Advanced / tough problems", 95],
+        ];
+        return labels.map(([tp, label, min], i) => ({
+          id: "st-" + i + "-" + Math.random().toString(36).slice(2, 8),
+          title: `${tp} — ${label}`,
+          channel: channel || "Top Verified Educator",
+          durationSec: min * 60,
+          subject: subject,
+          topic: tp,
+          externalUrl: ext,
+          offline: true,
+          color: subColor,
+          why: "Offline StudyTube pick — opens a targeted verified-educator search (network unreachable right now).",
+        }));
+      }
+      function ytAvatarColor(name) {
+        let h = 0;
+        for (let i = 0; i < String(name).length; i++) h = (h * 31 + String(name).charCodeAt(i)) % 360;
+        return "hsl(" + h + " 55% 42%)";
+      }
       function ytVideoCard(v, ctx) {
         const prog = vwProgress(v.id);
         const card = el("div", "yt-card");
         const teacherName = v.teacher || v.channel || "Top Educator";
         const topic = (ctx && ctx.topic) || v.topic || "";
         const subject = (ctx && ctx.subject) || v.subject || "";
-        const subColor = SUBCOLOR[subject] || "var(--blue)";
+        const subColor = v.color || SUBCOLOR[subject] || "var(--blue)";
+        const real = ytIsRealId(v.id);
+        const avatarBg = ytAvatarColor(teacherName);
+        const thumb = real
+          ? `<img loading="lazy" decoding="async" class="yt-thumb-img" src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" onerror="this.src='https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg'" alt="${esc(v.title)}">`
+          : `<div class="yt-thumb-img" style="width:100%;height:100%;display:flex;align-items:flex-end;padding:12px;background:linear-gradient(135deg, ${subColor} 0%, #0f172a 100%);color:#fff"><b style="font-size:15px;line-height:1.35">${esc(topic || v.title)}</b></div>`;
 
         card.innerHTML = `
-    <div class="yt-thumb-wrap">
-      <img loading="lazy" class="yt-thumb-img" src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" onerror="this.src='https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg'" alt="${esc(v.title)}">
+    <div class="yt-thumb-wrap" data-open>
+      ${thumb}
       ${v.durationSec ? `<div class="yt-duration">${fmtTime(v.durationSec)}</div>` : ""}
-      ${prog && prog.pct ? `
-        <div class="yt-progress-track">
-          <div class="yt-progress-bar" style="width:${Math.min(100, prog.pct)}%"></div>
-        </div>
-      ` : ""}
-      ${prog && prog.done ? `<div style="position:absolute;top:8px;left:8px;background:rgba(34,197,94,0.92);color:#fff;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:4px">✓ COMPLETED</div>` : ""}
+      ${prog && prog.pct ? `<div class="yt-progress-track"><div class="yt-progress-bar" style="width:${Math.min(100, prog.pct)}%"></div></div>` : ""}
+      ${prog && prog.done ? `<div style="position:absolute;top:8px;left:8px;background:rgba(34,197,94,0.92);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px">✓ COMPLETED</div>` : ""}
     </div>
-    <div style="padding:12px;display:flex;flex-direction:column;flex:1">
-      <div class="row" style="gap:6px;align-items:center;margin-bottom:6px">
-        ${subject ? `<span class="chip" style="font-size:10.5px;color:${subColor}">${esc(subject)}</span>` : ""}
-        ${topic ? `<span class="chip" style="font-size:10.5px">${esc(topic.slice(0, 18))}</span>` : ""}
-        <span class="chip" style="font-size:10px;background:rgba(59,130,246,0.1);color:#3b82f6;border-color:rgba(59,130,246,0.25)">Kota Verified</span>
-      </div>
-      <b style="font-size:13.5px;line-height:1.35;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(v.title)}</b>
-      <div class="row" style="gap:6px;align-items:center;margin-top:auto">
-        <div style="width:24px;height:24px;border-radius:50%;background:${subColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:none">
-          ${esc((teacherName[0] || "T").toUpperCase())}
-        </div>
-        <div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">
-          <b>${esc(teacherName)}</b> <span class="yt-verified-badge" title="Verified Faculty">✓</span>
+    <div class="yt-body">
+      <span class="yt-avatar" style="background:${avatarBg}">${esc((teacherName[0] || "T").toUpperCase())}</span>
+      <div class="yt-body-main">
+        <div class="yt-title" title="${esc(v.title)}">${esc(v.title)}</div>
+        <div class="yt-meta"><b>${esc(teacherName)}</b>${v.channel || v.teacher ? " · " + esc(v.channel || v.teacher) : ""}${subject ? " · " + esc(subject) : ""}${topic ? " · " + esc(topic.slice(0, 34)) : ""}</div>
+        ${v.why ? `<div class="yt-ready">💡 ${esc(v.why)}</div>` : ""}
+        <div class="yt-actions">
+          <button class="btn" data-open>${real ? "▶ Watch" : "🔍 Find on YouTube"}</button>
+          ${real ? `<button class="btn" data-wl title="Watch Later">⏳ Save</button>` : ""}
+          ${topic ? `<button class="btn" data-pyq>✍️ PYQs</button>` : ""}
         </div>
       </div>
-      <div class="row" style="margin-top:10px;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
-        <button class="btn ghost sm" style="flex:1;font-size:11.5px;padding:4px 6px" data-play>▶ Watch</button>
-        ${topic ? `<button class="btn ghost sm" style="flex:1;font-size:11.5px;padding:4px 6px;color:#2563eb" data-pyq>✍️ PYQs</button>` : ""}
-        <button class="btn ghost sm" style="padding:4px 8px;font-size:11.5px" data-wl title="Watch Later">⏳</button>
-      </div>
+      ${real ? `<button class="yt-more" data-wl title="Watch Later">⋮</button>` : ""}
     </div>`;
 
-        card.querySelector("[data-play]").onclick = (e) => {
+        card.querySelector("[data-open]").onclick = (e) => {
           e.stopPropagation();
-          ytPlay(v, ctx);
+          if (real) ytPlay(v, ctx);
+          else window.open(v.externalUrl || "", "_blank", "noopener,noreferrer");
         };
-        card.querySelector(".yt-thumb-wrap").onclick = () => ytPlay(v, ctx);
+        card.querySelector(".yt-thumb-wrap").onclick = (e) => {
+          if (real) ytPlay(v, ctx);
+          else window.open(v.externalUrl || "", "_blank", "noopener,noreferrer");
+        };
         const pyqBtn = card.querySelector("[data-pyq]");
-        if (pyqBtn) {
+        if (pyqBtn)
           pyqBtn.onclick = (e) => {
             e.stopPropagation();
             ytPlay(v, ctx);
@@ -16065,13 +16436,13 @@
               if (modalPractice) modalPractice.click();
             }, 50);
           };
-        }
-        card.querySelector("[data-wl]").onclick = (e) => {
-          e.stopPropagation();
-          const added = ytWatchLaterToggle(v, ctx || {});
-          toast(added ? "Added to Watch Later queue" : "Removed from queue");
-        };
-
+        card.querySelectorAll("[data-wl]").forEach((b) => {
+          b.onclick = (e) => {
+            e.stopPropagation();
+            const added = ytWatchLaterToggle(v, ctx || {});
+            toast(added ? "Added to Watch Later queue" : "Removed from queue");
+          };
+        });
         return card;
       }
 
@@ -16087,473 +16458,304 @@
           board11: "Class 11 Foundation",
         }[target] || "JEE Main 2026";
 
-        // ── 1. STUDYTUBE HEADER WITH SELECTION GUARANTEE ──
-        const headerCard = el("div", "card");
-        headerCard.style.cssText = "padding:16px 20px;border-left:4px solid #ff0000;background:var(--panel)";
-        headerCard.innerHTML = `
-    <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-      <div class="yt-brand">
-        <span class="yt-badge">▶ STUDYTUBE</span>
-        <span>StudyTube for Serious Aspirants</span>
-      </div>
-      <div class="row" style="gap:8px;align-items:center">
-        <span class="chip" style="background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3);font-weight:700">
-          🛡️ 0% Distraction · 100% Syllabus Aligned
-        </span>
-        <span class="chip" style="background:rgba(59,130,246,0.12);color:#3b82f6;font-weight:700">
-          🎯 ${esc(targetLabel)}
-        </span>
-      </div>
+        const wrap = el("div", "yt-app");
+        wrap.style.cssText = "width:100%";
+
+        // ── 1. SIDEBAR (YouTube left rail) ──
+        const sb = el("div", "yt-sidebar");
+        const sbItems = [
+          ["🏠", "Home", "home"],
+          ["⚡", "One-shot", "oneshot"],
+          ["🔁", "Revision", "revision"],
+          ["🚀", "PYQ Marathons", "pyq"],
+          ["🧠", "Dream Teams", "dream"],
+          ["⏳", "Watch Later", "wl"],
+          ["❤️", "Saved", "saved"],
+          ["📝", "My Notes", "notes"],
+        ];
+        const sbBtns = [];
+        sbItems.forEach(([ic, name, key]) => {
+          const b = el("button", "yt-sb-item" + (key === "home" ? " active" : ""));
+          b.innerHTML = `<span class="yt-sb-ic">${ic}</span><span>${esc(name)}</span>`;
+          b.onclick = () => {
+            sbBtns.forEach((x) => x.classList.remove("active"));
+            b.classList.add("active");
+            const t = wrap.querySelector('[data-scroll="' + key + '"]');
+            if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (key === "oneshot") doSearch("One Shot Full Chapter Complete Revision");
+            if (key === "revision") doSearch("Quick Revision One Shot Mind Map JEE");
+            if (key === "pyq") doSearch("JEE Main PYQ Marathon Past 5 Years");
+            if (key === "dream") doSearch("");
+          };
+          sbBtns.push(b);
+          sb.appendChild(b);
+        });
+        wrap.appendChild(sb);
+
+        // ── 2. MAIN COLUMN ──
+        const main = el("div", "yt-main");
+        main.innerHTML = `
+    <div class="yt-topbar">
+      <span class="yt-logo"><span class="yt-playbox">▶</span>StudyTube</span>
+      <span class="chip" style="background:rgba(34,197,94,0.1);color:var(--green);border-color:rgba(34,197,94,0.25);font-weight:700">🚫 0% Distraction · ${esc(targetLabel)}</span>
+      <span class="chip" style="background:rgba(59,130,246,0.1);color:#3b82f6;font-weight:700">🎯 ${esc(targetLabel)}</span>
     </div>
-    <div class="small muted" style="margin-top:6px;line-height:1.45">
-      No algorithmic rabbit holes, no entertainment shorts, no comment toxicity. Only Kota's top faculties (PW, Unacademy, Competishun, Physics Galaxy, Eduniti, MathonGo, Allen) synchronized with your real test weakness.
-    </div>`;
-        root.appendChild(headerCard);
-
-        // ── 2. SELECTION & SCORE CONFIDENCE BLUEPRINT (Solves User's Doubt) ──
-        const trustCard = el("div", "card");
-        trustCard.style.cssText = "border:1px solid rgba(59,130,246,0.3);background:linear-gradient(135deg, var(--panel) 0%, rgba(59,130,246,0.04) 100%)";
-        
-        // Calculate real readiness metrics
-        const tests = S.tests || [];
-        const attempts = tests.filter((t2) => t2.result);
-        const avgAcc = attempts.length ? Math.round(attempts.reduce((a, b) => a + (b.result.accuracy || 0), 0) / attempts.length) : 0;
-        const totalWatchedSec = Object.values(videoLog()).reduce((a, b) => a + (b.watchedSec || 0), 0);
-        const watchedHours = (totalWatchedSec / 3600).toFixed(1);
-        const predPercentile = avgAcc >= 85 ? "99.4 - 99.8" : avgAcc >= 70 ? "98.2 - 99.1" : avgAcc >= 50 ? "95.5 - 97.8" : "90.0 - 94.5";
-        const predBoard = avgAcc >= 80 ? "95% - 98%" : avgAcc >= 60 ? "88% - 94%" : "78% - 87%";
-
-        trustCard.innerHTML = `
-    <div class="row" style="justify-content:space-between;align-items:center;cursor:pointer" data-toggleTrust>
-      <div class="row" style="gap:8px;align-items:center">
-        <span style="font-size:22px">🏆</span>
-        <div>
-          <b style="font-size:15px;color:var(--text)">Why Your Selection & 95%+ Board Score is Mathematically Guaranteed</b>
-          <div class="small muted">Click to inspect the 4-Step Mastery Engine & your live percentile predictor</div>
-        </div>
+    <div class="yt-topbar">
+      <div class="yt-search-box">
+        <input type="text" class="yt-search-input" data-ytSearch placeholder="Search StudyTube — topic, chapter ya teacher…">
+        <button class="yt-search-btn" data-ytSubmit>🔍</button>
       </div>
-      <button class="btn ghost sm" style="font-size:12px" data-trustBtn>Inspect Blueprint ▾</button>
+      <button class="yt-topicon" data-ytClear title="Clear search">✕</button>
+      <button class="yt-topicon" data-wlBtn title="Watch later">⏳</button>
+      <button class="yt-topicon" data-saveBtn title="Saved">❤️</button>
     </div>
-    <div data-trustBody hidden style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px">
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:#3b82f6">1. 👨‍🏫 Top Faculty Only</div>
-          <div class="small muted" style="margin-top:4px">Only verified teachers from Kota & top platforms. Zero missing prerequisites or amateur coverage.</div>
-        </div>
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:var(--green)">2. ✍️ 1-Click PYQ Drill</div>
-          <div class="small muted" style="margin-top:4px">Watching is only 20% of learning. Every video directly connects to 10 real NTA PYQs to cement concepts.</div>
-        </div>
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:var(--amber)">3. 🔄 Auto-Fix Backlogs</div>
-          <div class="small muted" style="margin-top:4px">If accuracy < 70%, the AI automatically reschedules a targeted revision slot in your plan.</div>
-        </div>
-        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)">
-          <div class="small" style="font-weight:700;color:#ec4899">4. 🛡️ Focus Guard Lock</div>
-          <div class="small muted" style="margin-top:4px">Regain-style friction and launcher mode lock you into uninterrupted flow states.</div>
-        </div>
-      </div>
-      <!-- LIVE READINESS PREDICTOR -->
-      <div style="padding:12px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-        <div>
-          <div class="small" style="font-weight:700">📊 Your Live Exam Readiness Meter:</div>
-          <div class="small muted">Based on ${watchedHours} hrs focused video study · ${attempts.length} mock tests · ${avgAcc}% PYQ accuracy</div>
-        </div>
-        <div class="row" style="gap:12px">
-          <div style="text-align:right">
-            <div class="small muted">Est. JEE Percentile</div>
-            <b style="font-size:16px;color:#3b82f6">${predPercentile}%ile</b>
-          </div>
-          <div style="text-align:right">
-            <div class="small muted">Est. Board 12th</div>
-            <b style="font-size:16px;color:var(--green)">${predBoard}</b>
-          </div>
-        </div>
-      </div>
-    </div>`;
-        root.appendChild(trustCard);
-
-        const trustToggle = trustCard.querySelector("[data-toggleTrust]");
-        const trustBody = trustCard.querySelector("[data-trustBody]");
-        const trustBtn = trustCard.querySelector("[data-trustBtn]");
-        trustToggle.onclick = () => {
-          trustBody.hidden = !trustBody.hidden;
-          trustBtn.textContent = trustBody.hidden ? "Inspect Blueprint ▾" : "Collapse ▲";
-        };
-
-        // ── 3. YOUTUBE-STYLE SEARCH & HORIZONTAL FILTER CHIPS ──
-        const searchCard = el("div", "card");
-        searchCard.style.padding = "14px 16px";
-        searchCard.innerHTML = `
-    <div class="row" style="gap:8px;align-items:center;margin-bottom:10px">
-      <div style="position:relative;flex:1">
-        <input type="text" data-ytSearch placeholder="Search any topic, chapter, or teacher (e.g. Rotational Motion, Organic Chemistry, ABJ Sir, NV Sir)..." 
-          style="width:100%;box-sizing:border-box;padding:10px 40px 10px 14px;border-radius:999px;font-size:13.5px;border:1px solid var(--line);background:var(--bg)">
-        <button class="iconbtn" data-ytClear style="position:absolute;right:10px;top:50%;transform:translateY(-50%);display:none">✕</button>
-      </div>
-      <button class="btn sm" data-ytSubmit style="background:#ff0000;color:#fff;border-radius:999px;padding:8px 18px;font-weight:700">🔍 Search</button>
-    </div>
-    <!-- CHIPS BAR -->
     <div class="yt-chips" data-chipsContainer>
-      <button class="yt-chip active" data-filter="all">🌟 All Top Lectures</button>
-      <button class="yt-chip" data-filter="pw">🔥 Physics Wallah</button>
-      <button class="yt-chip" data-filter="unacademy">🎓 Unacademy Atoms</button>
-      <button class="yt-chip" data-filter="competishun">🏛️ Competishun (Mohit Tyagi)</button>
-      <button class="yt-chip" data-filter="physicsgalaxy">🌌 Physics Galaxy (Ashish Arora)</button>
-      <button class="yt-chip" data-filter="mathongo">📐 MathonGo (Anup Sir)</button>
-      <button class="yt-chip" data-filter="eduniti">⚡ Eduniti (Mohit Goenka)</button>
-      <button class="yt-chip" data-filter="esaral">🎯 eSaral</button>
-      <button class="yt-chip" data-filter="motion">🔥 Motion Kota (NV Sir)</button>
-      <button class="yt-chip" data-filter="allen">⭐ ALLEN JEE</button>
-      <button class="yt-chip" data-filter="oneshot">⚡ Full Chapter One-Shots</button>
-      <button class="yt-chip" data-filter="ncert">📖 NCERT 100/100 (Boards)</button>
-      <button class="yt-chip" data-filter="pyq">🎯 PYQ Solving Marathons</button>
-      <button class="yt-chip" data-filter="formula">📝 Formula Checklists</button>
-    </div>`;
-        root.appendChild(searchCard);
+      <button class="yt-chip active" data-filter="all">All</button>
+      <button class="yt-chip" data-filter="pw">Physics Wallah</button>
+      <button class="yt-chip" data-filter="unacademy">Unacademy Atoms</button>
+      <button class="yt-chip" data-filter="competishun">Competishun</button>
+      <button class="yt-chip" data-filter="physicsgalaxy">Physics Galaxy</button>
+      <button class="yt-chip" data-filter="mathongo">MathonGo</button>
+      <button class="yt-chip" data-filter="eduniti">Eduniti</button>
+      <button class="yt-chip" data-filter="esaral">eSaral</button>
+      <button class="yt-chip" data-filter="motion">Motion Kota</button>
+      <button class="yt-chip" data-filter="allen">ALLEN JEE</button>
+      <button class="yt-chip" data-filter="oneshot">⚡ One-shots</button>
+      <button class="yt-chip" data-filter="ncert">📖 NCERT Boards</button>
+      <button class="yt-chip" data-filter="pyq">🎯 PYQ Marathons</button>
+      <button class="yt-chip" data-filter="formula">📝 Formula Lists</button>
+    </div>
+    <div data-searchResults class="yt-grid" style="margin-top:14px"></div>
+    <section class="yt-shelf" data-scroll="home">
+      <div class="yt-shelf-h"><h3>Continue watching</h3><span class="small">Resume karo, abhi yahin se</span></div>
+      <div class="yt-grid" data-cw></div>
+    </section>
+    <section class="yt-shelf" data-scroll="today" style="display:none">
+      <div class="yt-shelf-h"><h3>Today's planned lessons</h3><span class="small">From your AI plan</span></div>
+      <div data-todayGrid class="yt-grid"></div>
+    </section>
+    <section class="yt-shelf" data-scroll="dream">
+      <div class="yt-shelf-h"><h3>Recommended for you</h3><span class="small">Weak-topic + Dream Team matched</span></div>
+      <div class="yt-grid" data-rec></div>
+    </section>
+    <section class="yt-shelf" data-scroll="oneshot">
+      <div class="yt-shelf-h"><h3>⚡ Quick one-shot revision</h3><span class="small">Tight timeline ke liye</span></div>
+      <div class="yt-grid" data-oneshot></div>
+    </section>
+    <section class="yt-shelf" data-scroll="revision">
+      <div class="yt-shelf-h"><h3>🔁 Revision due</h3><span class="small">Spaced recall — kabhi dοna mat bhaoolo</span></div>
+      <div class="yt-grid" data-rev></div>
+    </section>
+    <section class="yt-shelf" data-scroll="wl">
+      <div class="yt-shelf-h"><h3>⏳ Watch Later</h3><span class="small">Saved queue</span></div>
+      <div class="yt-grid" data-wl></div>
+    </section>
+    <section class="yt-shelf" data-scroll="saved">
+      <div class="yt-shelf-h"><h3>❤️ Saved Playlists</h3><span class="small">Keep for revision</span></div>
+      <div class="yt-grid" data-saved></div>
+    </section>
+    <section class="yt-shelf" data-scroll="notes">
+      <div class="yt-shelf-h"><h3>📝 My Study Notes</h3><span class="small">Lesson notes attached</span></div>
+      <div data-notes class="yt-grid"></div>
+    </section>`;
+        wrap.appendChild(main);
+        root.appendChild(wrap);
 
-        // ── SEARCH RESULTS CONTAINER ──
-        const searchResultsGrid = el("div", "yt-grid");
-        searchResultsGrid.style.marginBottom = "20px";
-        searchResultsGrid.hidden = true;
-        root.appendChild(searchResultsGrid);
+        const searchInput = wrap.querySelector("[data-ytSearch]");
+        const searchClear = wrap.querySelector("[data-ytClear]");
+        const searchSubmit = wrap.querySelector("[data-ytSubmit]");
+        const searchGrid = wrap.querySelector("[data-searchResults]");
+        const chips = wrap.querySelectorAll(".yt-chip");
 
-        const searchInput = searchCard.querySelector("[data-ytSearch]");
-        const searchClear = searchCard.querySelector("[data-ytClear]");
-        const searchSubmit = searchCard.querySelector("[data-ytSubmit]");
-        const chips = searchCard.querySelectorAll(".yt-chip");
-
-        const executeSearch = async (queryTerm, channelFilter = "") => {
+        // ── SEARCH ──
+        const doSearch = async (queryTerm, channelFilter = "") => {
+          queryTerm = (queryTerm || "").trim();
           if (!queryTerm && !channelFilter) {
-            searchResultsGrid.hidden = true;
+            searchGrid.innerHTML = "";
+            searchGrid.style.display = "none";
             return;
           }
-          searchResultsGrid.hidden = false;
-          searchResultsGrid.innerHTML = `<div class="small muted" style="grid-column:1/-1;padding:20px;text-align:center">🔍 Searching verified lectures from top educators…</div>`;
-          
-          const items = await ytFetch({
+          searchGrid.style.display = "";
+          searchGrid.innerHTML = `<div class="yt-empty">🔍 Searching verified lectures…</div>`;
+          const req = {
             topic: queryTerm || "Physics Chemistry Maths",
             subject: "Physics",
             language: lang,
             kind: "learn",
             depth: "lecture",
-            target: target,
+            target,
             minMinutes: 5,
             maxMinutes: 360,
             channel: channelFilter,
-          });
-
-          if (!items.length) {
-            searchResultsGrid.innerHTML = `
-              <div class="card" style="grid-column:1/-1;text-align:center;padding:24px">
-                <div style="font-size:24px;margin-bottom:8px">🔍</div>
-                <b>No lectures found for "${esc(queryTerm || channelFilter)}"</b>
-                <div class="small muted" style="margin:6px 0 12px">Try searching a general chapter name or topic.</div>
-              </div>`;
-            return;
-          }
-
-          searchResultsGrid.innerHTML = `
-            <div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <b style="font-size:15px">Showing ${items.length} Curated Lectures for "${esc(queryTerm || channelFilter)}"</b>
-              <button class="btn ghost sm" data-closeSearch style="font-size:12px">✕ Close Search</button>
-            </div>`;
-          
-          searchResultsGrid.querySelector("[data-closeSearch]").onclick = () => {
-            searchResultsGrid.hidden = true;
-            searchInput.value = "";
-            searchClear.style.display = "none";
-            chips.forEach((c) => c.classList.remove("active"));
-            searchCard.querySelector('[data-filter="all"]').classList.add("active");
           };
-
-          items.forEach((v) => {
-            searchResultsGrid.appendChild(ytVideoCard(v, { topic: queryTerm || v.topic, subject: v.subject }));
-          });
+          let items = await ytFetch(req);
+          if (!items.length) items = ytOfflinePicks(queryTerm || channelFilter, "Physics", lang, target, channelFilter);
+          searchGrid.innerHTML = `<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b style="font-size:15px">Showing ${items.length} lectures for "${esc(queryTerm || channelFilter)}"</b><button class="btn ghost sm" data-closeSearch>✕ Close</button></div>`;
+          searchGrid.querySelector("[data-closeSearch]").onclick = () => {
+            searchGrid.innerHTML = "";
+            searchGrid.style.display = "none";
+            searchInput.value = "";
+            chips.forEach((c) => c.classList.remove("active"));
+            chips[0] && chips[0].classList.add("active");
+          };
+          items.forEach((v) => searchGrid.appendChild(ytVideoCard(v, { topic: queryTerm || v.topic, subject: v.subject || "Physics" })));
         };
-
-        searchSubmit.onclick = () => executeSearch(searchInput.value.trim());
+        searchSubmit.onclick = () => doSearch(searchInput.value);
         searchInput.onkeydown = (e) => {
-          if (e.key === "Enter") executeSearch(searchInput.value.trim());
-        };
-        searchInput.oninput = () => {
-          searchClear.style.display = searchInput.value ? "inline-flex" : "none";
+          if (e.key === "Enter") doSearch(searchInput.value);
         };
         searchClear.onclick = () => {
           searchInput.value = "";
-          searchClear.style.display = "none";
-          searchResultsGrid.hidden = true;
+          searchGrid.innerHTML = "";
+          searchGrid.style.display = "none";
         };
-
-        // Chips Filter Click Handlers
         chips.forEach((chip) => {
           chip.onclick = () => {
             chips.forEach((c) => c.classList.remove("active"));
             chip.classList.add("active");
-            const filt = chip.getAttribute("data-filter");
-            if (filt === "all") {
-              searchResultsGrid.hidden = true;
-            } else if (filt === "pw") {
-              executeSearch("", "Physics Wallah");
-            } else if (filt === "unacademy") {
-              executeSearch("", "Unacademy Atoms");
-            } else if (filt === "competishun") {
-              executeSearch("", "Mohit Tyagi Competishun");
-            } else if (filt === "physicsgalaxy") {
-              executeSearch("", "Physics Galaxy");
-            } else if (filt === "mathongo") {
-              executeSearch("", "MathonGo");
-            } else if (filt === "eduniti") {
-              executeSearch("", "Eduniti Mohit Goenka");
-            } else if (filt === "esaral") {
-              executeSearch("", "eSaral");
-            } else if (filt === "motion") {
-              executeSearch("", "Motion JEE");
-            } else if (filt === "allen") {
-              executeSearch("", "ALLEN JEE");
-            } else if (filt === "oneshot") {
-              executeSearch("One Shot Full Chapter Complete Revision");
-            } else if (filt === "ncert") {
-              executeSearch("NCERT Line by Line Class 12 Boards");
-            } else if (filt === "pyq") {
-              executeSearch("JEE Main PYQ Marathon Past 5 Years");
-            } else if (filt === "formula") {
-              executeSearch("Formula Revision Checklist Short Notes");
-            }
+            const f = chip.getAttribute("data-filter");
+            if (f === "all") {
+              searchGrid.innerHTML = "";
+              searchGrid.style.display = "none";
+            } else if (f === "pw") doSearch("", "Physics Wallah");
+            else if (f === "unacademy") doSearch("", "Unacademy Atoms");
+            else if (f === "competishun") doSearch("", "Mohit Tyagi Competishun");
+            else if (f === "physicsgalaxy") doSearch("", "Physics Galaxy");
+            else if (f === "mathongo") doSearch("", "MathonGo");
+            else if (f === "eduniti") doSearch("", "Eduniti Mohit Goenka");
+            else if (f === "esaral") doSearch("", "eSaral");
+            else if (f === "motion") doSearch("", "Motion JEE");
+            else if (f === "allen") doSearch("", "ALLEN JEE");
+            else if (f === "oneshot") doSearch("One Shot Full Chapter Complete Revision");
+            else if (f === "ncert") doSearch("NCERT Line by Line Class 12 Boards");
+            else if (f === "pyq") doSearch("JEE Main PYQ Marathon Past 5 Years");
+            else if (f === "formula") doSearch("Formula Revision Checklist Short Notes");
           };
         });
 
-        // ── 4. CONTINUE WATCHING SECTION ──
-        const cw = continueWatching();
+        // ── HELPERS ──
+        const cwSlot = wrap.querySelector("[data-cw]");
+        const cw = continueWatching().filter((x) => x && x.id);
         if (cw.length) {
-          const cwSection = el("div");
-          cwSection.style.marginBottom = "24px";
-          cwSection.innerHTML = `
-            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div class="row" style="gap:8px;align-items:center">
-                <span style="font-size:18px">⏯️</span>
-                <h3 style="margin:0;font-size:16px">Continue Watching</h3>
-              </div>
-              <div class="small muted">${cw.length} in progress · click to resume</div>
-            </div>`;
-          const cwGrid = el("div", "yt-grid");
-          cw.slice(0, 6).forEach((r) => {
-            cwGrid.appendChild(
-              ytVideoCard(
-                { id: r.id, title: r.title, channel: r.channel, durationSec: r.durationSec },
-                { topic: r.topic, subject: r.subject },
-              ),
-            );
-          });
-          cwSection.appendChild(cwGrid);
-          root.appendChild(cwSection);
+          cw.slice(0, 8).forEach((r) => cwSlot.appendChild(ytVideoCard(r, { topic: r.topic, subject: r.subject })));
+        } else {
+          cwSlot.innerHTML = `<div class="yt-empty">No lesson in progress. Koi bhi lecture start karo — wahi se resume hoga.</div>`;
         }
 
-        // ── 5. TODAY'S STUDY VIDEOS (From Planner) ──
+        // Today's planned lessons
+        const todaySection = wrap.querySelector("[data-scroll='today']");
         if (p && p.tasks) {
           const tk = todayKey(Date.now());
-          const todayTasks = p.tasks.filter((t2) => t2.date === tk && t2.status === "todo" && t2.kind !== "revision").slice(0, 4);
+          const todayTasks = p.tasks
+            .filter((t) => t.date === tk && t.status === "todo" && t.kind !== "revision")
+            .slice(0, 6);
           if (todayTasks.length) {
-            const todayCard = el("div", "card");
-            todayCard.style.cssText = "border-left:4px solid var(--accent, #3b82f6);margin-bottom:24px";
-            todayCard.innerHTML = `
-              <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div class="row" style="gap:8px;align-items:center">
-                  <span style="font-size:18px">📅</span>
-                  <h3 style="margin:0;font-size:16px">Today's Scheduled Video Lessons</h3>
-                </div>
-                <span class="chip" style="background:rgba(59,130,246,0.1);color:#3b82f6;font-weight:700">From Your Active Study Plan</span>
-              </div>
-              <div data-todayGrid class="yt-grid"></div>`;
-            root.appendChild(todayCard);
-
-            const tGrid = todayCard.querySelector("[data-todayGrid]");
-            todayTasks.forEach((t2) => {
-              const opt = el("div", "optrow");
-              opt.style.cssText = "cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)";
+            todaySection.style.display = "";
+            const tg = wrap.querySelector("[data-todayGrid]");
+            todayTasks.forEach((t) => {
+              const opt = el("div", "yt-card");
               opt.innerHTML = `
-                <div style="font-size:22px;flex:none">📹</div>
-                <div style="flex:1;min-width:0">
-                  <b style="font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t2.topic)}</b>
-                  <div class="small muted">${esc(t2.subject)} · ~${aipEff(t2.estMin, p.profile)} min · ${t2.teacher || "Kota Faculty"}</div>
-                </div>
-                <button class="btn sm" style="background:#ff0000;color:#fff;font-weight:700;padding:4px 10px">▶ Start</button>`;
-              opt.onclick = () => aipOpenLesson(t2);
-              tGrid.appendChild(opt);
+    <div class="yt-thumb-wrap" style="height:auto;padding:16px;background:linear-gradient(135deg, #0f172a 0%, #24324a 100%);color:#fff;display:flex;flex-direction:column;justify-content:flex-end">
+      <span style="font-size:12px;color:#94a3b8">${esc(t.subject)} · ~${aipEff(t.estMin, p.profile)} min</span>
+      <b style="font-size:15px;line-height:1.35;margin-top:4px">${esc(t.topic)}</b>
+      <span style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:#ff0000;color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;width:max-content">▶ Start</span>
+    </div>
+    <div class="yt-body">
+      <span class="yt-avatar" style="background:#ff0000">S</span>
+      <div class="yt-body-main">
+        <div class="yt-title">${esc(t.topic)}</div>
+        <div class="yt-meta"><b>${esc(t.teacher || "Kota Faculty")}</b> · ${esc(t.subject)} · From your plan</div>
+      </div>
+    </div>`;
+              opt.querySelector(".yt-thumb-wrap").onclick = () => aipOpenLesson(t);
+              tg.appendChild(opt);
             });
           }
         }
 
-        // ── 6. WEAK TOPICS HIGH-YIELD CURATION (Weakness Doctor) ──
-        const weakSection = el("div");
-        weakSection.style.marginBottom = "24px";
-        weakSection.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="row" style="gap:8px;align-items:center">
-              <span style="font-size:18px">💪</span>
-              <h3 style="margin:0;font-size:16px">Weak Topic Doctor (Recommended for You)</h3>
-            </div>
-            <div class="small muted">Synchronized with your real test accuracy</div>
-          </div>
-          <div data-weakGrid class="yt-grid">
-            <div class="small muted" style="grid-column:1/-1;padding:16px;text-align:center">Diagnosing your test attempts to fetch exact recovery lectures…</div>
-          </div>`;
-        root.appendChild(weakSection);
-
-        (async () => {
-          let weak = [];
-          try {
-            weak = chapterPriorities().slice(0, 4);
-          } catch (e) {}
-          const grid = weakSection.querySelector("[data-weakGrid]");
-          if (!grid) return;
-          if (!weak.length) {
-            grid.innerHTML = `
-              <div class="card" style="grid-column:1/-1;padding:16px;text-align:center">
-                <b>No test weaknesses detected yet!</b>
-                <div class="small muted" style="margin-top:4px">Attempt 1-2 CBT mocks or PYQ papers — your exact weakest chapters will automatically surface with targeted lectures here.</div>
-              </div>`;
+        // ── SHELF LOADER ──
+        const loadShelf = async (gridSel, params, offline) => {
+          const grid = wrap.querySelector(gridSel);
+          grid.innerHTML = `<div class="yt-empty">Loading…</div>`;
+          let items = await ytFetch(params);
+          if (!items.length) items = offline || [];
+          grid.innerHTML = "";
+          if (!items.length) {
+            grid.innerHTML = `<div class="yt-empty">No verified lectures right now — network issue, thodi der me dobara try karo.</div>`;
             return;
           }
-          grid.innerHTML = "";
-          for (const w2 of weak) {
-            if (!weakSection.isConnected) return;
-            const items = await ytFetch({
-              topic: w2.name,
-              subject: w2.sub || "Physics",
-              language: lang,
-              kind: "revision",
-              depth: "lecture",
-              target,
-              minMinutes: 5,
-              maxMinutes: 90,
-              channel: "",
-            });
-            if (items.length) {
-              const v = {
-                ...items[0],
-                why: `Diagnosed from tests: ${w2.name} has ${w2.acc}% accuracy (${w2.n} questions tested). Watch this recovery lesson then attempt the chapter drill!`,
-              };
-              grid.appendChild(ytVideoCard(v, { topic: w2.name, subject: w2.sub }));
-            }
+          items.slice(0, 8).forEach((v) => grid.appendChild(ytVideoCard(v, { topic: params.topic, subject: params.subject })));
+        };
+
+        // Recommended (weak topic first)
+        const weakTopic = (function () {
+          try {
+            const w = chapterPriorities().slice(0, 3);
+            return w.length ? w[0].name : "";
+          } catch (e) {
+            return "";
           }
         })();
+        const recTopic = weakTopic || "Electrostatics";
+        loadShelf(
+          "[data-rec]",
+          { topic: recTopic, subject: "Physics", language: lang, kind: "learn", depth: "lecture", target, minMinutes: 5, maxMinutes: 300, channel: "" },
+          ytOfflinePicks(recTopic, "Physics", lang, target, ""),
+        );
 
-        // ── 7. SAVED PLAYLISTS & WATCH LATER (2-Column Section) ──
-        const playlistsSection = el("div");
-        playlistsSection.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;margin-bottom:24px";
+        loadShelf(
+          "[data-oneshot]",
+          { topic: "One Shot Full Chapter Complete Revision", subject: "Physics", language: lang, kind: "revision", depth: "oneshot", target, minMinutes: 5, maxMinutes: 240, channel: "" },
+          ytOfflinePicks("One Shot Revision", "Physics", lang, target, ""),
+        );
 
-        // Watch Later Card
-        const wl = ytWatchLater();
-        const wlCard = el("div", "card");
-        wlCard.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="row" style="gap:8px;align-items:center">
-              <span>⏳</span>
-              <h3 style="margin:0;font-size:15px">Watch Later Queue</h3>
-            </div>
-            <span class="chip">${wl.length} videos</span>
-          </div>
-          <div data-wlList style="display:flex;flex-direction:column;gap:8px"></div>`;
-        const wlList = wlCard.querySelector("[data-wlList]");
-        if (wl.length) {
-          wl.slice(0, 5).forEach((v) => {
-            const row = el("div", "row");
-            row.style.cssText = "justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)";
-            row.innerHTML = `
-              <div style="min-width:0;flex:1">
-                <b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title || v.id)}</b>
-                <div class="small muted">${esc(v.channel || "")}${v.durationSec ? " · " + fmtTime(v.durationSec) : ""}</div>
-              </div>
-              <div class="row" style="gap:4px">
-                <button class="btn ghost sm" data-open style="padding:2px 8px">▶</button>
-                <button class="btn ghost sm" data-del style="padding:2px 8px">✕</button>
-              </div>`;
-            row.querySelector("[data-open]").onclick = () => ytPlay(v, { topic: v.topic, subject: v.subject });
-            row.querySelector("[data-del]").onclick = () => {
-              const q = ytWatchLater();
-              const i = q.findIndex((x) => x.id === v.id);
-              if (i >= 0) {
-                q.splice(i, 1);
-                save();
-                render(0);
-              }
-            };
-            wlList.appendChild(row);
+        loadShelf(
+          "[data-rev]",
+          { topic: recTopic + " Quick Revision One Shot", subject: "Physics", language: lang, kind: "revision", depth: "oneshot", target, minMinutes: 5, maxMinutes: 90, channel: "" },
+          ytOfflinePicks(recTopic + " Revision", "Physics", lang, target, ""),
+        );
+
+        // Watch later
+        const wlList = ytWatchLater();
+        const wlGrid = wrap.querySelector("[data-wl]");
+        if (wlList.length) {
+          wlList.slice(0, 8).forEach((v) => wlGrid.appendChild(ytVideoCard(v, { topic: v.topic, subject: v.subject })));
+        } else {
+          wlGrid.innerHTML = `<div class="yt-empty">Watch later khali hai — kisi card ke ⏳ par tap karke save karo.</div>`;
+        }
+
+        // Saved
+        const savedList = ytSaved();
+        const savedGrid = wrap.querySelector("[data-saved]");
+        if (savedList.length) {
+          savedList.slice(0, 8).forEach((v) => savedGrid.appendChild(ytVideoCard(v, { topic: v.topic, subject: v.subject })));
+        } else {
+          savedGrid.innerHTML = `<div class="yt-empty">No saved playlists yet — kisi lecture ko ❤️ karo.</div>`;
+        }
+
+        // Notes
+        const noteList = ytNoteList().slice(0, 6);
+        const notesGrid = wrap.querySelector("[data-notes]");
+        if (noteList.length) {
+          noteList.forEach((n) => {
+            const c = el("div", "yt-note-card");
+            c.innerHTML = `<b>${esc(n.videoTitle || n.topic || n.id)}</b><div class="small muted" style="margin:4px 0">${esc(n.subject || "")} · ${esc(n.channel || "")}</div><div class="small" style="white-space:pre-wrap;max-height:90px;overflow-y:auto;line-height:1.5">${esc(n.text)}</div><button class="btn ghost sm" style="margin-top:8px" data-playNote>▶ Re-watch</button>`;
+            c.querySelector("[data-playNote]").onclick = () => ytPlay({ id: n.id, title: n.videoTitle || n.topic || n.id, channel: n.channel || "", subject: n.subject || "" }, { topic: n.topic, subject: n.subject });
+            notesGrid.appendChild(c);
           });
         } else {
-          wlList.innerHTML = `<div class="small muted" style="padding:10px;text-align:center">No videos in queue. Tap ⏳ on any video card to save for later.</div>`;
+          notesGrid.innerHTML = `<div class="yt-empty">Notes khali — player ke andar 📝 Notes me likho, yahan save rahenge.</div>`;
         }
-        playlistsSection.appendChild(wlCard);
 
-        // Saved Playlists Card
-        const sv = ytSaved();
-        const svCard = el("div", "card");
-        svCard.innerHTML = `
-          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="row" style="gap:8px;align-items:center">
-              <span>❤️</span>
-              <h3 style="margin:0;font-size:15px">Saved Playlists</h3>
-            </div>
-            <span class="chip">${sv.length} saved</span>
-          </div>
-          <div data-svList style="display:flex;flex-direction:column;gap:8px"></div>`;
-        const svList = svCard.querySelector("[data-svList]");
-        if (sv.length) {
-          sv.slice(0, 5).forEach((v) => {
-            const row = el("div", "row");
-            row.style.cssText = "justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)";
-            row.innerHTML = `
-              <div style="min-width:0;flex:1">
-                <b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title || v.id)}</b>
-                <div class="small muted">${esc(v.subject || "")} · ${esc(v.channel || "")}</div>
-              </div>
-              <button class="btn ghost sm" data-open style="padding:2px 8px">▶</button>`;
-            row.querySelector("[data-open]").onclick = () => ytPlay(v, { topic: v.topic, subject: v.subject });
-            svList.appendChild(row);
-          });
-        } else {
-          svList.innerHTML = `<div class="small muted" style="padding:10px;text-align:center">No saved playlists yet. Tap ❤️ on any lecture to bookmark.</div>`;
-        }
-        playlistsSection.appendChild(svCard);
-        root.appendChild(playlistsSection);
-
-        // ── 8. MY VIDEO NOTES ──
-        const notes = ytNoteList();
-        if (notes.length) {
-          const notesCard = el("div", "card");
-          notesCard.style.cssText = "border-left:4px solid var(--amber);margin-bottom:24px";
-          notesCard.innerHTML = `
-            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div class="row" style="gap:8px;align-items:center">
-                <span>📝</span>
-                <h3 style="margin:0;font-size:16px">My Video Study Notes & Takeaways</h3>
-              </div>
-              <span class="chip">${notes.length} lessons annotated</span>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px">
-              ${notes.slice(0, 6).map((n) => `
-                <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column">
-                  <b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">${esc(n.videoTitle || n.topic || n.id)}</b>
-                  <div class="small muted" style="margin-bottom:8px">${esc(n.subject || "")} · ${esc(n.channel || "")}</div>
-                  <div class="small" style="line-height:1.4;white-space:pre-wrap;background:var(--panel);padding:8px;border-radius:6px;border:1px solid var(--line);flex:1;max-height:90px;overflow-y:auto">${esc(n.text)}</div>
-                  <div class="row" style="margin-top:8px;justify-content:flex-end">
-                    <button class="btn ghost sm" data-playNote="${esc(n.id)}" style="font-size:11.5px">▶ Re-watch Lesson</button>
-                  </div>
-                </div>
-              `).join("")}
-            </div>`;
-          notes.slice(0, 6).forEach((n) => {
-            const btn = notesCard.querySelector(`[data-playNote="${esc(n.id)}"]`);
-            if (btn) {
-              btn.onclick = () => ytPlay(
-                { id: n.id, title: n.videoTitle || n.topic || n.id, channel: n.channel || "", subject: n.subject || "" },
-                { topic: n.topic, subject: n.subject },
-              );
-            }
-          });
-          root.appendChild(notesCard);
-        }
+        // Header quick actions
+        wrap.querySelector("[data-wlBtn]").onclick = () => {
+          const t = wrap.querySelector('[data-scroll="wl"]');
+          if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+        wrap.querySelector("[data-saveBtn]").onclick = () => {
+          const t = wrap.querySelector('[data-scroll="saved"]');
+          if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
       }
       /* ======================= LIVE CLASSES (free, YouTube) =======================
    The server (/api/public/live-classes) scans YouTube's public live-filtered
