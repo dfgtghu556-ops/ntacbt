@@ -111,30 +111,56 @@ export function evaluate(
   return { per, all };
 }
 
-/** Real NTA 2025 merged-session marks→percentile anchors. */
+/**
+ * Real NTA 2025 merged-session marks→percentile anchors.
+ * DENSE table (every 5 marks in the bend region, plus the published values)
+ * — this MUST match `NTA_MARKS_PERCENTILE` in public/jee-cbt.html and
+ * `scripts/validate-analytics.mjs`, so the React Analytics page, the legacy
+ * app and the validator report the SAME percentile for the SAME score.
+ * The anchors are sorted by marks (required by the interpolation loop).
+ */
 const NTA_ANCHORS: Array<[number, number]> = [
   [0, 0.84],
   [5, 4.5],
   [10, 9.7],
   [15, 20.6],
   [20, 37.69],
+  [25, 47.4],
   [30, 56.57],
+  [35, 64.2],
   [40, 71.3],
+  [45, 77.2],
   [50, 80.98],
+  [55, 84.6],
   [60, 86.91],
+  [65, 88.8],
   [70, 90.41],
+  [75, 91.7],
   [80, 93.0],
+  [85, 94.1],
   [90, 95.0],
+  [95, 95.8],
   [100, 96.0],
+  [110, 96.9],
   [120, 97.5],
+  [130, 98.32],
   [140, 98.67],
+  [150, 98.99],
   [160, 99.03],
+  [165, 99.15],
+  [170, 99.27],
   [180, 99.46],
+  [190, 99.6],
   [200, 99.71],
+  [210, 99.795],
   [220, 99.852],
+  [230, 99.901],
   [240, 99.935],
+  [250, 99.95],
   [260, 99.977],
+  [270, 99.99],
   [280, 99.994],
+  [290, 99.9991],
   [300, 99.99999],
 ];
 

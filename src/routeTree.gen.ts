@@ -17,6 +17,7 @@ import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppFocusRouteImport } from './routes/app.focus'
 import { Route as AppPlannerRouteImport } from './routes/app.planner'
 import { Route as AppPyqRouteImport } from './routes/app.pyq'
+import { Route as AppReportRouteImport } from './routes/app.report'
 import { Route as AppSaarthiRouteImport } from './routes/app.saarthi'
 import { Route as AppStudytubeRouteImport } from './routes/app.studytube'
 import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat'
@@ -65,6 +66,11 @@ const AppPlannerRoute = AppPlannerRouteImport.update({
 const AppPyqRoute = AppPyqRouteImport.update({
   id: '/app/pyq',
   path: '/app/pyq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppReportRoute = AppReportRouteImport.update({
+  id: '/app/report',
+  path: '/app/report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSaarthiRoute = AppSaarthiRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/app/focus': typeof AppFocusRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/pyq': typeof AppPyqRoute
+  '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/app/': typeof AppIndexRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/app/focus': typeof AppFocusRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/pyq': typeof AppPyqRoute
+  '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/app/focus': typeof AppFocusRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/pyq': typeof AppPyqRoute
+  '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/app/': typeof AppIndexRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/app/focus'
     | '/app/planner'
     | '/app/pyq'
+    | '/app/report'
     | '/app/saarthi'
     | '/app/studytube'
     | '/app/'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/app/focus'
     | '/app/planner'
     | '/app/pyq'
+    | '/app/report'
     | '/app/saarthi'
     | '/app/studytube'
     | '/api/public/ai-chat'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/app/focus'
     | '/app/planner'
     | '/app/pyq'
+    | '/app/report'
     | '/app/saarthi'
     | '/app/studytube'
     | '/app/'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   AppFocusRoute: typeof AppFocusRoute
   AppPlannerRoute: typeof AppPlannerRoute
   AppPyqRoute: typeof AppPyqRoute
+  AppReportRoute: typeof AppReportRoute
   AppSaarthiRoute: typeof AppSaarthiRoute
   AppStudytubeRoute: typeof AppStudytubeRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/app/pyq'
       fullPath: '/app/pyq'
       preLoaderRoute: typeof AppPyqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/report': {
+      id: '/app/report'
+      path: '/app/report'
+      fullPath: '/app/report'
+      preLoaderRoute: typeof AppReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/saarthi': {
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppFocusRoute: AppFocusRoute,
   AppPlannerRoute: AppPlannerRoute,
   AppPyqRoute: AppPyqRoute,
+  AppReportRoute: AppReportRoute,
   AppSaarthiRoute: AppSaarthiRoute,
   AppStudytubeRoute: AppStudytubeRouteWithChildren,
   AppIndexRoute: AppIndexRoute,

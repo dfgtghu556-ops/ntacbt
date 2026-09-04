@@ -36,8 +36,9 @@ function Planner() {
 
   const rows = useMemo(() => {
     if (showAll) return allTasks;
-    const start = localDayKey(Date.now() - 3 * 24 * 3600 * 1000);
-    const end = localDayKey(Date.now() + 24 * 24 * 3600 * 1000);
+    // "Focus 3-Week Window" = today through 21 days ahead (3 weeks).
+    const start = localDayKey(Date.now());
+    const end = localDayKey(Date.now() + 21 * 24 * 3600 * 1000);
     return allTasks.filter((t) => t.date >= start && t.date <= end);
   }, [allTasks, showAll]);
 
@@ -55,10 +56,15 @@ function Planner() {
   }, [displayRows]);
 
   const todayKeyNow = localDayKey();
-  const totalMin = displayRows.reduce((n, r) => n + (r.estMin || 0), 0);
+  // A completed task is counted at its REAL watched minutes (actualMin) when
+  // available, so a longer-than-planned video is never silently shown as the
+  // shorter planned estimate. Pending tasks use the planned estMin.
+  const minOf = (r: PlannerTaskRow) =>
+    r.status === "done" && typeof r.actualMin === "number" ? r.actualMin : r.estMin || 0;
+  const totalMin = displayRows.reduce((n, r) => n + minOf(r), 0);
   const doneMin = displayRows
     .filter((r) => r.status === "done")
-    .reduce((n, r) => n + (r.estMin || 0), 0);
+    .reduce((n, r) => n + minOf(r), 0);
 
   return (
     <div className="space-y-6">

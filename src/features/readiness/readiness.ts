@@ -18,8 +18,10 @@ function accuracyOf(attempts: AttemptSummary[]): number {
   for (const a of attempts) {
     const all = a.result?.all;
     if (!all) continue;
+    // NOTE: parentheses are required — `|| 0 + (all.wrong || 0)` would bind the
+    // addition inside the right operand and double-count correct answers.
     correct += all.correct || 0;
-    attempted += all.correct || 0 + (all.wrong || 0);
+    attempted += (all.correct || 0) + (all.wrong || 0);
   }
   return attempted ? Math.round((correct / attempted) * 1000) / 10 : 0;
 }

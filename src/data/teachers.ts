@@ -1,3 +1,5 @@
+export type ExamTarget = "jeemain" | "jeeadv" | "board12" | "board11" | "cbse27";
+
 export interface TeacherRecord {
   id: string;
   name: string;
@@ -5,7 +7,7 @@ export interface TeacherRecord {
   instituteId: string;
   subject: "Physics" | "Chemistry" | "Mathematics";
   specialization?: string;
-  examTarget: ("jeemain" | "jeeadv" | "board12" | "board11" | "cbse27")[];
+  examTarget: ExamTarget[];
   channelName: string;
   channelId?: string;
   verified: boolean;
@@ -14,6 +16,15 @@ export interface TeacherRecord {
   supportedTopics: string[];
   searchQueryAlias: string[];
   batchInfo?: string;
+  /**
+   * Board-first educator: teaches CBSE/board level as the PRIMARY audience,
+   * not as a side-tag on a JEE/NEET channel. When the learner targets
+   * CBSE Class 12 / Board exams, ONLY these (plus board-targeted lessons)
+   * are surfaced — JEE/NEET faculties are excluded.
+   */
+  boardCore?: boolean;
+  /** Primary exam family. `both` means the content genuinely serves JEE and board. */
+  examFamily?: "jee" | "board" | "both";
 }
 
 export interface InstituteRecord {
@@ -142,6 +153,78 @@ export const INSTITUTES: InstituteRecord[] = [
     verified: true,
     source: "https://www.youtube.com/@ScienceandFun",
     description: "Class 11/12 CBSE & board-focused NCERT faculty (Ashu Ghai Sir, Ushank Sir).",
+  },
+  {
+    id: "chemistry-guruji",
+    name: "Chemistry Guruji (Bharat Panchal)",
+    shortName: "Chemistry Guruji",
+    officialChannels: ["Bharat Panchal — Chemistry Guruji 2.0"],
+    verified: true,
+    source: "https://www.youtube.com/@BharatPanchal",
+    description: "Top CBSE Class 12 Chemistry board educator (Bharat Panchal).",
+  },
+  {
+    id: "arvind-academy",
+    name: "Arvind Academy",
+    shortName: "Arvind Academy",
+    officialChannels: ["Arvind Academy"],
+    verified: true,
+    source: "https://www.youtube.com/@ArvindAcademy",
+    description: "CBSE Class 12 Physics board + PYQ educator.",
+  },
+  {
+    id: "mathematically-inclined",
+    name: "Mathematically Inclined (Neha Agrawal)",
+    shortName: "Maths Inclined",
+    officialChannels: ["Mathematically Inclined"],
+    verified: true,
+    source: "https://www.youtube.com/@MathematicallyInclined",
+    description: "Popular CBSE Class 12 Mathematics board educator (Neha Agrawal).",
+  },
+  {
+    id: "magnet-brains",
+    name: "Magnet Brains",
+    shortName: "Magnet Brains",
+    officialChannels: ["Magnet Brains"],
+    verified: true,
+    source: "https://www.youtube.com/@MagnetBrainsEducation",
+    description: "NCERT + CBSE full-syllabus board channel.",
+  },
+  {
+    id: "zaki-saudagar",
+    name: "Zaki Saudagar Physics",
+    shortName: "Zaki Saudagar",
+    officialChannels: ["Zaki Saudagar Physics"],
+    verified: true,
+    source: "https://www.youtube.com/@zakisaudagar",
+    description: "CBSE Class 12 Physics board educator.",
+  },
+  {
+    id: "sunil-jangra",
+    name: "Sunil Jangra Physics",
+    shortName: "Sunil Jangra",
+    officialChannels: ["Sunil Jangra Physics"],
+    verified: true,
+    source: "https://www.youtube.com/@SunilJangra",
+    description: "CBSE Class 12 Physics board educator.",
+  },
+  {
+    id: "cbseclassvideos",
+    name: "cbseclassvideos",
+    shortName: "cbseclassvideos",
+    officialChannels: ["cbseclassvideos"],
+    verified: true,
+    source: "https://www.youtube.com/@cbseclassvideos",
+    description: "CBSE Class 12 Mathematics board channel.",
+  },
+  {
+    id: "ashish4students",
+    name: "Ashish4students",
+    shortName: "Ashish4students",
+    officialChannels: ["Ashish4students"],
+    verified: true,
+    source: "https://www.youtube.com/@Ashish4students",
+    description: "CBSE Class 12 Mathematics board educator.",
   },
 ];
 
@@ -1883,6 +1966,434 @@ export const TEACHERS: TeacherRecord[] = [
 ];
 
 /** Lookup helpers */
+/**
+ * CBSE / Board-first educators (Class 12 PCM). These are primary board
+ * teachers — they teach the CBSE syllabus with board-grade depth and exam
+ * patterns, NOT as a side-tag on a JEE/NEET channel. When the learner picks
+ * CBSE Class 12 (board12 / cbse27), ONLY these faculties are surfaced for
+ * the Dream Teacher picker and video discovery; JEE / NEET faculties are
+ * excluded for that target.
+ */
+export const BOARD_TEACHERS: TeacherRecord[] = [
+  // ─── Physics (board-focused) ────────────────────────────────────────────
+  {
+    id: "board-abhishek-sahu",
+    name: "Abhishek Sahu (Abj Sir)",
+    institute: "Physics Wallah — NCERT Wallah",
+    instituteId: "physics-wallah",
+    subject: "Physics",
+    specialization: "Class 12 Physics (boards + derivations)",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "Abhishek Sahu Physics",
+    verified: true,
+    source: "https://www.youtube.com/@AbhishekSahu",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    batchInfo: "Vijeta One-Shots · PyQ Series · Derivations",
+    supportedTopics: [
+      "Electrostatics",
+      "Current Electricity",
+      "Magnetism and Matter",
+      "Moving Charges and Magnetism",
+      "Ray Optics",
+      "Wave Optics",
+      "Dual Nature of Radiation and Matter",
+      "Atoms",
+      "Nuclei",
+      "Semiconductor Electronics",
+    ],
+    searchQueryAlias: ["Abhishek Sahu Physics", "Abj Sir", "NCERT Wallah Vijeta"],
+  },
+  {
+    id: "board-arvind-academy",
+    name: "Arvind Sir",
+    institute: "Arvind Academy",
+    instituteId: "arvind-academy",
+    subject: "Physics",
+    specialization: "CBSE 12 Physics + PYQ Marathon",
+    examTarget: ["board12", "cbse27"],
+    channelName: "Arvind Academy",
+    verified: true,
+    source: "https://www.youtube.com/@ArvindAcademy",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    batchInfo: "Full Chapter Lectures · Board PYQ Sessions",
+    supportedTopics: [
+      "Electrostatics",
+      "Current Electricity",
+      "Moving Charges and Magnetism",
+      "Ray Optics",
+      "Wave Optics",
+      "Dual Nature",
+      "Atoms",
+      "Nuclei",
+      "Semiconductors",
+    ],
+    searchQueryAlias: ["Arvind Academy Physics", "Arvind Sir Class 12 Physics"],
+  },
+  {
+    id: "board-zaki-saudagar",
+    name: "Zaki Saudagar",
+    institute: "Zaki Saudagar Physics",
+    instituteId: "zaki-saudagar",
+    subject: "Physics",
+    specialization: "CBSE 12 Physics (boards + NEET base)",
+    examTarget: ["board12", "cbse27"],
+    channelName: "Zaki Saudagar Physics",
+    verified: true,
+    source: "https://www.youtube.com/@zakisaudagar",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    batchInfo: "Board + competitive base lectures",
+    supportedTopics: [
+      "Electrostatics",
+      "Current Electricity",
+      "Magnetism",
+      "Optics",
+      "Modern Physics",
+      "Semiconductors",
+    ],
+    searchQueryAlias: ["Zaki Saudagar Physics", "Zaki Sir Physics Boards"],
+  },
+  {
+    id: "board-sunil-jangra",
+    name: "Sunil Jangra",
+    institute: "Sunil Jangra Physics",
+    instituteId: "sunil-jangra",
+    subject: "Physics",
+    specialization: "CBSE 12 Physics boards",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "Sunil Jangra Physics",
+    verified: true,
+    source: "https://www.youtube.com/@SunilJangra",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Electrostatics",
+      "Current Electricity",
+      "Magnetism",
+      "Ray Optics",
+      "Wave Optics",
+      "Modern Physics",
+    ],
+    searchQueryAlias: ["Sunil Jangra Physics", "Sunil Sir Class 12 Physics"],
+  },
+  {
+    id: "board-rakshak-dua",
+    name: "Rakshak Dua Sir",
+    institute: "Physics Wallah — PARISHRAM / UDAY",
+    instituteId: "physics-wallah",
+    subject: "Physics",
+    specialization: "Class 12 Physics board specialist (PARISHRAM / UDAY)",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "Rakshak Sir Science",
+    verified: true,
+    source: "https://www.youtube.com/@RakshakSirScience",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    batchInfo: "PARISHRAM 2026 · UDAY 2026 · Class 11-12 Physics",
+    supportedTopics: [
+      "Electrostatics",
+      "Current Electricity",
+      "Moving Charges and Magnetism",
+      "Ray Optics",
+      "Wave Optics",
+      "Dual Nature of Radiation and Matter",
+      "Atoms",
+      "Nuclei",
+      "Semiconductor Electronics",
+    ],
+    searchQueryAlias: ["Rakshak Sir Physics", "Rakshak Sir Science", "Rakshak Dua Sir"],
+  },
+  {
+    id: "board-magnet-brains",
+    name: "Magnet Brains (PCM)",
+    institute: "Magnet Brains",
+    instituteId: "magnet-brains",
+    subject: "Physics",
+    specialization: "NCERT + CBSE full syllabus",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "Magnet Brains",
+    verified: true,
+    source: "https://www.youtube.com/@MagnetBrainsEducation",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Electrostatics",
+      "Current Electricity",
+      "Magnetism",
+      "Optics",
+      "Modern Physics",
+    ],
+    searchQueryAlias: ["Magnet Brains Class 12 Physics", "Magnet Brains Boards"],
+  },
+  // ─── Chemistry (board-focused) ──────────────────────────────────────────
+  {
+    id: "board-bharat-panchal",
+    name: "Bharat Panchal Sir",
+    institute: "Chemistry Guruji 2.0",
+    instituteId: "chemistry-guruji",
+    subject: "Chemistry",
+    specialization: "Class 12 Chemistry boards (OC/PC/IC)",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "Bharat Panchal — Chemistry Guruji 2.0",
+    verified: true,
+    source: "https://www.youtube.com/@BharatPanchal",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    batchInfo: "Karna Batch for Boards · NCERT ka Nichod · PYQ",
+    supportedTopics: [
+      "Solutions",
+      "Electrochemistry",
+      "Chemical Kinetics",
+      "Haloalkanes and Haloarenes",
+      "Alcohols Phenols and Ethers",
+      "Aldehydes Ketones and Carboxylic Acids",
+      "Amines",
+      "Biomolecules",
+      "Coordination Compounds",
+      "d and f Block Elements",
+      "p Block Elements",
+    ],
+    searchQueryAlias: ["Bharat Panchal Chemistry", "Bharat Panchal Class 12", "Chemistry Guruji"],
+  },
+  {
+    id: "board-shourya-mam",
+    name: "Shourya Ma'am",
+    institute: "Physics Wallah — NCERT Wallah",
+    instituteId: "physics-wallah",
+    subject: "Chemistry",
+    specialization: "Physical Chemistry (boards)",
+    examTarget: ["board12", "cbse27"],
+    channelName: "NCERT Wallah",
+    verified: true,
+    source: "https://www.youtube.com/@NCERTWallah",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: ["Solutions", "Electrochemistry", "Chemical Kinetics", "Thermodynamics"],
+    searchQueryAlias: ["Shourya Ma'am Chemistry", "NCERT Wallah Physical Chemistry"],
+  },
+  {
+    id: "board-ashima-mam",
+    name: "Ashima Ma'am",
+    institute: "Physics Wallah — NCERT Wallah",
+    instituteId: "physics-wallah",
+    subject: "Chemistry",
+    specialization: "Organic + Inorganic (boards)",
+    examTarget: ["board12", "cbse27"],
+    channelName: "NCERT Wallah",
+    verified: true,
+    source: "https://www.youtube.com/@NCERTWallah",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Haloalkanes and Haloarenes",
+      "Alcohols Phenols and Ethers",
+      "Aldehydes Ketones and Carboxylic Acids",
+      "Amines",
+      "Biomolecules",
+      "Coordination Compounds",
+    ],
+    searchQueryAlias: ["Ashima Ma'am Chemistry", "NCERT Wallah Organic Chemistry"],
+  },
+  {
+    id: "board-anubha-gaur",
+    name: "Anubha Gaur Ma'am",
+    institute: "Vedantu 9 & 10 / Vedantu",
+    instituteId: "vedantu",
+    subject: "Chemistry",
+    specialization: "CBSE Class 12 Chemistry boards",
+    examTarget: ["board12", "board11", "cbse27"],
+    channelName: "Vedantu 9 & 10",
+    verified: true,
+    source: "https://www.youtube.com/@VedantuClass9_10",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Solutions",
+      "Electrochemistry",
+      "Chemical Kinetics",
+      "Coordination Compounds",
+    ],
+    searchQueryAlias: ["Anubha Gaur Chemistry", "Anubha Gaur Class 12"],
+  },
+  // ─── Mathematics (board-focused) ────────────────────────────────────────
+  {
+    id: "board-neha-agrawal",
+    name: "Neha Agrawal Ma'am",
+    institute: "Mathematically Inclined",
+    instituteId: "mathematically-inclined",
+    subject: "Mathematics",
+    specialization: "Class 12 Maths boards",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "Mathematically Inclined",
+    verified: true,
+    source: "https://www.youtube.com/@MathematicallyInclined",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    batchInfo: "Full chapter + PYQ + case-based",
+    supportedTopics: [
+      "Relations and Functions",
+      "Inverse Trigonometric Functions",
+      "Matrices",
+      "Determinants",
+      "Continuity and Differentiability",
+      "Applications of Derivatives",
+      "Integrals",
+      "Applications of Integrals",
+      "Differential Equations",
+      "Vector Algebra",
+      "Three Dimensional Geometry",
+      "Linear Programming",
+      "Probability",
+    ],
+    searchQueryAlias: ["Neha Agrawal Maths", "Mathematically Inclined", "Neha Ma'am Class 12"],
+  },
+  {
+    id: "board-cbseclassvideos",
+    name: "CbseClassVideos / NCERT",
+    institute: "cbseclassvideos",
+    instituteId: "cbseclassvideos",
+    subject: "Mathematics",
+    specialization: "Class 12 Maths boards + NCERT",
+    examTarget: ["board12", "cbse27", "board11"],
+    channelName: "cbseclassvideos",
+    verified: true,
+    source: "https://www.youtube.com/@cbseclassvideos",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Matrices",
+      "Determinants",
+      "Relations and Functions",
+      "Integrals",
+      "Differential Equations",
+      "Vector Algebra",
+      "Three Dimensional Geometry",
+      "Linear Programming",
+      "Probability",
+    ],
+    searchQueryAlias: ["cbseclassvideos", "CBSE Class Videos Maths"],
+  },
+  {
+    id: "board-ushank-sir",
+    name: "Ushank Sir",
+    institute: "Science and Fun",
+    instituteId: "science-fun",
+    subject: "Mathematics",
+    specialization: "CBSE Class 12 Maths boards",
+    examTarget: ["board12", "cbse27"],
+    channelName: "Science and Fun",
+    verified: true,
+    source: "https://www.youtube.com/@ScienceAndFun",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Matrices",
+      "Determinants",
+      "Integrals",
+      "Applications of Integrals",
+      "Differential Equations",
+      "Vector Algebra",
+      "Three Dimensional Geometry",
+      "Linear Programming",
+      "Probability",
+    ],
+    searchQueryAlias: ["Ushank Sir Maths", "Science and Fun Maths", "Ushank Sir Class 12"],
+  },
+  {
+    id: "board-ashish4students",
+    name: "Ashish4students",
+    institute: "Ashish4students",
+    instituteId: "ashish4students",
+    subject: "Mathematics",
+    specialization: "Class 12 Maths boards",
+    examTarget: ["board12", "cbse27"],
+    channelName: "Ashish4students",
+    verified: true,
+    source: "https://www.youtube.com/@Ashish4students",
+    currentStatus: "Verified",
+    boardCore: true,
+    examFamily: "board",
+    supportedTopics: [
+      "Relations and Functions",
+      "Inverse Trigonometric Functions",
+      "Matrices",
+      "Determinants",
+      "Continuity and Differentiability",
+      "Integrals",
+      "Differential Equations",
+      "Three Dimensional Geometry",
+      "Probability",
+    ],
+    searchQueryAlias: ["Ashish4students Maths", "Ashish Sir Class 12 Maths"],
+  },
+];
+
+/** True when the request target is a CBSE/board exam (vs JEE). */
+export function isBoardTarget(target: string | undefined): boolean {
+  return target === "board12" || target === "cbse27" || target === "board11" || target === "board";
+}
+
+/** Board-first educators for a subject (verified, board-core). */
+export function boardCoreTeachersFor(subject: string): TeacherRecord[] {
+  const s = subject.toLowerCase();
+  return BOARD_TEACHERS.filter(
+    (t) =>
+      t.verified &&
+      t.subject.toLowerCase() ===
+        (s === "physics" ? "physics" : s === "chemistry" ? "chemistry" : "mathematics"),
+  );
+}
+
+/**
+ * Teachers eligible for a given target. For a board target this returns ONLY
+ * board-first educators (no JEE/NEET faculties). For JEE targets it returns
+ * the full verified pool (board-core teachers still appear — they cover the
+ * shared syllabus — but are never forced over JEE faculties).
+ */
+export function teachersForTarget(
+  target: string | undefined,
+  subject?: string,
+  instituteId?: string,
+): TeacherRecord[] {
+  const subj = (subject as "Physics" | "Chemistry" | "Mathematics") || undefined;
+  let pool: TeacherRecord[] = TEACHERS.slice();
+  if (subj) pool = pool.filter((t) => t.subject === subj);
+  if (instituteId && instituteId !== "all" && instituteId !== "auto") {
+    pool = pool.filter((t) => t.instituteId === instituteId);
+  }
+  if (isBoardTarget(target)) {
+    // Board first: expose ONLY board-first educators (verified, board-core).
+    const board = BOARD_TEACHERS.filter((t) => (subject ? t.subject === subject : true));
+    if (board.length) return board;
+    // Fallback: teachers tagged with board targets but no explicit JEE family.
+    const fallback = pool.filter(
+      (t) =>
+        t.examFamily === "board" ||
+        (t.boardCore && (t.examTarget.includes("board12") || t.examTarget.includes("cbse27"))),
+    );
+    return fallback.length ? fallback : pool;
+  }
+  if (target === "jeeadv") {
+    return pool.filter((t) => t.examTarget.includes("jeeadv"));
+  }
+  return pool.filter((t) => t.examTarget.includes("jeemain"));
+}
+
 export function getTeachersByInstitute(instituteId: string): TeacherRecord[] {
   return TEACHERS.filter((t) => t.instituteId === instituteId);
 }
@@ -1926,10 +2437,17 @@ export function getTopFaculties(
         return t.examTarget.includes("jeeadv");
       }
       if (norm === "board12" || norm === "cbse27" || norm === "cbse" || norm === "board") {
-        return t.examTarget.includes("board12") || t.examTarget.includes("cbse27");
+        // Board target: ONLY board-first educators (never JEE/NEET faculties).
+        return (
+          t.boardCore === true &&
+          (t.examTarget.includes("board12") || t.examTarget.includes("cbse27"))
+        );
       }
       if (norm === "board11") {
-        return t.examTarget.includes("board11");
+        return (
+          (t.boardCore === true && t.examTarget.includes("board11")) ||
+          (t.examTarget.includes("board11") && t.examFamily === "board")
+        );
       }
       return true;
     });
@@ -1938,7 +2456,21 @@ export function getTopFaculties(
 }
 
 export function findTeacherById(id: string): TeacherRecord | undefined {
-  return TEACHERS.find((t) => t.id === id);
+  return TEACHERS.find((t) => t.id === id) ?? BOARD_TEACHERS.find((t) => t.id === id);
+}
+
+/** Resolve a teacher by id OR by name/alias, across JEE and board-core sets. */
+export function findTeacher(query: string): TeacherRecord | undefined {
+  if (!query) return undefined;
+  const q = query.toLowerCase();
+  return (
+    TEACHERS.find(
+      (t) => t.id === query || t.name.toLowerCase().includes(q) || t.name.toLowerCase() === q,
+    ) ??
+    BOARD_TEACHERS.find(
+      (t) => t.id === query || t.name.toLowerCase().includes(q) || t.name.toLowerCase() === q,
+    )
+  );
 }
 
 export function findInstituteById(id: string): InstituteRecord | undefined {
