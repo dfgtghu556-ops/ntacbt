@@ -17,7 +17,7 @@ NTACBT is a single integrated learning system for JEE Main, JEE Advanced, and CB
 - **Android:** Focus-Guard accessibility app with launcher mode and reminders (`android/`).
 - **PWA:** offline-capable service worker (note: precache currently reports empty; runtime caching still works after first load — a known Phase 8 item).
 
-Read the full audit and migration plan in [`docs/PHASE0-AUDIT.md`](docs/PHASE0-AUDIT.md), the target structure in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and the data governance rules in [`docs/DATA-GOVERNANCE.md`](docs/DATA-GOVERNANCE.md).
+Read the full audit and migration plan in [`docs/PHASE0-AUDIT.md`](docs/PHASE0-AUDIT.md), the AI-planner robustness audit in [`docs/PLANNER-AUDIT.md`](docs/PLANNER-AUDIT.md), the full-platform audit in [`docs/FULL-PLATFORM-AUDIT.md`](docs/FULL-PLATFORM-AUDIT.md), the target structure in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and the data governance rules in [`docs/DATA-GOVERNANCE.md`](docs/DATA-GOVERNANCE.md).
 
 ## Why not a blind rewrite
 
@@ -34,7 +34,11 @@ npm run dev
 
 ```sh
 npm run lint
-npm run validate:all
+npm run validate:all        # every validator + all harnesses (no network)
+npm run validate:planner    # AI-planner harness (1,212 scenarios / 39k+ assertions, incl. verified board videos)
+npm run validate:full       # full-platform harness (3,202 cases)
+npm run validate:mentor     # AI Mentor report harness (600 synthetic students / 618 reports)
+npm run robot-test          # legacy app E2E (112 checks)
 npm run build
 ```
 

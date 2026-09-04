@@ -27,7 +27,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
-import { JSDOM } from "jsdom";
+import { JSDOM, ResourceLoader } from "jsdom";
 import "fake-indexeddb/auto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -80,13 +80,37 @@ function makeFakeCtx() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Serve the app's OWN local scripts (e.g. /js/app.js) from disk so    */
+/* JSDOM executes them. The deferred CDN libs + Google fonts are still */
+/* ignored (we return empty/404), so the test stays offline/fast.      */
+/* ------------------------------------------------------------------ */
+const PUBLIC_DIR = join(__dirname, "..", "public");
+class LocalResourceLoader extends ResourceLoader {
+  fetch(url, options) {
+    const path = url.startsWith("file:") ? url : url.replace(/^https?:\/\/ntacbt\.test/, "");
+    if (path.startsWith("/js/") || path.startsWith("/css/")) {
+      const file = join(PUBLIC_DIR, path.replace(/^\//, ""));
+      try {
+        const buf = readFileSync(file);
+        return Promise.resolve(buf);
+      } catch {
+        return Promise.reject(new Error("404 " + path));
+      }
+    }
+    // Deferred CDN libs (pdf.js, jspdf, fonts) — we don't need them in tests.
+    return Promise.resolve(Buffer.from(""));
+  }
+}
+const resourceLoader = new LocalResourceLoader();
+
+/* ------------------------------------------------------------------ */
 /* Build the JSDOM instance with the app's browser APIs stubbed        */
 /* ------------------------------------------------------------------ */
 const dom = new JSDOM(html, {
   url: "https://ntacbt.test/jee-cbt.html",
   runScripts: "dangerously",
   pretendToBeVisual: true,
-  resources: undefined, // do NOT fetch the deferred CDN libs or Google fonts
+  resources: resourceLoader, // load the app's own /js + /css, skip CDNs
   // CRITICAL: stub browser globals BEFORE the app's inline script runs.
   // The app calls matchMedia() at the top level of its script; if the stub
   // is applied only after JSDOM construction, the script halts there and

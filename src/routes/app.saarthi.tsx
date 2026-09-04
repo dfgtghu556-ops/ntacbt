@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Send, ShieldAlert, Sparkles } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Loader2, Send, ShieldAlert, Sparkles, X } from "lucide-react";
 import { DataStore } from "@/lib/store";
-import { computeReadiness } from "@/features/readiness/readiness";
+import { loadFocusStore } from "@/features/focus/focus";
+import { loadStudyTubeProgress } from "@/features/studytube/progress";
+import { buildMentorReport, mentorContextForAI } from "@/features/mentor/report";
 
 export const Route = createFileRoute("/app/saarthi")({
   component: Saarthi,
@@ -11,6 +13,7 @@ export const Route = createFileRoute("/app/saarthi")({
 interface Msg {
   role: "user" | "model" | "system";
   text: string;
+  image?: { mimeType: string; data: string } | null;
 }
 
 type Mode = "hint" | "guidance" | "explanation" | "verification";
@@ -63,29 +66,50 @@ function Saarthi() {
   const [error, setError] = useState("");
   const [context, setContext] = useState("");
   const [contextNote, setContextNote] = useState("");
+  const [image, setImage] = useState<{ mimeType: string; data: string } | null>(null);
+
+  // Snap & Solve: read an uploaded/photo question as base64 so the backend can
+  // send it to Gemini for a step-by-step solution. Bounded to keep the request
+  // small (vision needs the photo, not a 5MB original).
+  function onFile(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Sirf image (photo/screenshot) daal sakte ho — text ke liye type karo.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Image 8 MB se choti rakhna (compress karke bhejo).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = String(reader.result || "").split(",")[1] || "";
+      setImage({ mimeType: file.type, data });
+    };
+    reader.onerror = () => setError("Image read nahi ho payi — dobara try karo.");
+    reader.readAsDataURL(file);
+  }
 
   useEffect(() => {
     const store = new DataStore();
-    const readiness = computeReadiness(store);
-    const weak = readiness.weakTopics[0];
+    // Wire the WHOLE student into Saarthi: the mentor report aggregator connects
+    // planner + CBT + analytics + StudyTube + focus into one explainable context.
+    const report = buildMentorReport({
+      store,
+      focus: loadFocusStore(),
+      studytube: loadStudyTubeProgress(),
+    });
+    const weak = report.mastery.weakTopics[0];
     setContextNote(
-      (weak
-        ? `Weak evidence: ${weak.subject} ${weak.chapter} (${weak.accuracy}%).`
-        : "No weak topic evidence yet.") +
-        (readiness.today.completedMinutes
-          ? ` Today: ${readiness.today.completedMinutes}/${readiness.today.plannedMinutes} min done.`
-          : " Today: no plan started."),
-    );
-    setContext(
-      `Target: ${readiness.examTarget}. ` +
-        `Attempts: ${readiness.attempts}. Accuracy: ${readiness.accuracy}%. ` +
+      `${report.learner.targetLabel} · Readiness ${report.readinessScore}/100 (${report.readinessLevel}).\n` +
         (weak
-          ? `Weak topic: ${weak.subject} ${weak.chapter} (${weak.accuracy}%).`
-          : "No weak topic yet.") +
-        (readiness.today.plannedMinutes
-          ? ` Today planned: ${readiness.today.plannedMinutes} min, ${readiness.today.completedMinutes} done.`
-          : ""),
+          ? `Weakest: ${weak.subject} ${weak.chapter} (${weak.accuracy}%).`
+          : "No weak-topic evidence yet.") +
+        (report.performance.attempts
+          ? ` ${report.performance.attempts} tests, ${report.performance.accuracy}% accuracy.`
+          : " No tests yet."),
     );
+    setContext(mentorContextForAI(report));
   }, []);
 
   function nextMode() {
@@ -105,11 +129,14 @@ function Saarthi() {
   async function send(textOverride?: string, modeOverride?: Mode) {
     const text = (textOverride ?? input).trim();
     const sendMode = modeOverride ?? mode;
-    if (!text || busy) return;
-    const user: Msg = { role: "user", text };
+    // If there's a photo but no typed text, allow a bare "snap & solve".
+    const hasContent = (text || image) && !busy;
+    if (!hasContent) return;
+    const user: Msg = { role: "user", text: text || "Solve this question step by step.", image };
     const next = [...messages, user];
     setMessages(next);
     setInput("");
+    setImage(null);
     setBusy(true);
     setError("");
 
@@ -119,7 +146,7 @@ function Saarthi() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: next
-            .map((m) => ({ role: m.role, text: m.text }))
+            .map((m) => ({ role: m.role, text: m.text, image: m.image ?? undefined }))
             .filter((m) => m.role !== "system"),
           studentContext: context,
           systemHint: MODE_HINTS[sendMode],
@@ -228,6 +255,13 @@ function Saarthi() {
                   : "border bg-background"
               }`}
             >
+              {m.image?.data ? (
+                <img
+                  src={`data:${m.image.mimeType};base64,${m.image.data}`}
+                  alt="Uploaded question"
+                  className="mb-2 h-24 w-24 rounded-lg object-cover"
+                />
+              ) : null}
               {m.text}
             </div>
           ),
@@ -240,21 +274,53 @@ function Saarthi() {
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
 
-      <div className="flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Ask about a topic, a mistake, or what to revise…"
-          className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
-        <button
-          onClick={() => void send()}
-          disabled={busy || !input.trim()}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-        >
-          <Send className="h-4 w-4" /> Send
-        </button>
+      <div className="space-y-2">
+        {image ? (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2">
+            <img
+              src={`data:${image.mimeType};base64,${image.data}`}
+              alt="Attached question"
+              className="h-12 w-12 rounded-md object-cover"
+            />
+            <span className="flex-1 text-xs text-muted-foreground">
+              Photo attached — Saarthi will solve it step by step.
+            </span>
+            <button
+              type="button"
+              onClick={() => setImage(null)}
+              className="rounded-full p-1 text-muted-foreground hover:bg-muted"
+              aria-label="Remove attached image"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
+        <div className="flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && send()}
+            placeholder="Ask about a topic, a mistake, or what to revise…"
+            className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+          <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+            <Camera className="h-4 w-4" />
+            <span className="hidden sm:inline">Snap &amp; solve</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => onFile(e.target.files?.[0] as File | undefined)}
+            />
+          </label>
+          <button
+            onClick={() => void send()}
+            disabled={busy || (!input.trim() && !image)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            <Send className="h-4 w-4" /> Send
+          </button>
+        </div>
       </div>
     </div>
   );

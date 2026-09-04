@@ -125,6 +125,9 @@ export interface PlannerTaskRow {
   videoId?: string;
   completedAt?: number;
   why?: string;
+  /** Real wall-clock minutes actually watched when a longer-than-planned video
+   *  was completed (falls back to estMin when the task wasn't video-driven). */
+  actualMin?: number;
   [key: string]: unknown;
 }
 
@@ -208,7 +211,9 @@ export class DataStore {
   }
 
   get tests(): LegacyTest[] {
-    return JSON.parse(JSON.stringify(this._raw.tests || [])) as LegacyTest[];
+    // Guard against corrupt/cross-window shapes: always return a real array.
+    if (!Array.isArray(this._raw.tests)) return [];
+    return JSON.parse(JSON.stringify(this._raw.tests)) as LegacyTest[];
   }
 
   get settings(): LegacySettings {
@@ -217,9 +222,16 @@ export class DataStore {
 
   get planner(): LegacyPlanner | null {
     const p = this._raw.aiPlanner;
-    return p && "profile" in p && "tasks" in p
-      ? (JSON.parse(JSON.stringify(p)) as LegacyPlanner)
-      : null;
+    if (!(p && "profile" in p && "tasks" in p)) return null;
+    // The legacy app records completion in `plannerDone[id]` (see
+    // public/jee-cbt.html), not on the task row itself. Overlay it here so the
+    // React planner + readiness engine see the same done-state as the legacy UI.
+    const done = this._raw.plannerDone || {};
+    const tasks = (Array.isArray(p.tasks) ? p.tasks : []).map((t) => ({
+      ...t,
+      status: done[t.id] ? "done" : ((t as PlannerTaskRow).status ?? "pending"),
+    }));
+    return { ...p, tasks } as LegacyPlanner;
   }
 
   get dayKey(): string {

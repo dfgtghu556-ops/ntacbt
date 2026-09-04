@@ -1,4 +1,12 @@
-import { CheckCircle2, Clock3, ExternalLink, Play, Search, Video } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  Flame,
+  Play,
+  Search,
+  Video,
+} from "lucide-react";
 import type { StudyTubeVideo } from "../types";
 
 function fmtDuration(sec: number): string {
@@ -13,10 +21,16 @@ function fmtDuration(sec: number): string {
 
 const REAL_ID = /^[A-Za-z0-9_-]{11}$/;
 
-const SUBJECT_COLOR: Record<string, string> = {
-  Physics: "from-sky-500/80 via-blue-600/80 to-indigo-800",
-  Chemistry: "from-emerald-500/80 via-teal-600/80 to-cyan-800",
-  Mathematics: "from-violet-500/80 via-purple-600/80 to-indigo-900",
+const SUBJECT_GRADIENT: Record<string, string> = {
+  Physics: "from-sky-500 via-blue-600 to-indigo-800",
+  Chemistry: "from-emerald-500 via-teal-600 to-cyan-800",
+  Mathematics: "from-violet-500 via-purple-600 to-indigo-900",
+};
+
+const SUBJECT_TEXT: Record<string, string> = {
+  Physics: "text-sky-600 bg-sky-500/10",
+  Chemistry: "text-emerald-600 bg-emerald-500/10",
+  Mathematics: "text-violet-600 bg-violet-500/10",
 };
 
 function avatarHue(name: string): number {
@@ -29,7 +43,7 @@ function Thumb({ video }: { video: StudyTubeVideo }) {
   const real = REAL_ID.test(video.id || "");
   const thumb = real ? `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg` : "";
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
+    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-muted ring-1 ring-black/5">
       {real ? (
         <img
           src={thumb}
@@ -37,23 +51,29 @@ function Thumb({ video }: { video: StudyTubeVideo }) {
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          className="h-full w-full object-cover transition-transform duration-200 hover:scale-[1.03]"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
         />
       ) : (
         <div
-          className={`flex h-full w-full flex-col justify-end bg-gradient-to-br ${SUBJECT_COLOR[video.subject || "Physics"]} p-3`}
+          className={`flex h-full w-full flex-col justify-end bg-gradient-to-br ${SUBJECT_GRADIENT[video.subject || "Physics"]} p-3`}
         >
-          <Video className="mb-auto h-5 w-5 text-white/80" />
-          <span className="line-clamp-2 text-sm font-semibold text-white">
+          <Video className="mb-auto h-6 w-6 text-white/85" />
+          <span className="line-clamp-2 text-sm font-semibold text-white drop-shadow">
             {video.topic || video.title}
           </span>
         </div>
       )}
       {video.durationSec ? (
-        <div className="absolute right-1.5 bottom-1.5 rounded bg-black/80 px-1.5 py-0.5 text-[11px] font-medium text-white">
+        <span className="absolute right-2 bottom-2 rounded-md bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
           {fmtDuration(video.durationSec)}
-        </div>
+        </span>
       ) : null}
+      {/* Play overlay on hover */}
+      <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur">
+          <Play className="h-5 w-5 fill-current" />
+        </span>
+      </span>
     </div>
   );
 }
@@ -86,37 +106,68 @@ export function VideoCard({
   const external = video.externalUrl;
 
   return (
-    <article className="group w-full">
+    <article className="group flex h-full w-full flex-col rounded-2xl border border-border/70 bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg">
       <button type="button" onClick={() => onPlay?.(video)} className="block w-full text-left">
         <Thumb video={video} />
       </button>
 
-      <div className="mt-2 flex gap-2">
-        <span
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-          style={{ backgroundColor: `hsl(${hue} 55% 42%)` }}
-        >
-          {initials(video.channel || video.teacher || "ST")}
-        </span>
-        <div className="min-w-0">
-          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug">{video.title}</h3>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {video.channel || video.teacher || "StudyTube"}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {video.subject}
-            {video.topic ? ` · ${video.topic}` : ""}
-            {video.depth ? ` · ${video.depth === "oneshot" ? "One-shot" : video.depth}` : ""}
-            {video.published ? ` · ${video.published}` : ""}
-          </p>
+      <div className="mt-2.5 flex flex-1 flex-col">
+        <div className="flex gap-2.5">
+          <span
+            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm"
+            style={{ backgroundColor: `hsl(${hue} 55% 42%)` }}
+          >
+            {initials(video.channel || video.teacher || "ST")}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
+              {video.title}
+            </h3>
+            <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
+              {video.channel || video.teacher || "StudyTube"}
+            </p>
+          </div>
         </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${SUBJECT_TEXT[video.subject || "Physics"]}`}
+          >
+            {video.subject || "Physics"}
+          </span>
+          {video.depth ? (
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              {video.depth === "oneshot"
+                ? "One-shot"
+                : video.depth === "detailed"
+                  ? "Detailed"
+                  : video.kind === "revision"
+                    ? "Revision"
+                    : video.kind === "practice"
+                      ? "Practice"
+                      : video.kind === "advanced"
+                        ? "Advanced"
+                        : "Lecture"}
+            </span>
+          ) : null}
+        </div>
+
+        {video.topic ? (
+          <p className="mt-1.5 truncate text-xs text-muted-foreground"> {video.topic}</p>
+        ) : null}
       </div>
 
-      <div className="mt-2 flex items-center gap-1.5">
+      {video.why ? (
+        <p className="mt-2 line-clamp-2 rounded-lg border border-dashed border-border bg-muted/30 px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground">
+           {video.why}
+        </p>
+      ) : null}
+
+      <div className="mt-3 flex items-center gap-1.5 border-t border-border/60 pt-2.5">
         <button
           type="button"
           onClick={() => onPlay?.(video)}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
             external
               ? "bg-accent text-accent-foreground hover:bg-accent/80"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -129,24 +180,29 @@ export function VideoCard({
           <button
             type="button"
             onClick={() => onToggleWatchLater(video)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs ${
-              watchLater ? "border-primary text-primary" : "border-input text-muted-foreground"
+            title={watchLater ? "Remove from watch later" : "Save for later"}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+              watchLater
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:border-primary/50 hover:text-primary"
             }`}
           >
-            <Clock3 className="h-3.5 w-3.5" /> {watchLater ? "Saved" : "Save"}
+            <Clock3 className="h-3.5 w-3.5" />
           </button>
         ) : null}
         {onComplete ? (
           <button
             type="button"
             onClick={() => onComplete(video)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs ${
+            title={watched ? "Completed" : "Mark as done"}
+            className={`inline-flex h-8 items-center justify-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-colors ${
               watched
-                ? "border-green-500 text-green-600"
-                : "border-input text-muted-foreground hover:border-green-500"
+                ? "border-green-500 bg-green-500/10 text-green-600"
+                : "border-border text-muted-foreground hover:border-green-500 hover:text-green-600"
             }`}
           >
-            <CheckCircle2 className="h-3.5 w-3.5" /> {watched ? "Done" : "Mark done"}
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {watched ? "Done" : ""}
           </button>
         ) : null}
         {external ? (
@@ -154,18 +210,13 @@ export function VideoCard({
             href={external}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto inline-flex items-center gap-1 rounded-full border border-input px-3 py-1.5 text-xs text-muted-foreground"
+            title="Open in YouTube"
+            className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary"
           >
-            <ExternalLink className="h-3.5 w-3.5" /> Search
+            <ExternalLink className="h-3.5 w-3.5" />
           </a>
         ) : null}
       </div>
-
-      {video.why ? (
-        <p className="mt-2 rounded-md border border-dashed px-2 py-1.5 text-xs text-muted-foreground">
-          💡 {video.why}
-        </p>
-      ) : null}
     </article>
   );
 }
@@ -188,27 +239,23 @@ export function ChannelCard({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-40 shrink-0 flex-col items-center rounded-xl border p-3 text-center transition-colors hover:bg-accent/60"
+      className="flex w-44 shrink-0 flex-col items-center rounded-2xl border border-border/70 bg-card p-3.5 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
     >
       <span
-        className="flex h-14 w-14 items-center justify-center rounded-full text-base font-bold text-white"
+        className="flex h-14 w-14 items-center justify-center rounded-2xl text-base font-bold text-white shadow-sm"
         style={{ backgroundColor: `hsl(${hue} 55% 42%)` }}
       >
         {initials(name)}
       </span>
-      <span className="mt-2 line-clamp-2 text-sm font-semibold">{name}</span>
+      <span className="mt-2 line-clamp-2 text-sm font-semibold text-foreground">{name}</span>
       {channelName ? (
-        <span className="mt-0.5 text-xs text-muted-foreground">{channelName}</span>
+        <span className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{channelName}</span>
       ) : null}
-      {institute ? <span className="mt-0.5 text-xs text-muted-foreground">{institute}</span> : null}
       {specialization ? (
-        <span className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">
+        <span className="mt-1.5 line-clamp-2 rounded-lg bg-muted/50 px-2 py-1 text-[10.5px] text-muted-foreground">
           {specialization}
         </span>
       ) : null}
-      <span className="mt-2 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-        Follow
-      </span>
     </button>
   );
 }
@@ -221,18 +268,25 @@ export function EmptyState({
   onRetry?: (() => void) | undefined;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-8 text-center">
-      <Search className="h-8 w-8 text-muted-foreground" />
-      <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+        <Search className="h-7 w-7" />
+      </span>
+      <p className="max-w-md text-sm text-muted-foreground">{message}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-md border border-input px-3 py-1.5 text-xs"
+          className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary"
         >
           Retry
         </button>
       ) : null}
     </div>
   );
+}
+
+/** Helper so the flame icon can be re-used: keeps tree-shaking honest. */
+export function WeakIcon() {
+  return <Flame className="h-4 w-4" />;
 }

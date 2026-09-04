@@ -10,7 +10,7 @@
  */
 
 import type { StudyTubeRequest, StudyTubeVideo } from "./types";
-import { INSTITUTES, TEACHERS } from "@/data/teachers";
+import { INSTITUTES, TEACHERS, boardCoreTeachersFor, isBoardTarget } from "@/data/teachers";
 
 function subjectWord(subject: string): string {
   return subject === "Physics" || subject === "Chemistry" || subject === "Mathematics"
@@ -38,12 +38,25 @@ function depthWord(depth: StudyTubeRequest["depth"], kind: StudyTubeRequest["kin
   return " full chapter lecture";
 }
 
-function durationFor(depth: StudyTubeRequest["depth"], kind: StudyTubeRequest["kind"]): number {
-  if (kind === "revision") return 50 * 60;
-  if (kind === "practice" || kind === "advanced") return 90 * 60;
-  if (depth === "oneshot") return 180 * 60;
-  if (depth === "detailed") return 240 * 60;
-  return 150 * 60;
+/** Board-accurate durations (seconds) so the pick matches the detail asked for. */
+function durationFor(
+  depth: StudyTubeRequest["depth"],
+  kind: StudyTubeRequest["kind"],
+  target?: StudyTubeRequest["target"],
+): number {
+  const board = isBoardTarget(target);
+  if (kind === "revision") return board ? 45 * 60 : 50 * 60;
+  if (kind === "practice" || kind === "advanced") return board ? 75 * 60 : 90 * 60;
+  if (depth === "oneshot") return board ? 120 * 60 : 180 * 60;
+  if (depth === "detailed") return board ? 180 * 60 : 240 * 60;
+  return board ? 120 * 60 : 150 * 60;
+}
+
+/** Pool of educators eligible for a request target (board → board-core only). */
+function teacherPool(req: StudyTubeRequest) {
+  const subject = subjectWord(req.subject);
+  if (isBoardTarget(req.target)) return boardCoreTeachersFor(subject);
+  return TEACHERS.filter((t) => t.subject === subject && t.verified);
 }
 
 function slug(s: string): string {
@@ -65,8 +78,7 @@ function buildSearchUrl(req: StudyTubeRequest, channelName?: string, teacherName
 }
 
 function pickTeacher(req: StudyTubeRequest) {
-  const subject = subjectWord(req.subject);
-  const candidates = TEACHERS.filter((t) => t.subject === subject && t.verified);
+  const candidates = teacherPool(req);
   const teachers =
     req.teacher != null
       ? candidates.filter((t) => t.id === req.teacher || t.name === req.teacher)
@@ -119,26 +131,38 @@ export function offlineCatalog(req: StudyTubeRequest): StudyTubeVideo[] {
     title: `${topic} — ${titleKeyword} | ${channelName}`,
     channel: channelName,
     channelId: teacher?.channelId || "",
-    durationSec: durationFor(req.depth, req.kind),
+    durationSec: durationFor(req.depth, req.kind, req.target),
     externalUrl: buildSearchUrl(req, channelName, teacher?.name),
     why: teacher
-      ? `Dream Teacher pick: ${teacher.name} · ${teacher.specialization || "verified educator"}.`
+      ? `Dream Teacher pick: ${teacher.name} · ${teacher.specialization || "verified board educator"}.`
       : "Top verified educator pick for this topic and target.",
   };
 
   const more: StudyTubeVideo[] = [];
-  const variants: Array<[string, string]> = [
-    ["One-Shot Revision", "one shot quick revision complete"],
-    ["PYQ + MCQ Practice", "pyq important questions solved"],
-    ["Board-Level Explanation", "class 12 cbse board explanation easy"],
-    ["Advanced / Tough Problems", "jee advanced level tough problems"],
-  ];
+  const board = isBoardTarget(req.target);
+  const variants: Array<[string, string]> = board
+    ? [
+        ["One-Shot Revision", "one shot quick revision complete"],
+        ["PYQ + Case-Based Practice", "pyq important questions case based solved"],
+        ["NCERT / Board Explanation", "class 12 cbse ncert explanation easy"],
+        ["Higher-Order Board Problems", "class 12 cbse higher order tough questions"],
+      ]
+    : [
+        ["One-Shot Revision", "one shot quick revision complete"],
+        ["PYQ + MCQ Practice", "pyq important questions solved"],
+        ["Board-Level Explanation", "class 12 cbse board explanation easy"],
+        ["Advanced / Tough Problems", "jee advanced level tough problems"],
+      ];
   for (const [label, keyword] of variants) {
     void keyword;
     const variantReq: StudyTubeRequest = {
       ...req,
       topic: `${topic} ${label}`,
-      kind: label.includes("PYQ") ? "practice" : label.includes("Advanced") ? "advanced" : req.kind,
+      kind: label.includes("PYQ")
+        ? "practice"
+        : label.includes("Advanced") || label.includes("Higher-Order")
+          ? "advanced"
+          : req.kind,
       depth: label === "One-Shot Revision" ? "oneshot" : req.depth,
     };
     const updated = pickTeacher(variantReq);
@@ -149,7 +173,7 @@ export function offlineCatalog(req: StudyTubeRequest): StudyTubeVideo[] {
       title: `${topic} — ${label} | ${ch}`,
       channel: ch,
       channelId: updated?.channelId || "",
-      durationSec: durationFor(variantReq.depth, variantReq.kind),
+      durationSec: durationFor(variantReq.depth, variantReq.kind, variantReq.target),
       externalUrl: buildSearchUrl(variantReq, ch, updated?.name),
       why:
         updated && updated.name !== teacher?.name
@@ -162,19 +186,31 @@ export function offlineCatalog(req: StudyTubeRequest): StudyTubeVideo[] {
   return [first, ...more].filter((v) => v.title.trim().length > 0);
 }
 
-/** Channel-style card data for the "Subscriptions"-like Dream rows. */
+/**
+ * Channel-style card data for the "Subscriptions"-like Dream rows.
+ * Target-aware: for a CBSE/board target ONLY board-core educators are
+ * returned (no JEE/NEET faculties); grouped so board vs JEE stays clear.
+ */
 export function dreamChannels(req: StudyTubeRequest) {
   const subject = subjectWord(req.subject);
-  const teachers = TEACHERS.filter(
-    (t) =>
-      t.subject === subject && t.verified && (!req.institute || t.instituteId === req.institute),
+  const board = isBoardTarget(req.target);
+  const teachers = teacherPool(req).filter(
+    (t) => !req.institute || t.instituteId === req.institute,
   );
-  return teachers.slice(0, 8).map((t) => ({
+  // Group: board-first educators first (for board target that's the whole list),
+  // then recognised JEE faculties (only shown for JEE targets).
+  const boardFirst = teachers.sort((a, b) => {
+    const aBoard = a.boardCore ? 0 : 1;
+    const bBoard = b.boardCore ? 0 : 1;
+    return aBoard - bBoard || a.name.localeCompare(b.name);
+  });
+  return boardFirst.slice(0, 8).map((t) => ({
     id: t.id,
     name: t.name,
     channelName: t.channelName,
     institute: t.institute,
     specialization: t.specialization,
+    boardCore: t.boardCore,
     request: { ...req, teacher: t.id } as StudyTubeRequest,
   }));
 }

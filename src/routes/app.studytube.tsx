@@ -3,8 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Clock3, Flame, MonitorPlay, Play, Search, Target, TrendingUp } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
-import { getLegacyTeachers, type LegacyTeacher } from "@/data/sot/legacy-inline";
-import { INSTITUTES, findInstituteById } from "@/data/teachers";
+import { getLegacyTeachers } from "@/data/sot/legacy-inline";
+import {
+  INSTITUTES,
+  TEACHERS,
+  BOARD_TEACHERS,
+  teachersForTarget,
+  findInstituteById,
+} from "@/data/teachers";
 import { discover } from "@/features/studytube/service";
 import { dreamChannels, offlineCatalog } from "@/features/studytube/catalog";
 import {
@@ -112,7 +118,7 @@ const DREAM_TEAMS: DreamTeamOption[] = [
     id: i.id,
     name: i.name,
     shortName: i.shortName,
-    icon: i.id === "science-fun" ? "🧪" : "🏛️",
+    icon: i.id === "science-fun" ? "" : "",
     subjects: ["Physics", "Chemistry", "Mathematics"],
   })),
 ].sort((a, b) => a.name.localeCompare(b.name));
@@ -124,12 +130,21 @@ function dreamTeamName(id: string | undefined): string {
   );
 }
 
+function teacherById(id: string | undefined) {
+  if (!id) return undefined;
+  return (
+    TEACHERS.find((x) => x.id === id) ??
+    BOARD_TEACHERS.find((x) => x.id === id) ??
+    LEGACY_TEACHERS.find((x) => x.id === id)
+  );
+}
+
 function teacherSupportsInstitute(
   teacherId: string | undefined,
   instituteId: string | undefined,
 ): boolean {
   if (!teacherId || !instituteId) return true;
-  const t = LEGACY_TEACHERS.find((x) => x.id === teacherId);
+  const t = teacherById(teacherId);
   if (!t) return true;
   return t.instituteId === instituteId;
 }
@@ -155,12 +170,14 @@ function teacherSupportsTarget(
   target: StudyTubeRequest["target"],
 ): boolean {
   if (!teacherId) return true;
-  const t = LEGACY_TEACHERS.find((x) => x.id === teacherId);
+  const t = teacherById(teacherId);
   if (!t) return true;
   const arr = t.examTarget || [];
+  const boardCore = (t as { boardCore?: boolean }).boardCore === true;
   if (target === "board12" || target === "cbse27")
-    return arr.includes("board12") || arr.includes("cbse27");
-  if (target === "board11") return arr.includes("board11");
+    // Board target: ONLY board-first educators qualify (exclude JEE/NEET).
+    return boardCore && (arr.includes("board12") || arr.includes("cbse27"));
+  if (target === "board11") return boardCore && arr.includes("board11");
   if (target === "jeeadv") return arr.includes("jeeadv");
   return arr.includes("jeemain");
 }
@@ -177,10 +194,10 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
         active
-          ? "bg-foreground text-background"
-          : "border border-input text-muted-foreground hover:bg-accent/70"
+          ? "bg-foreground text-background shadow-sm"
+          : "border border-input text-muted-foreground hover:bg-accent/80 hover:text-foreground"
       }`}
     >
       {children}
@@ -221,7 +238,7 @@ function StudyTube() {
     setTeacher((prev) => (teacherSupportsInstitute(prev, id) ? prev : undefined));
   }
 
-  function toggleTeacher(t: LegacyTeacher) {
+  function toggleTeacher(t: { id: string; instituteId: string }) {
     if (teacher === t.id) {
       setTeacher(undefined);
     } else {
@@ -377,20 +394,16 @@ function StudyTube() {
   );
 
   const currentSubject = subjectOf(weak);
+  const targetTeachers = useMemo(
+    () => teachersForTarget(target, currentSubject),
+    [target, currentSubject],
+  );
+  // Dream Team: institutes that actually have a teacher for the current
+  // subject + target (board target → board-core institutes only).
   const dreamTeamOptions = DREAM_TEAMS.filter((i) =>
-    LEGACY_TEACHERS.some(
-      (t) =>
-        t.instituteId === i.id &&
-        t.subject === currentSubject &&
-        teacherSupportsTarget(t.id, target),
-    ),
+    targetTeachers.some((t) => t.instituteId === i.id),
   );
-  const dreamTeachers = LEGACY_TEACHERS.filter(
-    (t) =>
-      t.subject === currentSubject &&
-      teacherSupportsTarget(t.id, target) &&
-      (!institute || t.instituteId === institute),
-  );
+  const dreamTeachers = targetTeachers.filter((t) => !institute || t.instituteId === institute);
   const channels = useMemo(
     () =>
       dreamChannels({
@@ -450,97 +463,132 @@ function StudyTube() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white">
-            <Play className="h-4 w-4 fill-current" />
-          </span>
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">StudyTube</h1>
-            <p className="text-xs text-muted-foreground">
-              Study-first discovery · zero-distraction study hub
-            </p>
+      {/* ── HERO: brand + target balance + search ── */}
+      <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/12 via-card to-card p-5 sm:p-6">
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg">
+              <Play className="h-5 w-5 fill-current" />
+            </span>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">StudyTube</h1>
+              <p className="text-xs text-muted-foreground">
+                Study-first discovery · zero-distraction study hub
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={institute ?? ""}
+              onChange={(e) => changeInstitute(e.target.value || undefined)}
+              className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Dream Team"
+            >
+              <option value="">Dream Team: Auto</option>
+              {dreamTeamOptions.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.icon} {i.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={teacher ?? ""}
+              onChange={(e) => {
+                const id = e.target.value || undefined;
+                const t = teacherById(id);
+                if (t) toggleTeacher(t);
+                else setTeacher(undefined);
+              }}
+              className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Dream Teacher"
+            >
+              <option value="">Dream Teacher: Auto</option>
+              {dreamTeachers.map((t) => (
+                <option key={t.id} value={t.id} data-board={t.boardCore ? "1" : undefined}>
+                  {t.name} · {t.channelName}
+                  {t.boardCore ? " — Board" : " — JEE"}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-        <div className="ml-auto flex flex-wrap gap-2">
-          <select
-            value={institute ?? ""}
-            onChange={(e) => changeInstitute(e.target.value || undefined)}
-            className="rounded-full border border-input bg-background px-3 py-1.5 text-xs outline-none"
-            aria-label="Dream Team"
+
+        {/* Focus (target) balance — always visible */}
+        <div className="relative mt-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+            Focus
+          </span>
+          {(
+            [
+              ["jeemain", "JEE Main"],
+              ["jeeadv", "JEE Adv"],
+              ["board12", "CBSE 12"],
+              ["cbse27", "CBSE 27"],
+              ["board11", "Class 11"],
+            ] as const
+          ).map(([t, label]) => (
+            <Chip key={t} active={target === t} onClick={() => changeTarget(t)}>
+              {label}
+            </Chip>
+          ))}
+        </div>
+        <p className="relative mt-2 text-[11px] text-muted-foreground">
+          {target === "jeemain"
+            ? " JEE Main engine — concept + PYQ + speed. Board-level detail included for strong basics."
+            : target === "jeeadv"
+              ? " JEE Advanced — deep problem solving, advanced topics, tricky numerics."
+              : target === "board12" || target === "cbse27"
+                ? " CBSE Class 12 boards — NCERT line-by-line, derivations, board-pattern PYQ."
+                : " Class 11 foundation — build the base for JEE + boards."}
+        </p>
+
+        {/* Hero search */}
+        <div className="relative mt-4 flex flex-col gap-2 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && openSearchQuery(query)}
+              placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
+              className="w-full rounded-2xl border border-border bg-background py-3 pr-4 pl-11 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <button
+            onClick={() => openSearchQuery(query)}
+            className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           >
-            <option value="">🏆 Dream Team: Auto</option>
-            {dreamTeamOptions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.icon} {i.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={teacher ?? ""}
-            onChange={(e) => {
-              const id = e.target.value || undefined;
-              const t = LEGACY_TEACHERS.find((x) => x.id === id);
-              if (t) toggleTeacher(t);
-              else setTeacher(undefined);
-            }}
-            className="rounded-full border border-input bg-background px-3 py-1.5 text-xs outline-none"
-            aria-label="Dream Teacher"
+            Search
+          </button>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-2xl border border-border px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
-            <option value="">🎯 Dream Teacher: Auto</option>
-            {dreamTeachers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} · {t.channelName}
-              </option>
-            ))}
-          </select>
+            {open ? "Hide" : " Preferences"}
+          </button>
+        </div>
+
+        {/* Quick subject chips */}
+        <div className="relative mt-3 flex flex-wrap gap-2">
+          {(["all", "Physics", "Chemistry", "Mathematics", "oneshot", "revision"] as const).map(
+            (f) => (
+              <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
+                {f === "all"
+                  ? "All"
+                  : f === "Physics"
+                    ? "Physics"
+                    : f === "Chemistry"
+                      ? "Chemistry"
+                      : f === "Mathematics"
+                        ? "Maths"
+                      : f === "oneshot"
+                        ? "One-shots"
+                        : "Revision"}
+              </Chip>
+            ),
+          )}
         </div>
       </section>
-
-      <div className="flex flex-wrap gap-2">
-        {(["all", "Physics", "Chemistry", "Mathematics", "oneshot", "revision"] as const).map(
-          (f) => (
-            <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
-              {f === "all"
-                ? "All"
-                : f === "Physics"
-                  ? "Physics"
-                  : f === "Chemistry"
-                    ? "Chemistry"
-                    : f === "Mathematics"
-                      ? "Maths"
-                      : f === "oneshot"
-                        ? "⚡ One-shots"
-                        : "🔁 Revision"}
-            </Chip>
-          ),
-        )}
-      </div>
-
-      <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && openSearchQuery(query)}
-            placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
-            className="w-full rounded-lg border border-input bg-background py-2 pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <button
-          onClick={() => openSearchQuery(query)}
-          className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Search
-        </button>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-full border border-input px-3 py-2 text-xs text-muted-foreground"
-        >
-          {open ? "Hide" : "Preferences"}
-        </button>
-      </div>
 
       {open ? (
         <section className="rounded-xl border p-4">
@@ -578,9 +626,7 @@ function StudyTube() {
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground">
                 {dreamTeamName(institute)} →{" "}
-                {teacher
-                  ? LEGACY_TEACHERS.find((t) => t.id === teacher)?.name || "Selected"
-                  : "Auto best fit"}
+                {teacher ? teacherById(teacher)?.name || "Selected" : "Auto best fit"}
               </p>
             </div>
           </div>
@@ -632,7 +678,7 @@ function StudyTube() {
       ) : null}
 
       <Shelf
-        title="🎯 Dream Teacher picks"
+        title=" Dream Teacher picks"
         subtitle="Chosen faculty, lesson depth matched to your target."
         icon={Target}
         items={teacherShelf.filter(matches)}
@@ -662,7 +708,7 @@ function StudyTube() {
       ) : null}
 
       <Shelf
-        title="⚡ Quick one-shot revision"
+        title=" Quick one-shot revision"
         subtitle="Crash-mode, high-weightage revision that fits tight timelines."
         icon={TrendingUp}
         items={oneshotShelf.filter(matches)}
@@ -752,15 +798,25 @@ function Shelf({
   watchedIds: Record<string, boolean>;
 }) {
   return (
-    <section>
-      <div className="mb-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Icon className="h-4 w-4 text-muted-foreground" /> {title}
-        </h2>
-        <div className="mt-0.5 flex flex-wrap items-center gap-2">
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <section className="rounded-3xl border border-border/60 bg-card/40 p-4 sm:p-5">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+            {title}
+            {items.length ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                {items.length}
+              </span>
+            ) : null}
+          </h2>
+          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
           {fallback && items.length ? (
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-600">
               offline picks
             </span>
           ) : null}
@@ -769,11 +825,11 @@ function Shelf({
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-52 animate-pulse rounded-xl border bg-muted/40" />
+            <div key={i} className="h-52 animate-pulse rounded-2xl border bg-muted/40" />
           ))}
         </div>
       ) : items.length ? (
-        <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((v) => (
             <VideoCard
               key={v.id}

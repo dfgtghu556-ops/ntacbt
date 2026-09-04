@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { LANG_LABEL, type Lang, useLang, setLang } from "@/lib/lang";
 
 export const Route = createFileRoute("/app/_layout")({
   component: AppLayout,
@@ -46,6 +47,7 @@ function AppLayout() {
   const current = (matches[matches.length - 1] ?? "").replace(/\/$/, "");
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const lang = useLang();
 
   function submitSearch(e: FormEvent) {
     e.preventDefault();
@@ -86,6 +88,19 @@ function AppLayout() {
         </form>
 
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              const order: Lang[] = ["hinglish", "en", "hi"];
+              const next = order[(order.indexOf(lang) + 1) % order.length] as Lang;
+              setLang(next);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-input px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            aria-label="Change language"
+            title="Switch language (Hinglish / English / Hindi)"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> {LANG_LABEL[lang]}
+          </button>
           <Link
             to="/app/saarthi"
             className="hidden items-center gap-1.5 rounded-full border border-input px-2.5 py-1.5 text-xs font-medium text-muted-foreground sm:inline-flex"

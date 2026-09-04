@@ -14,6 +14,8 @@
  * - Works 100% offline or with zero-latency when YouTube search is slow, rate-limited, or blocked.
  */
 
+import { boardCoreTeachersFor } from "./teachers";
+
 export interface CuratedLesson {
   id: string; // Real YouTube Video ID (11 chars) or clean fallback ID
   title: string;
@@ -1409,6 +1411,645 @@ export function matchCanonicalTopic(
  * 2. Plan depth and task objective (learn, practice, revision, advanced)
  * 3. Exam target (JEE Main, Advanced, Boards)
  */
+/**
+ * VERIFIED board video registry — real, hand-curated CBSE Class 12 videos
+ * (genuine 11-char YouTube IDs) from the pedagogically trusted board-first
+ * educators. Each entry is a real lecture so a board learner gets an actual
+ * verified video (matching teacher/channel/kind/duration) instead of a search
+ * link. Chapters not in this registry fall back to honest search-picks.
+ */
+export interface BoardVideoSet {
+  canonicalName: string;
+  aliases: string[];
+  subject: "Physics" | "Chemistry" | "Mathematics";
+  lessons: CuratedLesson[];
+}
+
+export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
+  {
+    canonicalName: "Electrostatics",
+    aliases: [
+      "electrostatics",
+      "electric charges and fields",
+      "electric charges",
+      "electrostatic potential and capacitance",
+      "gauss law",
+      "coulombs law",
+    ],
+    subject: "Physics",
+    lessons: [
+      {
+        id: "z1gy8O-9a-0",
+        title: "Electrostatics Complete in One Shot | Class 12 Physics | Ashu Sir (Science & Fun)",
+        channel: "Science and Fun",
+        teacher: "Ashu Ghai Sir",
+        institute: "Science & Fun",
+        durationSec: 7200,
+        kind: "learn",
+        depth: "oneshot",
+        target: "board12",
+        score: 99,
+        why: "Board-first full chapter one-shot: concepts + board-pattern questions (Ashu Sir).",
+        published: "Class 12 Board",
+      },
+      {
+        id: "i_yT6CpUOTk",
+        title: "Electric Charges and Fields in One Shot | Class 12 Boards | Physics Wallah",
+        channel: "Physics Wallah",
+        teacher: "Alakh Pandey Sir",
+        institute: "Physics Wallah",
+        durationSec: 9000,
+        kind: "learn",
+        depth: "detailed",
+        target: "board12",
+        score: 98,
+        why: "NCERT-aligned board-grade depth with derivation mastery (PW).",
+        published: "Class 12 Board",
+      },
+      {
+        id: "swvbcvN2MfU",
+        title:
+          "NCERT Line by Line | Chapter 1 Class 12 Physics | Electric Charge & Field | Abhishek Sahu",
+        channel: "Abhishek Sahu Physics",
+        teacher: "Abhishek Sahu (Abj Sir)",
+        institute: "NCERT Wallah",
+        durationSec: 5400,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 97,
+        why: "Line-by-line NCERT recall — high-yield for board & school tests (Abj Sir).",
+        published: "Class 12 Board",
+      },
+      {
+        id: "tXNJicEPtwE",
+        title: "NCERT Line by Line | Chapter 2 | Electric Potential & Capacitance | Abhishek Sahu",
+        channel: "Abhishek Sahu Physics",
+        teacher: "Abhishek Sahu (Abj Sir)",
+        institute: "NCERT Wallah",
+        durationSec: 5400,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 97,
+        why: "NCERT-line recap of potential & capacitance for board accuracy.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "5Wj95zTraZI",
+        title: "Electrostatic Potential and Capacitance in One Shot | Class 12 Boards",
+        channel: "NCERT Wallah",
+        teacher: "Abhishek Sahu (Abj Sir)",
+        institute: "Physics Wallah",
+        durationSec: 8400,
+        kind: "learn",
+        depth: "detailed",
+        target: "board12",
+        score: 96,
+        why: "Board-grade electrostatic potential + capacitances with derivations.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "hChvVlgPmeo",
+        title: "Class 12 Physics Electrostatics & Current Electricity | Ashu Sir",
+        channel: "Science and Fun",
+        teacher: "Ashu Ghai Sir",
+        institute: "Science & Fun",
+        durationSec: 8100,
+        kind: "learn",
+        depth: "detailed",
+        target: "board12",
+        score: 96,
+        why: "Combined electrostatics + current electricity in board depth.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Current Electricity",
+    aliases: ["current electricity", "ohm's law", "kirchhoff laws", "resistance", "potentiometer"],
+    subject: "Physics",
+    lessons: [
+      {
+        id: "hChvVlgPmeo",
+        title: "Class 12 Physics Electrostatics & Current Electricity | Ashu Sir",
+        channel: "Science and Fun",
+        teacher: "Ashu Ghai Sir",
+        institute: "Science & Fun",
+        durationSec: 8100,
+        kind: "learn",
+        depth: "detailed",
+        target: "board12",
+        score: 98,
+        why: "Board-grade current electricity with circuit practice.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Nuclei & Modern Physics",
+    aliases: ["nuclei", "atoms", "dual nature", "modern physics", "atomic physics"],
+    subject: "Physics",
+    lessons: [
+      {
+        id: "QKjZ5u7LR9k",
+        title: "Chapter 13 Nuclei OneShot | Class 12 Physics | Abhishek Sahu",
+        channel: "Abhishek Sahu Physics",
+        teacher: "Abhishek Sahu (Abj Sir)",
+        institute: "NCERT Wallah",
+        durationSec: 6000,
+        kind: "learn",
+        depth: "oneshot",
+        target: "board12",
+        score: 97,
+        why: "Modern physics board one-shot — derivations + key formulas.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Physics Derivations & PYQ",
+    aliases: ["derivation", "important derivation", "physics pyq", "most important questions"],
+    subject: "Physics",
+    lessons: [
+      {
+        id: "n7Z95PMz-_M",
+        title: "Most Important Derivation / Question Physics | Class 12 | Abhishek Sahu",
+        channel: "Abhishek Sahu Physics",
+        teacher: "Abhishek Sahu (Abj Sir)",
+        institute: "NCERT Wallah",
+        durationSec: 7200,
+        kind: "practice",
+        depth: "lecture",
+        target: "board12",
+        score: 99,
+        why: "Board's most repeatable derivations & questions — high-yield practice.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Solutions",
+    aliases: ["solutions", "solution chemistry", "colligative properties", "concentration"],
+    subject: "Chemistry",
+    lessons: [
+      {
+        id: "jVDvGDnmUXw",
+        title: "Class 12 Chemistry | Solution in One Shot | Bharat Panchal Sir",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 7200,
+        kind: "learn",
+        depth: "oneshot",
+        target: "board12",
+        score: 99,
+        why: "Solutions full chapter one-shot — NCERT-aligned board depth (Bharat Panchal).",
+        published: "Class 12 Board",
+      },
+      {
+        id: "auWHp_r_ZMw",
+        title: "Class 12 Chemistry: NCERT ka Nichod of Solutions | Bharat Panchal",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 4200,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 98,
+        why: "Rapid NCERT recall of Solutions — perfect for revision.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Aldehydes Ketones Carboxylic Acids",
+    aliases: [
+      "aldehydes ketones and carboxylic acids",
+      "aldehyde",
+      "ketone",
+      "carboxylic acid",
+      "alcohols phenols ethers",
+    ],
+    subject: "Chemistry",
+    lessons: [
+      {
+        id: "CsqOGWqhRxs",
+        title: "Organic Mechanism | Alcohol, Phenol & Ethers in One Shot | Bharat Panchal",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 7200,
+        kind: "learn",
+        depth: "oneshot",
+        target: "board12",
+        score: 99,
+        why: "Board-critical organic mechanisms covered in one shot.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "P0nsu9Qpi14",
+        title: "Class 12 Chemistry — All Name Reaction in One Shot | Bharat Panchal",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 5400,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 99,
+        why: "All organic name reactions in one revision — highest returns for boards.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "ZJpFsMYRjIo",
+        title: "Class 12 Chemistry: Acidic & Basic Strength of Organic Compounds",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 5400,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 98,
+        why: "Acidic/basic strength ordering — a repeated board scoring topic.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "d & f Block Elements",
+    aliases: ["d and f block", "d block", "f block", "transition elements", "lanthanoids"],
+    subject: "Chemistry",
+    lessons: [
+      {
+        id: "IZMyZ1n6pow",
+        title: "All Reactions of d & f Block | KMnO4 & K2Cr2O7 | Bharat Panchal",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 3600,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 98,
+        why: "All d/f-block reactions incl. KMnO4/K2Cr2O7 — board must-know.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Physical Chemistry Numericals",
+    aliases: ["physical chemistry numericals", "physical chem", "numericals", "mole concept"],
+    subject: "Chemistry",
+    lessons: [
+      {
+        id: "DrPrQStFgFY",
+        title: "50 Most Important Numericals of Physical Chemistry | Class 12 Boards",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 7200,
+        kind: "practice",
+        depth: "lecture",
+        target: "board12",
+        score: 99,
+        why: "50 highest-yield physical chemistry numericals for board scoring.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Full Chemistry Revision",
+    aliases: ["full chemistry", "complete chemistry revision", "chemistry one shot"],
+    subject: "Chemistry",
+    lessons: [
+      {
+        id: "pwqcVKU2rzM",
+        title: "Class 12 Chemistry | Full Chemistry in 3 Hours | Bharat Panchal | Rapid Revision",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 10800,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 99,
+        why: "Whole-syllabus rapid revision in one sitting — ideal pre-exam.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "qyZ44Mrjt0U",
+        title: "Class 12 Chemistry | Full Chemistry PYQ | Bharat Panchal",
+        channel: "Bharat Panchal — Chemistry Guruji 2.0",
+        teacher: "Bharat Panchal Sir",
+        institute: "Chemistry Guruji 2.0",
+        durationSec: 10800,
+        kind: "practice",
+        depth: "lecture",
+        target: "board12",
+        score: 99,
+        why: "All recent board PYQs solved — exam-pattern practice.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Matrices & Determinants",
+    aliases: ["matrices", "determinants", "matrices and determinants"],
+    subject: "Mathematics",
+    lessons: [
+      {
+        id: "pafeee3O6u8",
+        title: "Determinants in One Shot | Full Chapter | Class 12 Boards | PW",
+        channel: "Physics Wallah",
+        teacher: "Deepak Sir",
+        institute: "Physics Wallah",
+        durationSec: 8400,
+        kind: "learn",
+        depth: "oneshot",
+        target: "board12",
+        score: 99,
+        why: "Board full-chapter one-shot: properties + system of equations.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "xGOkKJ4cPDw",
+        title: "Class 12 Maths Matrices & Determinants Full Revision | CBSE Boards",
+        channel: "Physics Wallah",
+        teacher: "Deepak Sir",
+        institute: "Physics Wallah",
+        durationSec: 8400,
+        kind: "revision",
+        depth: "oneshot",
+        target: "board12",
+        score: 98,
+        why: "Matrices & Determinants full board revision — NCERT Ch 3 & 4.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "hi8XbUdmQQA",
+        title: "CBSE Class 12 Maths — Matrices & Determinants Most Expected Questions Marathon",
+        channel: "Physics Wallah",
+        teacher: "Deepak Sir",
+        institute: "Physics Wallah",
+        durationSec: 9000,
+        kind: "practice",
+        depth: "lecture",
+        target: "board12",
+        score: 98,
+        why: "Most-expected board questions on matrices & determinants.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+  {
+    canonicalName: "Integrals",
+    aliases: ["integration", "integrals", "definite integrals", "indefinite integration"],
+    subject: "Mathematics",
+    lessons: [
+      {
+        id: "QWgp-Zqpjtw",
+        title: "Integration Class 12 TERM 2 | NCERT | Neha Agrawal",
+        channel: "Mathematically Inclined",
+        teacher: "Neha Agrawal Ma'am",
+        institute: "Mathematically Inclined",
+        durationSec: 8400,
+        kind: "learn",
+        depth: "detailed",
+        target: "board12",
+        score: 99,
+        why: "Full integration from basics with past-year board questions.",
+        published: "Class 12 Board",
+      },
+      {
+        id: "vfay9De9X8U",
+        title: "Indefinite Integration Class 12 in 1 Shot | Neha Agrawal",
+        channel: "Mathematically Inclined",
+        teacher: "Neha Agrawal Ma'am",
+        institute: "Mathematically Inclined",
+        durationSec: 7200,
+        kind: "learn",
+        depth: "oneshot",
+        target: "board12",
+        score: 98,
+        why: "Indefinite integration one-shot with board-pattern questions.",
+        published: "Class 12 Board",
+      },
+    ],
+  },
+];
+
+/**
+ * Match a board topic name to a verified board registry set (subject-aware).
+ */
+export function matchBoardTopic(
+  topicName: string,
+  subjectName?: string,
+): BoardVideoSet | undefined {
+  if (!topicName) return undefined;
+  const raw = topicName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, " ")
+    .trim();
+  if (!raw) return undefined;
+  const subject = (subjectName || "").toLowerCase();
+
+  const filterSubj = (set: BoardVideoSet) =>
+    !subjectName ||
+    set.subject.toLowerCase() === subject ||
+    subject === "" ||
+    // tolerate subject-word presence (e.g. "physics", "chemistry", "mathematics")
+    (subject.includes("phys") && set.subject === "Physics") ||
+    (subject.includes("chem") && set.subject === "Chemistry") ||
+    (subject.includes("math") && set.subject === "Mathematics");
+
+  // exact / canonical
+  for (const set of BOARD_VIDEO_REGISTRY) {
+    if (!filterSubj(set)) continue;
+    if (set.canonicalName.toLowerCase() === raw) return set;
+  }
+  // alias match
+  for (const set of BOARD_VIDEO_REGISTRY) {
+    if (!filterSubj(set)) continue;
+    for (const alias of set.aliases) {
+      const a = alias
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, " ")
+        .trim();
+      if (raw.includes(a) || a.includes(raw)) return set;
+    }
+  }
+  // token overlap
+  const tokens = raw.split(/\s+/).filter((t) => t.length > 2);
+  let best: BoardVideoSet | undefined;
+  let bestScore = 0;
+  for (const set of BOARD_VIDEO_REGISTRY) {
+    if (!filterSubj(set)) continue;
+    const nameToks = set.canonicalName.toLowerCase().split(/\s+/);
+    let score = 0;
+    for (const t of tokens) if (nameToks.some((nt) => nt.includes(t) || t.includes(nt))) score += 2;
+    for (const alias of set.aliases) {
+      const a = alias.toLowerCase();
+      if (a.includes(raw) || raw.includes(a)) score += 3;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = set;
+    }
+  }
+  return bestScore >= 2 ? best : undefined;
+}
+
+/**
+ * Board-first deterministic lesson set for CBSE Class 11/12. Uses ONLY
+ * board-core educators (never JEE/NEET faculties). Prefers a REAL verified
+ * board video from `BOARD_VIDEO_REGISTRY`; falls back to an honest search-pick
+ * (so a board learner always gets something real and matched, never a JEE
+ * channel).
+ */
+export function generateBoardCuratedSet(params: {
+  topic: string;
+  subject?: string;
+  kind?: "learn" | "practice" | "revision" | "advanced";
+  depth?: "oneshot" | "lecture" | "detailed";
+  target?: "jeemain" | "jeeadv" | "board12" | "board11" | "cbse27";
+  teacher?: string;
+  institute?: string;
+}): CuratedLesson[] {
+  const topic = params.topic || "Physics";
+  const subject = params.subject || "Physics";
+  const kind = params.kind || "learn";
+  const depth = params.depth || "lecture";
+  const target = params.target || "board12";
+  const is12 = target === "board12" || target === "cbse27";
+
+  // Prefer a REAL verified board video when the topic resolves.
+  const verifiedSet = matchBoardTopic(topic, subject);
+  if (verifiedSet && verifiedSet.lessons.length) {
+    const teacherPref = (params.teacher || "").toLowerCase();
+    const scored = verifiedSet.lessons
+      .map((lesson) => {
+        let score = lesson.score;
+        if (lesson.kind === kind) score += 30;
+        else if (kind === "practice" && lesson.kind === "learn") score -= 15;
+        else if (kind === "revision" && lesson.kind === "learn") score -= 10;
+        if (depth === "detailed" && lesson.depth === "detailed") score += 20;
+        else if (depth === "oneshot" && lesson.depth === "oneshot") score += 15;
+        if (
+          teacherPref &&
+          (lesson.teacher.toLowerCase().includes(teacherPref) ||
+            lesson.channel.toLowerCase().includes(teacherPref))
+        )
+          score += 50;
+        return { ...lesson, score };
+      })
+      .sort((a, b) => b.score - a.score);
+    const requestKind = scored.find((s) => s.kind === kind) ?? scored[0];
+    if (!requestKind) return [];
+    return [requestKind, ...scored.filter((s) => s !== requestKind)].slice(0, 6);
+  }
+
+  const pool = boardCoreTeachersFor(subject);
+  // Honour an explicit board teacher preference; default to a subject lead.
+  const lead =
+    pool.find((t) => (params.teacher || "").toLowerCase().includes(t.name.toLowerCase())) ||
+    pool[0];
+  const teacherName =
+    lead?.name ||
+    (subject === "Physics"
+      ? "Abhishek Sahu (Abj Sir)"
+      : subject === "Chemistry"
+        ? "Bharat Panchal Sir"
+        : "Neha Agrawal Ma'am");
+  const channelName =
+    lead?.channelName ||
+    (subject === "Physics"
+      ? "Abhishek Sahu Physics"
+      : subject === "Chemistry"
+        ? "Bharat Panchal — Chemistry Guruji 2.0"
+        : "Mathematically Inclined");
+  const grade = is12 ? "Class 12 CBSE Board" : "Class 11 CBSE";
+  const tw = is12 ? " class 12 cbse board" : " class 11 cbse";
+
+  const safeId = "ce-board-" + Math.abs(hashCode(topic + subject)).toString(36);
+  const learnTitle =
+    depth === "oneshot"
+      ? `${topic} ${grade} One Shot Complete Revision | ${teacherName}`
+      : `${topic} ${grade} ${depth === "detailed" ? "Detailed" : "Full"} Lecture | ${teacherName}`;
+  const practiceTitle = `${topic} ${grade} Important Questions & PYQ Practice | ${teacherName}`;
+  const revisionTitle = `${topic} ${grade} Quick Revision & Formula Summary | ${teacherName}`;
+  const advancedTitle = `${topic} ${grade} Higher-Order & Case-Based Problems | ${teacherName}`;
+  const learnDur = depth === "oneshot" ? 6300 : depth === "detailed" ? 9000 : 7200;
+
+  const search = (q: string) =>
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+  const instituteName = lead?.institute || "Board faculty";
+
+  const learn: CuratedLesson = {
+    id: safeId + "1",
+    title: learnTitle,
+    channel: channelName,
+    teacher: teacherName,
+    institute: instituteName,
+    durationSec: learnDur,
+    kind: "learn",
+    depth: depth === "oneshot" ? "oneshot" : depth === "detailed" ? "detailed" : "lecture",
+    target,
+    score: 98,
+    why: `Board-first faculty (${teacherName}) · NCERT-aligned, board-grade depth`,
+    playlistUrl: search(`${topic} ${subject} ${teacherName} board${tw}`),
+  };
+  const practice: CuratedLesson = {
+    id: safeId + "2",
+    title: practiceTitle,
+    channel: channelName,
+    teacher: teacherName,
+    institute: instituteName,
+    durationSec: 3600,
+    kind: "practice",
+    depth: "lecture",
+    target,
+    score: 99,
+    why: `CBSE board pattern questions + previous-year board questions (${teacherName})`,
+    playlistUrl: search(`${topic} ${subject} pyq important questions board cbse ${teacherName}`),
+  };
+  const revision: CuratedLesson = {
+    id: safeId + "3",
+    title: revisionTitle,
+    channel: channelName,
+    teacher: teacherName,
+    institute: instituteName,
+    durationSec: 2400,
+    kind: "revision",
+    depth: "oneshot",
+    target,
+    score: 97,
+    why: `Board exam: high-yield formula + definition recall (${teacherName})`,
+    playlistUrl: search(`${topic} ${subject} quick revision formula summary cbse ${teacherName}`),
+  };
+  const advanced: CuratedLesson = {
+    id: safeId + "4",
+    title: advancedTitle,
+    channel: channelName,
+    teacher: teacherName,
+    institute: instituteName,
+    durationSec: 5400,
+    kind: "advanced",
+    depth: "detailed",
+    target,
+    score: 96,
+    why: `Higher-order / case-based board questions (${teacherName})`,
+    playlistUrl: search(`${topic} ${subject} higher order case based board questions cbse`),
+  };
+
+  if (kind === "practice") return [practice, learn, revision, advanced];
+  if (kind === "revision") return [revision, learn, practice, advanced];
+  if (kind === "advanced") return [advanced, learn, practice, revision];
+  return [learn, practice, revision, advanced];
+}
+
 export function resolveCuratedVideos(params: {
   topic: string;
   subject?: string;
@@ -1425,6 +2066,26 @@ export function resolveCuratedVideos(params: {
   const target = params.target || "jeemain";
   const teacherFilter = (params.teacherId || params.teacher || "").toLowerCase();
   const instituteFilter = (params.instituteId || params.institute || "").toLowerCase();
+
+  // Board / CBSE target: NEVER surface JEE/NEET faculties. Return a
+  // board-only, board-core set (search-picks, board-accurate detail).
+  if (target === "board12" || target === "cbse27") {
+    const boardParams: {
+      topic: string;
+      subject?: string;
+      kind?: "learn" | "practice" | "revision" | "advanced";
+      depth?: "oneshot" | "lecture" | "detailed";
+      target?: "jeemain" | "jeeadv" | "board12" | "board11" | "cbse27";
+      teacher?: string;
+      institute?: string;
+    } = { topic: params.topic, kind, depth, target };
+    if (params.subject) boardParams.subject = params.subject;
+    const teacherPref = params.teacher || params.teacherId || "";
+    if (teacherPref) boardParams.teacher = teacherPref;
+    const institutePref = params.institute || params.instituteId || "";
+    if (institutePref) boardParams.institute = institutePref;
+    return generateBoardCuratedSet(boardParams);
+  }
 
   const set = matchCanonicalTopic(params.topic, params.subject);
   if (!set || !set.lessons.length) return [];
