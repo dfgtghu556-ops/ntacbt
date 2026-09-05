@@ -6943,6 +6943,54 @@
         m.querySelector("[data-no]").onclick = () => m.remove();
         document.body.appendChild(m);
       }
+      /* ---- FP · collapsible planner sections (research: NN/g accordion + summary headers) ----
+   Har lamba section ek header-row mein simat jata hai: icon + title + LIVE summary + chevron.
+   - khula/band S.ui.planSec[key] mein persist hota hai (user ki choice yaad rehti hai)
+   - default: pending kaam ho ya section bilkul naya ho to khula, warna band
+   - card ka apna header andar chhup jata hai — double-header nahi, single saaf header */
+      function aipSection(key, card, opts = {}) {
+        const wrap = el("div", "");
+        wrap.setAttribute("data-asec", key);
+        wrap.style.cssText = "border:1px solid var(--line);border-radius:14px;margin-top:12px;background:var(--panel);overflow:hidden";
+        const head = el("button", "");
+        head.type = "button";
+        head.setAttribute("data-asec-head", key);
+        head.setAttribute("aria-expanded", "true");
+        head.style.cssText = "width:100%;display:flex;align-items:center;gap:9px;padding:11px 13px;background:none;border:0;cursor:pointer;text-align:left;color:inherit;font:inherit";
+        let title = opts.title || key, icoHTML = "\uD83D\uDCCC";
+        try {
+          const h3 = card.querySelector("h3");
+          if (h3 && !opts.title) title = (h3.textContent || "").replace(/\s+/g, " ").trim().slice(0, 52);
+          const ico = card.querySelector(".section-title .ico");
+          if (ico) icoHTML = ico.innerHTML;
+          const innerHead = card.querySelector(".section-title");
+          if (innerHead) innerHead.style.display = "none";
+          else { const fh = card.firstElementChild; if (fh && fh.tagName === "H3") fh.style.display = "none"; }
+        } catch (e) {}
+        head.innerHTML = `<span style="font-size:17px;flex:none;display:inline-flex">${icoHTML}</span><b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;max-width:46%">${esc(title)}</b>${opts.sum ? `<span class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${opts.sum}</span>` : ""}<span data-chev style="margin-left:auto;color:var(--muted);font-size:13px;flex:none">\u25BE</span>`;
+        const body = el("div", "");
+        body.setAttribute("data-asec-body", key);
+        body.style.cssText = "padding:0 13px 13px";
+        try { card.style.marginTop = "0"; card.style.border = "0"; card.style.boxShadow = "none"; card.style.background = "transparent"; card.style.paddingLeft = "0"; card.style.paddingRight = "0"; } catch (e) {}
+        body.appendChild(card);
+        wrap.append(head, body);
+        S.ui = S.ui || {}; S.ui.planSec = S.ui.planSec || {};
+        const isOpen = () => (S.ui.planSec[key] == null ? !!opts.open : !!S.ui.planSec[key]);
+        const paint = () => {
+          const open = isOpen();
+          body.style.display = open ? "" : "none";
+          head.setAttribute("aria-expanded", open ? "true" : "false");
+          const c = head.querySelector("[data-chev]");
+          if (c) c.textContent = open ? "\u25BE" : "\u25B8";
+        };
+        head.onclick = () => {
+          S.ui.planSec[key] = isOpen() ? 0 : 1;
+          try { save(); } catch (e) {}
+          paint();
+        };
+        paint();
+        return wrap;
+      }
       function targetsCard() {
         // Today's target checklist — the FIRST card of the day view.
         const p = aip();
@@ -8175,7 +8223,18 @@
       function featureCheckupModal() {
         const p = aip();
         const m = el("div", "modal");
-        const goTab = (k) => { try { const b = document.querySelector(`[data-atab="${k}"]`); if (b) { b.click(); b.scrollIntoView(); } } catch (e) {} };
+        const goTab = (k) => { try {
+          const b = document.querySelector(`[data-atab="${k}"]`);
+          if (b) b.click();
+          try {
+            S.ui = S.ui || {}; S.ui.planSec = S.ui.planSec || {};
+            const map = { aaj: ["targets"], plan: ["coverage", "subjects", "insights", "whatif", "backlog"], memory: ["srs", "flash", "formula"], tools: ["ptools", "habits", "badges"] };
+            (map[k] || []).forEach((s) => { S.ui.planSec[s] = 1; });
+            save();
+          } catch (e2) {}
+          try { render(0); } catch (e2) {}
+          setTimeout(() => { try { const b2 = document.querySelector(`[data-atab="${k}"]`); if (b2) b2.scrollIntoView(); } catch (e2) {} }, 150);
+        } catch (e) {} };
         if (!p || !Array.isArray(p.tasks)) {
           m.innerHTML = `<div class="box" style="max-width:min(440px,94vw)">
             <h3 style="margin-top:0">✅ Feature checkup</h3>
@@ -8286,7 +8345,7 @@
           demo: () => demoModal(),
           recovery: () => aipRecoveryModal(),
           backlog: () => backlogCardModal(),
-          srs: () => { const el2 = document.querySelector("[data-srs-card]"); if (el2) el2.scrollIntoView(); else toast("Neeche memory section dekho"); },
+          srs: () => { try { S.ui = S.ui || {}; S.ui.aipTab = "memory"; S.ui.planSec = S.ui.planSec || {}; S.ui.planSec.srs = 1; save(); render(0); } catch (e) {} setTimeout(() => { try { const el2 = document.querySelector("[data-srs-card]"); if (el2) el2.scrollIntoView({ block: "start" }); } catch (e) {} }, 150); },
           mixed: () => mixedBagStart(12),
           owntest: () => ownTestModal(),
           flash: () => { const d = flashDue(10); if (d.length) flashRoundModal(d, 0, 0); else toast("🎉 Koi due card nahi!"); },
@@ -10460,7 +10519,19 @@
         panTools.setAttribute("data-apanel", "tools");
         root.append(panAaj, panPlan, panMem, panTools);
         panAaj.appendChild(head);
-        try { const tc0 = targetsCard(); if (tc0) panAaj.appendChild(tc0); } catch (e) {}
+        try {
+          const tc0 = targetsCard();
+          if (tc0) {
+            let tSum = "", tOpen = true;
+            try {
+              const b = tc0.querySelector("h3 .badge");
+              if (b) tSum = esc(b.textContent.trim()) + " done";
+              const m = /(\d+)\s*\/\s*(\d+)/.exec(tSum);
+              if (m) tOpen = +m[1] < +m[2];
+            } catch (e2) {}
+            panAaj.appendChild(aipSection("targets", tc0, { open: tOpen, sum: tSum }));
+          }
+        } catch (e) {}
         const list = el("div", "card");
         list.innerHTML = `<h3>Today's tasks</h3>`;
         if (!today.length)
@@ -10544,6 +10615,25 @@
           row.appendChild(acts);
           list.appendChild(row);
         });
+        // FP · lambi task-list: pehle 6 dikhao, baaki ek tap par (research: show a taste, expand on demand)
+        try {
+          const _rows = [...list.children].filter((x) => x.classList && x.classList.contains("optrow"));
+          const _N = 6;
+          if (_rows.length > _N) {
+            S.ui = S.ui || {}; S.ui.planSec = S.ui.planSec || {};
+            const moreBtn = el("button", "btn ghost sm", "");
+            moreBtn.setAttribute("data-aaj-more", "1");
+            moreBtn.style.cssText = "margin-top:10px;width:100%";
+            const paintMore = () => {
+              const open = !!S.ui.planSec.aajmore;
+              _rows.forEach((r, i) => { r.style.display = open || i < _N ? "" : "none"; });
+              moreBtn.innerHTML = open ? "Kam dikhao \u25B4" : `Aur ${_rows.length - _N} tasks dikhao \u25BE`;
+            };
+            moreBtn.onclick = () => { S.ui.planSec.aajmore = S.ui.planSec.aajmore ? 0 : 1; try { save(); } catch (e) {} paintMore(); };
+            list.appendChild(moreBtn);
+            paintMore();
+          }
+        } catch (e) {}
         const todayPending = today.filter((t) => t.status === "todo").length;
         const todayLeft = todayPending;
         const futurePending = p.tasks
@@ -10572,9 +10662,30 @@
           list.appendChild(pullBox);
         }
         panAaj.appendChild(list);
-        try { const pt = planToolsCard(); if (pt) panTools.appendChild(pt); } catch (e) {}
-        try { const cc0 = coverageCard(); if (cc0) panPlan.appendChild(cc0); } catch (e) {}
-        try { const ic0 = insightsCard(); if (ic0) panPlan.appendChild(ic0); } catch (e) {}
+        try {
+          const pt = planToolsCard();
+          if (pt) {
+            let nT = 0;
+            try { nT = pt.querySelectorAll("[data-tool]").length; } catch (e2) {}
+            panTools.appendChild(aipSection("ptools", pt, { open: true, sum: nT ? `${nT} tools` : "" }));
+          }
+        } catch (e) {}
+        try {
+          const cc0 = coverageCard();
+          if (cc0) {
+            let cSum = "";
+            try { const cv = aipCoverage(); cSum = `${cv.doneCh || 0}/${cv.totalCh || 0} chapters · ${cv.pct}%`; } catch (e2) {}
+            panPlan.appendChild(aipSection("coverage", cc0, { open: true, sum: cSum }));
+          }
+        } catch (e) {}
+        try {
+          const ic0 = insightsCard();
+          if (ic0) {
+            let iSum = "";
+            try { const st = ic0.querySelector(".section-title .small"); if (st) iSum = esc(st.textContent.trim().slice(0, 64)); } catch (e2) {}
+            panPlan.appendChild(aipSection("insights", ic0, { open: false, sum: iSum }));
+          }
+        } catch (e) {}
         // subject progress
         const sp = el("div", "card");
         sp.innerHTML = `<h3>Your subjects</h3>`;
@@ -10595,7 +10706,17 @@
       <b>${pct(dn, all.length)}%<span class="s"> · ~${remH} h left</span></b>
       <div class="bar"><i style="width:${pct(dn, all.length)}%;background:${SUBCOLOR[s]}"></i></div></div>`;
         });
-        panPlan.appendChild(sp);
+        {
+          let sSum = "";
+          try {
+            sSum = (p.profile.subjects || [...new Set(p.tasks.map((t) => t.subject))]).map((s) => {
+              const all = p.tasks.filter((t) => t.subject === s);
+              const dn = all.filter((t) => t.status === "done").length;
+              return `${s.slice(0, 4)} ${pct(dn, all.length)}%`;
+            }).join(" · ");
+          } catch (e2) {}
+          panPlan.appendChild(aipSection("subjects", sp, { open: false, sum: sSum }));
+        }
         // ── UPCOMING & FULL STUDY ROADMAP ──
         const allPlanDates = [...new Set(p.tasks.map((t) => t.date))].sort();
         const allPendingTasks = p.tasks.filter((t) => t.status === "todo");
@@ -10981,7 +11102,7 @@
           });
           if (base.vs)
             wi.innerHTML += `<div class="small muted" style="margin-top:8px">Buffer = revision + mocks ka time. 10+ din ka buffer healthy hai.</div>`;
-          panPlan.appendChild(wi);
+          panPlan.appendChild(aipSection("whatif", wi, { open: false, sum: `bache ${base.tasks} tasks · ~${Math.round(base.totalMin / 60)}h kaam` }));
         })();
         // learned capacity note (transparency: plan adapts to reality)
         (() => {
@@ -11013,7 +11134,14 @@
             },
             "Rebuild",
           );
-        try { const bc0 = backlogCard(); if (bc0) panPlan.appendChild(bc0); } catch (e) {}
+        try {
+          const bc0 = backlogCard();
+          if (bc0) {
+            let nBl = 0;
+            try { nBl = backlogChapters().length; } catch (e2) {}
+            panPlan.appendChild(aipSection("backlog", bc0, { open: nBl > 0, sum: nBl ? `${nBl} chapters` : "zero backlog!" }));
+          }
+        } catch (e) {}
         try {
           const ql = el("div", "card");
           ql.innerHTML = `<div class="section-title"><span class="ico">⚡</span>
@@ -11034,11 +11162,50 @@
           };
           panMem.appendChild(ql);
         } catch (e) {}
-        try { const sr0 = srsCard(); if (sr0) panMem.appendChild(sr0); } catch (e) {}
-        try { const fd0 = flashDeckCard(); if (fd0) panMem.appendChild(fd0); } catch (e) {}
-        try { const fo0 = formulaDrillCard(); if (fo0) panMem.appendChild(fo0); } catch (e) {}
-        try { const hb0 = habitsCard(); if (hb0) panTools.appendChild(hb0); } catch (e) {}
-        try { const pb0 = fpBadgesCard(); if (pb0) panTools.appendChild(pb0); } catch (e) {}
+        try {
+          const sr0 = srsCard();
+          if (sr0) {
+            let due = 0, tot = 0;
+            try { due = srsDueList().length; tot = Object.keys(S.srs || {}).length; } catch (e2) {}
+            panMem.appendChild(aipSection("srs", sr0, { open: due > 0 || tot === 0, sum: due ? `${due} due` : "sab fresh!" }));
+          }
+        } catch (e) {}
+        try {
+          const fd0 = flashDeckCard();
+          if (fd0) {
+            let fDue = 0, fM = 0;
+            try { const fl = flashCounts(); fDue = fl.due || 0; fM = fl.mastered || 0; } catch (e2) {}
+            panMem.appendChild(aipSection("flash", fd0, { open: fDue > 0, sum: `${fDue} due · ${fM} mastered` }));
+          }
+        } catch (e) {}
+        try {
+          const fo0 = formulaDrillCard();
+          if (fo0) {
+            let fDone = false;
+            try { fDone = !!((S.formulaDrill || {})[todayKey(Date.now())]); } catch (e2) {}
+            panMem.appendChild(aipSection("formula", fo0, { open: !fDone, sum: fDone ? "aaj done ✓" : "15 min · due" }));
+          }
+        } catch (e) {}
+        try {
+          const hb0 = habitsCard();
+          if (hb0) {
+            let hPend = 0, hTot = 0;
+            try {
+              const arr = habitsGet() || []; hTot = arr.length;
+              const tk3 = todayKey(Date.now());
+              hPend = arr.filter((h) => { try { return fpNum((h.log || {})[tk3], 0) < (h.targetPerDay || 1); } catch (e2) { return true; } }).length;
+            } catch (e2) {}
+            panTools.appendChild(aipSection("habits", hb0, { open: hPend > 0 || hTot === 0, sum: hTot ? `${hTot - hPend}/${hTot} aaj` : "pehli habit banao" }));
+          }
+        } catch (e) {}
+        try {
+          const pb0 = fpBadgesCard();
+          if (pb0) {
+            let bE = 0, bT = 0;
+            try { const L = fpBadgesEarned(); bT = L.length; bE = L.filter((x) => x.earned).length; } catch (e2) {}
+            panTools.appendChild(aipSection("badges", pb0, { open: false, sum: `${bE}/${bT} unlocked` }));
+          }
+        } catch (e) {}
         foot.appendChild(rb);
         panPlan.appendChild(foot);
         // ── FP · tab bar with live counts (choice persists across visits) ──

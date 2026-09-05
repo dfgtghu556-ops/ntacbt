@@ -836,6 +836,52 @@ console.log("== T15 · dashboard tabs + delete ==");
   await t.close();
 }
 
+/* ============ T16 · planner sections (accordion) + show-more ============ */
+console.log("== T16 · planner sections ==");
+{
+  const t = await boot({ seed: { ...richSeed(), _fpSprint: 1 } });
+  await t.backToPlanner();
+  const q = (s) => t.w.document.querySelector(s);
+  const secs = [...t.w.document.querySelectorAll("[data-asec]")];
+  check("T16 sections render", secs.length >= 9, "n=" + secs.length);
+  check("T16 heads+bodies", secs.every((s) => s.querySelector("[data-asec-head]") && s.querySelector("[data-asec-body]")));
+  check("T16 summaries live", secs.every((s) => (s.querySelector("[data-asec-head]").textContent || "").trim().length > 8));
+  check("T16 no double header", secs.every((s) => { const h = s.querySelector(".section-title"); return !h || h.style.display === "none"; }));
+  const disp = (k) => t.w.document.querySelector(`[data-asec-body="${k}"]`).style.display;
+  check("T16 default coverage open", disp("coverage") !== "none");
+  check("T16 default subjects closed", disp("subjects") === "none");
+  check("T16 default insights closed", disp("insights") === "none");
+  check("T16 default srs open (due)", disp("srs") !== "none");
+  check("T16 default flash closed (none due)", disp("flash") === "none");
+  check("T16 default ptools open", disp("ptools") !== "none");
+  check("T16 default badges closed", disp("badges") === "none");
+  const srsDue = t.g(`srsDueList().length`);
+  check("T16 srs summary count", q('[data-asec-head="srs"]').textContent.includes(`${srsDue} due`), "due=" + srsDue);
+  check("T16 coverage summary", q('[data-asec-head="coverage"]').textContent.includes("chapters"));
+  q('[data-asec-head="subjects"]').click(); await sleep(250);
+  check("T16 toggle opens", disp("subjects") !== "none" && t.g(`S.ui.planSec.subjects`) === 1 && q('[data-asec-head="subjects"]').getAttribute("aria-expanded") === "true");
+  q('[data-asec-head="coverage"]').click(); await sleep(250);
+  check("T16 toggle closes", disp("coverage") === "none" && t.g(`S.ui.planSec.coverage`) === 0);
+  await t.backToPlanner();
+  check("T16 persist across render", t.w.document.querySelector('[data-asec-body="subjects"]').style.display !== "none" && t.w.document.querySelector('[data-asec-body="coverage"]').style.display === "none");
+  // show-more: seed mein 4 today-tasks → 5 aur jodo
+  check("T16 no more-btn when short", !q("[data-aaj-more]"));
+  t.g(`S.aiPlanner.tasks.push(...["x1","x2","x3","x4","x5"].map((id,i)=>({id,subject:"Physics",topic:"Extra "+i,kind:"learn",diff:2,wt:2,depth:"lecture",estMin:20,status:"todo",date:${J(TK)}}))); save();`);
+  await t.backToPlanner();
+  const h3 = [...t.w.document.querySelectorAll("#app h3")].find((h) => h.textContent.trim() === "Today's tasks");
+  const card = h3.parentElement;
+  const rows = [...card.children].filter((x) => x.classList.contains("optrow"));
+  const mb = t.w.document.querySelector("[data-aaj-more]");
+  check("T16 more-btn appears", !!mb && mb.textContent.includes("Aur 3"), mb ? mb.textContent : "none");
+  check("T16 first six visible", rows.length === 9 && rows.filter((r) => r.style.display !== "none").length === 6, "rows=" + rows.length);
+  mb.click(); await sleep(250);
+  check("T16 more expands all", rows.filter((r) => r.style.display !== "none").length === 9 && t.g(`S.ui.planSec.aajmore`) === 1);
+  await t.backToPlanner();
+  check("T16 more persists", t.w.document.querySelector("[data-aaj-more]").textContent.includes("Kam dikhao"));
+  check("T16 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+
 console.log("──────────────────────────────────────────────");
 console.log(`24PACK: passed ${passed}, failed ${failed}`);
 process.exit(failed ? 1 : 0);
