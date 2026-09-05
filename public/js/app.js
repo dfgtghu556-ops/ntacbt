@@ -49,6 +49,9 @@
         return e;
       };
       const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+      /* BUILD TAG — har release par badhao. Settings ke neeche + console mein dikhta hai,
+   taaki "naya version aaya ya nahi" ka saboot hamesha 2 second mein mile. */
+      const NTACBT_BUILD = "2026-09-05.3";
       /* ------------------------- PROFESSIONAL ICON SYSTEM -----------------------
    Inline stroke SVGs (Material/Lucide style) replacing every emoji glyph.
    ic("name")            → inline svg string, 1em, currentColor
@@ -18993,6 +18996,12 @@
         sd.appendChild(sdOut);
         sd.appendChild(sdBtn);
         root.appendChild(sd);
+        // ---- Build tag: kaunsa version chal raha hai (update-proofing ka saboot) ----
+        try {
+          const bd = el("div", "small muted", `NTACBT build <b data-build-tag>${esc(NTACBT_BUILD)}</b>`);
+          bd.style.cssText = "margin:14px 0 30px;text-align:center";
+          root.appendChild(bd);
+        } catch (e) {}
       }
 
       /* ==========================================================================
@@ -24014,6 +24023,23 @@
           }
         } catch (e) {}
       })();
+      /* UPDATE BANNER — naya service worker active hote hi user ko "Reload" ka
+   button dikhao. Bina iske user purane code par atka rehta hai aur use lagta
+   hai "kuch badla hi nahi" — wahi shikayat jisne v1 cache-first ko pakda. */
+      function showUpdateBanner() {
+        try {
+          if (document.querySelector("[data-sw-update]")) return;
+          const examOpen = typeof EX !== "undefined" && EX && !$("#examView").classList.contains("hide");
+          if (examOpen) { setTimeout(showUpdateBanner, 60000); return; } // exam ke beech mein tang nahi
+          const b = el("div", "");
+          b.setAttribute("data-sw-update", "1");
+          b.style.cssText = "position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:999;display:flex;justify-content:center;pointer-events:none";
+          b.innerHTML = `<div style="pointer-events:auto;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--accent-text);border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:min(480px,94vw);flex-wrap:wrap;justify-content:center"><span style="font-size:14px">\u2728 <b>Naya version taiyar hai</b></span><button class="btn sm" data-sw-go>Reload</button><button class="btn ghost sm" data-sw-later>Baad mein</button></div>`;
+          b.querySelector("[data-sw-go]").onclick = () => location.reload();
+          b.querySelector("[data-sw-later]").onclick = () => b.remove();
+          document.body.appendChild(b);
+        } catch (e) {}
+      }
       (function registerOfflineWorker() {
         if (!("serviceWorker" in navigator)) return;
         const h = location.hostname,
@@ -24035,10 +24061,20 @@
           );
           return;
         }
-        addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+        addEventListener("load", () => navigator.serviceWorker.register("/sw.js").then((reg) => {
+          try {
+            navigator.serviceWorker.addEventListener("controllerchange", () => showUpdateBanner());
+            if (reg && reg.waiting && navigator.serviceWorker.controller) showUpdateBanner();
+            if (reg) reg.onupdatefound = () => {
+              const w = reg.installing;
+              if (w) w.onstatechange = () => { if (w.state === "installed" && navigator.serviceWorker.controller) showUpdateBanner(); };
+            };
+          } catch (e) {}
+        }).catch(() => {}));
       })();
 
       applyTheme();
+      try { console.log("[ntacbt] build", NTACBT_BUILD); } catch (e) {}
       // Daily practice reminder — fires at most once per calendar day, only while
       // the tab is open (no server-side push infra needed for this).
       (function dailyReminderCheck() {

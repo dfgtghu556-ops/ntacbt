@@ -882,6 +882,23 @@ console.log("== T16 · planner sections ==");
   await t.close();
 }
 
+/* ============ T17 · update banner + build tag ============ */
+console.log("== T17 · update plumbing ==");
+{
+  const t = await boot({ seed: { ...richSeed() } });
+  check("T17 build const", typeof t.g(`NTACBT_BUILD`) === "string" && t.g(`NTACBT_BUILD`).length >= 8, t.g(`NTACBT_BUILD`));
+  t.g(`showUpdateBanner()`);
+  check("T17 banner shows", !!t.w.document.querySelector("[data-sw-update]"));
+  t.g(`showUpdateBanner()`);
+  check("T17 banner single", t.w.document.querySelectorAll("[data-sw-update]").length === 1);
+  t.w.document.querySelector("[data-sw-later]").click();
+  check("T17 banner dismisses", !t.w.document.querySelector("[data-sw-update]"));
+  t.g(`go("settings")`); await sleep(500);
+  check("T17 settings shows build", t.text().includes(t.g(`NTACBT_BUILD`)));
+  check("T17 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+
 console.log("──────────────────────────────────────────────");
 console.log(`24PACK: passed ${passed}, failed ${failed}`);
 process.exit(failed ? 1 : 0);
