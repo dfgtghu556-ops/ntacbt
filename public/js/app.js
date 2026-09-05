@@ -256,6 +256,7 @@
    • background scroll locks while any modal is open
    The NTA instructions modal is marked data-static (deliberate flow). */
       new MutationObserver(() => {
+        if (typeof document === "undefined" || !document.querySelector) return; // teardown-safe
         const anyModal = !!document.querySelector(".modal,.imgzoom-overlay");
         // don't fight the exam view / chat, which manage overflow themselves
         const examOpen =
@@ -5668,10 +5669,19 @@
       };
       let aiWiz = null; // wizard state while building a plan
       function aip() {
+        // F4 · multi-plan aware (legacy S.aiPlanner stays the live copy)
         return S.aiPlanner || null;
       }
       function aipSave(p) {
         S.aiPlanner = p;
+        // F4 · mirror into the active slot so switching never loses work
+        try {
+          const sl = planSlotsGet();
+          if (sl.activeId && sl.plans[sl.activeId]) {
+            sl.plans[sl.activeId].data = p;
+            sl.plans[sl.activeId].updatedAt = Date.now();
+          }
+        } catch (e) {}
         save();
       }
       /* ═══ REALISTIC CAPACITY ENGINE ═══
@@ -5701,6 +5711,7 @@
         // uniform daily minutes it requires (older saved plans keep working).
         // DEFENSIVE: a corrupt/legacy saved profile (negative, NaN, string, or
         // zero dailyMin) must NEVER produce a negative or nonsense capacity.
+        prof = prof || {};
         let configured = Number(prof.dailyMin) || Number(prof.weekdayMin) || 180;
         if (!isFinite(configured) || configured <= 0) configured = 180;
         // capacity adaptation: if the learned real pace is well below the plan
@@ -5723,16 +5734,27 @@
      - aipRebalanceActual() only nudges TODAY's remaining tasks forward when a
        completion OVERRAN today's budget (spread, never piled on tomorrow). */
       function aipKey(t) {
-        return `${t.subject}::${t.topic}::${t.kind}`;
+        // UNIQUE per task (audit 2026-09): the old subject::topic::kind key was
+        // shared by every repeated revision of a topic AND by regenerated plans,
+        // so one completion's real minutes leaked into sibling tasks. Old-format
+        // map entries simply miss and fall back to t.actualMin/planned — safe.
+        return `${t.subject}::${t.topic}::${t.kind}::${t.date || ""}::${t.id || ""}`;
       }
       function aipMin(t, prof) {
+        // DEEP-AUDIT 2026-09: banked minutes must be finite AND sane. A poisoned
+        // value (Infinity via 1e999 API/storage payload, or an absurd-but-finite
+        // clock-jump total from an old save) used to render as "Infinity min" /
+        // "Invalid Date" across today, roadmap and dashboard. Single-task
+        // wall-clock can never honestly exceed 24h — cap there, fall back to
+        // the planned estimate for anything non-finite.
         if (t.status === "done") {
-          if (typeof t.actualMin === "number" && t.actualMin > 0) return t.actualMin;
+          if (typeof t.actualMin === "number" && isFinite(t.actualMin) && t.actualMin > 0)
+            return Math.min(t.actualMin, 1440);
           try {
             const p = aip();
             if (p && p.actual) {
               const v = p.actual[aipKey(t)];
-              if (typeof v === "number" && v > 0) return v;
+              if (typeof v === "number" && isFinite(v) && v > 0) return Math.min(v, 1440);
             }
           } catch (e) {}
         }
@@ -5746,21 +5768,96 @@
         // speed (estMin/speed), so "real minutes spent" = actual wall-clock
         // seconds / 60 — never divided by speed again (that would double-count).
         const speed = (p.profile && p.profile.speed) || 1.25;
-        let sec = 0;
+        const planEff = aipEff(t.estMin || 45, p.profile || {});
+        // Real watch evidence for THIS task's attached video (seconds, capped at
+        // the video's own length). <15s of open-time is "opened & closed", not
+        // watching. AUDIT 2026-09: the old code returned 0 (kept the stale
+        // estimate) whenever the log was thin — even with a real 2h video
+        // attached (watched externally / quick complete) — and it used a
+        // supplementary video's length as WORK minutes for practice tasks. Both
+        // are fixed by the kind-aware chain below.
+        let watchedSec = 0;
         if (t.videoId) {
           const r = (S.videoLog || {})[t.videoId];
-          if (r && r.watchedSec > 0)
-            sec = Math.min(r.watchedSec, r.durationSec || r.watchedSec);
-          else if (t.durationSec)
-            sec = Math.round(t.durationSec / speed);
+          // DEEP-AUDIT 2026-09: the log is untrusted input (legacy shapes carry
+          // strings, clock-jumps/1e999 payloads carry absurd or Infinite
+          // values). Evidence must be a finite number ≥15s, capped at 24h.
+          const ws = r ? Number(r.watchedSec) : NaN;
+          if (r && isFinite(ws) && ws >= 15) {
+            const dur = Number(r.durationSec);
+            watchedSec = Math.min(Math.min(ws, 86400), isFinite(dur) && dur > 0 ? dur : Math.min(ws, 86400));
+          }
         }
-        if (!sec || sec < 15) return 0; // no real video opened — keep the planned minutes
-        const eff = Math.max(1, Math.round(sec / 60));
+        const isWatchTask = t.kind === "learn" || t.kind === "revision";
+        const durSec = Number(t.durationSec);
+        const hasRealVideo =
+          /^[A-Za-z0-9_-]{11}$/.test(t.videoId || "") &&
+          isFinite(durSec) &&
+          durSec > 60 &&
+          durSec <= 86400;
+        let eff = 0,
+          sec = 0;
+        if (isWatchTask) {
+          // The task IS the video: bank watched minutes. Completed without
+          // meaningful in-app watch (external YouTube/app) → the attached REAL
+          // video's length at their speed beats the stale estimate. Estimated
+          // durations (search/offline picks) NEVER count as evidence.
+          if (watchedSec > 0) {
+            sec = watchedSec;
+            eff = Math.max(1, Math.round(sec / 60));
+          } else if (hasRealVideo) {
+            sec = Math.round(t.durationSec / speed);
+            eff = Math.max(1, Math.round(sec / 60));
+          } else return 0; // no evidence — keep the planned minutes
+        } else {
+          // Work tasks (practice/advanced/test): the video is supplementary —
+          // the planned work happened PLUS any real watch time on top. Never
+          // shrink the work to just the video's minutes, never use the video's
+          // length as work.
+          if (!watchedSec) return 0; // no extra evidence — keep planned
+          sec = watchedSec;
+          eff = planEff + Math.max(1, Math.round(sec / 60));
+        }
+        // DEEP-AUDIT 2026-09: never bank more than 24h of wall-clock on one
+        // task — anything beyond that is idle-tab/clock-skew, not studying.
+        eff = Math.min(eff, 1440);
+        sec = Math.min(sec, 86400);
         t.actualMin = eff;
         t.actualSec = sec;
         p.actual = p.actual || {};
         p.actual[aipKey(t)] = eff;
         return eff;
+      }
+      /* ═══ PLAN↔VIDEO SYNC — the #1 reported logical error ═══
+   The plan budgets estMin from depth tables, but the attached video's REAL
+   length often differs — the dashboard then shows the estimate while the
+   player shows the truth, on every task, every day. For video-first tasks we
+   ADOPT the real measured length as the plan estimate (keeping the original
+   in planEstMin), so today, roadmap, dashboard and mission all agree with the
+   player. Estimated durations (search/offline picks) NEVER re-budget a task.
+   estMin unit = raw 1× minutes, so synced estMin = durationSec/60; display
+   still divides by playback speed via aipEff. Returns the signed raw-minute
+   delta (0 = no change). */
+      function aipSyncTaskToVideo(t, v) {
+        // DEEP-AUDIT 2026-09: API durations are untrusted (a 1e999 payload
+        // parses to Infinity) — only finite, sub-24h lengths may re-budget.
+        if (!t || !v || !isFinite(v.durationSec) || v.durationSec < 60 || v.durationSec > 86400)
+          return 0;
+        if (v.durationEstimated || v.estDur || v.offline || v.externalUrl) return 0;
+        if (!/^[A-Za-z0-9_-]{11}$/.test(v.id || "")) return 0; // real videos only
+        if (t.kind !== "learn" && t.kind !== "revision") return 0; // work tasks keep work estimates
+        const realMin = Math.max(1, Math.round(v.durationSec / 60));
+        if (t.kind === "revision") {
+          // Revision may reuse the full learn video as reference — only adopt
+          // sane revision-length videos, never a 2h lecture as "revision work".
+          const cap = Math.max(45, Math.round((t.estMin || 20) * 2.5));
+          if (realMin > cap) return 0;
+        }
+        if (t.planEstMin == null) t.planEstMin = t.estMin;
+        const before = t.estMin;
+        t.estMin = realMin;
+        t.estMinSynced = v.id;
+        return t.estMin - before;
       }
       function aipDayLoad(dateKey, prof) {
         const p = aip();
@@ -5807,14 +5904,2304 @@
         }
         aipSave(p);
       }
+      /* ═══ 🚑 RECOVERY MODE — "I'm behind, fix my week" ═══
+   The rebalancer only spreads overdue work into future gaps — when the plan
+   is deeply behind, that just manufactures impossible 6-hour days. Recovery
+   Mode is the honest alternative: it diagnoses the backlog, then offers two
+   real strategies with a computed before/after preview:
+     1. EXTEND — shift future work +N days and first-fit the backlog into the
+        freed window (the plan honestly ends later; profile.days grows with it).
+     2. DROP THE FAT — remove low-weightage practice/revision drills (learn /
+        test / advanced are NEVER droppable) from an explicit ticked list, so
+        nothing vanishes silently. Removal (not a new status) keeps every
+        count honest automatically.
+   Planning is PURE (returns move/drop lists); Apply assigns + saves. */
+      function aipRecoveryStats() {
+        const p = aip();
+        if (!p || !Array.isArray(p.tasks)) return null;
+        const tk = todayKey(Date.now());
+        const prof = p.profile || {};
+        const cap = aipDayCap(tk, prof);
+        const overdue = p.tasks.filter((t) => t.status === "todo" && (t.date || "") < tk);
+        const overdueMin = overdue.reduce((s, t) => s + aipEff(t.estMin, prof), 0);
+        const todayMin = p.tasks
+          .filter((t) => t.date === tk && t.status === "todo")
+          .reduce((s, t) => s + aipEff(t.estMin, prof), 0);
+        const dates = p.tasks
+          .map((t) => t.date)
+          .filter(Boolean)
+          .sort();
+        return {
+          p,
+          prof,
+          tk,
+          cap,
+          overdue,
+          overdueMin,
+          todayMin,
+          planEnd: dates[dates.length - 1] || tk,
+        };
+      }
+      function aipRecoveryPlanExtend() {
+        // Pure: returns {days, moves:[{t,to}], newEnd, todayLoad, overdueMin,
+        // overdueCount}. Moves are collected, never assigned — Apply does that.
+        const st = aipRecoveryStats();
+        if (!st || !st.overdue.length)
+          return {
+            days: 0,
+            moves: [],
+            newEnd: st ? st.planEnd : null,
+            todayLoad: 0,
+            overdueMin: 0,
+            overdueCount: 0,
+          };
+        const { p, prof, tk, cap, overdue } = st;
+        const days = Math.max(1, Math.min(30, Math.ceil(st.overdueMin / Math.max(60, cap))));
+        const moves = [];
+        const load = {};
+        // 1. future work shifts +N days, freeing today..today+N-1
+        p.tasks
+          .filter((t) => t.status === "todo" && (t.date || "") >= tk)
+          .forEach((t) => {
+            const to = aipAddDays(t.date, days);
+            moves.push({ t, to });
+            load[to] = (load[to] || 0) + aipEff(t.estMin, prof);
+          });
+        // 2. backlog first-fits into the freed window (tests/learn first — a
+        // shaky foundation makes practice pointless; revisions last)
+        const kindOrd = { test: 0, learn: 1, practice: 2, advanced: 3, revision: 4 };
+        const queue = overdue
+          .slice()
+          .sort(
+            (a, b) =>
+              (kindOrd[a.kind] ?? 5) - (kindOrd[b.kind] ?? 5) || (b.wt || 2) - (a.wt || 2),
+          );
+        let day = tk;
+        queue.forEach((t) => {
+          const eff = aipEff(t.estMin, prof);
+          let guard = 0;
+          while ((load[day] || 0) + eff > cap * 1.25 && guard++ < 400) day = aipAddDays(day, 1);
+          moves.push({ t, to: day });
+          load[day] = (load[day] || 0) + eff;
+        });
+        const movedDates = moves.map((m) => m.to).sort();
+        const doneTodayMin = p.tasks
+          .filter((t) => t.date === tk && t.status === "done")
+          .reduce((s, t) => s + aipMin(t, prof), 0);
+        return {
+          days,
+          moves,
+          newEnd: movedDates[movedDates.length - 1] || st.planEnd,
+          todayLoad: (load[tk] || 0) + doneTodayMin,
+          overdueMin: st.overdueMin,
+          overdueCount: overdue.length,
+        };
+      }
+      function aipRecoveryDropCandidates() {
+        // Low-weightage drills only — learn/test/advanced are never droppable.
+        const st = aipRecoveryStats();
+        if (!st) return [];
+        return st.p.tasks
+          .filter(
+            (t) =>
+              t.status === "todo" &&
+              (t.kind === "practice" || t.kind === "revision") &&
+              (t.wt || 2) <= 2,
+          )
+          .map((t) => ({ t, eff: aipEff(t.estMin, st.prof) }))
+          .sort((a, b) => b.eff - a.eff)
+          .slice(0, 20);
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 1 — CORE ENGINES (pure data + storage helpers)
+   Every reader is defensive (corrupt storage → sane default, never throw).
+   ═══════════════════════════════════════════════════════════════ */
+      // ---- tiny helpers ----
+      function fpNum(v, dflt) {
+        const n = Number(v);
+        return isFinite(n) ? n : dflt;
+      }
+      function fpClamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+      function fpFmtHm(mins) {
+        mins = Math.max(0, Math.round(fpNum(mins, 0)));
+        const h = Math.floor(mins / 60),
+          m = mins % 60;
+        return h ? `${h}h ${m}m` : `${m}m`;
+      }
+      function fpDaysBetween(a, b) {
+        const d = Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+        return isFinite(d) ? d : 0;
+      }
+      /* ---- A3 · COVERAGE — chapters done/remaining per subject ----
+   A chapter counts DONE when its learn task is done. This is the "quantity
+   covered" hero metric (Reddit: quantity > hours). */
+      function aipCoverage() {
+        const p = aip();
+        if (!p || !Array.isArray(p.tasks))
+          return { pct: 0, doneCh: 0, totalCh: 0, perSubject: {}, list: [] };
+        const prof = p.profile || {};
+        const byKey = {};
+        p.tasks.forEach((t) => {
+          if (t.kind !== "learn") return;
+          const k = `${t.subject}||${t.topic}`;
+          byKey[k] = byKey[k] || { subject: t.subject, topic: t.topic, done: false, date: t.date };
+          if (t.status === "done") byKey[k].done = true;
+        });
+        const list = Object.values(byKey);
+        const perSubject = {};
+        (prof.subjects || [...new Set(list.map((x) => x.subject))]).forEach((s) => {
+          const mine = list.filter((x) => x.subject === s);
+          const done = mine.filter((x) => x.done).length;
+          perSubject[s] = { done, total: mine.length, pct: mine.length ? Math.round((done / mine.length) * 100) : 0 };
+        });
+        const doneCh = list.filter((x) => x.done).length;
+        return { pct: list.length ? Math.round((doneCh / list.length) * 100) : 0, doneCh, totalCh: list.length, perSubject, list };
+      }
+      /* ---- E4 · FORECAST — adherence + pace + honest finish date ----
+   adherence7 = done-minutes / planned-minutes over last 7 plan-days.
+   eta = today + remaining/planned-pace (uses REAL pace, never fantasy). */
+      function aipForecast() {
+        const p = aip();
+        const out = { adherence7: 0, paceMinDay: 0, remainingMin: 0, eta: null, daysOver: 0, totalDone: 0, totalPlan: 0 };
+        if (!p || !Array.isArray(p.tasks)) return out;
+        const tk = todayKey(Date.now());
+        const prof = p.profile || {};
+        let done7 = 0, plan7 = 0;
+        for (let i = 0; i < 7; i++) {
+          const dk = aipAddDays(tk, -i);
+          p.tasks.forEach((t) => {
+            if (t.date !== dk) return;
+            if (t.status === "done") {
+              done7 += aipMin(t, prof);
+              out.totalDone += aipMin(t, prof);
+            } else {
+              plan7 += aipEff(t.estMin, prof);
+            }
+          });
+        }
+        out.totalPlan = out.totalDone + plan7;
+        out.adherence7 = plan7 + done7 > 0 ? Math.round((done7 / (plan7 + done7)) * 100) : 100;
+        out.paceMinDay = Math.round(done7 / 7);
+        out.remainingMin = p.tasks
+          .filter((t) => t.status === "todo")
+          .reduce((s, t) => s + aipEff(t.estMin, prof), 0);
+        const pace = Math.max(20, done7 / 7);
+        const needDays = Math.ceil(out.remainingMin / pace);
+        out.eta = aipAddDays(tk, needDays);
+        try {
+          const dates = p.tasks.map((t) => t.date).filter(Boolean).sort();
+          const planEnd = dates[dates.length - 1];
+          if (planEnd) out.daysOver = Math.max(0, fpDaysBetween(planEnd, out.eta));
+        } catch (e) {}
+        return out;
+      }
+      /* ---- E2 · BURNOUT GUARD — sustainable-pace watchdog ----
+   ok = active 4+ days & load sane · tired = slump forming · fried = crash. */
+      function burnoutStatus() {
+        const p = aip();
+        const tk = todayKey(Date.now());
+        const prof = (p && p.profile) || {};
+        let activeDays = 0, doneMin7 = 0, planMin7 = 0, doneMin3 = 0;
+        for (let i = 0; i < 7; i++) {
+          const dk = aipAddDays(tk, -i);
+          let d = 0, pl = 0;
+          (p && p.tasks ? p.tasks : []).forEach((t) => {
+            if (t.date !== dk) return;
+            if (t.status === "done") d += aipMin(t, prof);
+            else pl += aipEff(t.estMin, prof);
+          });
+          // attempts also count as real work (mocks on off-plan days)
+          try {
+            S.attempts.forEach((a) => {
+              if (a.submittedAt && todayKey(a.submittedAt) === dk && a.result)
+                d += Math.round(((a.result.all.correct + a.result.all.wrong + a.result.all.skipped) * 1.5) || 0);
+            });
+          } catch (e) {}
+          if (d > 0) activeDays++;
+          doneMin7 += d;
+          planMin7 += pl;
+          if (i < 3) doneMin3 += d;
+        }
+        const cap = aipDayCap(tk, prof);
+        const avgLoad = planMin7 / 7;
+        let level = "ok",
+          msg = "Pace sustainable hai — aise hi chalo.";
+        if (activeDays <= 1 && planMin7 > 60) {
+          level = "fried";
+          msg = "7 din mein bas 1 active day — plan ko halka karo ya Recovery chalao. Aaram guilt-free hai, quit karna nahi.";
+        } else if (doneMin3 < cap * 0.5 && planMin7 > 120) {
+          level = "tired";
+          msg = "3 din se pace aadhi hai — aaj sirf 2 chhote targets rakho. Gadi dheemi, par rukegi nahi.";
+        } else if (avgLoad > cap * 1.6) {
+          level = "tired";
+          msg = "Roz ka load capacity se 60% zyada hai — ye plan burnout maang raha hai. Recovery → Extend socho.";
+        }
+        return { level, msg, activeDays, avgMin: Math.round(doneMin7 / 7), cap };
+      }
+      /* ---- E3 · 40/35/25 SUBJECT SPLIT — weak-first time share ----
+   Weakest subject (by mastery accuracy) gets the biggest share; the split
+   recomputes live from test data, so it "reassesses" continuously. */
+      function subjectSplit() {
+        let rows = [];
+        try {
+          rows = chapterMastery();
+        } catch (e) {
+          rows = [];
+        }
+        const bySub = {};
+        rows.forEach((r) => {
+          const s = r.subject || "General";
+          bySub[s] = bySub[s] || { acc: [], n: 0 };
+          if (isFinite(r.acc)) bySub[s].acc.push(r.acc);
+          bySub[s].n++;
+        });
+        const subs = Object.keys(bySub);
+        if (!subs.length) return { split: {}, note: "Pehla test do — split accuracy se banega." };
+        const avg = {};
+        subs.forEach((s) => {
+          const a = bySub[s].acc;
+          avg[s] = a.length ? a.reduce((x, y) => x + y, 0) / a.length : 50;
+        });
+        // weakness score → share (weakest ≈40%, mid ≈35%, strong ≈25% for 3 subs)
+        const weak = {};
+        subs.forEach((s) => (weak[s] = 100 - fpClamp(avg[s], 0, 100) + 5));
+        const tot = subs.reduce((x, s) => x + weak[s], 0) || 1;
+        const split = {};
+        subs.forEach((s) => (split[s] = Math.round((weak[s] / tot) * 100)));
+        return { split, avg, note: "Weak subject ko bada hissa — data badlega to split badlega." };
+      }
+      /* ---- D5 · SCORE PREDICTOR (Embibe-lite, honest) ----
+   predicted band = coverage × accuracy, minus behavior drag (skips,
+   overtime, repeat-mistake rate). Always a RANGE + reasons, never a rank. */
+      function scorePredict() {
+        const cov = aipCoverage().pct / 100;
+        let acc = 0, n = 0;
+        try {
+          const g = globalStats();
+          acc = fpClamp(g.avgAcc || 0, 0, 100) / 100;
+          n = g.total || 0;
+        } catch (e) {}
+        let skipRate = 0, otRate = 0, repeatRate = 0;
+        try {
+          const bh = behaviorStats();
+          skipRate = bh.skipRate;
+          otRate = bh.overtimeRate;
+          repeatRate = bh.repeatRate;
+        } catch (e) {}
+        // JEE Main ~300 marks scale for the band; boards use %.
+        const base = cov * acc; // 0..1 "preparedness"
+        const drag = fpClamp(skipRate * 0.5 + otRate * 0.3 + repeatRate * 0.4, 0, 0.35);
+        const mid = fpClamp(base * (1 - drag), 0, 1);
+        const spread = n < 3 ? 0.18 : n < 8 ? 0.12 : 0.08;
+        const reasons = [];
+        if (cov < 0.6) reasons.push(`syllabus ${Math.round(cov * 100)}% cover hai`);
+        if (acc < 0.75) reasons.push(`accuracy ${Math.round(acc * 100)}% (target 80%+)`);
+        if (skipRate > 0.25) reasons.push(`${Math.round(skipRate * 100)}% questions skip hote hain`);
+        if (repeatRate > 0.15) reasons.push("galtiyaan repeat ho rahi hain — error log kholo");
+        if (!reasons.length) reasons.push("coverage + accuracy + behavior teeno strong hain");
+        return {
+          lo: Math.round(fpClamp(mid - spread, 0, 1) * 300),
+          hi: Math.round(fpClamp(mid + spread, 0, 1) * 300),
+          pct: Math.round(mid * 100),
+          n, reasons,
+          confidence: n < 3 ? "low" : n < 8 ? "medium" : "high",
+        };
+      }
+      /* ---- D2 · BEHAVIOR ENGINE — attempt flags + aggregates ----
+   Per-question flags: tooFastWrong (<25s + wrong), overtime (±: >3× median
+   of that test), wasted (long + wrong), skipped. Aggregates feed predictor. */
+      function attemptBehavior(a) {
+        const t = a ? testById(a.testId) : null;
+        if (!a || !t || !Array.isArray(t.questions)) return { flags: {}, agg: null };
+        const times = t.questions
+          .map((q) => fpNum((a.responses[q.id] || {}).time, 0))
+          .filter((x) => x > 0)
+          .sort((x, y) => x - y);
+        const med = times.length ? times[Math.floor(times.length / 2)] : 90;
+        const flags = {};
+        let skip = 0, ot = 0, tfw = 0, wasted = 0, total = 0;
+        t.questions.forEach((q) => {
+          const r = a.responses[q.id] || {};
+          const tm = fpNum(r.time, 0);
+          const answered = r.ans != null && r.ans !== "";
+          const right = answered && isRight(q, r.ans);
+          total++;
+          const f = [];
+          if (!answered) {
+            skip++;
+            f.push("skipped");
+          } else if (!right && tm > 0 && tm < Math.min(25, med * 0.4)) {
+            tfw++;
+            f.push("tooFastWrong");
+          } else if (!right && tm > med * 3 && med > 10) {
+            wasted++;
+            ot++;
+            f.push("overtimeWrong");
+          } else if (right && tm > med * 3 && med > 10) {
+            ot++;
+            f.push("overtimeRight");
+          }
+          if (f.length) flags[q.id] = f;
+        });
+        return {
+          flags, med: Math.round(med),
+          agg: { skipRate: total ? skip / total : 0, overtimeRate: total ? ot / total : 0, tooFastRate: total ? tfw / total : 0, wastedRate: total ? wasted / total : 0, n: total },
+        };
+      }
+      function behaviorStats() {
+        const atts = (S.attempts || []).filter((a) => a.submittedAt).slice(-8);
+        if (!atts.length) return { skipRate: 0, overtimeRate: 0, repeatRate: 0, n: 0 };
+        let skip = 0, ot = 0, n = 0;
+        atts.forEach((a) => {
+          const b = attemptBehavior(a);
+          if (b.agg && b.agg.n) {
+            skip += b.agg.skipRate * b.agg.n;
+            ot += b.agg.overtimeRate * b.agg.n;
+            n += b.agg.n;
+          }
+        });
+        // repeat-mistake rate: wrong questions attempted 2+ times across attempts
+        let repeats = 0, wrongs = 0;
+        try {
+          const seen = {};
+          wrongQuestions().forEach((x) => {
+            wrongs++;
+            seen[x.q.id] = (seen[x.q.id] || 0) + 1;
+            if (seen[x.q.id] === 2) repeats++;
+          });
+        } catch (e) {}
+        return {
+          skipRate: n ? skip / n : 0,
+          overtimeRate: n ? ot / n : 0,
+          repeatRate: wrongs ? repeats / wrongs : 0,
+          n: atts.length,
+        };
+      }
+      /* ---- F3 · PYQ WEIGHTAGE — chapter frequency from real PYQ papers ----
+   Lazy + cached (S.pyqWt). Falls back to equal weights offline/empty. */
+      function pyqWeightage(subject) {
+        const cache = (S.pyqWt && S.pyqWt.map) || {};
+        if (subject) return cache[subject] || {};
+        return cache;
+      }
+      async function pyqWeightageBuild(onDone) {
+        if (S.pyqWt && Date.now() - (S.pyqWt.at || 0) < 30 * 86400000 && S.pyqWt.map) {
+          if (onDone) onDone(S.pyqWt.map);
+          return S.pyqWt.map;
+        }
+        try {
+          const ix = await (await fetch("/pyq/index.json")).json().catch(() => null);
+          const papers = (ix && (ix.papers || ix.files || [])) || [];
+          const map = {};
+          for (const p of papers.slice(0, 40)) {
+            try {
+              const d = await (await fetch("/pyq/" + p)).json().catch(() => null);
+              const qs = (d && (d.questions || (d.paper && d.paper.questions))) || [];
+              qs.forEach((q) => {
+                const s = q.subject || "General",
+                  c = q.chapter || "Misc";
+                map[s] = map[s] || {};
+                map[s][c] = (map[s][c] || 0) + 1;
+              });
+            } catch (e) {}
+          }
+          if (Object.keys(map).length) {
+            S.pyqWt = { at: Date.now(), map };
+            try { save(); } catch (e) {}
+          }
+          if (onDone) onDone(map);
+          return map;
+        } catch (e) {
+          if (onDone) onDone({});
+          return {};
+        }
+      }
+      function pyqWeightOf(subject, chapter) {
+        // 1..3 weight from PYQ frequency quartile within the subject
+        const m = pyqWeightage(subject);
+        const vals = Object.values(m);
+        if (!vals.length) return 2;
+        const v = m[chapter] || 0;
+        const s = vals.slice().sort((a, b) => a - b);
+        const q1 = s[Math.floor(s.length * 0.33)] ?? 0,
+          q2 = s[Math.floor(s.length * 0.66)] ?? 0;
+        return v >= q2 ? 3 : v >= q1 ? 2 : 1;
+      }
+      /* ---- B2 · COACHING-BATCH SYNC ----
+   The student tells us where their batch is (chapter per subject); the plan
+   re-prioritises: behind-batch = backlog protocol, at-batch = current, ahead
+   stays scheduled. Canonical chapter order comes from the syllabus lists. */
+      function batchGet() {
+        return (S.batch && typeof S.batch === "object" ? S.batch : null) || { coaching: "", at: {}, pace: 1 };
+      }
+      function batchSet(coaching, at, pace) {
+        S.batch = { coaching: coaching || "", at: at || {}, pace: fpClamp(fpNum(pace, 1), 1, 4) };
+        save();
+      }
+      function batchStatus() {
+        // {subject: {at, totalIdx, behindChapters:[...], status}}
+        const b = batchGet();
+        const p = aip();
+        const out = {};
+        if (!p || !b.coaching) return out;
+        const prof = p.profile || {};
+        (prof.subjects || []).forEach((s) => {
+          let order = [];
+          try {
+            order = (topicsForTarget(prof.target || "jeemain")[s] || []).map((x) => x[0] || x);
+          } catch (e) {
+            order = [];
+          }
+          if (!order.length)
+            order = [...new Set(p.tasks.filter((t) => t.subject === s).map((t) => t.topic))];
+          const atCh = b.at[s] || "";
+          const atIdx = atCh ? order.indexOf(atCh) : -1;
+          const doneSet = new Set(
+            p.tasks.filter((t) => t.subject === s && t.kind === "learn" && t.status === "done").map((t) => t.topic),
+          );
+          const behind = atIdx >= 0 ? order.slice(0, atIdx + 1).filter((c) => !doneSet.has(c)) : [];
+          out[s] = {
+            at: atCh, atIdx, total: order.length, behind,
+            status: !atCh ? "unset" : behind.length ? "behind" : "synced",
+          };
+        });
+        return out;
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 2 — MEMORY ENGINES (FSRS-lite SRS + flashcards)
+   ═══════════════════════════════════════════════════════════════ */
+      /* ---- C1 · FSRS-lite per-topic memory model ----
+   Each topic carries stability S (days) + difficulty D (0..1). After a recall
+   grade g (1=forgot .. 4=easy): S grows for passes, collapses for fails; next
+   due = now + S days targeting ~90% recall. SM-2-flavoured, fully local. */
+      function srsKey(subject, topic) {
+        return `${subject || "?"}||${topic || "?"}`.slice(0, 120);
+      }
+      function srsGet() {
+        if (!S.srs || typeof S.srs !== "object") S.srs = {};
+        return S.srs;
+      }
+      function srsState(subject, topic) {
+        const m = srsGet();
+        const k = srsKey(subject, topic);
+        if (!m[k]) m[k] = { s: 1, d: 0.4, due: Date.now(), reps: 0, lapses: 0 };
+        return m[k];
+      }
+      function srsReview(subject, topic, grade) {
+        // grade: 1 forgot · 2 hard · 3 good · 4 easy
+        grade = fpClamp(Math.round(fpNum(grade, 3)), 1, 4);
+        const st = srsState(subject, topic);
+        const m = srsGet();
+        const k = srsKey(subject, topic);
+        st.reps = (st.reps || 0) + 1;
+        // difficulty drifts with performance (bounded 0.1..0.9)
+        st.d = fpClamp(st.d + (grade === 1 ? 0.12 : grade === 2 ? 0.04 : grade === 4 ? -0.06 : -0.02), 0.1, 0.9);
+        if (grade === 1) {
+          st.lapses = (st.lapses || 0) + 1;
+          st.s = Math.max(0.5, (st.s || 1) * 0.25); // collapse, relearn tomorrow-ish
+        } else {
+          const mult = grade === 2 ? 1.3 : grade === 3 ? 2.2 : 3.2;
+          st.s = fpClamp((st.s || 1) * mult * (1.1 - st.d * 0.5), 1, 180);
+        }
+        st.due = Date.now() + st.s * 86400000;
+        st.lastGrade = grade;
+        m[k] = st;
+        try { save(); } catch (e) {}
+        return st;
+      }
+      function srsDueList() {
+        // Topics whose review is due now, weakest-first. Seeds from plan learns.
+        const m = srsGet();
+        const now = Date.now();
+        const out = [];
+        const p = aip();
+        const seen = new Set();
+        if (p && Array.isArray(p.tasks)) {
+          p.tasks.forEach((t) => {
+            if (t.kind !== "learn" || t.status !== "done") return;
+            const k = srsKey(t.subject, t.topic);
+            if (seen.has(k)) return;
+            seen.add(k);
+            const st = m[k] || { s: 1, d: 0.4, due: 0, reps: 0 };
+            if ((st.due || 0) <= now) out.push({ subject: t.subject, topic: t.topic, st });
+          });
+        }
+        // also surface tracked topics not in the plan (ex-batch chapters)
+        Object.keys(m).forEach((k) => {
+          if (seen.has(k)) return;
+          if ((m[k].due || 0) <= now) {
+            const [subject, topic] = k.split("||");
+            out.push({ subject, topic, st: m[k] });
+          }
+        });
+        out.sort((a, b) => (b.st.d - a.st.d) || (b.st.lapses || 0) - (a.st.lapses || 0));
+        return out;
+      }
+      function srsCounts() {
+        const m = srsGet();
+        const now = Date.now();
+        let due = 0, total = 0;
+        Object.values(m).forEach((st) => {
+          total++;
+          if ((st.due || 0) <= now) due++;
+        });
+        return { due, total };
+      }
+      /* ---- C3 · MISTAKE FLASHCARD DECK (Leitner boxes 1..5) ----
+   Every wrong question becomes a card. Daily round: 10 due cards, flip-first
+   recall, grade → box up/down. Boxes map to 1/2/4/8/16-day gaps. */
+      const FLASH_GAPS = [0, 1, 2, 4, 8, 16];
+      function flashGet() {
+        if (!S.flash || typeof S.flash !== "object") S.flash = {};
+        return S.flash;
+      }
+      function flashSyncFromMistakes() {
+        // ensure every wrong question has a card (idempotent)
+        try {
+          const f = flashGet();
+          let added = 0;
+          wrongQuestions().forEach((x) => {
+            if (!f[x.q.id]) {
+              f[x.q.id] = { box: 1, due: Date.now(), lapses: 0 };
+              added++;
+            }
+          });
+          if (added) { try { save(); } catch (e) {} }
+          return added;
+        } catch (e) {
+          return 0;
+        }
+      }
+      function flashDue(n = 10) {
+        flashSyncFromMistakes();
+        const f = flashGet();
+        const now = Date.now();
+        const byId = {};
+        try {
+          wrongQuestions().forEach((x) => (byId[x.q.id] = x));
+        } catch (e) {}
+        return Object.keys(f)
+          .filter((id) => byId[id] && (f[id].due || 0) <= now)
+          .sort((a, b) => (f[a].box - f[b].box) || ((f[b].lapses || 0) - (f[a].lapses || 0)))
+          .slice(0, Math.max(1, n))
+          .map((id) => ({ id, q: byId[id].q, t: byId[id].t, box: f[id].box }));
+      }
+      function flashGrade(id, remembered) {
+        const f = flashGet();
+        const c = f[id] || { box: 1, due: 0, lapses: 0 };
+        if (remembered) c.box = Math.min(5, (c.box || 1) + 1);
+        else {
+          c.box = 1;
+          c.lapses = (c.lapses || 0) + 1;
+        }
+        c.due = Date.now() + (FLASH_GAPS[c.box] || 1) * 86400000;
+        f[id] = c;
+        try { save(); } catch (e) {}
+        return c;
+      }
+      function flashCounts() {
+        flashSyncFromMistakes();
+        const f = flashGet();
+        const now = Date.now();
+        let due = 0, total = 0, mastered = 0;
+        Object.values(f).forEach((c) => {
+          total++;
+          if ((c.due || 0) <= now) due++;
+          if ((c.box || 1) >= 5) mastered++;
+        });
+        return { due, total, mastered };
+      }
+      /* ---- A1/A2 · NIGHTLY TARGETS ----
+   S.targets[dateKey] = [taskIds]. Set tonight for tomorrow; the day view
+   leads with them (checklist > timetable). Ids that vanish are ignored. */
+      function targetsGet(dateKey) {
+        const all = (S.targets && typeof S.targets === "object" ? S.targets : null) || {};
+        const list = all[dateKey];
+        return Array.isArray(list) ? list.filter((x) => typeof x === "string") : [];
+      }
+      function targetsSet(dateKey, ids) {
+        if (!S.targets || typeof S.targets !== "object") S.targets = {};
+        S.targets[dateKey] = [...new Set(ids.filter((x) => typeof x === "string"))].slice(0, 12);
+        // prune keys older than 14 days (bounded storage)
+        try {
+          const cutoff = aipAddDays(todayKey(Date.now()), -14);
+          Object.keys(S.targets).forEach((k) => {
+            if (k < cutoff) delete S.targets[k];
+          });
+        } catch (e) {}
+        save();
+      }
+      function targetsSuggest(dateKey, n = 5) {
+        // overdue first, then that day's todos, weak-chapter + high-wt first
+        const p = aip();
+        if (!p || !Array.isArray(p.tasks)) return [];
+        const prof = p.profile || {};
+        let weakSet = new Set();
+        try {
+          weakSet = new Set(chapterPriorities().slice(0, 5).map((x) => x.name));
+        } catch (e) {}
+        const rank = (t) =>
+          [(t.date || "") < dateKey ? 0 : 1, weakSet.has(t.topic) ? 0 : 1, -(t.wt || 2), t.kind === "learn" ? 0 : 1];
+        return p.tasks
+          .filter((t) => t.status === "todo" && (t.date || "") <= dateKey)
+          .sort((a, b) => {
+            const ra = rank(a), rb = rank(b);
+            for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
+            return 0;
+          })
+          .slice(0, Math.max(1, n))
+          .map((t) => t.id);
+      }
+      /* ---- E5 · HABITS — recurring micro-commitments with own streaks ----
+   S.habits = [{id, name, icon, targetPerDay, log: {dateKey: count}}] */
+      function habitsGet() {
+        if (!Array.isArray(S.habits)) S.habits = [];
+        return S.habits;
+      }
+      function habitAdd(name, icon, targetPerDay = 1) {
+        const h = habitsGet();
+        const item = {
+          id: "h" + Date.now().toString(36) + Math.floor(Math.random() * 999),
+          name: String(name || "Habit").slice(0, 40),
+          icon: icon || "✅",
+          targetPerDay: fpClamp(Math.round(fpNum(targetPerDay, 1)) || 1, 1, 50),
+          log: {},
+          createdAt: Date.now(),
+        };
+        h.push(item);
+        save();
+        return item;
+      }
+      function habitLog(id, delta = 1) {
+        const h = habitsGet().find((x) => x.id === id);
+        if (!h) return null;
+        const tk = todayKey(Date.now());
+        h.log = h.log || {};
+        h.log[tk] = Math.max(0, (fpNum(h.log[tk], 0) + delta));
+        save();
+        return h;
+      }
+      function habitStreak(h) {
+        let s = 0;
+        const tk = todayKey(Date.now());
+        for (let i = 0; i < 365; i++) {
+          const dk = aipAddDays(tk, -i);
+          const v = fpNum((h.log || {})[dk], 0);
+          if (v >= (h.targetPerDay || 1)) s++;
+          else if (i === 0 && v === 0) continue; // today still in progress
+          else break;
+        }
+        return s;
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 3 — RECOVERY + BACKLOG + TARGETS + COVERAGE UI
+   ═══════════════════════════════════════════════════════════════ */
+      function fpChapterPool(subject, chapter, n = 15) {
+        // {q} items for a chapter from the local question bank (exact + fuzzy)
+        const out = [], seen = new Set();
+        const cl = String(chapter || "").toLowerCase();
+        try {
+          S.tests.forEach((t) =>
+            (t.questions || []).forEach((q) => {
+              if (!q || seen.has(q.id)) return;
+              const ql = String(q.chapter || "").toLowerCase();
+              const tl = String(q.topic || "").toLowerCase();
+              if (subject && q.subject && q.subject !== subject) return;
+              if (ql === cl || (cl && (ql.includes(cl) || cl.includes(ql))) || (tl && cl && (tl.includes(cl) || cl.includes(tl)))) {
+                seen.add(q.id);
+                out.push({ q });
+              }
+            }),
+          );
+        } catch (e) {}
+        // shuffle + cap
+        for (let i = out.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [out[i], out[j]] = [out[j], out[i]];
+        }
+        return out.slice(0, Math.max(1, n));
+      }
+      function fpFmtClock(sec) {
+        sec = Math.max(0, Math.round(fpNum(sec, 0)));
+        const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+        const p = (x) => String(x).padStart(2, "0");
+        return h ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`;
+      }
+      /* ---- B4 · RECOVERY MODAL (completes the Recovery engine) ---- */
+      function aipRecoveryModal() {
+        const st = aipRecoveryStats();
+        if (!st) return;
+        const h = aipHealth();
+        const cands0 = aipRecoveryDropCandidates();
+        const R = {
+          strategy: st.overdue.length ? "extend" : "drop",
+          drops: new Set(cands0.slice(0, 3).map((c) => c.t.id)),
+        };
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(560px,94vw);max-height:88vh;overflow:auto" data-rec-box>
+          <h3 style="margin-top:0">🚑 Recovery Mode</h3>
+          <div class="small muted" data-rec-diag></div>
+          <div style="display:grid;gap:8px;margin:12px 0" data-rec-cards></div>
+          <div data-rec-preview></div>
+          <div data-rec-drops style="margin-top:8px"></div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+            <button class="btn ghost" data-no>Cancel</button>
+            <button class="btn" data-rec-apply>Apply recovery</button>
+          </div></div>`;
+        const diag = m.querySelector("[data-rec-diag]");
+        const cards = m.querySelector("[data-rec-cards]");
+        const prev = m.querySelector("[data-rec-preview]");
+        const dropBox = m.querySelector("[data-rec-drops]");
+        diag.innerHTML = `📊 Backlog: <b>${st.overdue.length} tasks · ${fpFmtHm(st.overdueMin)}</b> · Aaj: <b>${fpFmtHm(st.todayMin)}</b> (cap ${fpFmtHm(st.cap)}) · Health: <b>${h ? esc(h.label) : "—"}</b>`;
+        const paint = () => {
+          const plan = aipRecoveryPlanExtend();
+          const cands = aipRecoveryDropCandidates();
+          const dropSave = cands.filter((c) => R.drops.has(c.t.id)).reduce((s, c) => s + c.eff, 0);
+          const cardStyle = (on) =>
+            `text-align:left;border:2px solid ${on ? "var(--accent-text)" : "var(--line)"};border-radius:12px;padding:10px 12px;background:${on ? "color-mix(in srgb,var(--accent-text) 8%,var(--bg))" : "var(--bg)"};cursor:pointer;width:100%`;
+          cards.innerHTML = `
+            <button style="${cardStyle(R.strategy === "extend")}" data-rec-strategy="extend">
+              <b>📅 Extend the plan ${plan.days ? `· +${plan.days}d → ends ${esc(fmtDate(plan.newEnd))}` : ""}</b>
+              <div class="small muted">${plan.moves.length ? `${plan.moves.length} tasks re-spread · aaj sirf ${fpFmtHm(plan.todayLoad)}` : "Koi backlog nahi — zaroorat nahi"}</div>
+            </button>
+            <button style="${cardStyle(R.strategy === "drop")}" data-rec-strategy="drop">
+              <b>✂️ Drop the fat ${dropSave ? `· save ${fpFmtHm(dropSave)}` : ""}</b>
+              <div class="small muted">${cands.length ? `${cands.length} low-value drills mile (learn/test kabhi drop nahi hote)` : "Koi low-value drill nahi — sab kaam important hai"}</div>
+            </button>`;
+          cards.querySelectorAll("[data-rec-strategy]").forEach((b) => {
+            b.onclick = () => {
+              R.strategy = b.getAttribute("data-rec-strategy");
+              paint();
+            };
+          });
+          if (R.strategy === "extend") {
+            prev.innerHTML = plan.moves.length
+              ? `<div class="small" style="border:1px dashed var(--line);border-radius:10px;padding:8px 10px">Aaj ke baad: backlog <b>${plan.overdueCount} tasks (${fpFmtHm(plan.overdueMin)})</b> aane wale ${plan.days} dinon mein ghusega — tests/learn pehle, revision aakhir mein. Plan <b>${esc(fmtDate(plan.newEnd))}</b> tak jayega.</div>`
+              : `<div class="small" style="color:var(--green)">✅ Backlog clear hai — extend ki zaroorat nahi.</div>`;
+            dropBox.innerHTML = "";
+          } else {
+            prev.innerHTML = "";
+            dropBox.innerHTML = cands.length
+              ? `<div class="small muted" style="margin-bottom:6px">Tick = permanently hatao (min ${fpFmtHm(dropSave)} bachao):</div>` +
+                cands
+                  .map(
+                    (c) => `<label class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;cursor:pointer">
+                      <input type="checkbox" data-rec-drop="${esc(c.t.id)}" ${R.drops.has(c.t.id) ? "checked" : ""}>
+                      <span style="flex:1;min-width:0"><b>${esc(c.t.topic)}</b> <span class="small muted">· ${esc(c.t.subject)} · ${c.t.kind} · ~${c.eff}m</span></span>
+                    </label>`,
+                  )
+                  .join("")
+              : `<div class="small" style="color:var(--green)">✅ Koi low-value drill nahi mili.</div>`;
+            dropBox.querySelectorAll("[data-rec-drop]").forEach((cb) => {
+              cb.onchange = () => {
+                const id = cb.getAttribute("data-rec-drop");
+                if (cb.checked) R.drops.add(id);
+                else R.drops.delete(id);
+                paint();
+              };
+            });
+          }
+        };
+        paint();
+        m.querySelector("[data-rec-apply]").onclick = () => {
+          try {
+            const p = aip();
+            if (!p) return;
+            if (R.strategy === "extend") {
+              const plan = aipRecoveryPlanExtend();
+              if (!plan.moves.length) {
+                toast("✅ Backlog clear hai — kuch karne ko nahi");
+                m.remove();
+                return;
+              }
+              plan.moves.forEach((mv) => {
+                mv.t.date = mv.to;
+                mv.t.catchup = true;
+              });
+              try {
+                const sd = p.profile && p.profile.startDate;
+                const diff = Math.round((new Date(plan.newEnd + "T00:00:00") - new Date(sd + "T00:00:00")) / 86400000) + 1;
+                if (isFinite(diff) && diff > (p.profile.days || 0)) p.profile.days = diff;
+              } catch (e) {}
+              if (plan.overdueCount >= 5) S._fpComeback = (S._fpComeback || 0) + 1;
+              aipSave(p);
+              m.remove();
+              toast(`📅 Plan +${plan.days} din extend — aaj sirf ${fpFmtHm(plan.todayLoad)}`);
+              render(0);
+            } else {
+              const gone = p.tasks.filter((t) => R.drops.has(t.id));
+              if (!gone.length) {
+                toast("Koi drill select nahi ki");
+                return;
+              }
+              const saved = gone.reduce((s, t) => s + aipEff(t.estMin, p.profile), 0);
+              p.tasks = p.tasks.filter((t) => !R.drops.has(t.id));
+              aipSave(p);
+              m.remove();
+              toast(`✂️ ${gone.length} drills (${fpFmtHm(saved)}) dropped — halka plan, tez raftaar`);
+              render(0);
+            }
+          } catch (e) {
+            toast("⚠️ Recovery fail — reload karke retry karo");
+          }
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ---- B1 · BACKLOG PROTOCOL — one-shot episodes + Ex1 + 5yr PYQs ----
+   S.backlogSteps["subject||chapter"] = {videoId, videoTitle, durationSec,
+   epDone: n, pracDone: bool, pyqDone: bool} */
+      function backlogGet() {
+        if (!S.backlogSteps || typeof S.backlogSteps !== "object") S.backlogSteps = {};
+        return S.backlogSteps;
+      }
+      function backlogChapters() {
+        // undone learn todos behind today (+ batch-behind), weakest-first
+        const p = aip();
+        if (!p || !Array.isArray(p.tasks)) return [];
+        const tk = todayKey(Date.now());
+        const map = {};
+        p.tasks.forEach((t) => {
+          if (t.kind !== "learn" || t.status === "done") return;
+          if ((t.date || "") >= tk) return;
+          const k = `${t.subject}||${t.topic}`;
+          map[k] = map[k] || { subject: t.subject, topic: t.topic, since: t.date, wt: t.wt || 2 };
+          if (t.date < map[k].since) map[k].since = t.date;
+        });
+        try {
+          const bs = batchStatus();
+          Object.keys(bs).forEach((s) => {
+            (bs[s].behind || []).forEach((c) => {
+              const k = `${s}||${c}`;
+              if (!map[k]) map[k] = { subject: s, topic: c, since: tk, wt: 2, fromBatch: true };
+            });
+          });
+        } catch (e) {}
+        const out = Object.values(map);
+        let weakSet = new Set();
+        try {
+          weakSet = new Set(chapterPriorities().slice(0, 5).map((x) => x.name));
+        } catch (e) {}
+        out.sort((a, b) => (weakSet.has(b.topic) ? 1 : 0) - (weakSet.has(a.topic) ? 1 : 0) || (b.wt - a.wt));
+        return out;
+      }
+      function backlogProtocolModal(subject, topic) {
+        const k = `${subject}||${topic}`;
+        const store = backlogGet();
+        store[k] = store[k] || {};
+        const st = store[k];
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(560px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">📦 Backlog Protocol</h3>
+          <div class="small muted"><b>${esc(subject)} · ${esc(topic)}</b> — one-shot episodes (45 min), Ex1-style set, 5-saal PYQs. Lambi lectures backlog mein zeher hain.</div>
+          <div data-bp-body style="margin-top:10px;display:grid;gap:10px"></div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-no>Close</button></div>
+        </div>`;
+        const body = m.querySelector("[data-bp-body]");
+        const paint = () => {
+          const eps = [];
+          const dur = fpNum(st.durationSec, 0);
+          if (dur > 60) {
+            const EP = 45 * 60;
+            const n = Math.max(1, Math.ceil(dur / EP));
+            for (let i = 0; i < n; i++)
+              eps.push({ i, from: i * EP, to: Math.min(dur, (i + 1) * EP), done: i < (st.epDone || 0) });
+          }
+          body.innerHTML = `
+            <div class="card" style="margin:0"><b>1️⃣ One-shot ${st.videoTitle ? `· <span class="small muted">${esc(st.videoTitle)} (${fpFmtClock(dur)})</span>` : ""}</b>
+              <div style="margin-top:8px;display:grid;gap:6px" data-bp-eps>
+                ${eps.length ? eps.map((e) => `<button class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;text-align:left" data-bp-ep="${e.i}">
+                    <span style="font-size:16px">${e.done ? "✅" : "▶️"}</span>
+                    <span style="flex:1"><b>Episode ${e.i + 1}</b> <span class="small muted">${fpFmtClock(e.from)} → ${fpFmtClock(e.to)}</span></span>
+                  </button>`).join("") : `<div class="small muted">Pehle one-shot dhoondo — lambi lecture nahi, compact one-shot.</div>`}
+              </div>
+              <div class="row" style="margin-top:8px;gap:8px">
+                <button class="btn sm" data-bp-find>${st.videoId ? "🔁 Dusra one-shot" : "🔍 One-shot dhoondo"}</button>
+              </div></div>
+            <div class="card" style="margin:0"><b>2️⃣ Ex1-style practice set ${st.pracDone ? "✅" : ""}</b>
+              <div class="small muted">15 questions, is chapter se — concept clarity ke liye variety.</div>
+              <div class="row" style="margin-top:8px"><button class="btn sm" data-bp-prac>${st.pracDone ? "🔁 Phir se karo" : "▶️ Start practice set"}</button></div></div>
+            <div class="card" style="margin:0"><b>3️⃣ 5-saal PYQ set ${st.pyqDone ? "✅" : ""}</b>
+              <div class="small muted">Is chapter ke recent PYQs — exam-pattern lock karne ke liye.</div>
+              <div class="row" style="margin-top:8px"><button class="btn sm" data-bp-pyq>${st.pyqDone ? "🔁 Phir se karo" : "▶️ Start PYQ set"}</button></div></div>`;
+          body.querySelector("[data-bp-find]").onclick = async (ev) => {
+            ev.target.disabled = true;
+            ev.target.textContent = "Dhoond rahe hain…";
+            try {
+              const fake = { subject, topic, kind: "learn", diff: 2, wt: 3, depth: "oneshot", estMin: 120 };
+              const v = await new Promise((res) => {
+                try {
+                  aipFindVideo(fake, (list) => res(list));
+                } catch (e) { res([]); }
+              });
+              const pick = (Array.isArray(v) ? v : []).find((x) => !x.durationEstimated && fpNum(x.durationSec, 0) > 1800) || (Array.isArray(v) ? v[0] : null);
+              if (pick && pick.id) {
+                st.videoId = pick.id;
+                st.videoTitle = pick.title || "One-shot";
+                st.durationSec = fpNum(pick.durationSec, 0);
+                st.epDone = 0;
+                save();
+                paint();
+                // open the video right away
+                try { aipOpenLesson({ ...fake, videoId: pick.id }); } catch (e) {}
+              } else toast("One-shot nahi mila — offline ho ya API down hai");
+            } catch (e) {
+              toast("Video search fail — baad mein try karo");
+            }
+            try { ev.target.disabled = false; } catch (e) {}
+          };
+          body.querySelectorAll("[data-bp-ep]").forEach((b) => {
+            b.onclick = () => {
+              const i = +b.getAttribute("data-bp-ep");
+              st.epDone = Math.max(st.epDone || 0, i + 1);
+              save();
+              paint();
+              try {
+                if (st.videoId) {
+                  // episode resume: seed lastPosition so the player starts there
+                  try {
+                    const log = videoLog();
+                    log[st.videoId] = log[st.videoId] || {};
+                    log[st.videoId].lastPosition = i * 45 * 60;
+                    save();
+                  } catch (e) {}
+                  ytPlay({ id: st.videoId, title: st.videoTitle, durationSec: st.durationSec }, { subject, topic });
+                }
+              } catch (e) {}
+            };
+          });
+          const startSet = (kind) => {
+            let items = fpChapterPool(subject, topic, kind === "prac" ? 15 : 12);
+            if (kind === "pyq") {
+              // prefer PYQ-sourced questions (paper names carry years)
+              try {
+                const pyqItems = [], other = [];
+                items.forEach((x) => (/pyq|jee|neet|20\d\d/i.test(x.q.id + " " + ((x.q.__paper) || "")) ? pyqItems.push(x) : other.push(x)));
+                if (pyqItems.length >= 5) items = pyqItems.slice(0, 12);
+              } catch (e) {}
+            }
+            if (!items.length) {
+              toast("Is chapter ke questions bank mein nahi — pehle paper upload karo ya test do");
+              return;
+            }
+            S._backlogPending = { key: k, kind };
+            save();
+            startDrill(`Backlog ${kind === "prac" ? "Practice" : "PYQ"} · ${topic}`.slice(0, 60), items, 90);
+            m.remove();
+          };
+          body.querySelector("[data-bp-prac]").onclick = () => startSet("prac");
+          body.querySelector("[data-bp-pyq]").onclick = () => startSet("pyq");
+        };
+        paint();
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 4 — TARGETS · COVERAGE · BRIEFING · COUNTDOWN ·
+   SPRINTS · BATCH SYNC · COMMITMENTS
+   ═══════════════════════════════════════════════════════════════ */
+      /* ---- A1/A2 · TARGETS UI ---- */
+      function targetsModal(dateKey) {
+        const p = aip();
+        if (!p) return;
+        const suggested = targetsSuggest(dateKey, 8);
+        const current = new Set(targetsGet(dateKey));
+        suggested.forEach((id) => { if (!targetsGet(dateKey).length) current.add(id); });
+        const cands = p.tasks.filter((t) => t.status === "todo" && (t.date || "") <= dateKey).slice(0, 30);
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(540px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">🎯 Kal ke targets <span class="small muted">(${esc(fmtDate(dateKey))})</span></h3>
+          <div class="small muted">5 se zyada nahi — toppers chhote, pakke vaade karte hain. Overdue sabse upar hai.</div>
+          <div style="display:grid;gap:6px;margin-top:10px" data-tm-list></div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+            <button class="btn ghost" data-no>Cancel</button>
+            <button class="btn" data-tm-save>Lock targets</button>
+          </div></div>`;
+        const list = m.querySelector("[data-tm-list]");
+        list.innerHTML = cands.length
+          ? cands.map((t) => {
+              const od = (t.date || "") < dateKey;
+              return `<label class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;cursor:pointer">
+                <input type="checkbox" data-tm="${esc(t.id)}" ${current.has(t.id) ? "checked" : ""}>
+                <span style="flex:1;min-width:0"><b>${esc(t.topic)}</b> <span class="small muted">· ${esc(t.subject)} · ${t.kind}${od ? ' · <b style="color:var(--red)">overdue</b>' : ""}</span></span>
+                <span class="small muted">~${aipEff(t.estMin, p.profile)}m</span>
+              </label>`;
+            }).join("")
+          : `<div class="small" style="color:var(--green)">✅ Kuch bacha hi nahi — kal rest day hai!</div>`;
+        m.querySelector("[data-tm-save]").onclick = () => {
+          const ids = [...list.querySelectorAll("[data-tm]:checked")].map((x) => x.getAttribute("data-tm"));
+          targetsSet(dateKey, ids.slice(0, 12));
+          m.remove();
+          toast(ids.length ? `🎯 ${ids.length} targets locked — kal phod dena` : "Targets cleared");
+          render(0);
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      function targetsCard() {
+        // Today's target checklist — the FIRST card of the day view.
+        const p = aip();
+        if (!p) return null;
+        const tk = todayKey(Date.now());
+        let ids = targetsGet(tk);
+        const byId = {};
+        p.tasks.forEach((t) => (byId[t.id] = t));
+        let items = ids.map((id) => byId[id]).filter(Boolean);
+        const auto = !items.length;
+        if (auto) items = targetsSuggest(tk, 5).map((id) => byId[id]).filter(Boolean);
+        const c = el("div", "card");
+        const doneN = items.filter((t) => t.status === "done").length;
+        c.innerHTML = `<div class="section-title"><span class="ico">🎯</span>
+          <div><h3 style="margin:0">Aaj ke targets <span class="badge ${doneN === items.length && items.length ? "g" : ""}">${doneN}/${items.length}</span></h3>
+          <div class="small muted">${auto ? "Auto-suggested (kal raat set nahi hue) — checklist jeet-ti hai, timetable nahi." : "Kal raat wale vaade — poore karo, chain se so jao."}</div></div></div>
+          <div style="display:grid;gap:6px;margin-top:10px" data-tc-list></div>
+          <div class="row" style="margin-top:8px;gap:8px">
+            <button class="btn sm ghost" data-tc-tomorrow>🌙 Kal ke targets set karo</button>
+          </div>`;
+        const list = c.querySelector("[data-tc-list]");
+        list.innerHTML = items.length
+          ? items.map((t) => {
+              const isDone = t.status === "done";
+              return `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;${isDone ? "opacity:.65" : ""}">
+                <span style="font-size:16px">${isDone ? "✅" : t.kind === "learn" ? "▶️" : t.kind === "test" ? "📝" : "✏️"}</span>
+                <span style="flex:1;min-width:0"><b style="${isDone ? "text-decoration:line-through" : ""}">${esc(t.topic)}</b>
+                  <span class="small muted"> · ${esc(t.subject)} · ${t.kind} · ~${aipEff(t.estMin, p.profile)}m</span></span>
+                ${isDone ? "" : (t.kind === "learn" || t.kind === "revision" ? `<button class="btn sm" data-tc-watch="${esc(t.id)}">Watch</button>` : `<button class="btn sm green" data-tc-done="${esc(t.id)}">Done ✓</button>`)}
+              </div>`;
+            }).join("")
+          : `<div class="small" style="color:var(--green)">✅ Aaj kuch due nahi — aage ka kaam uthao ya rest karo.</div>`;
+        list.querySelectorAll("[data-tc-watch]").forEach((b) => {
+          b.onclick = () => {
+            const t = byId[b.getAttribute("data-tc-watch")];
+            if (t) { try { aipOpenLesson(t); } catch (e) { toast("Lesson kholne mein dikkat — retry karo"); } }
+          };
+        });
+        list.querySelectorAll("[data-tc-done]").forEach((b) => {
+          b.onclick = () => {
+            const t = byId[b.getAttribute("data-tc-done")];
+            if (!t) return;
+            t.status = "done";
+            t.completedAt = Date.now();
+            try { aipRecordActual(t); } catch (e) {}
+            try { aipSave(p); aipRebalanceActual(); } catch (e) {}
+            toast("🚀 Target poora — aise hi!");
+            render(0);
+          };
+        });
+        c.querySelector("[data-tc-tomorrow]").onclick = () => targetsModal(aipAddDays(tk, 1));
+        return c;
+      }
+      /* ---- A3 · COVERAGE CARD ---- */
+      function coverageCard() {
+        const cov = aipCoverage();
+        const p = aip();
+        if (!p) return null;
+        const c = el("div", "card");
+        const subs = Object.keys(cov.perSubject);
+        c.innerHTML = `<div class="section-title"><span class="ico">🗺️</span>
+          <div><h3 style="margin:0">Syllabus coverage <span class="badge g">${cov.pct}%</span></h3>
+          <div class="small muted">${cov.doneCh}/${cov.totalCh} chapters · ghante nahi, coverage jeet-ti hai.</div></div></div>
+          <div class="progress" style="margin:10px 0"><i style="width:${cov.pct}%"></i></div>
+          <div style="display:grid;gap:6px" data-cov-subs>
+            ${subs.map((s) => {
+              const r = cov.perSubject[s];
+              return `<div><div class="row" style="justify-content:space-between"><b class="small">${esc(s)}</b><span class="small muted">${r.done}/${r.total} · ${r.pct}%</span></div>
+                <div class="progress thin"><i style="width:${r.pct}%;background:${(typeof SUBCOLOR !== "undefined" && SUBCOLOR[s]) || "var(--accent-text)"}"></i></div></div>`;
+            }).join("")}
+          </div>`;
+        return c;
+      }
+      /* ---- E4 · MORNING BRIEFING + EVENING REVIEW (dashboard) ---- */
+      function briefingCard() {
+        const p = aip();
+        if (!p || !Array.isArray(p.tasks)) return null;
+        const hr = new Date().getHours();
+        if (hr >= 20) return null; // evening owns the review card
+        const tk = todayKey(Date.now());
+        const prof = p.profile || {};
+        const todays = p.tasks.filter((t) => t.date === tk && t.status === "todo");
+        const od = p.tasks.filter((t) => t.status === "todo" && (t.date || "") < tk);
+        const mins = todays.reduce((s, t) => s + aipEff(t.estMin, prof), 0);
+        const first = todays.slice().sort((a, b) => (b.wt || 2) - (a.wt || 2))[0];
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">🌅</span>
+          <div><h3 style="margin:0">Aaj ka briefing <span class="small muted">· 30-second plan</span></h3></div></div>
+          <div style="margin-top:8px" class="small">🎯 <b>${todays.length} kaam · ~${fpFmtHm(mins)}</b>${od.length ? ` · <b style="color:var(--red)">${od.length} overdue</b>` : " · koi backlog nahi 🎉"}</div>
+          ${first ? `<div class="small" style="margin-top:4px">👉 Pehle ye uthao: <b>${esc(first.topic)}</b> (${esc(first.subject)}) — sabse zyada marks-per-minute.</div>` : ""}
+          <div class="row" style="margin-top:8px;gap:8px">
+            <button class="btn sm" data-bf-open>Open today's plan</button>
+            ${od.length ? `<button class="btn sm ghost" data-bf-rec>🚑 Recovery</button>` : ""}
+          </div>`;
+        c.querySelector("[data-bf-open]").onclick = () => go("planner");
+        const rec = c.querySelector("[data-bf-rec]");
+        if (rec) rec.onclick = () => { try { aipRecoveryModal(); } catch (e) { toast("Recovery kholne mein dikkat"); } };
+        return c;
+      }
+      function eveningReviewCard() {
+        const p = aip();
+        if (!p || !Array.isArray(p.tasks)) return null;
+        const hr = new Date().getHours();
+        if (hr < 17) return null; // morning owns the briefing card
+        const tk = todayKey(Date.now());
+        const done = p.tasks.filter((t) => t.date === tk && t.status === "done");
+        const pend = p.tasks.filter((t) => t.date === tk && t.status === "todo");
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">🌙</span>
+          <div><h3 style="margin:0">Shaam ka hisaab <span class="small muted">· 1-minute review</span></h3></div></div>
+          <div style="margin-top:8px" class="small">✅ <b>${done.length} poore</b> · ⏳ <b>${pend.length} bache</b>${pend.length ? ` — <b>${esc(pend[0].topic)}</b> kal sabse pehle` : " — perfect day 🎉"}</div>
+          <div class="row" style="margin-top:8px;gap:8px">
+            <button class="btn sm" data-er-tomorrow>🎯 Kal ke targets (${targetsGet(aipAddDays(tk, 1)).length || "auto"})</button>
+          </div>`;
+        c.querySelector("[data-er-tomorrow]").onclick = () => targetsModal(aipAddDays(tk, 1));
+        return c;
+      }
+      /* ---- EXAM COUNTDOWN STRIP ---- */
+      function countdownGet() {
+        try {
+          if (S.settings && S.settings.examDate) return S.settings.examDate;
+          if (S.goal && S.goal.examDate) return S.goal.examDate;
+        } catch (e) {}
+        return "";
+      }
+      function countdownCard() {
+        const c = el("div", "card");
+        const paint = () => {
+          const ed = countdownGet();
+          if (!ed) {
+            c.innerHTML = `<div class="section-title"><span class="ico">⏳</span>
+              <div><h3 style="margin:0">Exam countdown</h3><div class="small muted">Target date set karo — roz ki urgency khud banegi.</div></div></div>
+              <div class="row" style="margin-top:8px;gap:8px"><input type="date" data-cd-in style="max-width:170px"><button class="btn sm" data-cd-set>Set exam date</button></div>`;
+            c.querySelector("[data-cd-set]").onclick = () => {
+              const v = c.querySelector("[data-cd-in]").value;
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { toast("Sahi date chuno"); return; }
+              S.settings = S.settings || {};
+              S.settings.examDate = v;
+              save();
+              paint();
+              toast("⏳ Countdown shuru!");
+            };
+            return;
+          }
+          const left = Math.ceil((new Date(ed + "T00:00:00") - Date.now()) / 86400000);
+          const cov = aipCoverage();
+          const perDay = left > 0 && cov.totalCh ? ((cov.totalCh - cov.doneCh) / left).toFixed(1) : "—";
+          c.innerHTML = `<div class="section-title"><span class="ico">⏳</span>
+            <div><h3 style="margin:0">${left >= 0 ? `<b style="font-size:22px">${left}</b> <span class="small muted">din baaki</span>` : "Exam aa gaya — all the best! 🎯"}</h3>
+            <div class="small muted">${esc(fmtDate(ed))} · roz ~${perDay} chapters = syllabus on time.</div></div>
+            <button class="btn sm ghost" data-cd-edit style="margin-left:auto">Edit</button></div>`;
+          c.querySelector("[data-cd-edit]").onclick = () => {
+            S.settings.examDate = "";
+            save();
+            paint();
+          };
+        };
+        paint();
+        return c;
+      }
+      /* ---- B3 · HOLIDAY SPRINT PLANNER ---- */
+      function sprintModal() {
+        const chs = backlogChapters();
+        if (!chs.length) { toast("✅ Backlog zero hai — sprint ki zaroorat nahi!"); return; }
+        const tk = todayKey(Date.now());
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(540px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">⚡ Holiday sprint planner</h3>
+          <div class="small muted">Chhuttiyon mein backlog udao — lean mode: one-shot + PYQ set per chapter, lambi theory nahi.</div>
+          <div class="row" style="margin:10px 0;gap:8px;align-items:center">
+            <label class="small">Sprint shuru: <input type="date" data-sp-from value="${aipAddDays(tk, 1)}"></label>
+            <label class="small">Din: <input type="number" data-sp-days value="5" min="1" max="21" style="width:64px"></label>
+            <label class="small">Roz ghante: <input type="number" data-sp-hrs value="4" min="1" max="10" style="width:64px"></label>
+          </div>
+          <div data-sp-prev></div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+            <button class="btn ghost" data-no>Cancel</button>
+            <button class="btn" data-sp-make>Make sprint</button>
+          </div></div>`;
+        const prev = m.querySelector("[data-sp-prev]");
+        const compute = () => {
+          const from = m.querySelector("[data-sp-from]").value || aipAddDays(tk, 1);
+          const days = fpClamp(Math.round(fpNum(m.querySelector("[data-sp-days]").value, 5)) || 5, 1, 21);
+          const hrs = fpClamp(Math.round(fpNum(m.querySelector("[data-sp-hrs]").value, 4)) || 4, 1, 10);
+          const budget = days * hrs * 60; // minutes
+          // lean cost per chapter: 90m one-shot + 60m PYQ set
+          const pick = [];
+          let used = 0;
+          for (const c of chs) {
+            if (used + 150 <= budget * 1.1) { pick.push(c); used += 150; }
+            else break;
+          }
+          return { from, days, hrs, pick, used };
+        };
+        const paintPrev = () => {
+          const r = compute();
+          prev.innerHTML = `<div class="small" style="border:1px dashed var(--line);border-radius:10px;padding:8px 10px">
+            📦 <b>${r.pick.length}/${chs.length} backlog chapters</b> fit honge (${fpFmtHm(r.used)} ka kaam, ${r.days} din × ${r.hrs}h).<br>
+            <span class="muted">${r.pick.map((c) => esc(c.topic)).join(" · ") || "—"}</span></div>`;
+        };
+        ["[data-sp-from]", "[data-sp-days]", "[data-sp-hrs]"].forEach((s) => {
+          m.querySelector(s).onchange = paintPrev;
+          m.querySelector(s).oninput = paintPrev;
+        });
+        paintPrev();
+        m.querySelector("[data-sp-make]").onclick = () => {
+          try {
+            const r = compute();
+            if (!r.pick.length) { toast("Budget mein koi chapter fit nahi — din/ghante badhao"); return; }
+            const p = aip();
+            let uid = Date.now() % 100000;
+            const perDay = Math.max(1, Math.ceil(r.pick.length / r.days));
+            r.pick.forEach((c, i) => {
+              const dk = aipAddDays(r.from, Math.floor(i / perDay));
+              [{ kind: "learn", topic: c.topic, estMin: 90 }, { kind: "practice", topic: `PYQ Sprint: ${c.topic}`, estMin: 60 }].forEach((x) => {
+                p.tasks.push({
+                  id: "sp" + (uid++) + i, subject: c.subject, topic: x.topic, kind: x.kind,
+                  diff: 2, wt: 3, depth: "oneshot", estMin: x.estMin, status: "todo", date: dk, sprint: true,
+                });
+              });
+            });
+            aipSave(p);
+            m.remove();
+            toast(`⚡ Sprint ready — ${r.pick.length} chapters, ${r.days} din!`);
+            render(0);
+          } catch (e) { toast("Sprint banane mein dikkat — retry karo"); }
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ---- B2 · BATCH SYNC MODAL ---- */
+      function batchModal() {
+        const b = batchGet();
+        const p = aip();
+        if (!p) return;
+        const prof = p.profile || {};
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(540px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">🏫 Coaching-batch sync</h3>
+          <div class="small muted">Batch kahan hai, batao — plan usi pace se chalega. Peechhe wale chapters backlog protocol mein jayenge.</div>
+          <div style="display:grid;gap:8px;margin-top:10px">
+            <label class="small">Coaching/batch: <input data-b-coach value="${esc(b.coaching)}" placeholder="Allen Phase 3 / PW Manzil…" style="width:100%"></label>
+            ${(prof.subjects || []).map((s) => {
+              let order = [];
+              try { order = (topicsForTarget(prof.target || "jeemain")[s] || []).map((x) => x[0] || x); } catch (e) {}
+              if (!order.length) order = [...new Set(p.tasks.filter((t) => t.subject === s).map((t) => t.topic))];
+              return `<label class="small">${esc(s)} batch abhi: <select data-b-at="${esc(s)}" style="width:100%">
+                <option value="">— select chapter —</option>
+                ${order.map((c) => `<option ${b.at[s] === c ? "selected" : ""} value="${esc(c)}">${esc(c)}</option>`).join("")}
+              </select></label>`;
+            }).join("")}
+            <label class="small">Batch pace (chapters/week): <input type="number" data-b-pace value="${b.pace || 1}" min="1" max="4" style="width:80px"></label>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+            <button class="btn ghost" data-no>Cancel</button>
+            <button class="btn" data-b-save>Sync batch</button>
+          </div></div>`;
+        m.querySelector("[data-b-save]").onclick = () => {
+          const at = {};
+          m.querySelectorAll("[data-b-at]").forEach((s2) => { if (s2.value) at[s2.getAttribute("data-b-at")] = s2.value; });
+          batchSet(m.querySelector("[data-b-coach]").value.trim(), at, m.querySelector("[data-b-pace]").value);
+          m.remove();
+          const bs = batchStatus();
+          const behind = Object.values(bs).reduce((x, r) => x + (r.behind || []).length, 0);
+          toast(behind ? `🏫 Synced — ${behind} chapters batch se peechhe (backlog protocol kholo)` : "🏫 Synced — batch ke saath-saath ho! 🎉");
+          render(0);
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ---- E1 · FIXED COMMITMENTS (school/coaching hours) ----
+   S.commitments = [{label, days:[0..6], from:"HH:MM", to:"HH:MM"}].
+   freeMin(dateKey) powers honest day-caps everywhere. */
+      function commitmentsGet() {
+        if (!Array.isArray(S.commitments)) S.commitments = [];
+        return S.commitments;
+      }
+      function freeMinFor(dateKey) {
+        // waking study window 06:00–23:00 minus busy blocks minus 3h life buffer
+        const dow = new Date(dateKey + "T00:00:00").getDay();
+        let busy = 0;
+        commitmentsGet().forEach((c) => {
+          if (!c || !Array.isArray(c.days) || !c.days.includes(dow)) return;
+          const toMin = (s) => {
+            const mm = String(s || "").match(/^(\d{1,2}):(\d{2})$/);
+            return mm ? (+mm[1]) * 60 + (+mm[2]) : null;
+          };
+          const a = toMin(c.from), bb = toMin(c.to);
+          if (a == null || bb == null || bb <= a) return;
+          busy += Math.max(0, Math.min(bb, 23 * 60) - Math.max(a, 6 * 60));
+        });
+        return Math.max(0, 17 * 60 - busy - 180);
+      }
+      function commitmentsModal() {
+        const list = commitmentsGet();
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(540px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">🏫 Fixed hours <span class="small muted">(school/coaching)</span></h3>
+          <div class="small muted">Jo time pakka busy hai, batao — plan sirf FREE hours mein banega. Jhoothi planning = pakka backlog.</div>
+          <div data-cm-list style="display:grid;gap:6px;margin-top:10px"></div>
+          <div class="row" style="margin-top:8px;gap:6px;flex-wrap:wrap">
+            <input data-cm-label placeholder="School" style="width:110px">
+            <input data-cm-from type="time" value="08:00" style="width:100px">
+            <input data-cm-to type="time" value="15:00" style="width:100px">
+            <button class="btn sm" data-cm-add>+ Add (Mon–Sat)</button>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-no>Done</button></div>
+        </div>`;
+        const box = m.querySelector("[data-cm-list]");
+        const paint = () => {
+          const arr = commitmentsGet();
+          box.innerHTML = arr.length
+            ? arr.map((c, i) => `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px">
+                <span style="flex:1"><b>${esc(c.label || "Busy")}</b> <span class="small muted">${esc(c.from)}–${esc(c.to)}</span></span>
+                <button class="btn sm ghost" data-cm-del="${i}">✕</button></div>`).join("")
+            : `<div class="small muted">Koi fixed hours nahi — poora din free maana jayega.</div>
+               <div class="small" style="margin-top:6px">Aaj free: <b>${fpFmtHm(freeMinFor(todayKey(Date.now())))}</b></div>`;
+          box.querySelectorAll("[data-cm-del]").forEach((x) => {
+            x.onclick = () => { commitmentsGet().splice(+x.getAttribute("data-cm-del"), 1); save(); paint(); };
+          });
+        };
+        paint();
+        m.querySelector("[data-cm-add]").onclick = () => {
+          const label = m.querySelector("[data-cm-label]").value.trim() || "Busy";
+          const from = m.querySelector("[data-cm-from]").value, to = m.querySelector("[data-cm-to]").value;
+          if (!from || !to || from >= to) { toast("Sahi time chuno"); return; }
+          commitmentsGet().push({ label: label.slice(0, 24), days: [1, 2, 3, 4, 5, 6], from, to });
+          save();
+          paint();
+        };
+        m.querySelector("[data-no]").onclick = () => { m.remove(); render(0); };
+        document.body.appendChild(m);
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 5 — DRILL FLOWS (recall-first · formula · mixed
+   bags · own-test · habits · focus-link)
+   ═══════════════════════════════════════════════════════════════ */
+      /* ---- C2 · TEST-FIRST REVISION ("recall before rewatch") ----
+   Starts a 5Q retrieval drill; S._recallPending grades SRS on completion. */
+      function recallCheckStart(subject, topic, taskId) {
+        const items = fpChapterPool(subject, topic, 5);
+        if (!items.length) {
+          toast("Is chapter ke questions bank mein nahi — pehle test do ya paper upload karo");
+          return false;
+        }
+        S._recallPending = { subject, topic, taskId: taskId || null, at: Date.now() };
+        save();
+        startDrill(`Recall check · ${topic}`.slice(0, 60), items, 90);
+        return true;
+      }
+      function recallCheckConsume(attempt) {
+        // called from the drill-completion hook; grades SRS + nudges rewatch
+        try {
+          const pend = S._recallPending;
+          if (!pend || !attempt || !attempt.result) return false;
+          S._recallPending = null;
+          const r = attempt.result.all;
+          const acc = r.correct + r.wrong > 0 ? (r.correct / (r.correct + r.wrong)) * 100 : 0;
+          const grade = acc >= 85 ? 4 : acc >= 60 ? 3 : acc >= 30 ? 2 : 1;
+          srsReview(pend.subject, pend.topic, grade);
+          // test-out: 80%+ recall PROVES the revision — no rewatch needed
+          if (acc >= 80 && pend.taskId) {
+            try {
+              const p = aip();
+              const t = p && p.tasks ? p.tasks.find((x) => x.id === pend.taskId) : null;
+              if (t && t.status !== "done") {
+                t.status = "done";
+                t.completedAt = Date.now();
+                try { aipRecordActual(t); } catch (e2) {}
+                aipSave(p);
+              }
+            } catch (e2) {}
+          }
+          save();
+          setTimeout(() => {
+            try {
+              if (grade <= 2) toast(`🧠 ${Math.round(acc)}% recall — video dobara dekho, phir kal phir check`);
+              else toast(`🧠 ${Math.round(acc)}% recall — yaad hai! Agla revision auto-schedule ho gaya`);
+            } catch (e) {}
+          }, 600);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      /* ---- C4 · FORMULA DRILL (15-min daily, from FORMULAS bank) ---- */
+      function formulaDrillStart(subject) {
+        let rows = [];
+        try {
+          const subs = subject ? [subject] : SUBJECTS;
+          subs.forEach((s) => (FORMULAS[s] || []).forEach(([k, v]) => rows.push({ s, k, v })));
+        } catch (e) {}
+        if (!rows.length) { toast("Formula bank khaali hai"); return false; }
+        // weak-first: chapters matching weak list float up
+        let weak = [];
+        try { weak = chapterPriorities().slice(0, 5).map((x) => x.name.toLowerCase()); } catch (e) {}
+        rows.sort(() => Math.random() - 0.5);
+        rows.sort((a, b) => {
+          const aw = weak.some((w) => a.k.toLowerCase().includes(w) || w.includes(a.k.toLowerCase().slice(0, 12))) ? 0 : 1;
+          const bw = weak.some((w) => b.k.toLowerCase().includes(w) || w.includes(b.k.toLowerCase().slice(0, 12))) ? 0 : 1;
+          return aw - bw;
+        });
+        const deck = rows.slice(0, 15);
+        S._formulaPending = { total: deck.length, at: Date.now() };
+        save();
+        formulaDrillModal(deck, 0, 0);
+        return true;
+      }
+      function formulaDrillModal(deck, i, remembered) {
+        if (i >= deck.length) {
+          const dk = todayKey(Date.now());
+          S.formulaDrill = S.formulaDrill || {};
+          S.formulaDrill[dk] = { done: deck.length, remembered };
+          S._formulaPending = null;
+          save();
+          toast(`📐 Formula drill poori — ${remembered}/${deck.length} yaad!`);
+          render(0);
+          return;
+        }
+        const m = el("div", "modal");
+        const card = deck[i];
+        m.innerHTML = `<div class="box" style="max-width:min(480px,94vw);text-align:center">
+          <div class="small muted">📐 Formula drill · ${i + 1}/${deck.length} · ${esc(card.s)}</div>
+          <h3 style="margin:14px 0;min-height:52px">${esc(card.k)}</h3>
+          <div data-fd-ans style="display:none;margin:0 0 12px;padding:12px;border:1px dashed var(--line);border-radius:10px;font-size:15px">${esc(card.v)}</div>
+          <div class="row" style="justify-content:center;gap:8px" data-fd-btns>
+            <button class="btn" data-fd-flip>Answer dekho</button>
+          </div></div>`;
+        m.querySelector("[data-fd-flip]").onclick = () => {
+          m.querySelector("[data-fd-ans]").style.display = "block";
+          const btns = m.querySelector("[data-fd-btns]");
+          btns.innerHTML = `<button class="btn ghost" data-fd-no>❌ Bhool gaya</button><button class="btn green" data-fd-yes>✅ Yaad tha</button>`;
+          btns.querySelector("[data-fd-no]").onclick = () => { m.remove(); formulaDrillModal(deck, i + 1, remembered); };
+          btns.querySelector("[data-fd-yes]").onclick = () => { m.remove(); formulaDrillModal(deck, i + 1, remembered + 1); };
+        };
+        document.body.appendChild(m);
+      }
+      function formulaDrillCard() {
+        const dk = todayKey(Date.now());
+        const done = S.formulaDrill && S.formulaDrill[dk];
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">📐</span>
+          <div><h3 style="margin:0">Formula drill <span class="small muted">· 15 min, roz</span></h3>
+          <div class="small muted">${done ? `Aaj poori — ${done.remembered}/${done.done} yaad ✅` : "Toppers roz 15 min formula dekhte hain — flip-first recall."}</div></div></div>
+          <div class="row" style="margin-top:8px;gap:8px">
+            <button class="btn sm" data-fd-start>${done ? "🔁 Phir se" : "▶️ Start drill"}</button>
+          </div>`;
+        c.querySelector("[data-fd-start]").onclick = () => formulaDrillStart(null);
+        return c;
+      }
+      /* ---- C3 · FLASH ROUND UI (mistake deck) ---- */
+      function flashRoundModal(cards, i, score) {
+        if (i >= cards.length) {
+          toast(cards.length ? `🃏 Flash round poori — ${score}/${cards.length} yaad!` : "Koi due card nahi 🎉");
+          render(0);
+          return;
+        }
+        const m = el("div", "modal");
+        const cd = cards[i];
+        const q = cd.q || {};
+        const opts = Array.isArray(q.options) ? q.options : [];
+        m.innerHTML = `<div class="box" style="max-width:min(520px,94vw)">
+          <div class="small muted">🃏 Mistake flash · ${i + 1}/${cards.length} · box ${cd.box}/5</div>
+          <div style="margin:10px 0;font-size:15px">${esc(q.text || q.img || "Question")}</div>
+          ${opts.length && !q.img ? `<div style="display:grid;gap:6px;margin-bottom:10px">${opts.map((o) => `<div class="optrow" style="padding:7px 10px"><b>${esc(o.label || "")}.</b> ${esc(o.text || "")}</div>`).join("")}</div>` : ""}
+          ${q.img ? `<img src="${esc(q.img)}" style="max-width:100%;border-radius:10px;margin-bottom:10px">` : ""}
+          <div data-fl-ans style="display:none;margin-bottom:10px;padding:10px;border:1px dashed var(--green);border-radius:10px"><b>Answer: ${esc(String(q.answer ?? "?"))}</b>${q.solText ? `<div class="small muted" style="margin-top:6px">${esc(String(q.solText).slice(0, 300))}</div>` : ""}</div>
+          <div class="row" style="justify-content:center;gap:8px" data-fl-btns>
+            <button class="btn" data-fl-flip>Pehle khud batao, phir dekho</button>
+          </div></div>`;
+        m.querySelector("[data-fl-flip]").onclick = () => {
+          m.querySelector("[data-fl-ans]").style.display = "block";
+          const btns = m.querySelector("[data-fl-btns]");
+          btns.innerHTML = `<button class="btn ghost" data-fl-no>❌ Galat tha</button><button class="btn green" data-fl-yes>✅ Sahi tha</button>`;
+          btns.querySelector("[data-fl-no]").onclick = () => { try { flashGrade(cd.id, false); } catch (e) {} m.remove(); flashRoundModal(cards, i + 1, score); };
+          btns.querySelector("[data-fl-yes]").onclick = () => { try { flashGrade(cd.id, true); } catch (e) {} m.remove(); flashRoundModal(cards, i + 1, score + 1); };
+        };
+        document.body.appendChild(m);
+      }
+      function flashDeckCard() {
+        const n = flashCounts();
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">🃏</span>
+          <div><h3 style="margin:0">Mistake flash deck <span class="badge ${n.due ? "" : "g"}">${n.due} due</span></h3>
+          <div class="small muted">${n.total} cards · ${n.mastered} mastered (box 5) · galti se bani strength.</div></div></div>
+          <div class="row" style="margin-top:8px"><button class="btn sm" data-fl-start ${n.due ? "" : "disabled"}>▶️ Start flash round (${Math.min(10, n.due)})</button></div>`;
+        const b = c.querySelector("[data-fl-start]");
+        if (b) b.onclick = () => flashRoundModal(flashDue(10), 0, 0);
+        return c;
+      }
+      /* ---- C5 · INTERLEAVED MIXED BAGS ---- */
+      function mixedBagStart(n = 12) {
+        const pool = [], seen = new Set();
+        try {
+          S.tests.forEach((t) =>
+            (t.questions || []).forEach((q) => {
+              if (!seen.has(q.id) && validQuestion(q)) {
+                seen.add(q.id);
+                pool.push({ q });
+              }
+            }),
+          );
+        } catch (e) {}
+        if (pool.length < 4) { toast("Mixed bag ke liye bank mein questions kam hain — pehle test do"); return false; }
+        // interleave: round-robin across chapters so no two adjacent share one
+        const byCh = {};
+        pool.forEach((x) => {
+          const k = (x.q.subject || "?") + "||" + (x.q.chapter || "?");
+          (byCh[k] = byCh[k] || []).push(x);
+        });
+        Object.values(byCh).forEach((arr) => arr.sort(() => Math.random() - 0.5));
+        const keys = Object.keys(byCh).sort(() => Math.random() - 0.5);
+        const out = [];
+        let guard = 0;
+        while (out.length < Math.min(n, pool.length) && guard++ < pool.length * 2) {
+          for (const k of keys) {
+            if (out.length >= Math.min(n, pool.length)) break;
+            const arr = byCh[k];
+            if (arr.length) out.push(arr.pop());
+          }
+        }
+        startDrill(`Mixed bag · ${out.length}Q interleaved`.slice(0, 60), out, 75);
+        return true;
+      }
+      /* ---- D6 · CREATE-YOUR-OWN-TEST (weak-concept targeted) ---- */
+      function ownTestModal() {
+        let weak = [];
+        // PYQ weight bends the order: weak + high-frequency chapters first
+        try {
+          weak = chapterPriorities()
+            .slice(0, 8)
+            .map((w) => ({ ...w, wt: pyqWeightOf(w.sub, w.name) }));
+          weak.sort((a, b) => b.score + (b.wt || 2) * 8 - (a.score + (a.wt || 2) * 8));
+          weak = weak.slice(0, 6);
+        } catch (e) {
+          try { weak = chapterPriorities().slice(0, 6); } catch (e2) {}
+        }
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(540px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">🧪 Apna test banao</h3>
+          <div class="small muted">Weak chapters se auto-pick — har test ek maksad ke saath.</div>
+          <div style="display:grid;gap:6px;margin-top:10px" data-ot-list>
+            ${weak.length ? weak.map((w, i) => `<label class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;cursor:pointer">
+              <input type="checkbox" data-ot="${esc(w.name)}" ${i < 3 ? "checked" : ""}>
+              <span style="flex:1"><b>${esc(w.name)}</b>${(w.wt || 0) >= 3 ? `<span title="PYQ mein baar-baar aaya — pehle ye khatm karo"> 🔥</span>` : ""}</span><span class="small" style="color:var(--red)">${w.acc}%</span>
+            </label>`).join("") : `<div class="small muted">Pehla test do — weak chapters tab pata chalenge.</div>`}
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px;align-items:center">
+            <label class="small">Questions: <input type="number" data-ot-n value="20" min="5" max="60" style="width:70px"></label>
+            <label class="small">/question: <input type="number" data-ot-t value="90" min="30" max="300" style="width:70px">s</label>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+            <button class="btn ghost" data-no>Cancel</button>
+            <button class="btn" data-ot-go>Start test</button>
+          </div></div>`;
+        m.querySelector("[data-ot-go]").onclick = () => {
+          const chs = [...m.querySelectorAll("[data-ot]:checked")].map((x) => x.getAttribute("data-ot"));
+          if (!chs.length) { toast("Kam se kam 1 chapter chuno"); return; }
+          const n = fpClamp(Math.round(fpNum(m.querySelector("[data-ot-n]").value, 20)) || 20, 5, 60);
+          const t = fpClamp(Math.round(fpNum(m.querySelector("[data-ot-t]").value, 90)) || 90, 30, 300);
+          const per = Math.max(1, Math.floor(n / chs.length));
+          let items = [];
+          chs.forEach((c) => { items = items.concat(fpChapterPool(null, c, per + 2)); });
+          items = items.slice(0, n);
+          if (items.length < 5) { toast("In chapters ke questions bank mein kam hain"); return; }
+          m.remove();
+          startDrill(`Custom test · ${chs.length} chapters`.slice(0, 60), items, t);
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ---- E5 · HABITS UI ---- */
+      function habitsCard() {
+        const hs = habitsGet();
+        const tk = todayKey(Date.now());
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">🔁</span>
+          <div><h3 style="margin:0">Daily habits <span class="small muted">· chhote vaade, badi consistency</span></h3></div></div>
+          <div style="display:grid;gap:6px;margin-top:10px" data-hb-list></div>
+          <div class="row" style="margin-top:8px;gap:6px">
+            <input data-hb-name placeholder="Nayi habit: Reading…" style="flex:1;min-width:120px">
+            <button class="btn sm" data-hb-add>+ Add</button>
+          </div>`;
+        const list = c.querySelector("[data-hb-list]");
+        const paint = () => {
+          const arr = habitsGet();
+          list.innerHTML = arr.length
+            ? arr.map((h) => {
+                const v = fpNum((h.log || {})[tk], 0);
+                const full = v >= (h.targetPerDay || 1);
+                return `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px">
+                  <span style="font-size:18px">${esc(h.icon || "✅")}</span>
+                  <span style="flex:1;min-width:0"><b>${esc(h.name)}</b> <span class="small muted">· ${v}/${h.targetPerDay} aaj · 🔥${habitStreak(h)}d</span></span>
+                  <button class="btn sm ${full ? "ghost" : "green"}" data-hb-plus="${esc(h.id)}">${full ? "✓" : "+1"}</button>
+                </div>`;
+              }).join("")
+            : `<div class="small muted">Koi habit nahi — ek chhoti shuru karo (roz 2 min formulas?).</div>`;
+          list.querySelectorAll("[data-hb-plus]").forEach((b) => {
+            b.onclick = () => { habitLog(b.getAttribute("data-hb-plus"), 1); paint(); };
+          });
+        };
+        paint();
+        c.querySelector("[data-hb-add]").onclick = () => {
+          const v = c.querySelector("[data-hb-name]").value.trim();
+          if (!v) { toast("Habit ka naam likho"); return; }
+          habitAdd(v, "✅", 1);
+          c.querySelector("[data-hb-name]").value = "";
+          paint();
+          toast("🔁 Habit jud gayi!");
+        };
+        return c;
+      }
+      /* ---- E5 · FOCUS-ON-TASK LINK ---- */
+      function pomoLinkTask(taskId) {
+        try {
+          S.pomoTask = taskId ? { taskId, at: Date.now() } : null;
+          save();
+        } catch (e) {}
+      }
+      function pomoLinkedTask() {
+        try {
+          const l = S.pomoTask;
+          if (!l || !l.taskId) return null;
+          const p = aip();
+          const t = p && p.tasks ? p.tasks.find((x) => x.id === l.taskId) : null;
+          return t && t.status !== "done" ? t : null;
+        } catch (e) {
+          return null;
+        }
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 6 — AUTOPSY · BADGES · PARENT · EXPORTS ·
+   BACKUP · REMINDERS · INSIGHT CARDS
+   ═══════════════════════════════════════════════════════════════ */
+      /* ---- D1 · MOCK AUTOPSY (extends S.qtags + S.reviewSchedule) ---- */
+      function autopsyCard(a) {
+        const t = a ? testById(a.testId) : null;
+        if (!a || !t) return null;
+        const c = el("div", "card");
+        const items = [];
+        (t.questions || []).forEach((q) => {
+          const r = (a.responses || {})[q.id] || {};
+          const answered = r.ans != null && r.ans !== "";
+          if (answered && isRight(q, r.ans)) return;
+          items.push({ q, r, answered });
+        });
+        const byCause = {};
+        S.qtags = S.qtags || {};
+        items.forEach((x) => {
+          const tag = S.qtags[x.q.id];
+          if (tag) byCause[tag] = (byCause[tag] || 0) + 1;
+        });
+        const bh = attemptBehavior(a);
+        const flagLabel = { tooFastWrong: "⚡ jaldi-galat", overtimeWrong: "⏳ overtime-galat", overtimeRight: "🐢 slow-sahi", skipped: "⏭️ skip" };
+        c.innerHTML = `<div class="section-title"><span class="ico">🔬</span>
+          <div><h3 style="margin:0">Mock autopsy <span class="small muted">· test se zyada analysis</span></h3>
+          <div class="small muted">${items.length} questions need you · har ek ka KAARAN tag karo, phir fix drill banao.</div></div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px" data-au-causes>
+            ${Object.keys(byCause).length ? Object.entries(byCause).map(([k, v]) => `<span class="pill">${esc(MISTAKE_TAG_LABEL[k] || k)} × ${v}</span>`).join("") : `<span class="small muted">Abhi koi cause tag nahi — neeche tag karo.</span>`}
+          </div>
+          <div style="display:grid;gap:6px;margin-top:10px;max-height:320px;overflow:auto" data-au-list>
+            ${items.slice(0, 60).map((x) => {
+              const fl = (bh.flags[x.q.id] || []).map((f) => flagLabel[f] || f).join(" ");
+              const cur = S.qtags[x.q.id] || "";
+              return `<div class="optrow" style="padding:7px 10px">
+                <div class="small"><b>Q${x.q.no}</b> · ${esc(x.q.chapter || x.q.subject || "")} ${fl ? `· <span class="muted">${esc(fl)}</span>` : ""} ${!x.answered ? '· <b style="color:var(--amber)">unattempted</b>' : ""}</div>
+                <div class="small muted" style="margin:3px 0">${esc(String(x.q.text || "").slice(0, 110))}${String(x.q.text || "").length > 110 ? "…" : ""}</div>
+                <div class="row" style="gap:6px;flex-wrap:wrap">
+                  <select data-au-tag="${esc(x.q.id)}" style="font-size:12px">
+                    <option value="">— kaaran chuno —</option>
+                    ${MISTAKE_TAGS.map(([v, l]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${esc(l)}</option>`).join("")}
+                  </select>
+                  <button class="btn sm ghost" data-au-re="${esc(x.q.id)}">↺ 7 din baad re-attempt</button>
+                </div>
+              </div>`;
+            }).join("") || `<div class="small" style="color:var(--green)">✅ Sab sahi — is paper mein autopsy ke layak kuch nahi!</div>`}
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px">
+            <button class="btn sm" data-au-fix ${items.length ? "" : "disabled"}>🧪 In chapters ki fix drill banao</button>
+          </div>`;
+        c.querySelectorAll("[data-au-tag]").forEach((s2) => {
+          s2.onchange = () => {
+            const id = s2.getAttribute("data-au-tag");
+            if (s2.value) S.qtags[id] = s2.value;
+            else delete S.qtags[id];
+            save();
+            toast(s2.value ? `Tagged: ${MISTAKE_TAG_LABEL[s2.value]} — ${MISTAKE_FIX[s2.value] || ""}`.slice(0, 90) : "Tag hataya");
+          };
+        });
+        c.querySelectorAll("[data-au-re]").forEach((b) => {
+          b.onclick = () => {
+            S.reviewSchedule = S.reviewSchedule || {};
+            S.reviewSchedule[b.getAttribute("data-au-re")] = { due: Date.now() + 7 * 86400000, src: "autopsy" };
+            save();
+            b.textContent = "✓ Queued";
+            b.disabled = true;
+          };
+        });
+        const fix = c.querySelector("[data-au-fix]");
+        if (fix) fix.onclick = () => {
+          const chs = [...new Set(items.map((x) => x.q.chapter).filter(Boolean))].slice(0, 4);
+          if (!chs.length) { toast("Chapters nahi mile"); return; }
+          let drill = [];
+          chs.forEach((ch) => { drill = drill.concat(fpChapterPool(null, ch, 5)); });
+          drill = drill.slice(0, 20);
+          if (!drill.length) { toast("In chapters ke questions bank mein nahi"); return; }
+          startDrill(`Fix drill · ${chs.length} chapters`.slice(0, 60), drill, 90);
+        };
+        return c;
+      }
+      /* ---- D3 · PRE-MOCK RITUAL STATE · D4 · ACCURACY GATE DATA ---- */
+      function ritualGet() {
+        if (!S.ritual || typeof S.ritual !== "object") S.ritual = {};
+        return S.ritual;
+      }
+      function accuracyGate() {
+        // {acc, gated} — timed mocks warn below 80% chapter accuracy
+        let acc = 0;
+        try { acc = fpClamp(globalStats().avgAcc || 0, 0, 100); } catch (e) {}
+        return { acc, gated: acc > 0 && acc < 80 };
+      }
+      /* ---- F1 · EFFORT BADGES (extends BADGES) ---- */
+      const FP_BADGES = [
+        ["🎯", "Target Locked", "Set tomorrow's targets at night", () => Object.keys(S.targets || {}).length > 0],
+        ["🎯", "Perfect Day", "Finish ALL of today's targets", () => {
+          try {
+            const tk = todayKey(Date.now());
+            const ids = targetsGet(tk);
+            if (!ids.length) return false;
+            const p = aip();
+            return ids.every((id) => { const t = p.tasks.find((x) => x.id === id); return t && t.status === "done"; });
+          } catch (e) { return false; }
+        }],
+        ["🚑", "Comeback", "Clear a 5+ task backlog via Recovery", () => (S._fpComeback || 0) > 0],
+        ["🧠", "Recall Warrior", "Score 80%+ on a recall check", () => (S._fpRecall80 || 0) > 0],
+        ["🃏", "Flash Master", "Master 10 flashcards (box 5)", () => { try { return flashCounts().mastered >= 10; } catch (e) { return false; } }],
+        ["📐", "Formula Streak×7", "7 formula drills in a row", () => {
+          try {
+            const tk = todayKey(Date.now());
+            for (let i = 0; i < 7; i++) if (!(S.formulaDrill || {})[aipAddDays(tk, -i)]) return false;
+            return true;
+          } catch (e) { return false; }
+        }],
+        ["🔬", "Autopsy Pro", "Tag causes on 25 questions", () => Object.keys(S.qtags || {}).length >= 25],
+        ["🔁", "Habit ×14", "Any 14-day habit streak", () => { try { return habitsGet().some((h) => habitStreak(h) >= 14); } catch (e) { return false; } }],
+        ["⚡", "Sprinter", "Complete a holiday sprint chapter", () => (S._fpSprint || 0) > 0],
+        ["🌅", "Early Bird ×5", "Study before 8am on 5 days", () => (S._fpEarly || 0) >= 5],
+      ];
+      function fpBadgesEarned() {
+        if (!S._fpSeen || typeof S._fpSeen !== "object") S._fpSeen = {};
+        const out = [];
+        FP_BADGES.forEach(([icon, name, desc, fn]) => {
+          let earned = false;
+          try { earned = !!fn(); } catch (e) {}
+          const isNew = earned && !S._fpSeen[name];
+          if (isNew) {
+            S._fpSeen[name] = Date.now();
+            try { save(); } catch (e) {}
+            setTimeout(() => { try { toast(`🏅 Badge mila: ${name}!`); } catch (e) {} }, 1200);
+          }
+          out.push({ icon, name, desc, earned, isNew });
+        });
+        return out;
+      }
+      function fpBadgesCard() {
+        const list = fpBadgesEarned();
+        const earned = list.filter((x) => x.earned).length;
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">🏅</span>
+          <div><h3 style="margin:0">Effort badges <span class="badge g">${earned}/${list.length}</span></h3>
+          <div class="small muted">Mehnat ke medal — kisi leaderboard se nahi, khud se race hai.</div></div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+            ${list.map((b) => `<span class="pill" title="${esc(b.desc)}" style="${b.earned ? "" : "opacity:.45;filter:grayscale(1)"}">${b.icon} ${esc(b.name)}</span>`).join("")}
+          </div>`;
+        return c;
+      }
+      /* ---- F2 · PARENT REPORT (WhatsApp share) ---- */
+      function parentReportText() {
+        const tk = todayKey(Date.now());
+        const p = aip();
+        let done7 = 0, plan7 = 0;
+        for (let i = 0; i < 7; i++) {
+          const dk = aipAddDays(tk, -i);
+          (p && p.tasks ? p.tasks : []).forEach((t) => {
+            if (t.date !== dk) return;
+            if (t.status === "done") done7++;
+            else plan7++;
+          });
+        }
+        let acc = 0, tests = 0;
+        try { const g = globalStats(); acc = Math.round(g.avgAcc || 0); tests = g.total || 0; } catch (e) {}
+        let streak = 0;
+        try { streak = streakInfo().streak || 0; } catch (e) {}
+        const cov = aipCoverage();
+        const adh = done7 + plan7 ? Math.round((done7 / (done7 + plan7)) * 100) : 100;
+        return `📊 *Weekly Study Report* (${fmtDate(aipAddDays(tk, -6))} – ${fmtDate(tk)})\n` +
+          `✅ Tasks: ${done7} done · ${adh}% adherence\n` +
+          `📝 Tests: ${tests} total · ${acc}% accuracy\n` +
+          `🗺️ Syllabus: ${cov.pct}% covered (${cov.doneCh}/${cov.totalCh} chapters)\n` +
+          `🔥 Streak: ${streak} days\n` +
+          `— via NTACBT AI Planner`;
+      }
+      function parentReportModal() {
+        const txt = parentReportText();
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(480px,94vw)">
+          <h3 style="margin-top:0">👪 Parent report</h3>
+          <div class="small muted">Hafte ki sacchai, ek message mein. Parents ka support = topper pattern.</div>
+          <pre data-pr-text style="white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;margin:10px 0">${esc(txt)}</pre>
+          <div class="row" style="justify-content:flex-end;gap:8px">
+            <button class="btn ghost" data-no>Close</button>
+            <button class="btn ghost" data-pr-copy>📋 Copy</button>
+            <a class="btn" data-pr-wa href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp ↗</a>
+          </div></div>`;
+        m.querySelector("[data-pr-copy]").onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(txt);
+            toast("📋 Report copied!");
+          } catch (e) { toast("Copy fail — text select karke copy karo"); }
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ---- F3 · EXPORTS — ICS calendar + PNG timetable ---- */
+      function exportICS() {
+        const p = aip();
+        if (!p) { toast("Pehle plan banao"); return; }
+        const tk = todayKey(Date.now());
+        const items = p.tasks.filter((t) => t.status === "todo" && (t.date || "") >= tk).slice(0, 60);
+        if (!items.length) { toast("Export ke layak kuch nahi"); return; }
+        const dt = (d, h, m2) => `${d.replace(/-/g, "")}T${String(h).padStart(2, "0")}${String(m2).padStart(2, "0")}00`;
+        let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//NTACBT//AI Planner//EN\r\n";
+        const perDay = {};
+        items.forEach((t) => {
+          const k = t.date;
+          perDay[k] = perDay[k] || 9 * 60; // start 9am
+          const dur = Math.min(180, aipEff(t.estMin, p.profile));
+          const s = perDay[k];
+          perDay[k] = s + dur + 10;
+          ics += `BEGIN:VEVENT\r\nUID:${t.id}@ntacbt\r\nDTSTART:${dt(k, Math.floor(s / 60), s % 60)}\r\nDTEND:${dt(k, Math.floor((s + dur) / 60), (s + dur) % 60)}\r\nSUMMARY:${(t.subject + " " + t.topic + " [" + t.kind + "]").replace(/[\r\n,;]/g, " ").slice(0, 100)}\r\nEND:VEVENT\r\n`;
+        });
+        ics += "END:VCALENDAR";
+        try {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+          a.download = "ntacbt-plan.ics";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 2000);
+          toast("📅 Calendar file download ho gayi!");
+        } catch (e) { toast("Is browser mein file download block hai"); }
+      }
+      function exportTimetablePNG() {
+        const p = aip();
+        if (!p) { toast("Pehle plan banao"); return; }
+        const tk = todayKey(Date.now());
+        const items = p.tasks.filter((t) => t.date === tk).slice(0, 12);
+        const cv = document.createElement("canvas");
+        cv.width = 720; cv.height = 200 + items.length * 64;
+        const g = cv.getContext("2d");
+        if (!g) { toast("Is browser mein image export nahi hoga"); return; }
+        g.fillStyle = "#101828"; g.fillRect(0, 0, cv.width, cv.height);
+        g.fillStyle = "#fff"; g.font = "bold 34px sans-serif";
+        g.fillText("🎯 Aaj ka Plan — " + fmtDate(tk), 28, 62);
+        g.font = "20px sans-serif"; g.fillStyle = "#9fb3c8";
+        g.fillText("NTACBT AI Planner", 28, 96);
+        const cols = { Physics: "#4da3ff", Chemistry: "#3ddc84", Mathematics: "#b388ff" };
+        items.forEach((t, i) => {
+          const y = 130 + i * 64;
+          g.fillStyle = "#1d2939";
+          if (g.roundRect) { g.beginPath(); g.roundRect(24, y, 672, 52, 12); g.fill(); }
+          else g.fillRect(24, y, 672, 52);
+          g.fillStyle = cols[t.subject] || "#ffd166";
+          g.fillRect(24, y, 52, 8);
+          g.fillStyle = t.status === "done" ? "#3ddc84" : "#fff";
+          g.font = "bold 22px sans-serif";
+          g.fillText(`${t.status === "done" ? "✅" : "⬜"} ${t.subject} · ${t.topic}`.slice(0, 42), 34, y + 34);
+          g.fillStyle = "#9fb3c8"; g.font = "18px sans-serif";
+          g.fillText(`${t.kind} · ~${aipEff(t.estMin, p.profile)}m`, 560, y + 33);
+        });
+        const a = document.createElement("a");
+        a.href = cv.toDataURL("image/png");
+        a.download = "aaj-ka-plan.png";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 2000);
+        toast("🖼️ Timetable image download ho gayi — wallpaper banao!");
+      }
+      /* ---- F4 · BACKUP / RESTORE (trust bridge to cloud sync) ---- */
+      function backupDownload() {
+        try {
+          const blob = new Blob([localStorage.getItem("jeecbt.v1") || "{}"], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `ntacbt-backup-${todayKey(Date.now())}.json`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 2000);
+          toast("💾 Backup download ho gaya — sambhal ke rakho!");
+        } catch (e) { toast("Backup fail — storage khaali hai?"); }
+      }
+      function backupRestore(file) {
+        const rd = new FileReader();
+        rd.onload = () => {
+          try {
+            const data = JSON.parse(rd.result);
+            if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("bad shape");
+            localStorage.setItem("jeecbt.v1", JSON.stringify(data));
+            toast("♻️ Backup restore ho gaya — reload ho raha hai…");
+            setTimeout(() => location.reload(), 900);
+          } catch (e) { toast("Ye valid NTACBT backup nahi hai"); }
+        };
+        rd.readAsText(file);
+      }
+      /* ---- E1 · REMINDER ENGINE (in-app scheduled nudges) ----
+   Honest scope: fires while the app is open (boot + every 60s + on return).
+   Uses Notification when granted, else toast. Never spams (one per slot). */
+      function reminderTick() {
+        try {
+          if (!S.reminders || typeof S.reminders !== "object") S.reminders = { enabled: true };
+          if (S.reminders.enabled === false) return;
+          const R = S.reminders;
+          const tk = todayKey(Date.now());
+          const hr = new Date().getHours() + new Date().getMinutes() / 60;
+          const p = aip();
+          const fire = (slot, title, body) => {
+            const key = slot + "@" + tk;
+            if (R[key]) return;
+            R[key] = Date.now();
+            save();
+            try {
+              if ("Notification" in window && Notification.permission === "granted") new Notification(title, { body });
+              else toast(`🔔 ${title} — ${body}`.slice(0, 120), 4000);
+            } catch (e) { toast(`🔔 ${title}`.slice(0, 120), 4000); }
+          };
+          if (!p || !Array.isArray(p.tasks)) return;
+          const todays = p.tasks.filter((t) => t.date === tk);
+          const done = todays.filter((t) => t.status === "done").length;
+          const pending = todays.length - done;
+          if (hr >= 6 && hr < 11 && todays.length) fire("kickoff", "Suprabhat! Aaj ke targets ready hain", `${pending} kaam · pehla target abhi uthao.`);
+          if (hr >= 13 && hr < 16 && todays.length && done < todays.length / 2) fire("midpoint", "Half-day check", `Sirf ${done}/${todays.length} poore — ek aur target nipatao.`);
+          if (hr >= 19 && hr < 21 && pending > 0) fire("due", `${pending} kaam bache hain`, "Aaj ka aakhri push — kal regret se achha hai.");
+          if (hr >= 21) fire("nightly", "Kal ke targets lock karo", "90 second ka kaam — kal ki jeet aaj raat likhi jaati hai.");
+        } catch (e) {}
+      }
+      /* ---- INSIGHT CARDS (forecast · predictor · split · burnout · weightage) ---- */
+      function insightsCard() {
+        const p = aip();
+        if (!p) return null;
+        const fc = aipForecast();
+        const pr = scorePredict();
+        const sp = subjectSplit();
+        const bo = burnoutStatus();
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">🔮</span>
+          <div><h3 style="margin:0">Plan intelligence</h3><div class="small muted">Andaza nahi — tumhare data ki sacchai.</div></div></div>
+          <div style="display:grid;gap:8px;margin-top:10px">
+            <div class="optrow" style="padding:8px 10px"><b>📈 7-day adherence: ${fc.adherence7}%</b>
+              <div class="small muted">Pace ${fpFmtHm(fc.paceMinDay)}/day · is raftaar se finish: <b>${esc(fmtDate(fc.eta))}</b>${fc.daysOver ? ` · <b style="color:var(--red)">plan se ${fc.daysOver}d late</b>` : " · plan se pehle 🎉"}</div></div>
+            <div class="optrow" style="padding:8px 10px"><b>🎯 Score band: ${pr.lo}–${pr.hi}/300</b> <span class="small muted">(${pr.confidence} confidence, ${pr.n} tests)</span>
+              <div class="small muted">${esc(pr.reasons.join(" · "))}</div></div>
+            <div class="optrow" style="padding:8px 10px"><b>⚖️ Time split: ${Object.keys(sp.split).length ? Object.entries(sp.split).map(([s, v]) => `${esc(s)} ${v}%`).join(" · ") : "—"}</b>
+              <div class="small muted">${esc(sp.note)}</div></div>
+            <div class="optrow" style="padding:8px 10px"><b>${bo.level === "ok" ? "💚" : bo.level === "tired" ? "💛" : "❤️‍🩹"} Pace: ${bo.level === "ok" ? "sustainable" : bo.level === "tired" ? "slump" : "burnout risk"}</b>
+              <div class="small muted">${esc(bo.msg)} (${bo.activeDays}/7 active days)</div></div>
+          </div>`;
+        return c;
+      }
+      /* ═══════════════════════════════════════════════════════════════
+   24-FEATURE PACK · PART 7 — PLAN TOOLS HUB · BACKLOG CARD · SRS CARD ·
+   MULTI-PLAN SLOTS
+   ═══════════════════════════════════════════════════════════════ */
+      /* ---- F4 · MULTI-PLAN SLOTS ----
+   S.planSlots = {activeId, plans: {id: {name, data, updatedAt}}}.
+   aip()/aipSave() reroute through the active slot; S.aiPlanner stays as the
+   legacy fallback so old saves and every reader keep working untouched. */
+      function planSlotsGet() {
+        if (!S.planSlots || typeof S.planSlots !== "object") S.planSlots = { activeId: null, plans: {} };
+        if (!S.planSlots.plans || typeof S.planSlots.plans !== "object") S.planSlots.plans = {};
+        return S.planSlots;
+      }
+      function planSlotsEnsure() {
+        // one-time adoption: legacy S.aiPlanner becomes slot #1 (named)
+        try {
+          const sl = planSlotsGet();
+          if (!sl.activeId && S.aiPlanner && S.aiPlanner.profile) {
+            const id = "p" + Date.now().toString(36);
+            const nm = ((S.aiPlanner.profile || {}).target || "plan").toUpperCase();
+            sl.plans[id] = { name: `Main plan · ${nm}`, data: S.aiPlanner, updatedAt: Date.now() };
+            sl.activeId = id;
+            save();
+          }
+          if (sl.activeId && !sl.plans[sl.activeId]) sl.activeId = Object.keys(sl.plans)[0] || null;
+        } catch (e) {}
+      }
+      function planSlotActive() {
+        try {
+          const sl = planSlotsGet();
+          if (sl.activeId && sl.plans[sl.activeId]) return { id: sl.activeId, ...sl.plans[sl.activeId] };
+        } catch (e) {}
+        return null;
+      }
+      function planSlotSwitch(id) {
+        const sl = planSlotsGet();
+        if (!sl.plans[id]) { toast("Ye plan nahi mila"); return; }
+        // park current in-memory plan back into its slot first
+        try {
+          const cur = planSlotActive();
+          if (cur && S.aiPlanner) {
+            sl.plans[cur.id].data = S.aiPlanner;
+            sl.plans[cur.id].updatedAt = Date.now();
+          }
+        } catch (e) {}
+        sl.activeId = id;
+        S.aiPlanner = sl.plans[id].data || null;
+        save();
+        toast(`📂 ${sl.plans[id].name} active!`);
+        render(0);
+      }
+      function aipClearActive() {
+        // wipe the live plan AND its slot copy (rebuild / new-wizard paths)
+        S.aiPlanner = null;
+        try {
+          const sl = planSlotsGet();
+          if (sl.activeId && sl.plans[sl.activeId]) {
+            sl.plans[sl.activeId].data = null;
+            sl.plans[sl.activeId].updatedAt = Date.now();
+          }
+        } catch (e) {}
+        save();
+      }
+      function planSlotCreate(name) {
+        const sl = planSlotsGet();
+        try {
+          const cur = planSlotActive();
+          if (cur && S.aiPlanner) {
+            sl.plans[cur.id].data = S.aiPlanner;
+            sl.plans[cur.id].updatedAt = Date.now();
+          }
+        } catch (e) {}
+        const id = "p" + Date.now().toString(36);
+        sl.plans[id] = { name: name || `Plan ${Object.keys(sl.plans).length + 1} · JEE+Boards`, data: null, updatedAt: Date.now() };
+        sl.activeId = id;
+        S.aiPlanner = null;
+        save();
+        return id;
+      }
+      function planSlotsModal() {
+        planSlotsEnsure();
+        const sl = planSlotsGet();
+        const ids = Object.keys(sl.plans);
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(480px,94vw)">
+          <h3 style="margin-top:0">📂 Study plans</h3>
+          <div class="small muted">JEE + Boards parallel? Alag plan, alag duniya — progress mix nahi hogi.</div>
+          <div style="display:grid;gap:6px;margin-top:10px" data-ps-list></div>
+          <div class="row" style="margin-top:8px;gap:6px">
+            <input data-ps-name placeholder="Naya plan: Boards 2027…" style="flex:1;min-width:120px">
+            <button class="btn sm" data-ps-add>+ New</button>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-no>Close</button></div>
+        </div>`;
+        const list = m.querySelector("[data-ps-list]");
+        const paint = () => {
+          const s2 = planSlotsGet();
+          list.innerHTML = Object.keys(s2.plans).length
+            ? Object.entries(s2.plans).map(([id, pl]) => {
+                const n = (pl.data && pl.data.tasks ? pl.data.tasks.length : 0);
+                const d = (pl.data && pl.data.tasks ? pl.data.tasks.filter((t) => t.status === "done").length : 0);
+                const on = s2.activeId === id;
+                return `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;${on ? "border-color:var(--green)" : ""}">
+                  <span style="flex:1;min-width:0"><b>${esc(pl.name)}</b> <span class="small muted">· ${d}/${n} done</span></span>
+                  ${on ? `<span class="pill">active</span>` : `<button class="btn sm" data-ps-on="${id}">Open</button>`}
+                  ${Object.keys(s2.plans).length > 1 ? `<button class="btn sm ghost" data-ps-del="${id}">✕</button>` : ""}
+                </div>`;
+              }).join("")
+            : `<div class="small muted">Koi plan nahi — wizard se pehla banao.</div>`;
+          list.querySelectorAll("[data-ps-on]").forEach((b) => {
+            b.onclick = () => { m.remove(); planSlotSwitch(b.getAttribute("data-ps-on")); };
+          });
+          list.querySelectorAll("[data-ps-del]").forEach((b) => {
+            b.onclick = () => {
+              const id = b.getAttribute("data-ps-del");
+              confirmBox("Plan delete?", `"${(planSlotsGet().plans[id] || {}).name || ""}" hamesha ke liye jayega. Pakka?`, () => {
+                const s3 = planSlotsGet();
+                delete s3.plans[id];
+                if (s3.activeId === id) {
+                  s3.activeId = Object.keys(s3.plans)[0] || null;
+                  S.aiPlanner = s3.activeId ? s3.plans[s3.activeId].data : null;
+                }
+                save();
+                m.remove();
+                toast("Plan delete ho gaya");
+                render(0);
+              }, "Delete");
+            };
+          });
+        };
+        paint();
+        m.querySelector("[data-ps-add]").onclick = () => {
+          const nm = m.querySelector("[data-ps-name]").value.trim() || `Plan ${Object.keys(planSlotsGet().plans).length + 1}`;
+          planSlotCreate(nm);
+          aiWiz = null;
+          m.remove();
+          toast(`📂 "${nm}" — ab wizard se banao!`);
+          render(0);
+        };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
+      /* ---- PLAN TOOLS HUB (one grid, every superpower) ---- */
+      function planToolsCard() {
+        const p = aip();
+        if (!p) return null;
+        const bl = backlogChapters().length;
+        const srs = srsDueList().length;
+        const fl = flashCounts();
+        const c = el("div", "card");
+        const btn = (id, icon, label, sub, hot) =>
+          `<button class="optrow" style="display:block;text-align:left;padding:9px 11px;cursor:pointer;${hot ? "border-color:var(--red)" : ""}" data-tool="${id}">
+            <b>${icon} ${label}</b>${hot ? ` <span class="pill" style="color:var(--red)">${hot}</span>` : ""}
+            <div class="small muted">${sub}</div></button>`;
+        c.innerHTML = `<div class="section-title"><span class="ico">🧰</span>
+          <div><h3 style="margin:0">Plan tools</h3><div class="small muted">Har superpower, ek jagah.</div></div></div>
+          <div style="display:grid;gap:8px;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
+            ${btn("recovery", "🚑", "Recovery", "Backlog? Fix my week", bl > 4 ? bl + " overdue" : "")}
+            ${btn("backlog", "📦", "Backlog protocol", "One-shot + Ex1 + 5yr PYQ", bl || "")}
+            ${btn("srs", "🧠", "Memory due", "SRS recall queue", srs || "")}
+            ${btn("mixed", "🎲", "Mixed bag", "12Q interleaved drill", "")}
+            ${btn("owntest", "🧪", "Apna test", "Weak-chapter custom test", "")}
+            ${btn("flash", "🃏", "Flash deck", `${fl.due} due · ${fl.mastered} mastered`, fl.due || "")}
+            ${btn("formula", "📐", "Formula drill", "15 min roz", (S.formulaDrill || {})[todayKey(Date.now())] ? "" : "due")}
+            ${btn("sprint", "⚡", "Holiday sprint", "Chhutti = backlog udao", "")}
+            ${btn("batch", "🏫", "Batch sync", S.batch && S.batch.coaching ? esc(S.batch.coaching) : "Allen/PW pace se jodo", "")}
+            ${btn("hours", "🕰️", "Fixed hours", "School/coaching busy time", "")}
+            ${btn("slots", "📂", "Plans", `${Object.keys(planSlotsGet().plans).length || 1} plan(s) · JEE∥Boards`, "")}
+            ${btn("export", "📤", "Export", "Calendar (.ics) file", "")}
+            ${btn("wallpaper", "🖼️", "Wallpaper", "Aaj ka plan = image", "")}
+            ${btn("parent", "👪", "Parent report", "WhatsApp weekly card", "")}
+            ${btn("backup", "💾", "Backup", "Download / restore", "")}
+          </div>
+          <input type="file" accept="application/json" data-restore-file style="display:none">`;
+        const acts = {
+          recovery: () => aipRecoveryModal(),
+          backlog: () => backlogCardModal(),
+          srs: () => { const el2 = document.querySelector("[data-srs-card]"); if (el2) el2.scrollIntoView(); else toast("Neeche memory section dekho"); },
+          mixed: () => mixedBagStart(12),
+          owntest: () => ownTestModal(),
+          flash: () => { const d = flashDue(10); if (d.length) flashRoundModal(d, 0, 0); else toast("🎉 Koi due card nahi!"); },
+          formula: () => formulaDrillStart(null),
+          sprint: () => sprintModal(),
+          batch: () => batchModal(),
+          hours: () => commitmentsModal(),
+          slots: () => planSlotsModal(),
+          export: () => exportICS(),
+          wallpaper: () => exportTimetablePNG(),
+          parent: () => parentReportModal(),
+          backup: () => backupDownload(),
+        };
+        c.querySelectorAll("[data-tool]").forEach((b) => {
+          b.onclick = () => {
+            try { (acts[b.getAttribute("data-tool")] || (() => {}))(); }
+            catch (e) { toast("Ye tool kholne mein dikkat — retry karo"); }
+          };
+        });
+        return c;
+      }
+      /* ---- BACKLOG CARD (planner section) ---- */
+      function backlogCard() {
+        const chs = backlogChapters();
+        const bs = batchStatus();
+        const behindBatch = Object.values(bs).reduce((x, r) => x + ((r.behind || []).length), 0);
+        const c = el("div", "card");
+        c.innerHTML = `<div class="section-title"><span class="ico">📦</span>
+          <div><h3 style="margin:0">Backlog protocol ${chs.length ? `<span class="badge" style="color:var(--red)">${chs.length}</span>` : `<span class="badge g">zero!</span>`}</h3>
+          <div class="small muted">${behindBatch ? `Batch se ${behindBatch} chapters peechhe · ` : ""}One-shot episodes + Ex1 + 5-saal PYQ — lambi lectures yahan banned hain.</div></div></div>
+          ${chs.length ? `<div style="display:grid;gap:6px;margin-top:10px">${chs.slice(0, 8).map((x) => {
+            const st = (backlogGet()[`${x.subject}||${x.topic}`] || {});
+            const steps = [st.epDone ? "1️⃣✅" : "1️⃣", st.pracDone ? "2️⃣✅" : "2️⃣", st.pyqDone ? "3️⃣✅" : "3️⃣"].join(" ");
+            return `<button class="optrow" style="display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;cursor:pointer" data-bl-open="${esc(x.subject)}||${esc(x.topic)}">
+              <span style="flex:1;min-width:0"><b>${esc(x.topic)}</b>${pyqWeightOf(x.subject, x.topic) >= 3 ? " 🔥" : ""} <span class="small muted">· ${esc(x.subject)}${x.fromBatch ? " · batch" : ""}</span></span>
+              <span class="small">${steps}</span></button>`;
+          }).join("")}</div>
+          <div class="row" style="margin-top:8px;gap:8px">
+            <button class="btn sm" data-bl-sprint>⚡ Holiday sprint banao</button>
+            <button class="btn sm ghost" data-bl-batch>🏫 Batch sync</button>
+          </div>` : `<div class="small" style="color:var(--green);margin-top:8px">✅ Backlog zero — ye asli topper zone hai.</div>`}`;
+        c.querySelectorAll("[data-bl-open]").forEach((b) => {
+          b.onclick = () => {
+            const [s, t2] = b.getAttribute("data-bl-open").split("||");
+            backlogProtocolModal(s, t2);
+          };
+        });
+        const sp2 = c.querySelector("[data-bl-sprint]");
+        if (sp2) sp2.onclick = () => sprintModal();
+        const ba = c.querySelector("[data-bl-batch]");
+        if (ba) ba.onclick = () => batchModal();
+        return c;
+      }
+      function backlogCardModal() {
+        // tools-hub shortcut: open the worst backlog chapter directly
+        const chs = backlogChapters();
+        if (!chs.length) { toast("✅ Backlog zero hai!"); return; }
+        backlogProtocolModal(chs[0].subject, chs[0].topic);
+      }
+      /* ---- SRS MEMORY CARD ---- */
+      function srsCard() {
+        const due = srsDueList().slice(0, 8);
+        const n = srsCounts();
+        const c = el("div", "card");
+        c.setAttribute("data-srs-card", "1");
+        c.innerHTML = `<div class="section-title"><span class="ico">🧠</span>
+          <div><h3 style="margin:0">Memory due <span class="badge ${n.due ? "" : "g"}">${n.due}</span></h3>
+          <div class="small muted">${n.total} topics tracked · bhoolne se PEHLE revise = 90% retention.</div></div></div>
+          ${due.length ? `<div style="display:grid;gap:6px;margin-top:10px">${due.map((x) => `
+            <div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px">
+              <span style="flex:1;min-width:0"><b>${esc(x.topic)}</b> <span class="small muted">· ${esc(x.subject)}${(x.st.lapses || 0) > 1 ? ` · <b style="color:var(--red)">${x.st.lapses}× bhoola</b>` : ""}</span></span>
+              <button class="btn sm" data-srs-drill="${esc(x.subject)}||${esc(x.topic)}">5Q check</button>
+            </div>`).join("")}</div>
+            <div class="small muted" style="margin-top:6px">Ya quick-grade karo (imaandaari se!):</div>
+            <div class="row" style="margin-top:4px;gap:6px" data-srs-grades>
+              <button class="btn sm ghost" data-g="1">❌ Bhool gaya</button>
+              <button class="btn sm ghost" data-g="2">😅 Mushkil</button>
+              <button class="btn sm ghost" data-g="3">🙂 Aasaan</button>
+              <button class="btn sm ghost" data-g="4">⚡ Bilkul yaad</button>
+            </div>` : `<div class="small" style="color:var(--green);margin-top:8px">✅ Memory fresh hai — kal phir check karenge.</div>`}`;
+        c.querySelectorAll("[data-srs-drill]").forEach((b) => {
+          b.onclick = () => {
+            const [s, t2] = b.getAttribute("data-srs-drill").split("||");
+            recallCheckStart(s, t2, null);
+          };
+        });
+        const gr = c.querySelector("[data-srs-grades]");
+        if (gr) gr.querySelectorAll("[data-g]").forEach((b) => {
+          b.onclick = () => {
+            const g = +b.getAttribute("data-g");
+            if (due[0]) {
+              srsReview(due[0].subject, due[0].topic, g);
+              toast(g === 1 ? "Kal phir milega — pakka yaad karayenge" : "Noted — agli baar sahi time par!");
+              render(0);
+            }
+          };
+        });
+        return c;
+      }
       function aipEff(min, prof) {
         // DEFENSIVE: playback speed must be a positive number (1–2× are the UI
         // options, but a corrupt/legacy saved profile could carry negative, NaN,
         // string, or zero speed). Clamp to a safe 1.25 default so effective
         // minutes are ALWAYS a positive, finite number — never NaN or negative.
+        // DEEP-AUDIT 2026-09: the MINUTES input gets the same treatment — half
+        // the call sites pass t.estMin raw, so one task with a missing/garbage
+        // estimate used to print "~NaN min" and silently zero-out that day's
+        // capacity accounting in the rebalancer (NaN comparisons are false, so
+        // every later task piled onto the same day). This choke point fixes all
+        // callers at once; a missing estimate means a standard 45-min lesson.
+        prof = prof || {};
         let speed = Number(prof.speed);
         if (!isFinite(speed) || speed <= 0) speed = 1.25;
-        return Math.max(1, Math.round(min / speed));
+        let m = Number(min);
+        if (!isFinite(m) || m <= 0) m = 45;
+        return Math.max(1, Math.round(Math.min(m, 1440) / speed));
       } // effective watch minutes
       function aipAddDays(key, n) {
         const d = new Date(key + "T00:00:00");
@@ -5847,6 +8234,16 @@
        *  full lecture), practice mix, advanced tasks, revision passes AND the
        *  chapter order (tight timelines = high-weightage chapters first). */
       function aipGenerate(prof) {
+        // DEEP-AUDIT 2026-09: the profile is untrusted input (a corrupt save
+        // used to throw inside Re-sync's click handler → a silently dead
+        // button). Sanitize the shape up front so generation NEVER throws;
+        // callers that need a non-empty plan check the result instead.
+        prof = prof && typeof prof === "object" ? prof : {};
+        if (!Array.isArray(prof.subjects)) prof.subjects = [];
+        if (!prof.topics || typeof prof.topics !== "object" || Array.isArray(prof.topics)) prof.topics = {};
+        const _days = Math.floor(Number(prof.days));
+        prof.days = isFinite(_days) && _days > 0 ? Math.min(_days, 365) : 30;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(prof.startDate || "")) prof.startDate = todayKey(Date.now());
         const D = AIP_DEPTHS[prof.depth] || aipDepthFor(prof.days, prof.subjects, prof.topics);
         prof.depth = Object.keys(AIP_DEPTHS).find((k) => AIP_DEPTHS[k] === D) || prof.depth;
         const queues = {};
@@ -5984,7 +8381,7 @@
             const subj = active.find((s) => (queues[s] || []).length) || planSubjects[0] || prof.subjects[0];
             tasks.push({
               id: "a" + uid2++,
-              subject: subj,
+              subject: subj || "General", // DEEP-AUDIT: never an undefined subject
               topic: isFinalWeek
                 ? "Grand All-India CBT Mock Test #" + Math.min(5, Math.floor(weekNum / 2))
                 : "Weekly CBT Milestone Test · Hafta " + weekNum,
@@ -6138,7 +8535,8 @@
         p.tasks
           .filter((t) => t.status === "todo" && t.date >= tk)
           .forEach((t) => {
-            load[t.date] = (load[t.date] || 0) + aipEff(t.estMin, p.profile);
+            // AUDIT 2026-09: done tasks occupy their REAL minutes, not the estimate.
+            load[t.date] = (load[t.date] || 0) + aipMin(t, p.profile);
           });
         // weak chapters and high-weightage first — the marks you're most likely losing
         let weakSet = new Set();
@@ -6170,9 +8568,89 @@
         });
         aipSave(p);
       }
+      /* STALE-REVISION PRUNE (audit 2026-09): missed revisions were never
+   rescheduled (rebalance skips them) yet counted as due forever, so health
+   could never recover past "At Risk". A revision >7 days overdue has lost its
+   spaced-repetition moment — a real mentor says "skip it, focus on today".
+   Returns the pruned count (0 = nothing stale). */
+      function aipPruneStaleRevisions() {
+        const p = aip();
+        if (!p || !p.tasks) return 0;
+        const cutoff = aipAddDays(todayKey(Date.now()), -7);
+        const before = p.tasks.length;
+        p.tasks = p.tasks.filter(
+          (t) => !(t.kind === "revision" && t.status === "todo" && t.date < cutoff),
+        );
+        const pruned = before - p.tasks.length;
+        if (pruned > 0) aipSave(p);
+        return pruned;
+      }
+      /* DONE-CARRY for re-sync/regeneration (audit 2026-09): the old
+   subject::topic::kind key merged every repeated revision of a topic, so ONE
+   finished revision resurrected as ALL of them done after a re-sync — free
+   progress, dishonest plan. Matching is date-qualified with occurrence order,
+   and every scrap of completion evidence (real minutes, video, timestamps,
+   synced estimates) is carried onto the fresh task instead of dropped. */
+      function aipDoneKey(t) {
+        return `${t.subject}::${t.topic}::${t.kind}::${t.date || ""}`;
+      }
+      function aipCarryDone(freshTasks, doneTasks) {
+        const byKey = {};
+        (doneTasks || []).forEach((t) => {
+          const k = aipDoneKey(t);
+          (byKey[k] = byKey[k] || []).push(t);
+        });
+        const used = {};
+        const carry = (t, src) => {
+          t.status = "done";
+          if (src.completedAt) t.completedAt = src.completedAt;
+          if (typeof src.actualMin === "number") t.actualMin = src.actualMin;
+          if (typeof src.actualSec === "number") t.actualSec = src.actualSec;
+          if (src.videoId) t.videoId = src.videoId;
+          if (src.videoTitle) t.videoTitle = src.videoTitle;
+          if (src.channel) t.channel = src.channel;
+          if (src.durationSec) t.durationSec = src.durationSec;
+          if (src.planEstMin != null) t.planEstMin = src.planEstMin;
+          if (src.estMinSynced) t.estMinSynced = src.estMinSynced;
+          // The synced minutes ARE the plan now — carry the synced estimate too.
+          if (src.estMinSynced && typeof src.estMin === "number") t.estMin = src.estMin;
+        };
+        // Phase 1 (strict): same key on the same date, in occurrence order.
+        (freshTasks || []).forEach((t) => {
+          const k = aipDoneKey(t);
+          const i = used[k] || 0;
+          const src = (byKey[k] || [])[i];
+          if (!src) return;
+          used[k] = i + 1;
+          src._carried = true;
+          carry(t, src);
+        });
+        // Phase 2 (loose, single-instance kinds only): a profile change (days
+        // edited) shifts dates — learn/practice/advanced/test occur once per
+        // topic so loose matching is safe for them. Revisions repeat per topic
+        // and NEVER match loosely (that was the free-progress bug).
+        const loosePool = {};
+        (doneTasks || []).forEach((t) => {
+          if (t._carried || t.kind === "revision") return;
+          const k = `${t.subject}::${t.topic}::${t.kind}`;
+          (loosePool[k] = loosePool[k] || []).push(t);
+        });
+        (freshTasks || []).forEach((t) => {
+          if (t.status === "done" || t.kind === "revision") return;
+          const k = `${t.subject}::${t.topic}::${t.kind}`;
+          const src = (loosePool[k] || []).shift();
+          if (src) carry(t, src);
+        });
+        (doneTasks || []).forEach((t) => {
+          delete t._carried;
+        });
+      }
       function aipHealth() {
         const p = aip();
-        if (!p) return null;
+        // DEEP-AUDIT 2026-09: null-safe — dashboard widgets call this on every
+        // render, so a corrupt plan must yield null (handled by callers), never
+        // throw. (Most callers already try/catch; this closes the rest.)
+        if (!p || !Array.isArray(p.tasks)) return null;
         const tk = todayKey(Date.now());
         const due = p.tasks.filter((t) => t.date <= tk),
           done = p.tasks.filter((t) => t.status === "done");
@@ -6224,7 +8702,9 @@
                     ? "revision"
                     : t.kind === "advanced"
                       ? "advanced"
-                      : "learn",
+                      : t.kind === "test"
+                        ? "practice" // a mock's warm-up is PYQ-style practice, not a concept lecture
+                        : "learn",
               // LEARNED PREFERENCE: 3+ postponed long lectures → search one-shots
               // and cap duration; the plan adapts to the student, not vice versa
               depth:
@@ -6307,7 +8787,11 @@
       }
       function vwEnd() {
         if (!_vwatch) return;
-        const sec = Math.round((Date.now() - _vwatch.startedAt) / 1000);
+        // DEEP-AUDIT 2026-09: a single "session" longer than 6h is an idle tab
+        // left open overnight or a device clock jump — never real watching.
+        // (Videos with unknown duration used to bank the whole gap uncapped,
+        // so one forgotten tab could credit 500+ phantom minutes to a task.)
+        const sec = Math.min(21600, Math.max(0, Math.round((Date.now() - _vwatch.startedAt) / 1000)));
         const w = _vwatch;
         _vwatch = null;
         if (sec < 15) return; // opening & closing isn't watching
@@ -6319,6 +8803,11 @@
           sessions: 0,
           firstAt: Date.now(),
         });
+        // Legacy/corrupt log rows may carry strings or non-finite counters —
+        // coerce before accumulating (else "100"+50 concatenates / NaN spreads).
+        if (!isFinite(Number(rec.watchedSec)) || rec.watchedSec < 0) rec.watchedSec = 0;
+        else rec.watchedSec = Number(rec.watchedSec);
+        if (!isFinite(Number(rec.sessions))) rec.sessions = 0;
         const cap = rec.durationSec || w.meta.durationSec || 0;
         const credit = cap ? Math.min(sec, Math.max(0, cap - rec.watchedSec)) : sec; // never exceed the video's own length
         rec.watchedSec += credit;
@@ -6417,7 +8906,8 @@
           ${t.depth ? `<span class="badge">${t.depth === "oneshot" ? "⚡ ONE-SHOT" : t.depth === "detailed" ? "🏆 DETAILED" : "📘 LECTURE"}</span>` : ""}
         </div>
         <h3 style="margin:6px 0 2px;word-break:break-word">${esc(t.topic)}</h3>
-        <div class="small muted">~${aipEff(t.estMin, p.profile)} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}</div>
+        <div class="small muted" data-planline>~${aipEff(t.estMin, p.profile)} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}</div>
+        ${t.kind === "test" ? `<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px">📝 <b>Mock day:</b> take a full-length test in the Tests section, then Mark Complete here. The video below is warm-up practice, not the test itself.</div>` : ""}
       </div>
       <button class="iconbtn close-lesson-btn" data-x aria-label="Band karo (Close)" title="Band karo (Close) ✕" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--line,#e2e8f0);color:var(--ink,#0f172a);border:1px solid rgba(0,0,0,0.15);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:all 0.15s ease">✕</button>
     </div>
@@ -6518,13 +9008,37 @@
           t.videoTitle = v.title;
           t.channel = v.channel;
           t.durationSec = v.durationSec;
+          // PLAN↔VIDEO SYNC (audit 2026-09): adopt this video's REAL length as
+          // the task's plan minutes (video-first tasks only; estimates never
+          // re-budget) so the dashboard and the player finally agree.
+          const beforeEff = aipEff(t.estMin, p.profile);
+          const syncDelta = aipSyncTaskToVideo(t, v);
+          const afterEff = aipEff(t.estMin, p.profile);
           aipSave(aip());
+          if (syncDelta > 0) {
+            try {
+              aipRebalanceActual();
+            } catch (e) {}
+          }
           // PER-VIDEO tracking: switching to this video closes the previous
           // video's session — time is never credited to the wrong videoId.
           vwStart(v, t);
           const prog = vwProgress(v.id);
           const resumeSec = prog && !prog.done && prog.lastPosition > 60 ? prog.lastPosition : 0;
-          const isRealYt = /^[A-Za-z0-9_-]{11}$/.test(v.id || "");
+          // A search-pick (externalUrl) is NEVER embedded, even if its id looks
+          // video-shaped — the id-shape test alone is not proof of a video.
+          const isRealYt = !v.externalUrl && /^[A-Za-z0-9_-]{11}$/.test(v.id || "");
+          const durEstimated = !!(v.durationEstimated || v.estDur || v.offline);
+          const durLabel = v.durationSec
+            ? (durEstimated ? "~" : "") + fmtTime(v.durationSec)
+            : "";
+          // The header's plan line was rendered before the video arrived — refresh
+          // it now that the task carries the real length.
+          try {
+            const pl = m.querySelector("[data-planline]");
+            if (pl)
+              pl.innerHTML = `~${afterEff} min at ${p.profile.speed}× · plan ${fmtDate(t.date)}${syncDelta ? ` · <span style="color:var(--green);font-weight:700">synced to this video's real length (was ~${beforeEff} min)</span>` : ""}`;
+          } catch (e) {}
           const directYtUrl = isRealYt
             ? `https://www.youtube.com/watch?v=${encodeURIComponent(v.id)}${resumeSec ? "&t=" + resumeSec : ""}`
             : (v.playlistUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title + " " + (v.channel || "") + " " + t.subject)}`);
@@ -6553,9 +9067,11 @@
       </div>`}
 
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px;gap:10px;flex-wrap:wrap">
-        <div style="flex:1;min-width:240px">
+        <div style="flex:1;min-width:min(240px,100%)">
           <div style="font-weight:700;font-size:14px;line-height:1.4;color:var(--ink)">${esc(v.title)}</div>
-          <div class="small muted" style="margin-top:3px">${esc(v.channel)} · ${fmtTime(v.durationSec)} (${fmtTime(Math.round(v.durationSec / (aip().profile.speed || 1.25)))} at ${aip().profile.speed}×)</div>
+          <div class="small muted" style="margin-top:3px">${esc(v.channel)} · ${durLabel}${v.durationSec ? ` (${(durEstimated ? "~" : "") + fmtTime(Math.round(v.durationSec / (aip().profile.speed || 1.25)))} at ${aip().profile.speed}×)` : ""}${durEstimated ? ` · <span title="This pick opens a targeted search; the exact video length is unknown until you open it">estimate</span>` : ""}</div>
+          ${syncDelta ? `<div class="small" style="margin-top:6px;color:var(--green)">✓ Plan synced: this lesson is really ${durLabel} — today's schedule updated from the ~${beforeEff}-min estimate.</div>` : ""}
+          ${!syncDelta && durEstimated && (t.kind === "learn" || t.kind === "revision") ? `<div class="small muted" style="margin-top:6px">⏱ Plan kept at ~${afterEff} min — this pick's length is an estimate; opening the real video will sync it exactly.</div>` : ""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <a href="${esc(directYtUrl)}" target="_blank" rel="noopener" class="btn ghost sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);font-size:12px">↗️ Open on YouTube</a>
@@ -6585,7 +9101,7 @@
                   (v, i2) =>
                     `<button class="btn ghost sm" data-alt="${i2 + 1}" style="max-width:100%;white-space:normal;text-align:left;border:1px solid var(--line);border-radius:8px;padding:6px 10px">
                        <span style="font-weight:600;display:block;color:var(--ink)">${esc(v.teacher || v.channel)}</span>
-                       <span class="small muted">${esc(v.title.slice(0, 55))}${v.title.length > 55 ? "…" : ""} · ${fmtTime(v.durationSec)}</span>
+                       <span class="small muted">${esc(v.title.slice(0, 55))}${v.title.length > 55 ? "…" : ""} · ${(v.durationEstimated || v.estDur || v.offline ? "~" : "") + fmtTime(v.durationSec)}</span>
                      </button>`,
                 )
                 .join("") + `</div>`;
@@ -6656,7 +9172,7 @@
           const lang = w.language === "hi" ? "Hindi" : w.language === "en" ? "English" : "Hinglish";
           bits.push(pill(lang));
           if (w.speed && w.speed !== 1.25) bits.push(pill(`${w.speed}× speed`));
-          return `<div class="aip-planstrip"><b style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;opacity:0.65">Your plan</b>${bits.join("")}</div>`;
+          return `<div class="aip-planstrip"><b style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;opacity:0.65">Your plan</b>${bits.join("")}<button class="btn ghost sm" data-wiz-plans style="margin-left:auto;font-size:11px;padding:3px 8px" title="Saved plans (JEE / Boards)">📂 Plans</button></div>`;
         };
         const H = (t2, s2) =>
           stepBar() +
@@ -6727,7 +9243,7 @@
             try {
               const syl = topicsForTarget(cur);
               sylBox.innerHTML = "";
-              SUBJECTS.concat(cur === "board12" || cur === "board11" ? ["English"] : []).forEach(
+              SUBJECTS.concat(cur === "board12" || cur === "board11" || cur === "cbse27" ? ["English"] : []).forEach(
                 (s) => {
                   const list = syl[s] || [];
                   if (!list.length) return;
@@ -6790,7 +9306,7 @@
           const subjList = w.subjects.slice();
           // board mode: English becomes selectable right here
           if (
-            (w.target === "board12" || w.target === "board11") &&
+            (w.target === "board12" || w.target === "board11" || w.target === "cbse27") &&
             SYL.English &&
             !subjList.includes("English")
           )
@@ -7422,14 +9938,26 @@
                 : w.days >= 60
                   ? [150, 180, 240, 300, 360, 420, 480]
                   : [240, 300, 360, 420, 480, 600, 720];
+          // AUDIT 2026-09: the honest required budget (computed in Days & depth)
+          // is ALWAYS choosable — short plans with few chapters need far less
+          // than the smallest preset (e.g. 60 min vs the 240-min floor), and
+          // brutal plans may need more than the largest preset. Never force a
+          // wrong budget by hiding the right one.
+          try {
+            const reqMin = Math.max(30, Math.round((w.dailyMin || 0) / 5) * 5);
+            if (reqMin && !budgetOptions.includes(reqMin)) {
+              budgetOptions.push(reqMin);
+              budgetOptions.sort((a, b) => a - b);
+            }
+          } catch (e) {}
           if (!w.dailyBudget) {
             const target = w.dailyMin || (w.days >= 120 ? 120 : w.days >= 90 ? 150 : w.days >= 60 ? 180 : 360);
             w.dailyBudget = budgetOptions.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a), budgetOptions[0]);
           }
           w.dailyMin = w.dailyBudget;
           const plans = {};
-          const bgrid = el("div", "grid");
-          bgrid.style.cssText = "grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:12px";
+          const bgrid = el("div", "grid aip-budget-grid");
+          bgrid.style.cssText = "grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:10px;margin-top:12px";
           budgetOptions.forEach((mins) => {
             const res = aipChooseDepth(w.days, mins, w.subjects, w.topics, w.speed);
             plans[mins] = res;
@@ -7443,7 +9971,10 @@
                 ? `<span class="badge g">✅ Comfortable</span>`
                 : `<span class="badge" style="color:var(--amber);font-weight:600">⚠️ Tight but doable</span>`
               : `<span class="badge" style="background:var(--red);color:#fff;font-weight:600">❌ Won't fit honestly</span>`;
-            const b = el("button", "optrow" + (on ? " sel" : ""));
+            // AUDIT 2026-09: .optrow is a flex ROW — without .aip-budget the card's
+            // blocks squeezed side-by-side instead of stacking (the "budget not
+            // optimised" layout bug, worst on phones).
+            const b = el("button", "optrow aip-budget" + (on ? " sel" : ""));
             b.style.cssText = "width:100%;text-align:left;cursor:pointer;margin-top:6px;padding:12px";
             b.innerHTML = `
               <div style="font-weight:800;font-size:14px">${hh}h${mm ? " " + mm + "m" : ""}/day</div>
@@ -7577,7 +10108,7 @@
           if (per > 360) {
             const warn = el("div", "card");
             warn.style.cssText = "border-color:var(--red);margin-top:10px";
-            warn.innerHTML = `<div class="small"><b>${ic("warn")} ${Math.floor(per / 60)}h+/day is brutal.</b> Go back and pick a longer window, trim chapters, or raise the speed — we never silently hand you an impossible plan.</div>`;
+            warn.innerHTML = `<div class="small"><b>${ic("warn")} ${Math.floor(per / 60)}h+/day is brutal.</b> Go back and pick a longer window, trim chapters, or raise the speed — we never silently hand you an impossible plan. (AIR 1 ne 6h/day mein top kiya tha — consistency > ghante.)</div>`;
             sum.appendChild(warn);
           } else if (per > 300) {
             const warn = el("div", "card");
@@ -7610,9 +10141,27 @@
           r2.append(back, go2);
           c.appendChild(r2);
         }
+        // FP · slot switcher reachable even with an empty current plan (delegated: survives step re-renders)
+        c.addEventListener("click", (e) => {
+          const b = e.target && e.target.closest ? e.target.closest("[data-wiz-plans]") : null;
+          if (b) {
+            try { planSlotsEnsure(); planSlotsModal(); } catch (err) { toast("Plans kholne mein dikkat — retry karo"); }
+          }
+        });
         root.appendChild(c);
       }
       function aipToday(root) {
+        // Drop revisions whose spaced moment passed (>7d overdue) BEFORE health
+        // and counts are computed, so stale work can't tank them forever.
+        const prunedStale = aipPruneStaleRevisions();
+        if (prunedStale > 0)
+          setTimeout(() => {
+            try {
+              toast(
+                `🧹 ${prunedStale} purani revision task${prunedStale > 1 ? "s" : ""} (moment nikal gaya) hata di — aaj pe focus karo`,
+              );
+            } catch (e) {}
+          }, 800);
         aipRebalance();
         const p = aip();
         if (!p || !p.tasks) return;
@@ -7624,18 +10173,13 @@
         const profDays = p.profile && p.profile.days ? p.profile.days : existingDates.length;
         if (profDays >= 60 && existingDates.length < profDays * 0.8) {
           try {
-            const doneSet = new Set(
-              p.tasks
-                .filter((t) => t.status === "done")
-                .map((t) => `${t.subject}::${t.topic}::${t.kind}`)
-            );
+            const doneTasks = p.tasks.filter((t) => t.status === "done");
             const fresh = aipGenerate(p.profile);
-            fresh.tasks.forEach((t) => {
-              if (doneSet.has(`${t.subject}::${t.topic}::${t.kind}`)) {
-                t.status = "done";
-              }
-            });
+            // Date-qualified carry (never cross-fills repeated revisions) + all
+            // completion evidence preserved (real minutes, videos, timestamps).
+            aipCarryDone(fresh.tasks, doneTasks);
             p.tasks = fresh.tasks;
+            p.actual = {};
             aipSave(p);
           } catch (e) {
             console.error("AIP auto-heal failed:", e);
@@ -7660,7 +10204,7 @@
         head.innerHTML = `<div class="section-title" style="justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:10px;align-items:center"><span class="ico">${ic("spark")}</span>
       <div><h3 style="margin:0">Today's Study Plan <span class="badge" style="color:${Dp.color}">${Dp.icon} ${Dp.label}</span> <span class="badge g">${totalPlanDates.length} Days Plan</span></h3>
       <div class="small muted">${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} · ${Dp.kind === "oneshot" ? "one-shots, high-weightage first" : Dp.kind === "detailed" ? "detailed lectures, full practice" : "full lectures + practice"} · Finishes on ${fmtDate(totalPlanDates[totalPlanDates.length - 1] || tk)}</div></div></div>
-      <button class="btn ghost sm" id="btn-aip-resync-top" style="font-size:11px;padding:4px 8px;margin-left:auto" title="Re-sync schedule across all ${p.profile.days || totalPlanDates.length} days">🔄 Re-sync</button>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn ghost sm" id="btn-aip-recovery-top" style="font-size:11px;padding:4px 8px;${h && (h.label === "At Risk" || h.label === "Slightly Behind") ? "border-color:var(--red);color:var(--red)" : ""}" title="Backlog ho gaya? Fix my week">🚑 Recovery</button><button class="btn ghost sm" id="btn-aip-resync-top" style="font-size:11px;padding:4px 8px" title="Re-sync schedule across all ${p.profile.days || totalPlanDates.length} days">🔄 Re-sync</button>
     </div>
     <div class="plan-summary">
       <div><b>${Math.floor(todayEff / 60)}h ${todayEff % 60}m</b><span>Left today</span></div>
@@ -7675,22 +10219,35 @@
         const resyncBtn = head.querySelector("#btn-aip-resync-top");
         if (resyncBtn) {
           resyncBtn.onclick = () => {
-            const doneSet = new Set(
-              p.tasks
-                .filter((t) => t.status === "done")
-                .map((t) => `${t.subject}::${t.topic}::${t.kind}`)
-            );
-            const fresh = aipGenerate(p.profile);
-            fresh.tasks.forEach((t) => {
-              if (doneSet.has(`${t.subject}::${t.topic}::${t.kind}`)) t.status = "done";
-            });
-            p.tasks = fresh.tasks;
-            aipSave(p);
-            toast(`✨ ${p.profile.days} dino ka poora plan re-synced!`);
-            render(0);
+            // DEEP-AUDIT 2026-09: this handler used to throw uncaught on a
+            // corrupt profile (silently dead button). It now fails LOUD and
+            // refuses to wipe a non-empty plan when the profile is unsalvageable.
+            try {
+              const subs = (p.profile && p.profile.subjects) || [];
+              const topics = (p.profile && p.profile.topics) || {};
+              const hasWork = subs.some((s) => (topics[s] || []).length);
+              if (!hasWork && p.tasks.length) {
+                toast("⚠️ Plan profile adhura hai — Re-sync ke bajaye Rebuild karo");
+                return;
+              }
+              const doneTasks = p.tasks.filter((t) => t.status === "done");
+              const fresh = aipGenerate(p.profile);
+              aipCarryDone(fresh.tasks, doneTasks);
+              p.tasks = fresh.tasks;
+              p.actual = {};
+              aipSave(p);
+              toast(`✨ ${p.profile.days} dino ka poora plan re-synced!`);
+              render(0);
+            } catch (e) {
+              toast("⚠️ Re-sync fail ho gaya — page reload karke dobara try karo");
+            }
           };
         }
+        const recBtn = head.querySelector("#btn-aip-recovery-top");
+        if (recBtn) recBtn.onclick = () => { try { aipRecoveryModal(); } catch (e) { toast("Recovery kholne mein dikkat — retry karo"); } };
+        try { planSlotsEnsure(); } catch (e) {}
         root.appendChild(head);
+        try { const tc0 = targetsCard(); if (tc0) root.appendChild(tc0); } catch (e) {}
         const list = el("div", "card");
         list.innerHTML = `<h3>Today's tasks</h3>`;
         if (!today.length)
@@ -7703,11 +10260,14 @@
         let running = 0;
         today.forEach((t) => {
           const mins = aipMin(t, p.profile); // done tasks show REAL minutes actually watched
+          const isTodo = t.status !== "done";
           const blockNo = today.filter((x) => x.status !== "done").findIndex((x) => x === t) + 1;
           const startsAt = new Date(blockStart.getTime() + running * 60000);
           const endsAt = new Date(startsAt.getTime() + mins * 60000);
           const tFmt = (d) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          running += mins;
+          // AUDIT 2026-09: only PENDING work advances the timetable — completed
+          // tasks used to push every later block later by already-finished work.
+          if (isTodo) running += mins;
           const row = el("div", "optrow");
           row.style.cssText =
             "cursor:default;margin-top:8px" + (t.status === "done" ? ";opacity:.55" : "");
@@ -7721,6 +10281,21 @@
           if (t.status !== "done") {
             const wb = el("button", "btn sm", ic("play") + " Watch");
             wb.onclick = () => aipOpenLesson(t);
+            // C2 · revision rows lead with recall-first (test before rewatch)
+            let rb2 = null;
+            if (t.kind === "revision") {
+              rb2 = el("button", "btn sm", "🧠 Recall");
+              rb2.title = "Pehle 5Q recall check, phir zaroorat ho to video";
+              rb2.onclick = () => { try { recallCheckStart(t.subject, t.topic, t.id); } catch (e) { toast("Recall check shuru nahi hua — retry karo"); } };
+            }
+            // E5 · link the focus timer to this exact task
+            const fb = el("button", "btn ghost sm", "⏱️");
+            fb.title = "Focus timer is task se link karo";
+            fb.onclick = () => {
+              pomoLinkTask(t.id);
+              toast(`⏱️ Timer linked: ${t.topic.slice(0, 40)} — Study Timer mein Start dabao`);
+              try { render(0); } catch (e) {}
+            };
             const db = el("button", "btn green sm", ic("check"));
             db.title = "Done";
             db.onclick = () => {
@@ -7749,7 +10324,8 @@
               render(0);
               toast("Moved to tomorrow — plan rebalanced");
             };
-            acts.append(wb, db, mb);
+            if (rb2) acts.append(rb2);
+            acts.append(wb, fb, db, mb);
           } else acts.appendChild(el("span", "small", ic("check") + " Done"));
           row.appendChild(acts);
           list.appendChild(row);
@@ -7782,6 +10358,9 @@
           list.appendChild(pullBox);
         }
         root.appendChild(list);
+        try { const pt = planToolsCard(); if (pt) root.appendChild(pt); } catch (e) {}
+        try { const cc0 = coverageCard(); if (cc0) root.appendChild(cc0); } catch (e) {}
+        try { const ic0 = insightsCard(); if (ic0) root.appendChild(ic0); } catch (e) {}
         // subject progress
         const sp = el("div", "card");
         sp.innerHTML = `<h3>Your subjects</h3>`;
@@ -7830,23 +10409,24 @@
             </div>
           `;
           grand.querySelector("#btn-next-rev").onclick = () => {
-            const revProf = { ...p.profile, days: 30, depth: "crash", style: "daily" };
+            // AUDIT 2026-09: the spread inherited the OLD startDate, so the new
+            // phase landed entirely in the past. A new phase starts TODAY.
+            const revProf = { ...p.profile, days: 30, depth: "crash", style: "daily", startDate: todayKey(Date.now()) };
             const revGen = aipGenerate(revProf);
-            aipSave({ profile: revProf, tasks: revGen.tasks, createdAt: Date.now() });
+            aipSave({ profile: revProf, tasks: revGen.tasks, createdAt: Date.now(), actual: {} });
             toast("🎉 30-Day Revision Phase plan taiyar!");
             render(0);
           };
           grand.querySelector("#btn-rebuild-adv").onclick = () => {
-            const advProf = { ...p.profile, target: "jeeadv", days: 45, depth: "detailed" };
+            const advProf = { ...p.profile, target: "jeeadv", days: 45, depth: "detailed", startDate: todayKey(Date.now()) };
             const advGen = aipGenerate(advProf);
-            aipSave({ profile: advProf, tasks: advGen.tasks, createdAt: Date.now() });
+            aipSave({ profile: advProf, tasks: advGen.tasks, createdAt: Date.now(), actual: {} });
             toast("🔥 JEE Advanced Mastery plan taiyar!");
             render(0);
           };
           grand.querySelector("#btn-new-wiz").onclick = () => {
             aiWiz = null;
-            S.aiPlanner = null;
-            save();
+            aipClearActive();
             render(0);
           };
           root.appendChild(grand);
@@ -8120,7 +10700,11 @@
                 db.onclick = () => {
                   t.status = "done";
                   t.completedAt = Date.now();
+                  // AUDIT 2026-09: this path skipped the REAL-minutes audit, so
+                  // roadmap completions silently banked the planned estimate.
+                  aipRecordActual(t);
                   aipSave(p);
+                  aipRebalanceActual();
                   toast("🚀 Future task pehle hi complete — tum plan se aage ho!");
                   render(0);
                 };
@@ -8130,6 +10714,7 @@
                 pb.onclick = () => {
                   t.date = tk;
                   aipSave(p);
+                  aipRebalanceActual(); // today may now overflow — spread, don't pile
                   toast("🚀 Task aaj ke schedule mein move ho gaya!");
                   render(0);
                 };
@@ -8206,20 +10791,28 @@
         rb.onclick = () =>
           confirmBox(
             "Rebuild your plan?",
-            "Your completed tasks stay counted, but the schedule is regenerated from scratch with the wizard.",
+            "This clears the current plan and starts the wizard fresh. Your video watch history stays, but plan progress resets to zero.",
             () => {
               aiWiz = null;
-              S.aiPlanner = null;
-              save();
+              aipClearActive();
               render(0);
             },
             "Rebuild",
           );
+        try { const bc0 = backlogCard(); if (bc0) root.appendChild(bc0); } catch (e) {}
+        try { const sr0 = srsCard(); if (sr0) root.appendChild(sr0); } catch (e) {}
+        try { const fd0 = flashDeckCard(); if (fd0) root.appendChild(fd0); } catch (e) {}
+        try { const fo0 = formulaDrillCard(); if (fo0) root.appendChild(fo0); } catch (e) {}
+        try { const hb0 = habitsCard(); if (hb0) root.appendChild(hb0); } catch (e) {}
+        try { const pb0 = fpBadgesCard(); if (pb0) root.appendChild(pb0); } catch (e) {}
         foot.appendChild(rb);
         root.appendChild(foot);
       }
       function aiPlannerSection(root) {
-        if (!aip() || !aip().tasks) aipWizard(root);
+        // DEEP-AUDIT 2026-09: a corrupt plan (non-array tasks, missing profile)
+        // must land on the wizard (rebuild path), never on a crashing today view.
+        const pl = aip();
+        if (!pl || !Array.isArray(pl.tasks) || !pl.profile) aipWizard(root);
         else aipToday(root);
       }
       /* ===================== end AI STUDY PLANNER ===================== */
@@ -8270,6 +10863,18 @@
             const k = todayKey(Date.now());
             pomoLog()[k] = (pomoLog()[k] || 0) + POMO.focusMin;
             S.studyLog[k] = S.studyLog[k] || 0.5; // a finished focus block keeps the streak alive
+            // FP · E5 focus-link: bank the block onto the linked task
+            try {
+              const lt2 = pomoLinkedTask();
+              if (lt2) {
+                lt2.focusMin = (fpNum(lt2.focusMin, 0) || 0) + POMO.focusMin;
+                toast(`⏱️ +${POMO.focusMin}m logged on "${lt2.topic.slice(0, 34)}" — done mark karo?`, 4500);
+              }
+              if (new Date().getHours() < 8) {
+                S._fpEarlyDays = S._fpEarlyDays || {};
+                S._fpEarlyDays[k] = 1;
+              }
+            } catch (e) {}
             save();
             toast("Focus block done — take a " + POMO.breakMin + "-minute break", 4500);
             try {
@@ -11070,14 +13675,17 @@
         const notesObj = ytNotes()[v.id] || { text: "", timestamps: [] };
         const teacherName = v.teacher || v.channel || "Top Verified Faculty";
 
-        m.innerHTML = `<div class="box" style="max-width:1080px;width:96vw;max-height:94vh;overflow-y:auto;padding:16px 20px">
+        // AUDIT 2026-09: width:100% (not 96vw) so the box respects the modal's
+        // padding on phones instead of bleeding past it; padding shrinks on
+        // small screens via .yt-theater-box.
+        m.innerHTML = `<div class="box yt-theater-box" style="max-width:1080px;max-height:94vh;overflow-y:auto">
     <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:12px">
       <div style="min-width:0;flex:1">
         <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
           <span style="background:var(--blue);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;letter-spacing:0.3px">▶ STUDY<span style="color:#ffe3d2">TUBE</span></span>
           ${subject ? `<span class="chip" style="color:${SUBCOLOR[subject] || "var(--accent-text)"}">${esc(subject)}</span>` : ""}
           ${topic ? `<span class="chip">${esc(topic)}</span>` : ""}
-          <span class="chip" style="background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3)">✓ 100% Syllabus Verified</span>
+          <span class="chip" style="background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3)">✓ StudyTube Pick</span>
         </div>
         <h3 style="margin:0;font-size:17px;line-height:1.35">${esc(v.title)}</h3>
         <div class="small muted" style="margin-top:3px">
@@ -11368,6 +13976,10 @@
           title: `${tp} — ${label}`,
           channel: channel || "Top Verified Educator",
           durationSec: min * 60,
+          // AUDIT 2026-09: these lengths are rough estimates, not measured —
+          // cards must show them with "~" and the planner must never re-budget
+          // from them (see aipSyncTaskToVideo).
+          durationEstimated: true,
           subject: subject,
           topic: tp,
           externalUrl: ext,
@@ -11397,7 +14009,7 @@
         card.innerHTML = `
     <div class="yt-thumb-wrap" data-open>
       ${thumb}
-      ${v.durationSec ? `<div class="yt-duration">${fmtTime(v.durationSec)}</div>` : ""}
+      ${v.durationSec ? `<div class="yt-duration" title="${v.durationEstimated || v.estDur || v.offline ? "Estimated length" : "Video length"}">${v.durationEstimated || v.estDur || v.offline ? "~" : ""}${fmtTime(v.durationSec)}</div>` : ""}
       ${prog && prog.pct ? `<div class="yt-progress-track"><div class="yt-progress-bar" style="width:${Math.min(100, prog.pct)}%"></div></div>` : ""}
       ${prog && prog.done ? `<div style="position:absolute;top:8px;left:8px;background:rgba(34,197,94,0.92);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px">✓ COMPLETED</div>` : ""}
     </div>
@@ -13200,6 +15812,8 @@
           ai = analyseCached(t, a);
 
         root.appendChild(scoreHero(t, a, r, ai));
+        // FP · D1 mock autopsy (extends mistake tags + review queue)
+        try { const au = autopsyCard(a); if (au) root.appendChild(au); } catch (e) {}
 
         /* ═════════ OVERPOWERED RESULT — plain-language, real-data insight ═════════ */
         // 1) Verdict hero — one sentence anyone understands
@@ -14256,6 +16870,22 @@
         return "";
       }
     })()}
+    ${(() => {
+      // FP · D3 pre-mock ritual + D4 accuracy soft-gate (toppers' protocol)
+      try {
+        const gate = accuracyGate();
+        const isMock = (test.duration || 0) >= 3600 || /mock|jee|neet|pyq/i.test(test.name || "");
+        const rg = ritualGet();
+        const rid = test.id || "once";
+        if (!isMock) return "";
+        return `<div class="card" style="border-color:var(--green);margin:12px 0" data-ritual-box>
+          <b>🧘 Pre-mock ritual <span class="small muted">(toppers skip nahi karte)</span></b>
+          <label class="small" style="display:block;margin-top:6px"><input type="checkbox" data-ritual="skim" ${rg[rid + ":skim"] ? "checked" : ""}> Error log skim kiya (15 min, repeat mistakes lock)</label>
+          <label class="small" style="display:block;margin-top:4px"><input type="checkbox" data-ritual="warm" ${rg[rid + ":warm"] ? "checked" : ""}> 5-min warmup: 3 easy questions dimaag garam karne ke liye</label>
+          ${gate.gated ? `<div class="small" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">⚠️ <b>Accuracy ${Math.round(gate.acc)}% hai (target 80%+).</b> Toppers pehle accuracy fix karte hain, phir speed. <button class="btn sm ghost" data-gate-fix>Weak chapters fix karo</button> <span class="muted">ya PROCEED dabao — choice tumhari.</span></div>` : ""}
+        </div>`;
+      } catch (e) { return ""; }
+    })()}
     <div class="nta-agree">
       <input type="checkbox" id="ntaAgree">
       <label for="ntaAgree">I have read and understood the instructions. I declare that I am not carrying any prohibited material and agree that in case of not adhering to the instructions, I shall be liable to be debarred from this Test.</label>
@@ -14265,6 +16895,21 @@
       <button class="btn" data-go disabled>PROCEED ${ic("play")}</button>
     </div></div>`;
         const goBtn = m.querySelector("[data-go]");
+        // FP · ritual persistence + accuracy-gate escape hatch
+        try {
+          const rid = (typeof test !== "undefined" && test.id ? test.id : "once");
+          m.querySelectorAll("[data-ritual]").forEach((cb) => {
+            cb.onchange = () => {
+              try {
+                const rg = ritualGet();
+                rg[rid + ":" + cb.getAttribute("data-ritual")] = cb.checked ? 1 : 0;
+                save();
+              } catch (e) {}
+            };
+          });
+          const gf = m.querySelector("[data-gate-fix]");
+          if (gf) gf.onclick = () => { m.remove(); go("practice"); };
+        } catch (e) {}
         m.querySelector("#ntaAgree").onchange = (e) => (goBtn.disabled = !e.target.checked);
         m.querySelector("[data-back]").onclick = () => m.remove();
         goBtn.onclick = () => {
@@ -14842,6 +17487,42 @@
           S.daily10[dk] = { score: attempt.result.all.correct, n: test.questions.length };
           delete S._d10pending;
         }
+        // FP · pending drill consumers (recall checks, backlog sets)
+        try {
+          if (S._recallPending && test.name && test.name.startsWith("Recall check")) {
+            recallCheckConsume(attempt);
+            try {
+              const rr = attempt.result.all;
+              if (rr.correct + rr.wrong > 0 && (rr.correct / (rr.correct + rr.wrong)) * 100 >= 80)
+                S._fpRecall80 = (S._fpRecall80 || 0) + 1;
+            } catch (e) {}
+          }
+        } catch (e) {}
+        try {
+          if (S._backlogPending) {
+            const bp = S._backlogPending;
+            S._backlogPending = null;
+            const bst = backlogGet();
+            const ent = (bst[bp.key] = bst[bp.key] || {});
+            const rr = attempt.result.all;
+            const acc = rr.correct + rr.wrong > 0 ? (rr.correct / (rr.correct + rr.wrong)) * 100 : 0;
+            if (bp.kind === "prac") ent.pracDone = true;
+            else ent.pyqDone = true;
+            if (acc >= 60) {
+              // backlog chapter cleared → mark its learn task done (no double work)
+              try {
+                const [bs2, bt2] = String(bp.key).split("||");
+                const p2 = aip();
+                const lt = p2 && p2.tasks ? p2.tasks.find((x) => x.subject === bs2 && x.topic === bt2 && x.kind === "learn" && x.status !== "done") : null;
+                if (lt && ent.pracDone && ent.pyqDone) {
+                  lt.status = "done";
+                  lt.completedAt = Date.now();
+                  aipRecordActual(lt);
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
         const pl = PLAN().find((p) => !p.done && todayKey(p.date) === todayKey(Date.now()));
         if (pl) setPlannerDone(pl, true);
         save();
@@ -20100,6 +22781,11 @@
         // ── "Am I on track?" survival banner: honest score + one next action ──
         const sb = survivalBanner();
         if (sb) root.appendChild(sb);
+        // ── FP: briefing/review (time-aware) + countdown + effort badges ──
+        try { const bf = briefingCard(); if (bf) root.appendChild(bf); } catch (e) {}
+        try { const er = eveningReviewCard(); if (er) root.appendChild(er); } catch (e) {}
+        try { const cd0 = countdownCard(); if (cd0) root.appendChild(cd0); } catch (e) {}
+        try { const fb0 = fpBadgesCard(); if (fb0) root.appendChild(fb0); } catch (e) {}
         // ── one-glance quick launcher: everyday actions at finger reach ──
         const qa = el("div", "grid g4");
         qa.style.cssText = "margin-top:12px;gap:10px";
@@ -20880,6 +23566,15 @@
         render();
         loadPublicTests();
       })();
+      // FP · E1 reminder engine boot (in-app scheduled nudges) + lazy PYQ weights
+      try {
+        setTimeout(() => { try { reminderTick(); } catch (e) {} }, 4000);
+        setInterval(() => { try { reminderTick(); } catch (e) {} }, 60000);
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) { try { reminderTick(); } catch (e) {} }
+        });
+        setTimeout(() => { try { pyqWeightageBuild(); } catch (e) {} }, 9000);
+      } catch (e) {}
       addEventListener("online", () => {
         setOffline(false);
         loadPublicTests(true);

@@ -803,9 +803,9 @@ function Shelf({
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-4 w-4" />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
-            {title}
+            <span className="truncate">{title}</span>
             {items.length ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                 {items.length}

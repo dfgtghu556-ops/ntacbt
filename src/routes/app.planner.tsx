@@ -146,7 +146,7 @@ function Planner() {
           {grouped.map(([date, list]) => {
             const isToday = date === todayKeyNow;
             const done = list.filter((r) => r.status === "done").length;
-            const mins = list.reduce((n, r) => n + (r.estMin || 0), 0);
+            const mins = list.reduce((n, r) => n + minOf(r), 0);
             return (
               <section key={date} className="rounded-xl border p-4">
                 <div className="mb-3 flex items-center justify-between">
@@ -189,7 +189,12 @@ function Planner() {
                             ) : null}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {r.kind} · {r.estMin || 45} min
+                            {r.kind} · {minOf(r) || 45} min
+                            {r.status === "done" &&
+                            typeof r.actualMin === "number" &&
+                            r.actualMin !== r.estMin
+                              ? " (actual)"
+                              : ""}
                             {adapted && a.reason
                               ? ` · Why: ${a.reason}`
                               : r.why

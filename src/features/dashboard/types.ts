@@ -12,6 +12,8 @@ export interface MissionSummary {
   why: string;
   kind: "learn" | "practice" | "revision" | "test";
   taskId?: string;
+  /** True when the underlying planner task is already done. */
+  done?: boolean;
 }
 
 export interface WeakTopic {

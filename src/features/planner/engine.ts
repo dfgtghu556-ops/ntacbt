@@ -33,6 +33,12 @@ export interface Candidate {
   playlistUrl?: string | undefined;
   verified?: boolean | undefined;
   isCurated?: boolean | undefined;
+  /**
+   * True when `durationSec` is an ESTIMATE (search-pick / offline pick), not a
+   * real video length. UIs must render it with a "~" prefix, and the planner
+   * must never re-budget a task's minutes from an estimated duration.
+   */
+  durationEstimated?: boolean | undefined;
   /** When set, the item is a search-pick that opens YouTube search (no single real video id). */
   externalUrl?: string | undefined;
 }
@@ -44,6 +50,19 @@ export const REAL_YT_ID = /^[A-Za-z0-9_-]{11}$/;
 function searchUrl(title: string, channel: string): string {
   const q = `${title} ${channel}`.trim();
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+}
+
+/**
+ * Deterministic synthetic id for an honest search-pick (never 11-char shaped,
+ * so no client can mistake it for a playable video). Stable across identical
+ * requests (cache/dedupe/React keys stay consistent); the index suffix keeps
+ * identical lessons unique inside one response.
+ */
+function searchPickId(c: { title: string; channel: string; kind: string }, index: number): string {
+  const s = `${c.title}|${c.channel}|${c.kind}`;
+  let h = 0;
+  for (let k = 0; k < s.length; k++) h = (Math.imul(31, h) + s.charCodeAt(k)) | 0;
+  return `pick-${Math.abs(h).toString(36)}-${index}`;
 }
 
 export interface RawItem {
@@ -409,8 +428,19 @@ export function rank(
     idealLo = 3600;
     idealHi = 12600;
   }
-  if (minMinutes) minSec = Math.max(minSec, Math.round(minMinutes * 60 * 0.5));
-  const hardMax = Math.max(idealHi * 1.6, (maxMinutes || 180) * 60 * 2);
+  if (minMinutes) minSec = Math.max(minSec, Math.round(minMinutes * 60 * 0.7));
+  // PLAN-SYNC (audit 2026-09): the planner sends maxMinutes derived from the
+  // task's own estimate (estMin × 1.6). The old ceiling
+  // (max(idealHi×1.6, maxMinutes×2)) let a 45-min slot pick a 4-HOUR video, and
+  // the fixed ideal bands scored it as a great fit — the systematic "video
+  // length ≠ dashboard minutes" mismatch on every task. The ceiling is now the
+  // plan's own budget (×1.5 headroom so near-fits survive), and the ideal band
+  // shrinks to that budget so scoring prefers videos that truly fit the slot.
+  // Requests without an explicit budget (maxMinutes=180 default) behave as
+  // before — the clamp only bites when the plan asks for a small slot.
+  const planMaxSec = (maxMinutes || 180) * 60;
+  idealHi = Math.min(idealHi, Math.max(idealLo, Math.round(planMaxSec * 1.25)));
+  const hardMax = Math.max(Math.round(planMaxSec * 1.5), Math.round(idealLo * 1.1));
 
   for (const v of raw) {
     // HARDENED: a search may resolve with corrupt/partial items (null, undefined,
@@ -612,7 +642,18 @@ export function rank(
   return filtered.sort((a, b) => b.score - a.score).slice(0, 6);
 }
 
-/** Resolve the authoritative curated lessons for a request (0-latency, verified). */
+/**
+ * Resolve the authoritative curated lessons for a request (0-latency).
+ *
+ * HONESTY CONTRACT (audit 2026-09): an 11-char id is NOT proof of a real
+ * video — the JEE curated registry carried placeholder ids that do not exist
+ * on YouTube, and serving them as `verified` produced dead embedded players
+ * whose invented durations never matched the plan's minutes. A lesson is
+ * therefore treated as a playable video ONLY when its registry entry carries
+ * `verifiedReal: true` (oEmbed-verified). Everything else is returned as an
+ * honest faculty-targeted SEARCH pick: synthetic non-video id, `externalUrl`,
+ * `verified: false`, and `durationEstimated: true`.
+ */
 export function resolveCuratedFor(req: PlannerRequest): Candidate[] {
   const lessons = resolveCuratedVideos({
     topic: req.topic,
@@ -625,28 +666,51 @@ export function resolveCuratedFor(req: PlannerRequest): Candidate[] {
     instituteId: req.institute,
     institute: req.institute,
   });
-  return lessons.map((c) => {
-    const isRealVideo = REAL_YT_ID.test(c.id);
+  return lessons.map((c, i) => {
+    const isRealVideo = REAL_YT_ID.test(c.id) && c.verifiedReal === true;
+    if (isRealVideo) {
+      return {
+        id: c.id,
+        title: c.title,
+        channel: c.channel,
+        channelId: c.channelId || "",
+        durationSec: c.durationSec,
+        published: c.published || "Verified Lecture",
+        score: c.score,
+        why: c.why,
+        teacher: c.teacher,
+        institute: c.institute,
+        playlistUrl: c.playlistUrl,
+        verified: true,
+        isCurated: true,
+        externalUrl: undefined,
+      };
+    }
     return {
-      id: c.id,
+      id: searchPickId(c, i),
       title: c.title,
       channel: c.channel,
       channelId: c.channelId || "",
       durationSec: c.durationSec,
-      published: isRealVideo ? c.published || "Verified Lecture" : "Search pick",
+      durationEstimated: true,
+      published: "Search pick",
       score: c.score,
-      why: c.why,
+      why: `${c.why} · opens a targeted YouTube search`,
       teacher: c.teacher,
       institute: c.institute,
       playlistUrl: c.playlistUrl,
-      verified: isRealVideo,
-      isCurated: isRealVideo,
-      externalUrl: isRealVideo ? undefined : searchUrl(c.title, c.channel),
+      verified: false,
+      isCurated: false,
+      externalUrl: searchUrl(c.title, `${c.teacher || ""} ${c.channel}`.trim()),
     };
   });
 }
 
-/** Curated authoritative items first, then unique high-scoring live items. */
+/**
+ * Real videos first (verified curated lessons, then unique high-scoring live
+ * items), honest search-picks last as faculty-targeted alternates. Bounded and
+ * de-duplicated by id.
+ */
 export function mergeRecommendations(
   curated: Candidate[],
   live: Candidate[],
@@ -654,18 +718,15 @@ export function mergeRecommendations(
 ): Candidate[] {
   const seenIds = new Set<string>();
   const merged: Candidate[] = [];
-  for (const c of curated) {
+  const push = (c: Candidate): void => {
     if (!seenIds.has(c.id)) {
       seenIds.add(c.id);
       merged.push(c);
     }
-  }
-  for (const item of live) {
-    if (!seenIds.has(item.id)) {
-      seenIds.add(item.id);
-      merged.push(item);
-    }
-  }
+  };
+  for (const c of curated) if (!c.externalUrl) push(c);
+  for (const item of live) push(item);
+  for (const c of curated) if (c.externalUrl) push(c);
   return merged.slice(0, limit);
 }
 

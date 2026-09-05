@@ -227,10 +227,23 @@ export class DataStore {
     // public/jee-cbt.html), not on the task row itself. Overlay it here so the
     // React planner + readiness engine see the same done-state as the legacy UI.
     const done = this._raw.plannerDone || {};
-    const tasks = (Array.isArray(p.tasks) ? p.tasks : []).map((t) => ({
-      ...t,
-      status: done[t.id] ? "done" : ((t as PlannerTaskRow).status ?? "pending"),
-    }));
+    const tasks = (Array.isArray(p.tasks) ? p.tasks : []).map((t) => {
+      const row = t as PlannerTaskRow;
+      // Normalise legacy shapes at the boundary (audit 2026-09):
+      // - legacy status is "todo", React is "pending" — unify to "pending".
+      // - legacy tasks carry `topic` (chapter name) but no `chapter` — fall
+      //   back so no UI ever renders "— undefined" and weak-topic matching
+      //   (adapt.ts) can actually fire.
+      const status =
+        done[row.id] || row.status === "done"
+          ? "done"
+          : "pending";
+      return {
+        ...row,
+        status,
+        chapter: row.chapter || row.topic || "",
+      };
+    });
     return { ...p, tasks } as LegacyPlanner;
   }
 
@@ -238,17 +251,18 @@ export class DataStore {
     return localDayKey();
   }
 
-  /** Today's planner rows (by date), plus a one-day grace fallback for older plans. */
+  /**
+   * Today's planner rows (by date). Strictly today: including tomorrow's
+   * tasks inflated "Today's plan" minutes and made 100% unreachable even when
+   * all of today's work was done (audit 2026-09).
+   */
   todayTasks(now = Date.now()): PlannerTaskRow[] {
     const p = this.planner;
     if (!p?.tasks?.length) return [];
     const today = localDayKey(now);
-    const tomorrow = localDayKey(now + 24 * 3600 * 1000);
-    const done = this._raw.plannerDone || {};
     return p.tasks
-      .filter((t) => t && (t.date === today || t.date === tomorrow))
-      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-      .map((t) => ({ ...t, status: done[t.id] ? "done" : t.status }));
+      .filter((t) => t && t.date === today)
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)));
   }
 
   /** Legacy progress facts for the dashboard and readiness model. */

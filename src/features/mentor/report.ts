@@ -20,7 +20,7 @@
 import type { DataStore, PlannerTaskRow } from "../../lib/store";
 import type { FocusStore, FocusSession } from "../focus/focus";
 import type { StudyTubeProgressStore, HandshakeRecord } from "../studytube/progress";
-import { computeReadiness } from "../readiness/readiness";
+import { computeReadiness, realMinutes } from "../readiness/readiness";
 import type { ReadinessSnapshot, WeakTopic } from "../dashboard/types";
 
 /* ------------------------------------------------------------------ */
@@ -365,8 +365,10 @@ function plannerMetrics(
   const overdue = notDone.filter((t) => str(t.date) && str(t.date) < todayKey);
   const todayTasks = tasks.filter((t) => str(t.date) === todayKey);
   const todayDone = todayTasks.filter((t) => t.status === "done");
-  const plannedMin = tasks.reduce((n, t) => n + num(t.estMin, 45), 0);
-  const doneMin = done.reduce((n, t) => n + num(t.estMin, 45), 0);
+  // Done tasks count REAL watched minutes (actualMin) when recorded — never the
+  // shorter planned estimate (audit 2026-09: the video/dashboard time sync fix).
+  const plannedMin = tasks.reduce((n, t) => n + realMinutes(t), 0);
+  const doneMin = done.reduce((n, t) => n + realMinutes(t), 0);
   return {
     totalTasks: tasks.length,
     doneTasks: done.length,

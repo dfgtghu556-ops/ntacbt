@@ -23,6 +23,14 @@ export interface CuratedLesson {
   channelId?: string;
   teacher: string;
   institute: string;
+  /**
+   * TRUE only when the `id` was actually verified to exist on YouTube
+   * (oEmbed check during the 2026-09 audit). The recommendation engine
+   * (`resolveCuratedFor`) embeds a lesson as a playable video ONLY when this
+   * is true; anything else is served as an honest search-pick. Never add a
+   * new 11-char id with this flag unless you verified it resolves.
+   */
+  verifiedReal?: boolean;
   durationSec: number;
   kind: "learn" | "practice" | "revision" | "advanced";
   depth: "oneshot" | "lecture" | "detailed";
@@ -40,7 +48,15 @@ export interface TopicVideoSet {
   lessons: CuratedLesson[];
 }
 
-// Canonical database covering every standard JEE Chapter with top Indian faculties
+// Canonical database covering every standard JEE Chapter with top Indian faculties.
+//
+// HONESTY NOTE (audit 2026-09): the 11-char `id`s in THIS registry were never
+// verified against YouTube — oEmbed spot-checks (8/8 across Physics, Chemistry
+// and Mathematics) return Not Found, i.e. these ids are placeholders, NOT real
+// videos. They intentionally carry NO `verifiedReal` flag, so the engine serves
+// them as faculty-targeted SEARCH picks (never embedded, durations labelled
+// estimates) until each id is replaced with a verified real video. Do NOT set
+// `verifiedReal` here without verifying every id via oEmbed first.
 export const CURATED_TOPIC_REGISTRY: Record<string, TopicVideoSet> = {
   // ==========================================
   // PHYSICS
@@ -1451,6 +1467,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Board-first full chapter one-shot: concepts + board-pattern questions (Ashu Sir).",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "i_yT6CpUOTk",
@@ -1465,6 +1482,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "NCERT-aligned board-grade depth with derivation mastery (PW).",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "swvbcvN2MfU",
@@ -1480,6 +1498,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 97,
         why: "Line-by-line NCERT recall — high-yield for board & school tests (Abj Sir).",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "tXNJicEPtwE",
@@ -1494,6 +1513,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 97,
         why: "NCERT-line recap of potential & capacitance for board accuracy.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "5Wj95zTraZI",
@@ -1508,6 +1528,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 96,
         why: "Board-grade electrostatic potential + capacitances with derivations.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "hChvVlgPmeo",
@@ -1522,6 +1543,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 96,
         why: "Combined electrostatics + current electricity in board depth.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1543,6 +1565,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "Board-grade current electricity with circuit practice.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1564,6 +1587,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 97,
         why: "Modern physics board one-shot — derivations + key formulas.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1585,6 +1609,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Board's most repeatable derivations & questions — high-yield practice.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1606,6 +1631,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Solutions full chapter one-shot — NCERT-aligned board depth (Bharat Panchal).",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "auWHp_r_ZMw",
@@ -1620,6 +1646,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "Rapid NCERT recall of Solutions — perfect for revision.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1647,6 +1674,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Board-critical organic mechanisms covered in one shot.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "P0nsu9Qpi14",
@@ -1661,6 +1689,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "All organic name reactions in one revision — highest returns for boards.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "ZJpFsMYRjIo",
@@ -1675,6 +1704,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "Acidic/basic strength ordering — a repeated board scoring topic.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1696,6 +1726,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "All d/f-block reactions incl. KMnO4/K2Cr2O7 — board must-know.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1717,6 +1748,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "50 highest-yield physical chemistry numericals for board scoring.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1738,6 +1770,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Whole-syllabus rapid revision in one sitting — ideal pre-exam.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "qyZ44Mrjt0U",
@@ -1752,6 +1785,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "All recent board PYQs solved — exam-pattern practice.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1773,6 +1807,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Board full-chapter one-shot: properties + system of equations.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "xGOkKJ4cPDw",
@@ -1787,6 +1822,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "Matrices & Determinants full board revision — NCERT Ch 3 & 4.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "hi8XbUdmQQA",
@@ -1801,6 +1837,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "Most-expected board questions on matrices & determinants.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
@@ -1822,6 +1859,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 99,
         why: "Full integration from basics with past-year board questions.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
       {
         id: "vfay9De9X8U",
@@ -1836,6 +1874,7 @@ export const BOARD_VIDEO_REGISTRY: BoardVideoSet[] = [
         score: 98,
         why: "Indefinite integration one-shot with board-pattern questions.",
         published: "Class 12 Board",
+        verifiedReal: true, // oEmbed-verified real YouTube video (audit 2026-09)
       },
     ],
   },
