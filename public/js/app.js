@@ -8069,6 +8069,179 @@
         m.querySelector("[data-no]").onclick = () => m.remove();
         document.body.appendChild(m);
       }
+      /* ---- DEMO PLAN (sab kuch safely aazmao) + FEATURE CHECKUP (live proof) ----
+   S._demo = {on, backup, testIds, attIds} — demoClear() restores byte-identical state. */
+      function demoIsOn() { try { return !!(S._demo && S._demo.on); } catch (e) { return false; } }
+      function demoLoad() {
+        if (demoIsOn()) return;
+        const tk = todayKey(Date.now());
+        const D = (o) => aipAddDays(tk, o);
+        const backup = {};
+        try {
+          ["aiPlanner", "srs", "habits", "targets", "batch", "commitments"].forEach((k) => {
+            backup[k] = JSON.parse(JSON.stringify(S[k] === undefined ? null : S[k]));
+          });
+          backup.examDate = (S.settings && S.settings.examDate) || "";
+        } catch (e) {}
+        const T = (id, subject, topic, kind, estMin, status, date) => ({ id, subject, topic, kind, diff: 2, wt: 2, depth: "lecture", estMin, status, date });
+        S.aiPlanner = {
+          profile: { subjects: ["Physics", "Chemistry", "Mathematics"],
+            topics: { Physics: [["Kinematics", 2, 3], ["Laws of Motion", 2, 3]], Chemistry: [["Mole Concept", 2, 3]], Mathematics: [["Quadratic Equations", 2, 3]] },
+            days: 30, dailyMin: 240, target: "jeemain", depth: "standard", language: "hinglish", speed: 1.25, style: "weekly",
+            channels: {}, institutes: {}, teachers: {}, teacherNames: {}, startDate: D(-5) },
+          tasks: [
+            T("demo-od1", "Physics", "Kinematics", "learn", 60, "todo", D(-3)),
+            T("demo-od2", "Chemistry", "Mole Concept", "revision", 30, "todo", D(-2)),
+            T("demo-prev", "Chemistry", "Mole Concept", "learn", 45, "done", D(-1)),
+            T("demo-c1", "Physics", "Laws of Motion", "learn", 60, "todo", tk),
+            T("demo-c2", "Mathematics", "Quadratic Equations", "revision", 30, "todo", tk),
+            T("demo-c3", "Chemistry", "Mole Concept", "practice", 20, "done", tk),
+            T("demo-t1", "Mathematics", "Quadratic Equations", "learn", 60, "todo", D(1)),
+          ],
+          createdAt: Date.now() - 5 * 86400000, actual: {},
+        };
+        try { S.aiPlanner.tasks.find((t) => t.id === "demo-prev").completedAt = Date.now() - 86400000; } catch (e) {}
+        try { S.aiPlanner.tasks.find((t) => t.id === "demo-c3").completedAt = Date.now() - 3600000; } catch (e) {}
+        S.srs = { "Physics||Kinematics": { s: 1.2, d: 0.4, due: Date.now() - 5000, reps: 2, lapses: 1 } };
+        S.habits = [{ id: "demo-h1", name: "Formula revision", icon: "📐", targetPerDay: 1, log: {}, createdAt: Date.now() }];
+        S.targets = {};
+        S.settings = S.settings || {};
+        S.settings.examDate = D(30);
+        S.reminders = { enabled: true };
+        const testIds = [], attIds = [];
+        try {
+          const qs = [];
+          ["Kinematics", "Kinematics", "Kinematics", "Laws of Motion", "Laws of Motion", "Laws of Motion"].forEach((ch, i) => {
+            qs.push({ id: "demo-q" + i, no: i + 1, subject: "Physics", chapter: ch, topic: ch, type: "mcq",
+              text: `Demo Q${i + 1}: ${ch} ka basic sawaal?`,
+              options: [{ label: "A", text: "pehla" }, { label: "B", text: "doosra" }, { label: "C", text: "teesra" }, { label: "D", text: "chautha" }],
+              answer: "b" });
+          });
+          S.tests = Array.isArray(S.tests) ? S.tests : [];
+          S.tests.push({ id: "demo-test-1", name: "🎭 Demo test (delete me)", createdAt: Date.now() - 86400000, duration: 3600, practice: true, questions: qs });
+          testIds.push("demo-test-1");
+          const resp = {};
+          qs.forEach((q, i) => { resp[q.id] = { ans: i < 2 ? "a" : q.answer, time: 25 + i }; });
+          const r = evaluate(testById("demo-test-1"), resp);
+          S.attempts = Array.isArray(S.attempts) ? S.attempts : [];
+          S.attempts.push({ id: "demo-att-1", testId: "demo-test-1", startedAt: Date.now() - 90000000, submittedAt: Date.now() - 86400000, responses: resp, result: r, timeTaken: 180 });
+          attIds.push("demo-att-1");
+        } catch (e) {}
+        S._demo = { on: true, at: Date.now(), backup, testIds, attIds };
+        save();
+        toast("🎭 Demo plan load ho gaya — sab kuch chalake dekho, phir hata dena!");
+        render(0);
+      }
+      function demoClear() {
+        const d = S._demo;
+        if (!d || !d.on) return;
+        try {
+          const b = d.backup || {};
+          ["aiPlanner", "srs", "habits", "targets", "batch", "commitments"].forEach((k) => {
+            if (b[k] === null || b[k] === undefined) delete S[k];
+            else S[k] = b[k];
+          });
+          S.settings = S.settings || {};
+          S.settings.examDate = b.examDate || "";
+          (d.testIds || []).forEach((id) => { S.tests = (S.tests || []).filter((t) => t && t.id !== id); });
+          (d.attIds || []).forEach((id) => { S.attempts = (S.attempts || []).filter((a) => a && a.id !== id); });
+        } catch (e) {}
+        try { delete S._demo; } catch (e) { S._demo = null; }
+        save();
+        toast("🧹 Demo hata diya — tumhara data wapas!");
+        render(0);
+      }
+      function demoModal() {
+        const on = demoIsOn();
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(460px,94vw)">
+          <h3 style="margin-top:0">🎭 ${on ? "Demo plan chal raha hai" : "Demo plan try karo"}</h3>
+          <div class="small muted">${on
+            ? "Ye sample data hai — recovery, backlog, SRS, drills sab ispar aazmao. Hatane par tumhara asli data wapas aa jayega."
+            : "Ek click mein sample plan + history load hogi (backlog, dues, weak chapters). Tumhara asli data backup mein safe rahega."}</div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+            <button class="btn ghost" data-no>${on ? "Rehne do" : "Cancel"}</button>
+            <button class="btn" data-demo-go>${on ? "🧹 Demo hatao, mera data lao" : "▶️ Demo load karo"}</button>
+          </div></div>`;
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        m.querySelector("[data-demo-go]").onclick = () => { m.remove(); try { on ? demoClear() : demoLoad(); } catch (e) { toast("Demo mein dikkat — retry karo"); } };
+        document.body.appendChild(m);
+      }
+      function featureCheckupModal() {
+        const p = aip();
+        const m = el("div", "modal");
+        const goTab = (k) => { try { const b = document.querySelector(`[data-atab="${k}"]`); if (b) { b.click(); b.scrollIntoView(); } } catch (e) {} };
+        if (!p || !Array.isArray(p.tasks)) {
+          m.innerHTML = `<div class="box" style="max-width:min(440px,94vw)">
+            <h3 style="margin-top:0">✅ Feature checkup</h3>
+            <div class="small muted">Checkup ke liye plan chahiye — wizard se banao, ya ek click mein demo lo.</div>
+            <div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px">
+              <button class="btn ghost" data-no>Close</button>
+              <button class="btn" data-cu-demo>🎭 Demo load karo</button>
+            </div></div>`;
+          m.querySelector("[data-no]").onclick = () => m.remove();
+          m.querySelector("[data-cu-demo]").onclick = () => { m.remove(); try { demoLoad(); } catch (e) {} };
+          document.body.appendChild(m);
+          return;
+        }
+        const tk = todayKey(Date.now());
+        const rows = [];
+        const C = (icon, name, fn, open) => {
+          try {
+            const r = fn() || {};
+            rows.push({ icon, name, st: r.need ? "need" : "live", detail: r.detail || "", open });
+          } catch (e) { rows.push({ icon, name, st: "bad", detail: String((e && e.message) || e).slice(0, 80), open }); }
+        };
+        C("🚑", "Recovery Mode", () => { const st = aipRecoveryStats(); return { detail: `${(st.overdue || []).length} overdue` }; }, () => aipRecoveryModal());
+        C("📦", "Backlog protocol", () => { const n = backlogChapters().length; return { detail: n ? `${n} chapters` : "zero 🎉" }; }, () => backlogCardModal());
+        C("🎯", "Nightly targets", () => ({ detail: `${targetsSuggest(tk, 5).length} suggested` }), () => goTab("aaj"));
+        C("🗺️", "Coverage", () => { const c = aipCoverage(); return { detail: `${c.pct}% · ${c.doneCh}/${c.totalCh}` }; }, () => goTab("plan"));
+        C("🔮", "Plan intelligence", () => { const f = aipForecast(), pr = scorePredict(); subjectSplit(); burnoutStatus(); return { detail: `${f.adherence7}% pace · ${pr.lo}–${pr.hi}` }; }, () => goTab("plan"));
+        C("⚡", "Sprint planner", () => { const n = backlogChapters().length; return n ? { detail: `${n} ready` } : { need: 1, detail: "backlog zero" }; }, () => sprintModal());
+        C("🏫", "Batch sync", () => { batchStatus(); const b = batchGet(); return b && b.coaching ? { detail: b.coaching } : { need: 1, detail: "sync nahi hua" }; }, () => batchModal());
+        C("🕰️", "Fixed hours", () => { const n = commitmentsGet().length; return n ? { detail: `${n} blocks · ${fpFmtHm(freeMinFor(tk))} free` } : { need: 1, detail: "koi block nahi" }; }, () => commitmentsModal());
+        C("📂", "Plan slots", () => ({ detail: `${Object.keys(planSlotsGet().plans).length} plan(s)` }), () => planSlotsModal());
+        C("🧠", "SRS memory", () => ({ detail: `${srsDueList().length} due` }), () => goTab("memory"));
+        C("🧠", "Recall-first", () => { const ch = p.tasks.find((t) => t.kind === "revision") || p.tasks[0] || {}; const n = fpChapterPool(ch.subject, ch.topic, 5).length; return n ? { detail: `${n} Qs` } : { need: 1, detail: "bank khaali" }; }, () => goTab("memory"));
+        C("🃏", "Flashcards", () => { const n = flashCounts(); return { detail: `${n.due} due · ${n.mastered} mastered` }; }, () => goTab("memory"));
+        C("📐", "Formula drill", () => { let n = 0; try { Object.values(FORMULAS).forEach((a) => (n += a.length)); } catch (e) {} return { detail: `${n} formulas${(S.formulaDrill || {})[tk] ? " · done ✅" : ""}` }; }, () => goTab("memory"));
+        C("🎲", "Mixed bag", () => { let n = 0; try { S.tests.forEach((t) => (t.questions || []).forEach((q) => { if (validQuestion(q)) n++; })); } catch (e) {} return n >= 4 ? { detail: `${n} Qs` } : { need: 1, detail: `sirf ${n} Qs` }; }, () => mixedBagStart(12));
+        C("🧪", "Apna test", () => { const w = chapterPriorities(); return w.length ? { detail: `${w.length} weak` } : { need: 1, detail: "pehla test do" }; }, () => ownTestModal());
+        C("🔁", "Habits", () => { const n = habitsGet().length; return n ? { detail: `${n} habits` } : { need: 1, detail: "koi habit nahi" }; }, () => goTab("tools"));
+        C("⏳", "Countdown", () => { const ed = countdownGet(); if (!ed) return { need: 1, detail: "date set karo" }; return { detail: `${Math.ceil((new Date(ed + "T00:00:00") - Date.now()) / 86400000)} din` }; }, () => go("dash"));
+        C("🌅", "Briefing/Review", () => { const b = briefingCard(), e2 = eveningReviewCard(); return { detail: b && e2 ? "dono active" : b ? "briefing" : "review" }; }, () => go("dash"));
+        C("🏅", "Effort badges", () => ({ detail: `${fpBadgesEarned().length} earned` }), () => goTab("tools"));
+        C("🔬", "Mock autopsy", () => { const n = S.attempts.filter((a) => a.submittedAt).length; return n ? { detail: `${n} attempts` } : { need: 1, detail: "mock do" }; }, () => { const at = S.attempts.filter((a) => a.submittedAt); if (at.length) go("result", at[at.length - 1].id); else toast("Pehle koi mock do"); });
+        C("🧘", "Ritual + gate", () => { ritualGet(); const g = accuracyGate(); return { detail: g.gated ? `gate on (${Math.round(g.acc)}%)` : "gate off" }; }, () => toast("Koi full mock shuru karo — instructions par ritual milega"));
+        C("👪", "Parent report", () => ({ detail: `${parentReportText().length} chars` }), () => parentReportModal());
+        C("📤", "Exports", () => { const n = p.tasks.filter((t) => t.status === "todo" && (t.date || "") >= tk).length; let cv = false; try { cv = !!document.createElement("canvas").getContext("2d"); } catch (e) {} return n && cv ? { detail: `${n} events` } : { need: 1, detail: n ? "canvas nahi" : "koi todo nahi" }; }, () => exportICS());
+        C("💾", "Backup", () => ({ detail: `${Math.round((localStorage.getItem("jeecbt.v1") || "").length / 1024)} KB` }), () => backupModal());
+        C("🔔", "Reminders", () => { if (!S.reminders || typeof S.reminders !== "object") S.reminders = { enabled: true }; const hr = new Date().getHours(); reminderTick(); return S.reminders.enabled === false ? { need: 1, detail: "band hai" } : { detail: hr >= 21 ? "nightly" : hr >= 19 ? "due" : hr >= 13 ? "midpoint" : hr >= 6 ? "kickoff" : "quiet hrs" }; }, () => toast("Tab khula rakho — sahi time par nudge aayega"));
+        C("⏱️", "Focus link", () => { pomoLinkTask("__cu__"); const ok = (S.pomoTask || {}).taskId === "__cu__"; pomoLinkTask(null); if (!ok) throw new Error("link fail"); return { detail: "timer + task" }; }, () => toast("Kisi task row par ⏱️ dabao"));
+        const nLive = rows.filter((r) => r.st === "live").length;
+        const nNeed = rows.filter((r) => r.st === "need").length;
+        const nBad = rows.filter((r) => r.st === "bad").length;
+        m.innerHTML = `<div class="box" style="max-width:min(560px,94vw);max-height:88vh;overflow:auto">
+          <h3 style="margin-top:0">✅ Feature checkup <span class="small muted">· live, isi browser mein</span></h3>
+          <div class="small" style="margin-bottom:8px"><b style="color:var(--green)">${nLive} live</b> · <b style="color:var(--amber)">${nNeed} action chahiye</b> · <b style="color:var(--red)">${nBad} broken</b></div>
+          <div style="display:grid;gap:6px">${rows.map((r, i) => `
+            <div class="optrow" style="display:flex;gap:8px;align-items:center;padding:6px 10px">
+              <span style="font-size:15px">${r.st === "live" ? "✅" : r.st === "need" ? "⏳" : "❌"}</span>
+              <span style="flex:1;min-width:0">${r.icon} <b>${esc(r.name)}</b> <span class="small muted">· ${esc(r.detail)}</span></span>
+              <button class="btn sm ghost" data-cu="${i}">Khol</button>
+            </div>`).join("")}</div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-no>Close</button></div>
+        </div>`;
+        m.querySelectorAll("[data-cu]").forEach((b) => {
+          b.onclick = () => {
+            const r = rows[+b.getAttribute("data-cu")];
+            m.remove();
+            try { if (r && r.open) r.open(); } catch (e) { toast("Kholne mein dikkat — retry karo"); }
+          };
+        });
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
       /* ---- PLAN TOOLS HUB (one grid, every superpower) ---- */
       function planToolsCard() {
         const p = aip();
@@ -8084,6 +8257,8 @@
         c.innerHTML = `<div class="section-title"><span class="ico">🧰</span>
           <div><h3 style="margin:0">Plan tools</h3><div class="small muted">Har superpower, ek jagah.</div></div></div>
           <div style="display:grid;gap:8px;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
+            ${btn("checkup", "✅", "Feature checkup", "Har feature live test karo", "")}
+            ${btn("demo", "🎭", demoIsOn() ? "Demo hatao" : "Demo plan", demoIsOn() ? "Asli data wapas lao" : "Sample data par sab aazmao", "")}
             ${btn("recovery", "🚑", "Recovery", "Backlog? Fix my week", bl > 4 ? bl + " overdue" : "")}
             ${btn("backlog", "📦", "Backlog protocol", "One-shot + Ex1 + 5yr PYQ", bl || "")}
             ${btn("srs", "🧠", "Memory due", "SRS recall queue", srs || "")}
@@ -8102,6 +8277,8 @@
           </div>
 `;
         const acts = {
+          checkup: () => featureCheckupModal(),
+          demo: () => demoModal(),
           recovery: () => aipRecoveryModal(),
           backlog: () => backlogCardModal(),
           srs: () => { const el2 = document.querySelector("[data-srs-card]"); if (el2) el2.scrollIntoView(); else toast("Neeche memory section dekho"); },
@@ -9191,7 +9368,7 @@
           const lang = w.language === "hi" ? "Hindi" : w.language === "en" ? "English" : "Hinglish";
           bits.push(pill(lang));
           if (w.speed && w.speed !== 1.25) bits.push(pill(`${w.speed}× speed`));
-          return `<div class="aip-planstrip"><b style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;opacity:0.65">Your plan</b>${bits.join("")}<button class="btn ghost sm" data-wiz-plans style="margin-left:auto;font-size:11px;padding:3px 8px" title="Saved plans (JEE / Boards)">📂 Plans</button></div>`;
+          return `<div class="aip-planstrip"><b style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;opacity:0.65">Your plan</b>${bits.join("")}<button class="btn ghost sm" data-wiz-demo style="margin-left:auto;font-size:11px;padding:3px 8px" title="Sample plan load karke sab aazmao">🎭 Demo</button><button class="btn ghost sm" data-wiz-plans style="font-size:11px;padding:3px 8px" title="Saved plans (JEE / Boards)">📂 Plans</button></div>`;
         };
         const H = (t2, s2) =>
           stepBar() +
@@ -10165,6 +10342,11 @@
           const b = e.target && e.target.closest ? e.target.closest("[data-wiz-plans]") : null;
           if (b) {
             try { planSlotsEnsure(); planSlotsModal(); } catch (err) { toast("Plans kholne mein dikkat — retry karo"); }
+            return;
+          }
+          const d2 = e.target && e.target.closest ? e.target.closest("[data-wiz-demo]") : null;
+          if (d2) {
+            try { demoModal(); } catch (err) { toast("Demo mein dikkat — retry karo"); }
           }
         });
         root.appendChild(c);
@@ -10265,8 +10447,15 @@
         const recBtn = head.querySelector("#btn-aip-recovery-top");
         if (recBtn) recBtn.onclick = () => { try { aipRecoveryModal(); } catch (e) { toast("Recovery kholne mein dikkat — retry karo"); } };
         try { planSlotsEnsure(); } catch (e) {}
-        root.appendChild(head);
-        try { const tc0 = targetsCard(); if (tc0) root.appendChild(tc0); } catch (e) {}
+        // ── FP · planner tabs: Aaj / Plan / Memory / Tools ──
+        const panAaj = el("div", ""), panPlan = el("div", ""), panMem = el("div", ""), panTools = el("div", "");
+        panAaj.setAttribute("data-apanel", "aaj");
+        panPlan.setAttribute("data-apanel", "plan");
+        panMem.setAttribute("data-apanel", "memory");
+        panTools.setAttribute("data-apanel", "tools");
+        root.append(panAaj, panPlan, panMem, panTools);
+        panAaj.appendChild(head);
+        try { const tc0 = targetsCard(); if (tc0) panAaj.appendChild(tc0); } catch (e) {}
         const list = el("div", "card");
         list.innerHTML = `<h3>Today's tasks</h3>`;
         if (!today.length)
@@ -10377,10 +10566,10 @@
           pullBox.appendChild(pullBtn);
           list.appendChild(pullBox);
         }
-        root.appendChild(list);
-        try { const pt = planToolsCard(); if (pt) root.appendChild(pt); } catch (e) {}
-        try { const cc0 = coverageCard(); if (cc0) root.appendChild(cc0); } catch (e) {}
-        try { const ic0 = insightsCard(); if (ic0) root.appendChild(ic0); } catch (e) {}
+        panAaj.appendChild(list);
+        try { const pt = planToolsCard(); if (pt) panTools.appendChild(pt); } catch (e) {}
+        try { const cc0 = coverageCard(); if (cc0) panPlan.appendChild(cc0); } catch (e) {}
+        try { const ic0 = insightsCard(); if (ic0) panPlan.appendChild(ic0); } catch (e) {}
         // subject progress
         const sp = el("div", "card");
         sp.innerHTML = `<h3>Your subjects</h3>`;
@@ -10401,7 +10590,7 @@
       <b>${pct(dn, all.length)}%<span class="s"> · ~${remH} h left</span></b>
       <div class="bar"><i style="width:${pct(dn, all.length)}%;background:${SUBCOLOR[s]}"></i></div></div>`;
         });
-        root.appendChild(sp);
+        panPlan.appendChild(sp);
         // ── UPCOMING & FULL STUDY ROADMAP ──
         const allPlanDates = [...new Set(p.tasks.map((t) => t.date))].sort();
         const allPendingTasks = p.tasks.filter((t) => t.status === "todo");
@@ -10449,7 +10638,7 @@
             aipClearActive();
             render(0);
           };
-          root.appendChild(grand);
+          panPlan.appendChild(grand);
         } else {
           // Regular Roadmap / Upcoming Card
           const up = el("div", "card");
@@ -10762,7 +10951,7 @@
             );
           }
 
-          root.appendChild(up);
+          panPlan.appendChild(up);
         }
         // ── WHAT-IF SIMULATOR: study-hours ka asli asar dikhta hai ──
         (() => {
@@ -10787,7 +10976,7 @@
           });
           if (base.vs)
             wi.innerHTML += `<div class="small muted" style="margin-top:8px">Buffer = revision + mocks ka time. 10+ din ka buffer healthy hai.</div>`;
-          root.appendChild(wi);
+          panPlan.appendChild(wi);
         })();
         // learned capacity note (transparency: plan adapts to reality)
         (() => {
@@ -10795,7 +10984,7 @@
             const learned = aipLearnedCapacity();
             const conf = p.profile.dailyMin || p.profile.weekdayMin || 180;
             if (learned && learned < conf * 0.7) {
-              root.appendChild(
+              panPlan.appendChild(
                 el(
                   "div",
                   "card",
@@ -10819,14 +11008,81 @@
             },
             "Rebuild",
           );
-        try { const bc0 = backlogCard(); if (bc0) root.appendChild(bc0); } catch (e) {}
-        try { const sr0 = srsCard(); if (sr0) root.appendChild(sr0); } catch (e) {}
-        try { const fd0 = flashDeckCard(); if (fd0) root.appendChild(fd0); } catch (e) {}
-        try { const fo0 = formulaDrillCard(); if (fo0) root.appendChild(fo0); } catch (e) {}
-        try { const hb0 = habitsCard(); if (hb0) root.appendChild(hb0); } catch (e) {}
-        try { const pb0 = fpBadgesCard(); if (pb0) root.appendChild(pb0); } catch (e) {}
+        try { const bc0 = backlogCard(); if (bc0) panPlan.appendChild(bc0); } catch (e) {}
+        try {
+          const ql = el("div", "card");
+          ql.innerHTML = `<div class="section-title"><span class="ico">⚡</span>
+            <div><h3 style="margin:0">Quick drills</h3><div class="small muted">Bina soche shuru karo — dimaag garam karo.</div></div></div>
+            <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+              <button class="btn sm" data-ql="mixed">🎲 Mixed bag</button>
+              <button class="btn sm" data-ql="own">🧪 Apna test</button>
+              <button class="btn sm" data-ql="recall">🧠 Abhi recall</button>
+            </div>`;
+          ql.querySelector('[data-ql="mixed"]').onclick = () => { try { mixedBagStart(12); } catch (e) { toast("Mixed bag shuru nahi hua"); } };
+          ql.querySelector('[data-ql="own"]').onclick = () => { try { ownTestModal(); } catch (e) { toast("Test builder nahi khula"); } };
+          ql.querySelector('[data-ql="recall"]').onclick = () => {
+            try {
+              const d = srsDueList()[0];
+              if (d) recallCheckStart(d.subject, d.topic, null);
+              else toast("🎉 Kuch due nahi — memory fresh hai!");
+            } catch (e) { toast("Recall shuru nahi hua"); }
+          };
+          panMem.appendChild(ql);
+        } catch (e) {}
+        try { const sr0 = srsCard(); if (sr0) panMem.appendChild(sr0); } catch (e) {}
+        try { const fd0 = flashDeckCard(); if (fd0) panMem.appendChild(fd0); } catch (e) {}
+        try { const fo0 = formulaDrillCard(); if (fo0) panMem.appendChild(fo0); } catch (e) {}
+        try { const hb0 = habitsCard(); if (hb0) panTools.appendChild(hb0); } catch (e) {}
+        try { const pb0 = fpBadgesCard(); if (pb0) panTools.appendChild(pb0); } catch (e) {}
         foot.appendChild(rb);
-        root.appendChild(foot);
+        panPlan.appendChild(foot);
+        // ── FP · tab bar with live counts (choice persists across visits) ──
+        try {
+          const tk = todayKey(Date.now());
+          const nAaj = today.filter((t) => t.status !== "done").length;
+          const nOd = p.tasks.filter((t) => t.status !== "done" && (t.date || "") < tk).length;
+          let nMem = 0;
+          try { nMem = srsDueList().length + (flashCounts().due || 0); } catch (e) {}
+          const bar = el("div", "row");
+          bar.setAttribute("data-atabs", "1");
+          bar.setAttribute("role", "tablist");
+          bar.style.cssText = "position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 2px;gap:6px;overflow-x:auto;flex-wrap:nowrap";
+          const defs = [
+            ["aaj", "🎯 Aaj", nAaj],
+            ["plan", "🗺️ Plan", nOd],
+            ["memory", "🧠 Memory", nMem],
+            ["tools", "🧰 Tools", null],
+          ];
+          const btns = {};
+          const panels = { aaj: panAaj, plan: panPlan, memory: panMem, tools: panTools };
+          const paint = (on) => {
+            defs.forEach(([k]) => {
+              panels[k].style.display = k === on ? "" : "none";
+              const b = btns[k];
+              if (b) {
+                b.style.borderColor = k === on ? "var(--accent)" : "";
+                b.style.fontWeight = k === on ? "700" : "";
+                b.setAttribute("aria-selected", k === on ? "true" : "false");
+              }
+            });
+          };
+          defs.forEach(([k, label, n]) => {
+            const b = el("button", "chip", `${label}${n != null && n > 0 ? ` <span class="badge">${n}</span>` : ""}`);
+            b.setAttribute("role", "tab");
+            b.setAttribute("data-atab", k);
+            b.style.whiteSpace = "nowrap";
+            b.onclick = () => {
+              try { S.ui = S.ui || {}; S.ui.aipTab = k; save(); } catch (e) {}
+              paint(k);
+            };
+            btns[k] = b;
+            bar.appendChild(b);
+          });
+          root.insertBefore(bar, panAaj);
+          let cur = "aaj";
+          try { if (S.ui && defs.some(([k]) => k === S.ui.aipTab)) cur = S.ui.aipTab; } catch (e) {}
+          paint(cur);
+        } catch (e) {}
       }
       function aiPlannerSection(root) {
         // DEEP-AUDIT 2026-09: a corrupt plan (non-array tasks, missing profile)

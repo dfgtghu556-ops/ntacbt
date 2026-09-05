@@ -722,6 +722,66 @@ console.log("== T13 · focus-link chip ==");
   await t.close();
 }
 
+/* ============ T14 · tabs + demo + checkup ============ */
+console.log("== T14 · tabs + demo + checkup ==");
+{
+  const t = await boot({ seed: richSeed() });
+  seedAttempt(t, "jt-bank", 1);
+  await t.gotoAI();
+  const tabs = [...t.w.document.querySelectorAll("[data-atab]")].map((b) => b.getAttribute("data-atab"));
+  check("T14 four tabs", tabs.join(",") === "aaj,plan,memory,tools", tabs.join(","));
+  check("T14 aaj count badge", (t.w.document.querySelector('[data-atab="aaj"]').textContent || "").includes("3"));
+  const vis = (k) => t.w.document.querySelector(`[data-apanel="${k}"]`).style.display !== "none";
+  check("T14 aaj visible first", vis("aaj") && !vis("plan") && !vis("memory") && !vis("tools"));
+  t.w.document.querySelector('[data-atab="memory"]').click(); await sleep(250);
+  check("T14 tab switches", vis("memory") && !vis("aaj"));
+  check("T14 tab persists", t.g(`(S.ui || {}).aipTab`) === "memory");
+  check("T14 quick drills", !!t.w.document.querySelector('[data-ql="recall"]'));
+  t.w.document.querySelector('[data-ql="recall"]').click(); await sleep(700);
+  check("T14 quick recall launches", (t.g(`(EX && EX.test && EX.test.name) || ""`) || "").startsWith("Recall check"));
+  await t.backToPlanner();
+  // checkup: 26 live rows, zero broken
+  t.w.document.querySelector('[data-tool="checkup"]').click(); await sleep(500);
+  check("T14 checkup opens", t.text().includes("Feature checkup"));
+  check("T14 26 checks", t.w.document.querySelectorAll("[data-cu]").length === 26, t.w.document.querySelectorAll("[data-cu]").length);
+  const cuModal = [...t.w.document.querySelectorAll(".modal")].find((mm) => (mm.textContent || "").includes("Feature checkup"));
+  const nBad = [...cuModal.querySelectorAll("[data-cu]")].filter((b) => (b.closest(".optrow").textContent || "").trim().startsWith("❌")).length;
+  check("T14 zero broken", nBad === 0, nBad + " broken");
+  check("T14 summary counts", /\d+ live/.test(t.text()));
+  t.w.document.querySelector('[data-cu="0"]').click(); await sleep(400);
+  check("T14 Khol opens recovery", !!t.w.document.querySelector("[data-rec-box]"));
+  [...t.w.document.querySelectorAll(".modal")].forEach((m) => { try { m.remove(); } catch {} });
+  // demo round-trip preserves the real plan byte-identical
+  const before = t.g(`JSON.stringify(S.aiPlanner.tasks.map(x => x.id + x.status).join(","))`);
+  t.w.document.querySelector('[data-tool="demo"]').click(); await sleep(400);
+  check("T14 demo modal", t.text().includes("Demo plan try karo"));
+  t.w.document.querySelector("[data-demo-go]").click(); await sleep(700);
+  check("T14 demo loaded", t.g(`!!(S._demo && S._demo.on)`) === true);
+  check("T14 demo plan live", t.g(`S.aiPlanner.tasks.some(x => x.id === "demo-od1")`) === true);
+  check("T14 demo history live", t.g(`S.attempts.some(a => a.id === "demo-att-1")`) === true);
+  t.w.document.querySelector('[data-tool="demo"]').click(); await sleep(400);
+  check("T14 demo button flips", (t.w.document.querySelector('[data-tool="demo"]').textContent || "").includes("hatao"));
+  t.w.document.querySelector("[data-demo-go]").click(); await sleep(700);
+  check("T14 demo cleared", t.g(`S._demo == null`) === true);
+  check("T14 real plan restored", t.g(`JSON.stringify(S.aiPlanner.tasks.map(x => x.id + x.status).join(","))`) === before);
+  check("T14 demo test removed", t.g(`S.tests.some(x => x.id === "demo-test-1")`) === false);
+  check("T14 zero errors", t.errors.length === 0, t.errors.slice(0, 3).join(" | "));
+  await t.close();
+}
+{
+  // demo from the wizard (no plan at all)
+  const t = await boot({ seed: { tests: bankTests(), attempts: [] } });
+  await t.gotoAI();
+  check("T14 wizard shows", !!t.w.document.querySelector("#app .aip-steps"));
+  check("T14 wizard demo entry", !!t.w.document.querySelector("[data-wiz-demo]"));
+  t.w.document.querySelector("[data-wiz-demo]").click(); await sleep(400);
+  t.w.document.querySelector("[data-demo-go]").click(); await sleep(700);
+  check("T14 demo from wizard", t.g(`S.aiPlanner.tasks.some(x => x.id === "demo-od1")`) === true);
+  check("T14 today view renders", t.text().includes("Today's tasks"));
+  check("T14 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+
 console.log("──────────────────────────────────────────────");
 console.log(`24PACK: passed ${passed}, failed ${failed}`);
 process.exit(failed ? 1 : 0);
