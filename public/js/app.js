@@ -6850,7 +6850,7 @@
             } catch (e) {
               toast("Video search fail — baad mein try karo");
             }
-            try { ev.target.disabled = false; } catch (e) {}
+            try { ev.target.disabled = false; ev.target.textContent = st.videoId ? "🔁 Dusra one-shot" : "🔍 One-shot dhoondo"; } catch (e) {}
           };
           body.querySelectorAll("[data-bp-ep]").forEach((b) => {
             b.onclick = () => {
@@ -7254,7 +7254,7 @@
           box.innerHTML = arr.length
             ? arr.map((c, i) => `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px">
                 <span style="flex:1"><b>${esc(c.label || "Busy")}</b> <span class="small muted">${esc(c.from)}–${esc(c.to)}</span></span>
-                <button class="btn sm ghost" data-cm-del="${i}">✕</button></div>`).join("")
+                <button class="btn sm ghost" data-cm-del="${i}" aria-label="Delete" title="Delete">✕</button></div>`).join("")
             : `<div class="small muted">Koi fixed hours nahi — poora din free maana jayega.</div>
                <div class="small" style="margin-top:6px">Aaj free: <b>${fpFmtHm(freeMinFor(todayKey(Date.now())))}</b></div>`;
           box.querySelectorAll("[data-cm-del]").forEach((x) => {
@@ -7829,6 +7829,25 @@
         toast("🖼️ Timetable image download ho gayi — wallpaper banao!");
       }
       /* ---- F4 · BACKUP / RESTORE (trust bridge to cloud sync) ---- */
+      function backupModal() {
+        const m = el("div", "modal");
+        m.innerHTML = `<div class="box" style="max-width:min(440px,94vw)">
+          <h3 style="margin-top:0">💾 Backup & restore</h3>
+          <div class="small muted">Poora progress ek file mein — device badlo, data saath le jao.</div>
+          <div class="row" style="margin-top:12px;gap:8px">
+            <button class="btn sm" data-bk-down>⬇️ Download backup</button>
+            <button class="btn sm ghost" data-bk-pick>♻️ Restore…</button>
+          </div>
+          <input type="file" accept="application/json" data-bk-file style="display:none">
+          <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-no>Close</button></div>
+        </div>`;
+        m.querySelector("[data-bk-down]").onclick = () => backupDownload();
+        const f = m.querySelector("[data-bk-file]");
+        m.querySelector("[data-bk-pick]").onclick = () => { try { f.click(); } catch (e) {} };
+        f.onchange = () => { if (f.files && f.files[0]) backupRestore(f.files[0]); };
+        m.querySelector("[data-no]").onclick = () => m.remove();
+        document.body.appendChild(m);
+      }
       function backupDownload() {
         try {
           const blob = new Blob([localStorage.getItem("jeecbt.v1") || "{}"], { type: "application/json" });
@@ -8013,7 +8032,7 @@
                 return `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;${on ? "border-color:var(--green)" : ""}">
                   <span style="flex:1;min-width:0"><b>${esc(pl.name)}</b> <span class="small muted">· ${d}/${n} done</span></span>
                   ${on ? `<span class="pill">active</span>` : `<button class="btn sm" data-ps-on="${id}">Open</button>`}
-                  ${Object.keys(s2.plans).length > 1 ? `<button class="btn sm ghost" data-ps-del="${id}">✕</button>` : ""}
+                  ${Object.keys(s2.plans).length > 1 ? `<button class="btn sm ghost" data-ps-del="${id}" aria-label="Delete plan" title="Delete plan">✕</button>` : ""}
                 </div>`;
               }).join("")
             : `<div class="small muted">Koi plan nahi — wizard se pehla banao.</div>`;
@@ -8081,7 +8100,7 @@
             ${btn("parent", "👪", "Parent report", "WhatsApp weekly card", "")}
             ${btn("backup", "💾", "Backup", "Download / restore", "")}
           </div>
-          <input type="file" accept="application/json" data-restore-file style="display:none">`;
+`;
         const acts = {
           recovery: () => aipRecoveryModal(),
           backlog: () => backlogCardModal(),
@@ -8097,7 +8116,7 @@
           export: () => exportICS(),
           wallpaper: () => exportTimetablePNG(),
           parent: () => parentReportModal(),
-          backup: () => backupDownload(),
+          backup: () => backupModal(),
         };
         c.querySelectorAll("[data-tool]").forEach((b) => {
           b.onclick = () => {
@@ -10291,6 +10310,7 @@
             // E5 · link the focus timer to this exact task
             const fb = el("button", "btn ghost sm", "⏱️");
             fb.title = "Focus timer is task se link karo";
+            fb.setAttribute("aria-label", "Focus timer is task se link karo");
             fb.onclick = () => {
               pomoLinkTask(t.id);
               toast(`⏱️ Timer linked: ${t.topic.slice(0, 40)} — Study Timer mein Start dabao`);
@@ -10950,6 +10970,7 @@
       <div class="lbl"><b id="pomoTime">${fmtTime(POMO.left)}</b><span id="pomoState">${POMO.mode === "focus" ? "FOCUS" : "BREAK"}</span></div>
     </div>
     <div class="pomo-controls"></div>
+    <div data-pomo-link style="margin-top:8px"></div>
     <div class="small muted" style="text-align:center;margin-top:10px">Today: <b>${totalToday} min</b> of deep focus${totalToday >= 100 ? " — outstanding!" : totalToday >= 50 ? " — great pace!" : ""}</div>
     <div data-focusGoal style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
       <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
@@ -10967,6 +10988,15 @@
       </div>
       <div class="progress" style="margin-top:6px;height:8px"><i data-fgWBar style="width:0%;background:linear-gradient(90deg,var(--blue),var(--purple))"></i></div>
     </div>`;
+        // FP · E5 linked-task chip (set from any plan task row via ⏱️)
+        try {
+          const lt = pomoLinkedTask();
+          const slot = c.querySelector("[data-pomo-link]");
+          if (lt && slot) {
+            slot.innerHTML = `<div class="small" style="background:var(--blue-soft);border-radius:8px;padding:6px 10px">⏱️ Linked: <b>${esc(lt.topic)}</b> <span class="muted">· ${esc(lt.subject)}</span> <button class="btn sm ghost" data-pomo-unlink style="padding:1px 7px;font-size:11px" aria-label="Unlink task" title="Unlink">✕</button></div>`;
+            slot.querySelector("[data-pomo-unlink]").onclick = () => { pomoLinkTask(null); render(0); };
+          }
+        } catch (e) {}
         const ctr = c.querySelector(".pomo-controls");
         const startB = el(
           "button",

@@ -512,6 +512,8 @@ console.log("== T9 · mock protocol + sharing ==");
   check("T9 wallpaper drawn", t.g(`window.__ctxCalls > 0`) === true);
   check("T9 wallpaper downloaded", (t.g(`(window.__dl || []).map(x => x.name).join(",")`) || "").includes(".png"));
   t.w.document.querySelector('[data-tool="backup"]').click(); await sleep(400);
+  check("T9 backup modal", !!t.w.document.querySelector("[data-bk-down]"));
+  t.w.document.querySelector("[data-bk-down]").click(); await sleep(400);
   check("T9 backup downloaded", (t.g(`(window.__dl || []).map(x => x.name).join(",")`) || "").includes("ntacbt-backup"));
   check("T9 zero errors", t.errors.length === 0, t.errors.slice(0, 3).join(" | "));
   await t.close();
@@ -558,6 +560,165 @@ console.log("== T11 · rich boot ==");
   check("T11 slots adopted", t.g(`Object.keys(S.planSlots.plans).length`) === 1);
   check("T11 no error card", !t.errorCard());
   check("T11 zero errors", t.errors.length === 0 && t.viewErrors.length === 0, (t.errors[0] || t.viewErrors[0] || ""));
+  await t.close();
+}
+
+/* ============ T12 · graceful edges ============ */
+console.log("== T12 · graceful edges ==");
+{
+  const t = await boot({ seed: richSeed() });
+  seedAttempt(t, "jt-bank", 1);
+  await t.gotoAI();
+  // backlog find with dead backend: fast graceful toast, button freed
+  t.w.document.querySelector("[data-bl-open]").click(); await sleep(400);
+  const t0 = Date.now();
+  t.w.document.querySelector("[data-bp-find]").click(); await sleep(1200);
+  check("T12 find fails graceful", t.toasts().join(" ").includes("One-shot nahi mila"), t.toasts().join(" ").slice(0, 80));
+  check("T12 find finishes fast", Date.now() - t0 < 8000, Date.now() - t0 + "ms");
+  check("T12 find button freed", t.w.document.querySelector("[data-bp-find]").disabled === false);
+  t.w.document.querySelector("[data-bp-find]").closest(".modal").querySelector("[data-no]").click(); await sleep(200);
+  // lesson Watch with dead backend: modal or toast, never a crash
+  t.w.document.querySelector("[data-tc-watch]").click(); await sleep(900);
+  check("T12 lesson opens offline-safe", !!t.w.document.querySelector(".modal [data-player]") || t.toasts().length > 0 || !!t.w.document.querySelector(".modal"));
+  [...t.w.document.querySelectorAll(".modal")].forEach((m) => { try { m.remove(); } catch {} });
+  // pomo link
+  const fb = [...t.w.document.querySelectorAll("#app button")].find((b) => (b.textContent || "") === "⏱️");
+  check("T12 focus-link button on rows", !!fb);
+  const linkedId = t.g(`S.aiPlanner.tasks.find(x => x.date === ${J(TK)} && x.status !== "done").id`);
+  fb.click(); await sleep(300);
+  check("T12 timer linked to task", t.g(`(S.pomoTask || {}).taskId`) === linkedId);
+  // empty pools
+  check("T12 recall unknown chapter → false", t.g(`recallCheckStart("Physics","NoSuchChapterXYZ",null)`) === false);
+  check("T12 recall toast", t.toasts().join(" ").includes("bank mein nahi"));
+  check("T12 recall pending untouched", t.g(`S._recallPending == null`) === true);
+  check("T12 mixed empty bank → false", t.g(`(function(){ const st = S.tests; S.tests = []; const r = mixedBagStart(12); S.tests = st; return r; })()`) === false);
+  // flash "Bhool gaya" path
+  t.w.document.querySelector("[data-fl-start]").click(); await sleep(400);
+  t.w.document.querySelector("[data-fl-flip]").click(); await sleep(250);
+  t.w.document.querySelector("[data-fl-no]").click(); await sleep(400);
+  check("T12 flash forgot → lapse", t.g(`S.flash["k0"].lapses`) === 1);
+  check("T12 flash forgot → box reset", t.g(`S.flash["k0"].box`) === 1);
+  // own-test with zero attempts
+  t.g(`S.__st = S.attempts; S.attempts = []; save();`);
+  await t.backToPlanner();
+  t.w.document.querySelector('[data-tool="owntest"]').click(); await sleep(400);
+  check("T12 own-test empty state", t.text().includes("Pehla test do"));
+  t.w.document.querySelector("[data-ot-go]").click(); await sleep(400);
+  check("T12 own-test empty start graceful", t.g(`typeof EX === "undefined" || !EX`) === true && t.toasts().length > 0);
+  [...t.w.document.querySelectorAll(".modal")].forEach((m) => { try { m.remove(); } catch {} });
+  t.g(`S.attempts = S.__st; delete S.__st; save();`);
+  // recovery on a clean plan
+  t.w.document.querySelector("#btn-aip-recovery-top").click(); await sleep(350);
+  t.w.document.querySelector("[data-rec-apply]").click(); await sleep(600);
+  check("T12 extend clears overdue", t.g(`S.aiPlanner.tasks.filter(x => x.status !== "done" && (x.date||"") < ${J(TK)}).length`) === 0);
+  t.w.document.querySelector("#btn-aip-recovery-top").click(); await sleep(350);
+  t.w.document.querySelector('[data-rec-strategy="extend"]').click(); await sleep(300);
+  t.w.document.querySelector("[data-rec-apply]").click(); await sleep(500);
+  check("T12 clean plan → clear toast", t.toasts().join(" ").includes("Backlog clear"));
+  // sprint with zero backlog
+  t.w.document.querySelector('[data-tool="sprint"]').click(); await sleep(400);
+  check("T12 sprint zero-backlog toast", t.toasts().join(" ").includes("Backlog zero"));
+  // slots delete path
+  t.w.document.querySelector('[data-tool="slots"]').click(); await sleep(400);
+  t.w.document.querySelector("[data-ps-name]").value = "Temp";
+  t.w.document.querySelector("[data-ps-add]").click(); await sleep(600);
+  await t.backToPlanner();
+  t.w.document.querySelector("[data-wiz-plans]").click(); await sleep(400);
+  const tempId = t.g(`Object.keys(S.planSlots.plans).find(id => S.planSlots.plans[id].name === "Temp")`);
+  t.w.document.querySelector(`[data-ps-del="${tempId}"]`).click(); await sleep(300);
+  [...t.w.document.querySelectorAll(".modal")].pop().querySelector("[data-yes]").click(); await sleep(500);
+  check("T12 slot deleted", !(t.g(`Object.keys(S.planSlots.plans).join(",")`) || "").split(",").includes(tempId));
+  // commitments add + delete
+  await t.backToPlanner();
+  t.w.document.querySelector('[data-tool="hours"]').click(); await sleep(400);
+  t.w.document.querySelector("[data-cm-from]").value = "10:00";
+  t.w.document.querySelector("[data-cm-to]").value = "12:00";
+  t.w.document.querySelector("[data-cm-label]").value = "Tmp";
+  t.w.document.querySelector("[data-cm-add]").click(); await sleep(400);
+  t.w.document.querySelector("[data-cm-del]").click(); await sleep(300);
+  check("T12 commitment deleted", t.g(`S.commitments.length`) === 0);
+  [...t.w.document.querySelectorAll(".modal")].forEach((m) => { try { m.remove(); } catch {} });
+  // short non-mock: instructions WITHOUT ritual
+  t.g("S.tests.push(" + JSON.stringify({ id: "jt-short", name: "Quick Revision Test", createdAt: NOW - DAY, duration: 600, questions: [{ ...({}), id: "sq0", no: 1, subject: "Physics", chapter: "Kinematics", topic: "Kinematics", type: "mcq", text: "Short Q?", options: OPTS, answer: "b" }] }) + ")");
+  t.g(`startExam("jt-short")`); await sleep(500);
+  check("T12 short test instructions", !!t.w.document.querySelector(".nta-inst"));
+  check("T12 no ritual for short test", !t.w.document.querySelector("[data-ritual-box]"));
+  t.w.document.querySelector("#ntaAgree").click();
+  t.w.document.querySelector("[data-go]").click(); await sleep(600);
+  check("T12 short test proceeds", t.g(`EX && EX.test.id`) === "jt-short");
+  // high accuracy → no gate, but ritual shows + PROCEED works
+  seedAttempt(t, "jt-bank", 0);
+  check("T12 gate disarmed at 100%", t.g(`accuracyGate().gated`) === false);
+  t.g("S.tests.push(" + JSON.stringify(mockTest()) + ")");
+  t.g(`startExam("jt-mock")`); await sleep(500);
+  check("T12 mock ritual shows", !!t.w.document.querySelector("[data-ritual-box]"));
+  check("T12 no gate at high acc", !t.w.document.querySelector("[data-gate-fix]"));
+  t.w.document.querySelector('[data-ritual="skim"]').click();
+  t.w.document.querySelector("#ntaAgree").click(); await sleep(150);
+  check("T12 PROCEED enabled by agree", t.w.document.querySelector("[data-go]").disabled === false);
+  t.w.document.querySelector("[data-go]").click(); await sleep(600);
+  check("T12 mock proceeds to exam", t.g(`EX && EX.test.id`) === "jt-mock");
+  // perfect autopsy
+  const aid100 = t.g(`S.attempts[S.attempts.length-1].id`);
+  t.g(`go("result", ${J("AID")})`.replace("AID", aid100)); await sleep(600);
+  check("T12 perfect autopsy clean", t.text().includes("0 questions need you"));
+  // exports with nothing to export
+  await t.backToPlanner();
+  t.g(`S.aiPlanner.tasks.forEach(x => x.status = "done"); save(); render(0);`); await sleep(500);
+  t.w.document.querySelector('[data-tool="export"]').click(); await sleep(400);
+  check("T12 ICS empty toast", t.toasts().join(" ").includes("Export ke layak kuch nahi"));
+  const dl0 = t.g(`(window.__dl || []).length`);
+  t.w.document.querySelector('[data-tool="wallpaper"]').click(); await sleep(400);
+  check("T12 wallpaper empty-day safe", t.g(`(window.__dl || []).length`) >= dl0);
+  // restore paths (last: rewrites storage)
+  t.g(`backupRestore(new File(["oops-not-json"], "x.json", { type: "application/json" }))`); await sleep(500);
+  check("T12 restore invalid toast", t.toasts().join(" ").includes("valid NTACBT backup nahi"));
+  t.g(`backupRestore(new File(["{}"], "b.json", { type: "application/json" }))`); await sleep(500);
+  check("T12 restore valid toast", t.toasts().join(" ").includes("restore ho gaya"));
+  check("T12 restore wrote storage", t.w.localStorage.getItem("jeecbt.v1") === "{}");
+  check("T12 zero errors", t.errors.length === 0, t.errors.slice(0, 3).join(" | "));
+  await t.close();
+}
+{
+  // dash edges: past countdown + empty-today briefing + locked badges
+  const ps = planSeed();
+  ps.tasks.forEach((x) => { x.date = DS(3); if (x.status === "done") x.status = "todo"; });
+  const t = await boot({ seed: { tests: bankTests(), attempts: [], aiPlanner: ps, settings: { examDate: DS(-1) } }, hash: "#dash" });
+  await sleep(400);
+  check("T12 past countdown text", t.text().includes("Exam aa gaya"));
+  const hr = new Date().getHours();
+  if (hr < 20) check("T12 briefing zero-today", t.text().includes("0 kaam"), "hr=" + hr);
+  check("T12 badges render locked", t.text().includes("Effort badges"));
+  check("T12 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+{
+  // fresh boot edges
+  const t = await boot({ seed: {}, hash: "#dash" });
+  await sleep(400);
+  check("T12 fresh countdown setter", !!t.w.document.querySelector("[data-cd-set]"));
+  check("T12 fresh badges", t.text().includes("Effort badges"));
+  t.g(`reminderTick()`);
+  await sleep(300);
+  check("T12 reminder silent sans plan", !t.toasts().join(" ").includes("🔔"));
+  check("T12 fresh no error card", !t.errorCard());
+  check("T12 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+
+/* ============ T13 · focus-link chip ============ */
+console.log("== T13 · focus-link chip ==");
+{
+  // pomodoroCard lives on the Schedule tab (default #planner landing)
+  const t = await boot({ seed: richSeed() });
+  await sleep(400);
+  check("T13 no chip unlinked", !t.text().includes("Linked:"));
+  t.g(`pomoLinkTask("t-cur1")`); t.g(`render(0)`); await sleep(500);
+  check("T13 chip shows task", t.text().includes("Linked:") && t.text().includes("Laws of Motion"));
+  t.w.document.querySelector("[data-pomo-unlink]").click(); await sleep(500);
+  check("T13 unlink clears", !t.text().includes("Linked:") && t.g(`S.pomoTask == null`) === true);
+  check("T13 done task never links", t.g(`pomoLinkTask("t-cur3"); (pomoLinkedTask() || {}).id || null`) === null);
+  check("T13 zero errors", t.errors.length === 0, t.errors[0] || "");
   await t.close();
 }
 
