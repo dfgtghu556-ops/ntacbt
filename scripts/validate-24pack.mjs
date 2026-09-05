@@ -235,7 +235,9 @@ console.log("== T2 · engines ==");
   t.g(`S.pyqWt = { at: Date.now(), map: { Physics: { Kinematics: 9, A: 5, B: 5, C: 5, "Laws of Motion": 1 } } }`);
   check("T2 pyq weight high=3", t.g(`pyqWeightOf("Physics","Kinematics")`) === 3);
   check("T2 pyq weight low=1", t.g(`pyqWeightOf("Physics","Laws of Motion")`) === 1);
-  check("T2 pyq build from disk", await t.g(`pyqWeightageBuild().then(m => Object.keys(m || {}).length > 0)`), "index.json papers parsed");
+  t.g(`delete S.pyqWt`);
+  check("T2 pyq build from disk", await t.g(`pyqWeightageBuild().then(m => Object.keys(m || {}).length >= 3)`), "index.json papers parsed");
+  check("T2 pyq chapters real", await t.g(`pyqWeightageBuild().then(m => Object.keys((m || {}).Physics || {}).length >= 5)`), "Physics chapters");
   check("T2 backlog finds Kinematics", (t.g(`backlogChapters().map(x => x.topic).join(",")`) || "").includes("Kinematics"));
   check("T2 targets suggest overdue-first", (t.g(`targetsSuggest(${J(TK)},5).join(",")`) || "").startsWith("t-od1"));
   check("T2 zero errors", t.errors.length === 0, t.errors[0] || "");
@@ -454,7 +456,9 @@ console.log("== T8 · dashboard ==");
   check("T8 countdown setter shows", !!t.w.document.querySelector("[data-cd-set]"));
   t.w.document.querySelector("[data-cd-in]").value = DS(30);
   t.w.document.querySelector("[data-cd-set]").click(); await sleep(500);
-  check("T8 countdown shows 30 din", t.text().includes("30") && /din/i.test(t.text()));
+  t.g(`go("dash")`); await sleep(600);
+  const tx8 = t.text();
+  check("T8 single countdown after set", tx8.includes("JEE Main Countdown") && tx8.includes("30d") && !tx8.includes("roz ~") && !t.w.document.querySelector("[data-cd-set]"));
   const hr = new Date().getHours();
   const tx = t.text();
   if (hr < 17) check("T8 morning briefing", tx.includes("Aaj ka briefing") || tx.includes("briefing"), "hr=" + hr);
@@ -685,7 +689,7 @@ console.log("== T12 · graceful edges ==");
   ps.tasks.forEach((x) => { x.date = DS(3); if (x.status === "done") x.status = "todo"; });
   const t = await boot({ seed: { tests: bankTests(), attempts: [], aiPlanner: ps, settings: { examDate: DS(-1) } }, hash: "#dash" });
   await sleep(400);
-  check("T12 past countdown text", t.text().includes("Exam aa gaya"));
+  check("T12 past countdown text", t.text().includes("Passed"));
   const hr = new Date().getHours();
   if (hr < 20) check("T12 briefing zero-today", t.text().includes("0 kaam"), "hr=" + hr);
   check("T12 badges render locked", t.text().includes("Effort badges"));
@@ -779,6 +783,56 @@ console.log("== T14 · tabs + demo + checkup ==");
   check("T14 demo from wizard", t.g(`S.aiPlanner.tasks.some(x => x.id === "demo-od1")`) === true);
   check("T14 today view renders", t.text().includes("Today's tasks"));
   check("T14 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+
+/* ============ T15 · dashboard tabs + last-plan delete + single countdown ============ */
+console.log("== T15 · dashboard tabs + delete ==");
+{
+  const t = await boot({ seed: { ...richSeed(), _fpSprint: 1 }, hash: "#dash" });
+  await sleep(500);
+  const q = (s) => t.w.document.querySelector(s);
+  check("T15 dash tabs render", !!q("[data-dtabs]") && q("[data-dtabs]").querySelectorAll("[data-dtab]").length === 3);
+  check("T15 dash default aaj", t.g(`S.ui.dashTab`) === "aaj" && q('[data-dpanel="aaj"]').style.display !== "none" && q('[data-dpanel="prog"]').style.display === "none" && q('[data-dpanel="prac"]').style.display === "none");
+  q('[data-dtab="prog"]').click(); await sleep(300);
+  check("T15 dash switch prog", t.g(`S.ui.dashTab`) === "prog" && q('[data-dpanel="prog"]').style.display !== "none" && q('[data-dpanel="aaj"]').style.display === "none");
+  q('[data-dtab="prac"]').click(); await sleep(300);
+  check("T15 dash switch prac", t.g(`S.ui.dashTab`) === "prac" && q('[data-dpanel="prac"]').style.display !== "none" && q('[data-dpanel="prog"]').style.display === "none");
+  t.g(`go("dash")`); await sleep(600);
+  check("T15 dash tab persists", t.g(`S.ui.dashTab`) === "prac" && t.w.document.querySelector('[data-dpanel="prac"]').style.display !== "none");
+  const pan = (k) => t.w.document.querySelector(`[data-dpanel="${k}"]`);
+  check("T15 panels populated", ["aaj", "prog", "prac"].every((k) => pan(k) && pan(k).children.length > 0));
+  check("T15 hero above tabs", (() => { const ch = [...t.w.document.querySelector("#app").children].map((x) => x.getAttribute && (x.getAttribute("data-dtabs") ? "bar" : (x.getAttribute("data-dpanel") || "?"))); const bi = ch.indexOf("bar"); return bi > 0 && ch[bi - 1] === "?"; })());
+  // countdown dedupe: date set → sirf legacy countdown, apna card gayab
+  t.g(`S.settings.examDate="${DS(20)}"; save(); go("dash")`); await sleep(600);
+  const tx1 = t.text();
+  check("T15 single countdown", tx1.includes("JEE Main Countdown") && tx1.includes("20d") && !tx1.includes("roz ~") && !t.w.document.querySelector("[data-cd-set]"));
+  t.g(`S.settings.examDate=""; save(); go("dash")`); await sleep(600);
+  check("T15 setter back when cleared", !!t.w.document.querySelector("[data-cd-set]") && t.text().includes("Exam countdown"));
+  check("T15 zero errors", t.errors.length === 0, t.errors[0] || "");
+  await t.close();
+}
+{
+  // UI se SAARE plans delete → aakhri ke baad wizard
+  const t = await boot({ seed: { tests: bankTests(), attempts: [], aiPlanner: planSeed() } });
+  await t.backToPlanner();
+  t.w.document.querySelector('[data-atab="tools"]').click(); await sleep(300);
+  t.w.document.querySelector('[data-tool="slots"]').click(); await sleep(400);
+  for (let i = 0; i < 6; i++) {
+    const n = t.g(`(S.planSlots && S.planSlots.plans) ? Object.keys(S.planSlots.plans).length : 0`);
+    if (!n) break;
+    if (!t.w.document.querySelector("[data-ps-list]")) {
+      await t.backToPlanner();
+      t.w.document.querySelector('[data-atab="tools"]').click(); await sleep(300);
+      t.w.document.querySelector('[data-tool="slots"]').click(); await sleep(400);
+    }
+    t.w.document.querySelector("[data-ps-del]").click(); await sleep(300);
+    [...t.w.document.querySelectorAll(".modal")].pop().querySelector("[data-yes]").click(); await sleep(500);
+  }
+  check("T15 all plans deleted", t.g(`(S.planSlots && S.planSlots.plans) ? Object.keys(S.planSlots.plans).length : -1`) === 0 && t.g(`S.aiPlanner === null`) === true);
+  await t.backToPlanner();
+  check("T15 last delete shows wizard", !!t.w.document.querySelector("#app .aip-steps"));
+  check("T15 zero errors", t.errors.length === 0, t.errors[0] || "");
   await t.close();
 }
 

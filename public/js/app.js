@@ -6296,8 +6296,11 @@
           const papers = (ix && (ix.papers || ix.files || [])) || [];
           const map = {};
           for (const p of papers.slice(0, 40)) {
+            // index entries are {id,...} objects (file = <id>.json); tolerate plain strings too
+            const name = typeof p === "string" ? p : p && (p.file || p.path || (p.id ? p.id + ".json" : null));
+            if (!name) continue;
             try {
-              const d = await (await fetch("/pyq/" + p)).json().catch(() => null);
+              const d = await (await fetch("/pyq/" + name)).json().catch(() => null);
               const qs = (d && (d.questions || (d.paper && d.paper.questions))) || [];
               qs.forEach((q) => {
                 const s = q.subject || "General",
@@ -7066,6 +7069,8 @@
         return "";
       }
       function countdownCard() {
+        // Date set hai? To legacy JEE countdown + exam-day checklist display sambhalte hain — teesra countdown confusion banega.
+        try { if (countdownGet()) return null; } catch (e) {}
         const c = el("div", "card");
         const paint = () => {
           const ed = countdownGet();
@@ -8032,7 +8037,7 @@
                 return `<div class="optrow" style="display:flex;gap:8px;align-items:center;padding:7px 10px;${on ? "border-color:var(--green)" : ""}">
                   <span style="flex:1;min-width:0"><b>${esc(pl.name)}</b> <span class="small muted">· ${d}/${n} done</span></span>
                   ${on ? `<span class="pill">active</span>` : `<button class="btn sm" data-ps-on="${id}">Open</button>`}
-                  ${Object.keys(s2.plans).length > 1 ? `<button class="btn sm ghost" data-ps-del="${id}" aria-label="Delete plan" title="Delete plan">✕</button>` : ""}
+                  ${`<button class="btn sm ghost" data-ps-del="${id}" aria-label="Delete plan" title="Delete plan">✕</button>`}
                 </div>`;
               }).join("")
             : `<div class="small muted">Koi plan nahi — wizard se pehla banao.</div>`;
@@ -23064,14 +23069,20 @@
         acts.append(two, qs, lb);
         hero.appendChild(acts);
         root.appendChild(hero);
+        // ── FP · dashboard panels: har card apni jagah (Aaj / Progress / Practice) ──
+        const dAaj = el("div", ""), dProg = el("div", ""), dPrac = el("div", "");
+        dAaj.setAttribute("data-dpanel", "aaj");
+        dProg.setAttribute("data-dpanel", "prog");
+        dPrac.setAttribute("data-dpanel", "prac");
+        root.append(dAaj, dProg, dPrac);
         // ── "Am I on track?" survival banner: honest score + one next action ──
         const sb = survivalBanner();
-        if (sb) root.appendChild(sb);
+        if (sb) dAaj.appendChild(sb);
         // ── FP: briefing/review (time-aware) + countdown + effort badges ──
-        try { const bf = briefingCard(); if (bf) root.appendChild(bf); } catch (e) {}
-        try { const er = eveningReviewCard(); if (er) root.appendChild(er); } catch (e) {}
-        try { const cd0 = countdownCard(); if (cd0) root.appendChild(cd0); } catch (e) {}
-        try { const fb0 = fpBadgesCard(); if (fb0) root.appendChild(fb0); } catch (e) {}
+        try { const bf = briefingCard(); if (bf) dAaj.appendChild(bf); } catch (e) {}
+        try { const er = eveningReviewCard(); if (er) dAaj.appendChild(er); } catch (e) {}
+        try { const cd0 = countdownCard(); if (cd0) dAaj.appendChild(cd0); } catch (e) {}
+        try { const fb0 = fpBadgesCard(); if (fb0) dProg.appendChild(fb0); } catch (e) {}
         // ── one-glance quick launcher: everyday actions at finger reach ──
         const qa = el("div", "grid g4");
         qa.style.cssText = "margin-top:12px;gap:10px";
@@ -23100,7 +23111,7 @@
           c.onclick = () => go(r2);
           qa.appendChild(c);
         });
-        root.appendChild(qa);
+        dPrac.appendChild(qa);
 
         // ── TODAY AT A GLANCE: the 4 things that matter right now, above the fold.
         //    Research-based hierarchy: status/targets top → trends middle → details
@@ -23213,7 +23224,7 @@
             });
             ov.appendChild(w);
           }
-          root.appendChild(ov);
+          dPrac.appendChild(ov);
         })();
 
         // ── launcher order: ONE next action → mentor → aaj ka mission ──
@@ -23222,7 +23233,7 @@
         const safeCard = (fn) => {
           try {
             const n = fn();
-            if (n) root.appendChild(n);
+            if (n) dAaj.appendChild(n);
           } catch (e) {
             console.error("[dash-card]", e);
           }
@@ -23249,12 +23260,12 @@
           };
           r.firstElementChild.appendChild(el("div", "row"));
           r.firstElementChild.lastElementChild.append(go1, dis);
-          root.appendChild(r);
+          dAaj.appendChild(r);
         }
 
         // LAUNCHER v2: one clean 6-up stats strip (hero stats + performance)
         // instead of numbers scattered across hero + a separate g4 block
-        root.appendChild(
+        dProg.appendChild(
           el(
             "div",
             "grid g6 stats-strip",
@@ -23275,31 +23286,31 @@
           ),
         );
         const wr = weeklyReportCard();
-        if (wr) root.appendChild(wr);
+        if (wr) dProg.appendChild(wr);
         const eod = endOfDayCard();
-        if (eod) root.appendChild(eod);
+        if (eod) dAaj.appendChild(eod);
         // ---- motivation engine (the "mann nahi kar raha" toolkit) ----
         const gs = goalSetupCard();
-        if (gs) root.appendChild(gs);
+        if (gs) dAaj.appendChild(gs);
         const mmGrid = el("div", "grid g2");
         mmGrid.appendChild(momentumCard());
         mmGrid.appendChild(focusLockCard());
-        root.appendChild(mmGrid);
+        dProg.appendChild(mmGrid);
         // DASHBOARD CLEANUP: the mood card is a "start somewhere" tool — once
         // today's studying has clearly started it stops helping any decision,
         // so it yields its space (clutter rule: every card must earn its place).
         if (!S.studyLog[todayKey(Date.now())] && (S.dailyQuestions[todayKey(Date.now())] || 0) < 5)
-          root.appendChild(moodCard());
+          dAaj.appendChild(moodCard());
         // ---- consistency engine cluster (research-backed daily habits) ----
         const cb = comebackCard();
-        if (cb) root.appendChild(cb);
+        if (cb) dAaj.appendChild(cb);
         const sr = sundayReviewCard();
-        if (sr) root.appendChild(sr);
-        root.appendChild(daily10Card());
+        if (sr) dProg.appendChild(sr);
+        dAaj.appendChild(daily10Card());
         const ccGrid = el("div", "grid g2");
         ccGrid.appendChild(studyContractCard());
         ccGrid.appendChild(consistencyCard());
-        root.appendChild(ccGrid);
+        dProg.appendChild(ccGrid);
 
         const goal = S.settings.dailyGoal || 20,
           doneToday = S.dailyQuestions[todayKey(Date.now())] || 0;
@@ -23316,7 +23327,7 @@
       <i style="display:block;height:100%;width:${goalPct}%;background:var(--blue);border-radius:4px"></i></div>
     <div class="bar" style="margin-top:4px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
       <i style="display:block;height:100%;width:${focusPct}%;background:var(--green);border-radius:4px"></i></div>`;
-        root.appendChild(dg);
+        dAaj.appendChild(dg);
         // ── STUDY QUALITY SCORE: one honest 0-100 number for how you're studying ──
         //     consistency (7-day questions) 40% · accuracy 25% · focus minutes 20% ·
         //     revision adherence 15%. No competitor collapses 'how well am I
@@ -23382,7 +23393,7 @@
         <div><div class="small" style="font-weight:700;font-size:16px">${lvl[0]} ${lvl[1]}</div>
           <div class="small muted">${lvl[2]}</div>
           <div class="small muted" style="margin-top:4px">Aaj tak: ${g.total} tests · ${q7} Q is hafte · ${Math.round(f7)} focus-min is hafte</div></div></div>`;
-          root.appendChild(sq);
+          dProg.appendChild(sq);
         } catch (e) {}
         // ── Exam-day checklist — appears in the final window before the exam ──
         try {
@@ -23436,7 +23447,7 @@
             <input type="checkbox" data-cb="${i}" style="width:17px;height:17px"><span>${it[0]} <b>${it[1]}</b></span><span class="small muted" style="margin-left:auto;text-align:right">${it[2]}</span></label>`,
             )
             .join("")}</div>`;
-              root.appendChild(ec);
+              dProg.appendChild(ec);
             }
           }
         } catch (e) {}
@@ -23463,7 +23474,7 @@
             go2.onclick = () => startExam(st2.id);
             r3.appendChild(go2);
             scCard.appendChild(r3);
-            root.appendChild(scCard);
+            dAaj.appendChild(scCard);
           }
         }
 
@@ -23488,7 +23499,7 @@
           nb.onclick = () => go("notebook");
           row.append(goBtn, nb);
           sr.appendChild(row);
-          root.appendChild(sr);
+          dPrac.appendChild(sr);
         }
 
         // ---- Exam countdown + percentile trajectory ----
@@ -23510,7 +23521,7 @@
               : target && latest != null
                 ? `<div class="traj-row"><span class="small">Latest percentile <b>${latest}</b> · target <b>${target}</b> — take more tests to unlock your projection.</span></div>`
                 : "");
-          root.appendChild(cd);
+          dProg.appendChild(cd);
         }
 
         // ---- Weekly recap ----
@@ -23524,7 +23535,7 @@
         ${statCard("Accuracy", recap.acc + "%", recap.accDelta != null ? `<div class="small" style="color:${recap.accDelta >= 0 ? "var(--green)" : "var(--red)"}">${recap.accDelta >= 0 ? "▲" : "▼"} ${Math.abs(recap.accDelta)}% vs last week</div>` : "")}
         ${statCard("Study days", recap.activeDays + " / 7")}
       </div>`;
-          root.appendChild(wr);
+          dProg.appendChild(wr);
         }
 
         // ---- Badges ----
@@ -23541,7 +23552,7 @@
       </div>`,
       )
       .join("")}</div>`;
-        root.appendChild(bc);
+        dProg.appendChild(bc);
 
         // latest public tests
         const lib = el("div", "card");
@@ -23563,7 +23574,7 @@
           cloudTests.slice(0, 3).forEach((t) => g3.appendChild(testCard(t)));
           lib.appendChild(g3);
         }
-        root.appendChild(lib);
+        dPrac.appendChild(lib);
 
         // recent performance
         const rec = el("div", "card");
@@ -23607,12 +23618,12 @@
             });
           rec.appendChild(tb);
         }
-        root.appendChild(rec);
+        dPrac.appendChild(rec);
 
         // weak-chapter video recommendations
         const vids = weakVideoItems();
         if (vids.length)
-          root.appendChild(
+          dPrac.appendChild(
             videoCard(
               "Revise before your next test",
               "Short revision links picked from your weakest chapters and recent mistakes.",
@@ -23620,6 +23631,49 @@
             ),
           );
 
+        // ── FP · dashboard tab bar with live count (choice persists across visits) ──
+        try {
+          S.ui = S.ui || {};
+          if (!["aaj", "prog", "prac"].includes(S.ui.dashTab)) S.ui.dashTab = "aaj";
+          let nAaj = 0;
+          try {
+            const pl = aip();
+            const tk = String(pl.todayKey || "");
+            nAaj = (pl.tasks || []).filter((t) => String(t.dayKey || "") === tk && !t.done).length;
+          } catch (e) {}
+          const dbar = el("div", "row");
+          dbar.setAttribute("data-dtabs", "1");
+          dbar.setAttribute("role", "tablist");
+          dbar.style.cssText = "position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 2px;gap:6px;overflow-x:auto;flex-wrap:nowrap";
+          const ddefs = [
+            ["aaj", "☀️ Aaj", nAaj],
+            ["prog", "📈 Progress", null],
+            ["prac", "🎯 Practice", null],
+          ];
+          const dbtns = {};
+          const dpanels = { aaj: dAaj, prog: dProg, prac: dPrac };
+          const dpaint = (on) => {
+            ddefs.forEach(([k]) => {
+              dpanels[k].style.display = k === on ? "" : "none";
+              const b = dbtns[k];
+              if (b) {
+                b.style.borderColor = k === on ? "var(--accent)" : "";
+                b.style.fontWeight = k === on ? "700" : "";
+                b.setAttribute("aria-selected", k === on ? "true" : "false");
+              }
+            });
+          };
+          ddefs.forEach(([k, label, n]) => {
+            const b = el("button", "chip", `${label}${n != null && n > 0 ? ` <span class="badge">${n}</span>` : ""}`);
+            b.setAttribute("role", "tab");
+            b.setAttribute("data-dtab", k);
+            b.onclick = () => { S.ui.dashTab = k; try { save(); } catch (e) {} dpaint(k); };
+            dbtns[k] = b;
+            dbar.appendChild(b);
+          });
+          root.insertBefore(dbar, dAaj);
+          dpaint(S.ui.dashTab);
+        } catch (e) {}
         countUpStats(root); // animate the headline numbers in
       }
 
