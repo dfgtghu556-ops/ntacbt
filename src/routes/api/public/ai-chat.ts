@@ -160,10 +160,62 @@ function needsThinking(text: string, hasImage: boolean): boolean {
   return wordSignals.test(t) || mathySignals.test(t);
 }
 
+/** Call the Lovable AI Gateway (OpenAI-compatible, handles text + images).
+ *  Primary provider: no per-student setup, stable models. Returns null so
+ *  the caller can fall through to the other providers. */
+async function tryLovable(
+  apiKey: string,
+  systemPrompt: string,
+  recent: ChatMessage[],
+  thinking: boolean,
+): Promise<string | null> {
+  const model = thinking ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite";
+  const messages: Record<string, unknown>[] = [{ role: "system", content: systemPrompt }];
+  for (const m of recent) {
+    const text = (m.text || "").slice(0, 4000);
+    if (m.role === "user" && m.image?.data && m.image.mimeType) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: text || "Solve the question in this photo." },
+          {
+            type: "image_url",
+            image_url: { url: `data:${m.image.mimeType};base64,${m.image.data}` },
+          },
+        ],
+      });
+    } else {
+      messages.push({ role: m.role === "model" ? "assistant" : "user", content: text });
+    }
+  }
+  try {
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.4,
+        max_tokens: thinking ? 1536 : 700,
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!r.ok) return null;
+    const data = (await r.json().catch(() => null)) as {
+      choices?: { message?: { content?: string } }[];
+    } | null;
+    const reply = data?.choices?.[0]?.message?.content?.trim();
+    return reply ? reply.replace(/<think>[\s\S]*?<\/think>/g, "").trim() || null : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Call OpenRouter (OpenAI-compatible API). Returns the reply text, or
  *  null when the caller should fall back to Gemini (rate limit, error,
  *  or empty response — free-tier models rotate and hiccup). */
 async function tryOpenRouter(
+
   apiKey: string,
   systemPrompt: string,
   recent: ChatMessage[],
