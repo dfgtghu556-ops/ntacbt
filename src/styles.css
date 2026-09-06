@@ -137,8 +137,36 @@
     border-color: var(--color-border);
   }
 
+  /* Tell the browser which scheme is active so native controls (select
+     dropdowns, scrollbars, date pickers, checkboxes) follow the theme
+     instead of staying white in dark mode / dark in light mode. */
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  /* Native <select> popups render with the OS palette on some platforms —
+     pin them to the app surface colours so nothing stays black-on-black. */
+  select,
+  option,
+  optgroup {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

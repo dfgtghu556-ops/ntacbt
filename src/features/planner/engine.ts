@@ -355,7 +355,22 @@ const TRUSTED_BOARD = [
  * Deterministic filter + explainable educational-fit ranking.
  * Keeps the original positional signature so behavior is byte-for-byte stable.
  */
+/** YouTube's "3 years ago" / "5 months ago" text → age in months (null if unknown). */
+export function ageInMonths(published: string): number | null {
+  const m = /(\d+)\s*(second|minute|hour|day|week|month|year)/i.exec(published || "");
+  if (!m) return null;
+  const n = Number(m[1]);
+  const unit = (m[2] || "").toLowerCase();
+  if (!Number.isFinite(n)) return null;
+  if (unit === "year") return n * 12;
+  if (unit === "month") return n;
+  if (unit === "week") return (n * 7) / 30;
+  if (unit === "day") return n / 30;
+  return 0;
+}
+
 export function rank(
+
   raw: RawItem[],
   topic: string,
   language: string,
@@ -616,6 +631,24 @@ export function rank(
       score += 18;
       why.push("your chosen educator");
     }
+
+    /* FRESHNESS: syllabus and exam pattern shift year to year, so a lecture
+       from 5 years ago is worth less than this year's batch — without wiping
+       out evergreen classics (they still rank on relevance). */
+    const age = ageInMonths(v.published);
+    if (age != null) {
+      if (age <= 12) {
+        score += 16;
+        why.push("recent upload");
+      } else if (age <= 24) {
+        score += 8;
+      } else if (age <= 36) {
+        score -= 4;
+      } else {
+        score -= Math.min(22, 8 + (age - 36) / 6);
+      }
+    }
+
 
     out.push({
       id: v.id,
