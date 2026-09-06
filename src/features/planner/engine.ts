@@ -617,6 +617,24 @@ export function rank(
       why.push("your chosen educator");
     }
 
+    /* FRESHNESS: syllabus and exam pattern shift year to year, so a lecture
+       from 5 years ago is worth less than this year's batch — without wiping
+       out evergreen classics (they still rank on relevance). */
+    const age = ageInMonths(v.published);
+    if (age != null) {
+      if (age <= 12) {
+        score += 16;
+        why.push("recent upload");
+      } else if (age <= 24) {
+        score += 8;
+      } else if (age <= 36) {
+        score -= 4;
+      } else {
+        score -= Math.min(22, 8 + (age - 36) / 6);
+      }
+    }
+
+
     out.push({
       id: v.id,
       title: v.title,
