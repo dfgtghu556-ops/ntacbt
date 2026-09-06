@@ -346,7 +346,13 @@ export const Route = createFileRoute("/api/public/ai-chat")({
           }
         }
 
-        // 1) OpenRouter first (free frontier models) — text-only messages.
+        // 0) Lovable AI Gateway — primary provider (text + vision, no extra setup).
+        if (lovKey) {
+          const reply = await tryLovable(lovKey, systemPrompt, recent, thinking);
+          if (reply) return Response.json({ reply });
+        }
+
+        // 1) OpenRouter — text-only messages.
         if (orKey && !hasImage) {
           const reply = await tryOpenRouter(orKey, systemPrompt, recent, thinking);
           if (reply) return Response.json({ reply });
@@ -363,20 +369,17 @@ export const Route = createFileRoute("/api/public/ai-chat")({
               error:
                 status === 429
                   ? "The AI is getting a lot of questions right now — try again in a moment."
-                  : `AI service error (${out.status})`,
+                  : "The AI is busy right now — thoda ruk kar dobara try karo.",
             },
             { status },
           );
         }
 
         return Response.json(
-          {
-            error: hasImage
-              ? "Photo answering needs a GEMINI_API_KEY secret (OpenRouter free vision is unreliable)."
-              : "The AI is temporarily unavailable — try again in a moment.",
-          },
+          { error: "The AI is temporarily unavailable — try again in a moment." },
           { status: 503 },
         );
+
       },
     },
   },
