@@ -33,7 +33,8 @@
     "validate:24pack": "node scripts/validate-24pack.mjs",
     "audit:wires": "node scripts/audit-wires.mjs",
     "audit:clicks": "node scripts/audit-clicks.mjs",
-    "audit": "node scripts/audit-wires.mjs && node scripts/audit-clicks.mjs"
+    "audit": "node scripts/audit-wires.mjs && node scripts/audit-clicks.mjs",
+    "perf:drawer": "node scripts/drawerperf.mjs 400"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
