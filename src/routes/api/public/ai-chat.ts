@@ -333,9 +333,10 @@ export const Route = createFileRoute("/api/public/ai-chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const lovKey = process.env["LOVABLE_API_KEY"];
         const orKey = process.env["OPENROUTER_API_KEY"];
         const gemKey = process.env["GEMINI_API_KEY"];
-        if (!orKey && !gemKey) {
+        if (!lovKey && !orKey && !gemKey) {
           return Response.json(
             {
               error:

@@ -52,8 +52,9 @@ function createSupabaseClient() {
       getUser: async () => ({ data: { user: null }, error: null }),
     };
     return new Proxy({ auth: mockAuth } as unknown as ReturnType<typeof createClient<Database>>, {
-      get(target: Record<string, unknown>, prop: string) {
-        if (prop in target) return target[prop];
+      get(rawTarget, prop) {
+        const target = rawTarget as unknown as Record<string, unknown>;
+        if (typeof prop === "string" && prop in target) return target[prop];
         return () => target;
       },
     });

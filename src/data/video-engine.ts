@@ -2194,12 +2194,12 @@ export function resolveCuratedVideos(params: {
 
   return generateConsistentCuratedSet({
     topic: params.topic,
-    subject: params.subject,
+    subject: params.subject ?? "",
     kind,
     depth,
     target,
-    teacher: params.teacher || params.teacherId,
-    institute: params.institute || params.instituteId,
+    teacher: params.teacher || params.teacherId || "",
+    institute: params.institute || params.instituteId || "",
   });
 }
 
@@ -2388,11 +2388,11 @@ export function generateConsistentCuratedSet(params: {
 
   // Reorder so the requested kind is at index 0
   if (kind === "practice") {
-    return [lessons[1], lessons[0], lessons[2], lessons[3]];
+    return [lessons[1]!, lessons[0]!, lessons[2]!, lessons[3]!];
   } else if (kind === "revision") {
-    return [lessons[2], lessons[0], lessons[1], lessons[3]];
+    return [lessons[2]!, lessons[0]!, lessons[1]!, lessons[3]!];
   } else if (kind === "advanced") {
-    return [lessons[3], lessons[0], lessons[1], lessons[2]];
+    return [lessons[3]!, lessons[0]!, lessons[1]!, lessons[2]!];
   }
   return lessons;
 }
