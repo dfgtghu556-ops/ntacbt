@@ -21,6 +21,11 @@ export interface StudyTubeVideo {
   playlistUrl?: string | undefined;
   verified?: boolean | undefined;
   isCurated?: boolean | undefined;
+  /**
+   * True when `durationSec` is an estimate (search-pick / offline pick), not a
+   * measured video length. UIs must render it with a "~" prefix.
+   */
+  durationEstimated?: boolean | undefined;
   /** When set, the item is an offline "search pick" that opens YouTube search (no single video id). */
   externalUrl?: string | undefined;
 }

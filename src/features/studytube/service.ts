@@ -25,6 +25,7 @@ function keyOf(req: StudyTubeRequest): string {
     req.target,
     req.teacher,
     req.institute,
+    req.maxMinutes ?? "",
   ]
     .map((x) =>
       String(x ?? "")

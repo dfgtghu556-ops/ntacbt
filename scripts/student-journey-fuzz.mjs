@@ -329,6 +329,23 @@ async function main() {
     let alive = true;
     try { g6("analyse")(bare, bareAtt); } catch (e) { alive = false; }
     ok(alive, "analyse() runs with mixed-validity attempt history (bad attempts skipped)");
+
+    // (4) REGRESSION (deploy audit): the DASHBOARD itself must survive a
+    // mixed-validity history. prepScore() and weeklyReportCard() read
+    // `a.result.all` unguarded, so viewDash() threw and the error boundary
+    // replaced the whole home screen — silently, because nothing asserted on
+    // the rendered DOM. Assert no throw, no boundary card, real content, and
+    // no swallowed card/view errors.
+    let dashErr = "";
+    w6.console.error = (...a) => { dashErr += a.map((x) => String((x && x.message) || x)).join(" ") + "\n"; };
+    let renderThrew = "";
+    try { g6(`go("dash")`); await new Promise((r) => setTimeout(r, 60)); g6(`render(0)`); }
+    catch (e) { renderThrew = e.message; }
+    const appHtml = w6.document.querySelector("#app").innerHTML;
+    ok(!renderThrew, "dashboard render() does not throw with malformed attempts" + (renderThrew ? " → " + renderThrew : ""));
+    ok(!/load nahi ho paya/.test(appHtml), "dashboard does NOT fall back to the error boundary");
+    ok(!/\[view:dash\]|\[dash-card\]/.test(dashErr), "no swallowed view/card errors while rendering dash" + (dashErr ? " → " + dashErr.trim().slice(0, 140) : ""));
+    ok(appHtml.length > 500, "dashboard actually painted content (" + appHtml.length + " chars)");
   }
 
   /* ------------------------------------------------------------ */

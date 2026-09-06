@@ -118,6 +118,18 @@ function weakTopics(store: DataStore): WeakTopic[] {
   return out.sort((a, b) => a.accuracy - b.accuracy).slice(0, 5);
 }
 
+/**
+ * Honest minutes for a planner row: a completed task counts its REAL watched
+ * minutes (`actualMin`) when the legacy engine recorded them, so a
+ * longer-than-planned video is never silently shown as the shorter estimate.
+ * Pending tasks use the planned `estMin`.
+ */
+export function realMinutes(t: PlannerTaskRow): number {
+  if (t.status === "done" && typeof t.actualMin === "number" && t.actualMin > 0)
+    return t.actualMin;
+  return t.estMin || 45;
+}
+
 function todayPlan(store: DataStore): {
   planned: number;
   completed: number;
@@ -131,7 +143,7 @@ function todayPlan(store: DataStore): {
   let done = 0;
   const missions: MissionSummary[] = [];
   for (const t of tasks) {
-    const min = t.estMin || 45;
+    const min = realMinutes(t);
     planned += min;
     if (t.status === "done") {
       done += 1;
@@ -143,23 +155,27 @@ function todayPlan(store: DataStore): {
 }
 
 function toMission(t: PlannerTaskRow): MissionSummary {
-  const profile = t.teacher || t.subject || "";
+  const chapter = t.chapter || t.topic || "";
+  const profile = (typeof t.teacher === "string" && t.teacher) || t.subject || "";
   const why =
-    t.why || `Planned ${t.kind} for ${t.chapter} — part of your current ${t.subject} plan.`;
+    (typeof t.why === "string" && t.why) ||
+    `Planned ${t.kind} for ${chapter} — part of your current ${t.subject} plan.`;
   return {
-    title: `${t.subject} — ${t.chapter}`,
+    title: `${t.subject} — ${chapter}`,
     subject: t.subject,
-    chapter: t.chapter,
-    minutes: t.estMin || 45,
+    chapter,
+    minutes: realMinutes(t),
     target: profile,
     why: why || "Scheduled from your adaptive plan.",
     kind: t.kind,
     taskId: t.id,
+    done: t.status === "done",
   };
 }
 
 function firstPendingMission(tasks: MissionSummary[]): MissionSummary | null {
-  return tasks.find((t) => t.kind !== "test") || tasks[0] || null;
+  // Never surface an already-completed task as the "next mission".
+  return tasks.find((t) => !t.done && t.kind !== "test") || tasks.find((t) => !t.done) || null;
 }
 
 function trend(store: DataStore): Array<{ at: number; marks: number; accuracy: number }> {

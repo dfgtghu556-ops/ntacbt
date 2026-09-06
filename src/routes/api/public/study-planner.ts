@@ -60,6 +60,10 @@ export const Route = createFileRoute("/api/public/study-planner")({
         const req = sanitizePlannerRequest(body);
         if (!req.topic) return Response.json({ error: "topic required" }, { status: 400 });
 
+        // The duration budget is part of the key: two tasks on the same topic
+        // with different planned lengths (e.g. a 45-min one-shot slot vs a
+        // 120-min lecture slot) must NOT share cached videos sized for the
+        // other slot — that was a direct "video ≠ dashboard time" leak.
         const key = [
           req.topic.toLowerCase(),
           req.subject,
@@ -70,6 +74,8 @@ export const Route = createFileRoute("/api/public/study-planner")({
           req.channel.toLowerCase(),
           req.teacher.toLowerCase(),
           req.institute.toLowerCase(),
+          req.maxMinutes,
+          req.minMinutes,
         ].join("|");
         const hit = cache.get(key);
         if (hit && Date.now() - hit.at < TTL) {

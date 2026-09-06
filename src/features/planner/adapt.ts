@@ -28,15 +28,19 @@ function norm(s: string | undefined): string {
 
 function matchesWeak(row: PlannerTaskRow, weak: WeakTopic[]): WeakTopic | null {
   const subj = norm(row.subject);
-  const chap = norm(row.chapter);
+  // Legacy planner rows carry the chapter name in `topic` (chapter is derived
+  // in the store) — match against BOTH spellings or weak-targeting silently
+  // never fires (audit 2026-09).
+  const chap = norm(row.chapter) || norm(row.topic);
   const topic = norm(row.topic);
+  const rowNames = new Set([chap, topic].filter(Boolean));
   for (const w of weak) {
     if (!w) continue;
     const ws = norm(w.subject);
+    if (!ws || !subj || subj !== ws) continue;
     const wc = norm(w.chapter);
     const wt = norm(w.topic || "");
-    if (ws && subj && subj === ws && wc && chap && chap === wc) return w;
-    if (ws && subj && subj === ws && wt && topic && topic === wt) return w;
+    if ((wc && rowNames.has(wc)) || (wt && rowNames.has(wt))) return w;
   }
   return null;
 }
@@ -65,12 +69,14 @@ export function adaptTasks(rows: PlannerTaskRow[], weak: WeakTopic[], now: numbe
   );
 
   mapped.sort((a, b) => {
-    const aw = a.weak ? 1 : 0;
-    const bw = b.weak ? 1 : 0;
-    if (aw !== bw) return bw - aw;
+    // Completed work always sinks first — a finished weak task must not sit at
+    // the top wearing a "Weak target" badge above real pending work.
     const ad = a.row.status === "done" ? 1 : 0;
     const bd = b.row.status === "done" ? 1 : 0;
     if (ad !== bd) return ad - bd;
+    const aw = a.weak ? 1 : 0;
+    const bw = b.weak ? 1 : 0;
+    if (aw !== bw) return bw - aw;
     return (a.row.estMin || 45) - (b.row.estMin || 45);
   });
 
@@ -81,10 +87,10 @@ export function adaptTasks(rows: PlannerTaskRow[], weak: WeakTopic[], now: numbe
     isWeakTarget: Boolean(m.weak),
   }));
 
-  const weakTargets = tasks.filter((t) => t.isWeakTarget).length;
+  const weakTargets = tasks.filter((t) => t.isWeakTarget && t.status !== "done").length;
   const pending = tasks.filter((t) => t.status !== "done").length;
   const summary = weakTargets
-    ? `${weakTargets} task${weakTargets > 1 ? "s" : ""} moved to the top because they match ${
+    ? `${weakTargets} pending task${weakTargets > 1 ? "s" : ""} moved to the top because they match ${
         usedWeak.length
       } identified weak topic${usedWeak.length > 1 ? "s" : ""}.`
     : pending

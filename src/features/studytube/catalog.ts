@@ -132,6 +132,7 @@ export function offlineCatalog(req: StudyTubeRequest): StudyTubeVideo[] {
     channel: channelName,
     channelId: teacher?.channelId || "",
     durationSec: durationFor(req.depth, req.kind, req.target),
+    durationEstimated: true,
     externalUrl: buildSearchUrl(req, channelName, teacher?.name),
     why: teacher
       ? `Dream Teacher pick: ${teacher.name} · ${teacher.specialization || "verified board educator"}.`
@@ -174,6 +175,7 @@ export function offlineCatalog(req: StudyTubeRequest): StudyTubeVideo[] {
       channel: ch,
       channelId: updated?.channelId || "",
       durationSec: durationFor(variantReq.depth, variantReq.kind, variantReq.target),
+      durationEstimated: true,
       externalUrl: buildSearchUrl(variantReq, ch, updated?.name),
       why:
         updated && updated.name !== teacher?.name

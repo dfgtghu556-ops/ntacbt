@@ -549,6 +549,39 @@ async function main() {
   const rankedEmpty = rank(live, "the and for", "en", "learn", 180);
   ok(Array.isArray(rankedEmpty), "rank on stopword topic returns array (no throw)");
 
+  // PLAN-SYNC (audit 2026-09): a small planned slot must not pick an
+  // hours-long video — the systematic "video length ≠ dashboard minutes"
+  // mismatch on every task.
+  const fitLive = [
+    {
+      id: "f1",
+      title: "Kinematics one shot complete",
+      channel: "PW",
+      channelId: "u1",
+      durationSec: 2700,
+      published: "1y",
+      live: false,
+    },
+    {
+      id: "f2",
+      title: "Kinematics complete marathon lecture",
+      channel: "PW",
+      channelId: "u1",
+      durationSec: 14400,
+      published: "1y",
+      live: false,
+    },
+  ];
+  const fitRanked = rank(fitLive, "Kinematics", "en", "learn", 45, "", "oneshot", 18, "jeemain");
+  ok(
+    fitRanked.some((i) => i.id === "f1"),
+    "small planned slot keeps the fitting video",
+  );
+  ok(
+    !fitRanked.some((i) => i.id === "f2"),
+    "small planned slot rejects the 4-hour video",
+  );
+
   /* ------------------------------------------------------------------ */
   section("Merge: curated-first, no duplicates, bounded");
   const curated = [
@@ -882,6 +915,11 @@ async function main() {
     );
     for (const l of set.lessons || []) {
       ok(P.engine.REAL_YT_ID.test(l.id), `board lesson id is a real YT id: ${l.title}`);
+      // Only oEmbed-verified entries may carry the embed-allowed flag.
+      ok(
+        l.verifiedReal === true,
+        `board lesson is oEmbed-verified (verifiedReal): ${l.title}`,
+      );
       ok(l.teacher && l.channel, `board lesson has teacher+channel: ${l.title}`);
       ok(l.kind && l.depth, `board lesson has kind/depth: ${l.title}`);
       ok(l.target === "board12" || l.target === "cbse27", `board lesson targets board: ${l.title}`);
@@ -918,27 +956,58 @@ async function main() {
   }
 
   /* ------------------------------------------------------------------ */
-  section("Curated registry ids are real YouTube video ids (verified)");
+  section("Curated honesty contract: unverified lessons are search-picks, never fake embeds");
+  // Audit 2026-09: the JEE registry's 11-char ids are placeholders that do not
+  // exist on YouTube (oEmbed: Not Found). An 11-char SHAPE is not proof of a
+  // video, so the engine embeds a lesson ONLY when verifiedReal === true.
+  // Everything else must resolve as an honest search-pick: synthetic non-video
+  // id, https externalUrl, verified falsy, duration labelled estimated.
   let registryVi = 0;
   for (const key of Object.keys(CURATED_TOPIC_REGISTRY)) {
     stats.scenarios++;
     const set = CURATED_TOPIC_REGISTRY[key];
     if (!set || !set.lessons || !set.lessons.length) continue;
-    const lessons = resolveCuratedVideos({
+    const req = sanitizePlannerRequest({
       topic: set.canonicalName,
       subject: set.subject,
       kind: "learn",
       depth: "lecture",
       target: "jeemain",
     });
+    const lessons = resolveCuratedFor(req);
     ok(lessons.length > 0, `resolves for ${key}`);
+    for (const it of lessons) {
+      const raw = set.lessons.find(
+        (l) => l.title === it.title || it.title.startsWith(l.title.slice(0, 24)),
+      );
+      if (raw && raw.verifiedReal === true) {
+        ok(
+          REAL_YT_ID.test(it.id) && it.verified === true && !it.externalUrl,
+          `verified lesson embeds as a real video: ${it.title.slice(0, 40)}`,
+        );
+      } else {
+        ok(!REAL_YT_ID.test(it.id), `unverified pick id is NOT video-shaped: ${key}`);
+        ok(
+          it.externalUrl && it.externalUrl.startsWith("https://www.youtube.com/results?"),
+          `unverified pick opens a targeted search: ${key}`,
+        );
+        ok(!it.verified, `unverified pick is NOT marked verified: ${key}`);
+        ok(
+          it.durationEstimated === true,
+          `unverified pick duration labelled estimated: ${key}`,
+        );
+      }
+      ensureValidPlan([it]);
+    }
+    // Determinism: identical requests produce identical pick ids (cache/dedupe/keys).
+    const again = resolveCuratedFor(req);
     ok(
-      lessons.every((l) => REAL_YT_ID.test(l.id)),
-      `registry lesson ids are real YT ids: ${key}`,
+      again.map((x) => x.id).join(",") === lessons.map((x) => x.id).join(","),
+      `search-pick ids are deterministic: ${key}`,
     );
     registryVi++;
   }
-  console.log(`  verified id integrity across ${registryVi} registry topics`);
+  console.log(`  honesty contract enforced across ${registryVi} registry topics`);
 
   /* ------------------------------------------------------------------ */
   // Cleanup

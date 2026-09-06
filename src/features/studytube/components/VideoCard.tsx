@@ -9,14 +9,17 @@ import {
 } from "lucide-react";
 import type { StudyTubeVideo } from "../types";
 
-function fmtDuration(sec: number): string {
+function fmtDuration(sec: number, estimated?: boolean): string {
   if (!sec) return "—";
   const s = sec % 60;
   const m = Math.floor(sec / 60) % 60;
   const h = Math.floor(sec / 3600);
-  return h
+  const base = h
     ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
     : `${m}:${String(s).padStart(2, "0")}`;
+  // Estimated lengths (search-picks / offline picks) are labelled, never
+  // presented as a measured video duration.
+  return estimated ? `~${base}` : base;
 }
 
 const REAL_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -64,8 +67,11 @@ function Thumb({ video }: { video: StudyTubeVideo }) {
         </div>
       )}
       {video.durationSec ? (
-        <span className="absolute right-2 bottom-2 rounded-md bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
-          {fmtDuration(video.durationSec)}
+        <span
+          className="absolute right-2 bottom-2 rounded-md bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur"
+          title={video.durationEstimated ? "Estimated length" : "Video length"}
+        >
+          {fmtDuration(video.durationSec, video.durationEstimated)}
         </span>
       ) : null}
       {/* Play overlay on hover */}
@@ -163,7 +169,7 @@ export function VideoCard({
         </p>
       ) : null}
 
-      <div className="mt-3 flex items-center gap-1.5 border-t border-border/60 pt-2.5">
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
         <button
           type="button"
           onClick={() => onPlay?.(video)}
