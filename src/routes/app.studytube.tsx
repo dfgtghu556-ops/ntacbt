@@ -477,11 +477,11 @@ function StudyTube() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-wrap">
             <select
               value={institute ?? ""}
               onChange={(e) => changeInstitute(e.target.value || undefined)}
-              className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-ring"
+              className="w-full min-w-0 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring lg:w-auto lg:py-1.5"
               aria-label="Dream Team"
             >
               <option value="">Dream Team: Auto</option>
@@ -499,7 +499,7 @@ function StudyTube() {
                 if (t) toggleTeacher(t);
                 else setTeacher(undefined);
               }}
-              className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-ring"
+              className="w-full min-w-0 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring lg:w-auto lg:py-1.5"
               aria-label="Dream Teacher"
             >
               <option value="">Dream Teacher: Auto</option>
@@ -514,7 +514,7 @@ function StudyTube() {
         </div>
 
         {/* Focus (target) balance — always visible */}
-        <div className="relative mt-4 flex flex-wrap items-center gap-2">
+        <div className="scrollbar-none relative mt-4 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
             Focus
           </span>
@@ -556,20 +556,20 @@ function StudyTube() {
           </div>
           <button
             onClick={() => openSearchQuery(query)}
-            className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:shrink-0"
           >
             Search
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="rounded-2xl border border-border px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="rounded-2xl border border-border px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:shrink-0"
           >
             {open ? "Hide" : " Preferences"}
           </button>
         </div>
 
         {/* Quick subject chips */}
-        <div className="relative mt-3 flex flex-wrap gap-2">
+        <div className="scrollbar-none relative mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           {(["all", "Physics", "Chemistry", "Mathematics", "oneshot", "revision"] as const).map(
             (f) => (
               <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
@@ -591,9 +591,9 @@ function StudyTube() {
       </section>
 
       {open ? (
-        <section className="rounded-xl border p-4">
+        <section className="rounded-2xl border border-border/60 bg-card/40 p-4">
           <h2 className="text-sm font-semibold">StudyTube preferences</h2>
-          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Target</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -630,7 +630,7 @@ function StudyTube() {
               </p>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="scrollbar-none -mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-2 lg:flex-wrap lg:overflow-visible">
             {channels.slice(0, 6).map((c) => (
               <ChannelCard
                 key={c.id}
@@ -798,7 +798,7 @@ function Shelf({
   watchedIds: Record<string, boolean>;
 }) {
   return (
-    <section className="rounded-3xl border border-border/60 bg-card/40 p-4 sm:p-5">
+    <section className="rounded-2xl border border-border/60 bg-card/40 p-3 sm:rounded-3xl sm:p-5">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-4 w-4" />
@@ -823,13 +823,13 @@ function Shelf({
         </div>
       </div>
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-52 animate-pulse rounded-2xl border bg-muted/40" />
           ))}
         </div>
       ) : items.length ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
           {items.map((v) => (
             <VideoCard
               key={v.id}
