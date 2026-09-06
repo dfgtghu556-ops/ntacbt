@@ -240,6 +240,42 @@
         document.body.appendChild(t);
         setTimeout(() => t.remove(), ms);
       }
+      /* Blob → usable URL with a data-URI fallback: ancient WebViews lack
+       * URL.createObjectURL, and without this every export silently dies. */
+      function blobSrc(blob) {
+        try {
+          if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function")
+            return Promise.resolve(URL.createObjectURL(blob));
+        } catch (e) {}
+        return new Promise((resolve, reject) => {
+          try {
+            const rd = new FileReader();
+            rd.onload = () => resolve(rd.result);
+            rd.onerror = () => reject(rd.error || new Error("blob read failed"));
+            rd.readAsDataURL(blob);
+          } catch (e) { reject(e); }
+        });
+      }
+      /* Fire-and-forget file download that never throws. */
+      function dlBlob(blob, filename) {
+        blobSrc(blob).then(
+          (href) => {
+            try {
+              const a = document.createElement("a");
+              a.href = href;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              const revoke = String(href).indexOf("blob:") === 0;
+              setTimeout(() => {
+                try { if (revoke) URL.revokeObjectURL(href); } catch (e) {}
+                try { a.remove(); } catch (e2) {}
+              }, 3000);
+            } catch (e) { toast("Is browser mein file download block hai"); }
+          },
+          () => toast("Is browser mein file download block hai"),
+        );
+      }
       function confirmBox(title, body, onYes, yesLabel = "Yes") {
         const m = el("div", "modal");
         m.innerHTML = `<div class="box"><h3>${esc(title)}</h3><p class="muted">${body}</p>
@@ -679,6 +715,14 @@
           saved.qtags = saved.qtags || {};
           // keep practice drills AND downloaded PYQ papers (results/review need them)
           saved.tests = (saved.tests || []).filter((t) => t.practice || t.pyq);
+          // HARDENED (deploy audit): drop attempts that were written without a
+          // result (legacy builds, an interrupted submit, a hand-edited or
+          // truncated backup). 47 dashboard/analytics sites read `a.result.all`
+          // and any one of them turns such a row into a crashed page. The
+          // storage-merge path already did this; load() is the other door in.
+          saved.attempts = (saved.attempts || []).filter(
+            (a) => a && (!a.submittedAt || (a.result && a.result.all)),
+          );
           return saved;
         } catch (e) {
           return JSON.parse(JSON.stringify(DEFAULT));
@@ -803,13 +847,13 @@
           const r = await cloudFetch("/storage/v1/object/public-tests/" + objectPath(path));
           const blob = await r.blob();
           imgPut(key, blob).catch(() => {}); // keep it for offline review
-          const u = URL.createObjectURL(blob);
+          const u = await blobSrc(blob);
           imgCache.set("cloud:" + path, u);
           return u;
         } catch (e) {
           const cached = await imgGet(key).catch(() => null); // no network: serve the saved copy
           if (!cached) throw e;
-          const u = URL.createObjectURL(cached);
+          const u = await blobSrc(cached);
           imgCache.set("cloud:" + path, u);
           return u;
         }
@@ -7839,12 +7883,7 @@
         });
         ics += "END:VCALENDAR";
         try {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-          a.download = "ntacbt-plan.ics";
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 2000);
+          dlBlob(new Blob([ics], { type: "text/calendar" }), "ntacbt-plan.ics");
           toast("📅 Calendar file download ho gayi!");
         } catch (e) { toast("Is browser mein file download block hai"); }
       }
@@ -7907,12 +7946,7 @@
       function backupDownload() {
         try {
           const blob = new Blob([localStorage.getItem("jeecbt.v1") || "{}"], { type: "application/json" });
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = `ntacbt-backup-${todayKey(Date.now())}.json`;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 2000);
+          dlBlob(blob, `ntacbt-backup-${todayKey(Date.now())}.json`);
           toast("💾 Backup download ho gaya — sambhal ke rakho!");
         } catch (e) { toast("Backup fail — storage khaali hai?"); }
       }
@@ -12191,12 +12225,7 @@
               text: `Scored ${r.all.marks}/${r.all.max} on ${t.name}`,
             });
           } else {
-            const url = URL.createObjectURL(blob);
-            const link = el("a");
-            link.href = url;
-            link.download = "jee-result.png";
-            link.click();
-            URL.revokeObjectURL(url);
+            dlBlob(blob, "jee-result.png");
             toast("Result card downloaded — share it from your gallery");
           }
         } catch (e) {
@@ -13337,14 +13366,7 @@
         return "ntacbt-backup-" + todayKey(Date.now()) + ".json";
       }
       function downloadBackup() {
-        const blob = new Blob([backupPayload()], { type: "application/json" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = backupFileName();
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        dlBlob(new Blob([backupPayload()], { type: "application/json" }), backupFileName());
         toast("Backup download ho gaya ✅");
       }
       function importBackupText(txt) {
@@ -14489,15 +14511,18 @@
       ${real ? `<button class="yt-more" data-wl title="Watch Later">⋮</button>` : ""}
     </div>`;
 
-        card.querySelector("[data-open]").onclick = (e) => {
+        // FIX (deploy audit): a card carries TWO [data-open] elements — the
+        // thumbnail wrapper AND the "▶ Watch" button. querySelector() only ever
+        // reached the thumbnail, so every "▶ Watch" button shipped dead (15 per
+        // page). Bind all of them; stopPropagation keeps the card calm.
+        const openVideo = (e) => {
           e.stopPropagation();
           if (real) ytPlay(v, ctx);
           else window.open(v.externalUrl || "", "_blank", "noopener,noreferrer");
         };
-        card.querySelector(".yt-thumb-wrap").onclick = (e) => {
-          if (real) ytPlay(v, ctx);
-          else window.open(v.externalUrl || "", "_blank", "noopener,noreferrer");
-        };
+        card.querySelectorAll("[data-open]").forEach((b) => {
+          b.onclick = openVideo;
+        });
         const pyqBtn = card.querySelector("[data-pyq]");
         if (pyqBtn)
           pyqBtn.onclick = (e) => {
@@ -18422,6 +18447,7 @@
           const b = el("button", "swatch" + (st.accent === k ? " on" : ""));
           b.style.background = hex;
           b.title = k;
+          b.setAttribute("aria-label", "Accent colour " + k);
           b.onclick = () => {
             st.accent = k;
             save();
@@ -18869,11 +18895,7 @@
         row.style.marginTop = "12px";
         const exp = el("button", "btn ghost sm", ic("save") + " Backup my data");
         exp.onclick = () => {
-          const blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
-          const a = el("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "jee-cbt-backup-" + todayKey(Date.now()) + ".json";
-          a.click();
+          dlBlob(new Blob([JSON.stringify(S, null, 2)], { type: "application/json" }), "jee-cbt-backup-" + todayKey(Date.now()) + ".json");
           toast("Backup downloaded — keep it somewhere safe");
         };
         // Restore: everything lives in this browser, so one accidental
@@ -19106,11 +19128,15 @@
         const now = Date.now(),
           DAY = 86400000;
         const inRange = (t, from, to) => t >= from && t < to;
+        // HARDENED (deploy audit): acc() below reads x.result.all.accuracy, so
+        // an attempt written without a result crashed weeklyRecap() and with it
+        // the entire dashboard view. Count only well-formed attempts.
+        const solid = (a) => a.submittedAt && a.result && a.result.all;
         const wk = S.attempts.filter(
-          (a) => a.submittedAt && inRange(a.submittedAt, now - 7 * DAY, now + 1),
+          (a) => solid(a) && inRange(a.submittedAt, now - 7 * DAY, now + 1),
         );
         const prev = S.attempts.filter(
-          (a) => a.submittedAt && inRange(a.submittedAt, now - 14 * DAY, now - 7 * DAY),
+          (a) => solid(a) && inRange(a.submittedAt, now - 14 * DAY, now - 7 * DAY),
         );
         const qs = (range) => {
           let n = 0;
@@ -19121,7 +19147,7 @@
           return n;
         };
         const acc = (list) => {
-          const a = list.map((x) => x.result.all.accuracy);
+          const a = list.filter((x) => x.result && x.result.all).map((x) => x.result.all.accuracy);
           return a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : 0;
         };
         let activeDays = 0;
@@ -21059,7 +21085,12 @@
           cov = L.length ? L.filter((t) => t.status === "done").length / L.length : 0;
         }
         // 2) accuracy from last 5 attempts
-        const done = S.attempts.filter((a) => a.submittedAt).slice(-5);
+        // HARDENED (deploy audit): a legacy/corrupt attempt can carry
+        // submittedAt without result.all — reading .all on it threw here and
+        // the whole Mission Control card vanished. Filter to well-formed only.
+        const done = S.attempts
+          .filter((a) => a.submittedAt && a.result && a.result.all)
+          .slice(-5);
         const acc = done.length
           ? done.reduce((s2, a) => s2 + a.result.all.accuracy, 0) / done.length / 100
           : 0;
@@ -22760,9 +22791,14 @@
       function weeklyReportCard() {
         const now = Date.now(),
           weekMs = 7 * 86400000;
-        const wk = S.attempts.filter((a) => a.submittedAt && a.submittedAt > now - weekMs);
+        // HARDENED (deploy audit): both windows are reduced with
+        // `a.result.all.marks/accuracy` below, so an attempt that lost its
+        // result crashed viewDash() and the error boundary replaced the entire
+        // dashboard. Require a well-formed result before an attempt counts.
+        const solid = (a) => a.submittedAt && a.result && a.result.all;
+        const wk = S.attempts.filter((a) => solid(a) && a.submittedAt > now - weekMs);
         const prev = S.attempts.filter(
-          (a) => a.submittedAt && a.submittedAt <= now - weekMs && a.submittedAt > now - 2 * weekMs,
+          (a) => solid(a) && a.submittedAt <= now - weekMs && a.submittedAt > now - 2 * weekMs,
         );
         if (!wk.length) return null;
         const avg = (arr) =>

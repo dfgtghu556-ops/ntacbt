@@ -30,7 +30,10 @@
     "validate:full": "node scripts/validate-full.mjs",
     "validate:mentor": "node scripts/validate-mentor.mjs",
     "validate:all": "node scripts/validate-jee2026.mjs && node scripts/validate-sot.mjs && node scripts/validate-syllabus.mjs && node scripts/validate-teachers.mjs && node scripts/validate-videos.mjs && node scripts/validate-links.mjs && node scripts/validate-analytics.mjs && node scripts/validate-planner.mjs && node scripts/validate-full.mjs && node scripts/validate-mentor.mjs && node scripts/student-journey.mjs && node scripts/student-journey-fuzz.mjs && node scripts/student-journey-r3.mjs",
-    "validate:24pack": "node scripts/validate-24pack.mjs"
+    "validate:24pack": "node scripts/validate-24pack.mjs",
+    "audit:wires": "node scripts/audit-wires.mjs",
+    "audit:clicks": "node scripts/audit-clicks.mjs",
+    "audit": "node scripts/audit-wires.mjs && node scripts/audit-clicks.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
