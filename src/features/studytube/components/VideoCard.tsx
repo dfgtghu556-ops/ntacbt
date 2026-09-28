@@ -1,12 +1,4 @@
-import {
-  CheckCircle2,
-  Clock3,
-  ExternalLink,
-  Flame,
-  Play,
-  Search,
-  Video,
-} from "lucide-react";
+import { CheckCircle2, Clock3, ExternalLink, Flame, Play, Search, Video } from "lucide-react";
 import type { StudyTubeVideo } from "../types";
 
 function fmtDuration(sec: number, estimated?: boolean): string {
@@ -165,7 +157,7 @@ export function VideoCard({
 
       {video.why ? (
         <p className="mt-2 line-clamp-2 rounded-lg border border-dashed border-border bg-muted/30 px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground">
-           {video.why}
+          {video.why}
         </p>
       ) : null}
 

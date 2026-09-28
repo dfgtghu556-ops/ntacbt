@@ -370,7 +370,6 @@ export function ageInMonths(published: string): number | null {
 }
 
 export function rank(
-
   raw: RawItem[],
   topic: string,
   language: string,
@@ -648,7 +647,6 @@ export function rank(
         score -= Math.min(22, 8 + (age - 36) / 6);
       }
     }
-
 
     out.push({
       id: v.id,

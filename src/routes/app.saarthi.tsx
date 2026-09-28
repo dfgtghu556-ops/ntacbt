@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, Loader2, Send, ShieldAlert, Sparkles, X } from "lucide-react";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Send,
+  ShieldAlert,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { loadFocusStore } from "@/features/focus/focus";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";

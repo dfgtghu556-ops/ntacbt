@@ -125,8 +125,7 @@ function weakTopics(store: DataStore): WeakTopic[] {
  * Pending tasks use the planned `estMin`.
  */
 export function realMinutes(t: PlannerTaskRow): number {
-  if (t.status === "done" && typeof t.actualMin === "number" && t.actualMin > 0)
-    return t.actualMin;
+  if (t.status === "done" && typeof t.actualMin === "number" && t.actualMin > 0) return t.actualMin;
   return t.estMin || 45;
 }
 

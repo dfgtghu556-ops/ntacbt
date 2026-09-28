@@ -54,12 +54,24 @@ export function mistakeFromStore(store: DataStore): MistakePattern | null {
 }
 
 const TAG_META: Record<string, { label: string; fix: string }> = {
-  concept: { label: "Concept gap", fix: "Revise theory first, then attempt — not the other way around." },
-  formula: { label: "Formula recall", fix: "Build a formula sheet for the chapter and review 2 minutes daily." },
-  calculation: { label: "Calculation slip", fix: "Write rough work in two columns; check the final line once more." },
+  concept: {
+    label: "Concept gap",
+    fix: "Revise theory first, then attempt — not the other way around.",
+  },
+  formula: {
+    label: "Formula recall",
+    fix: "Build a formula sheet for the chapter and review 2 minutes daily.",
+  },
+  calculation: {
+    label: "Calculation slip",
+    fix: "Write rough work in two columns; check the final line once more.",
+  },
   misread: { label: "Misread question", fix: "Read the stem once again before locking an answer." },
   silly: { label: "Silly mistake", fix: "Slow down 10% — accuracy pays more than raw speed." },
-  guessed: { label: "Guessed", fix: "If 3+ options confuse you, skip — negative marking eats guesses." },
+  guessed: {
+    label: "Guessed",
+    fix: "If 3+ options confuse you, skip — negative marking eats guesses.",
+  },
 };
 
 /** Mirror of the readiness/engine NTA grading so we don't create a circular

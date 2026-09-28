@@ -17,7 +17,10 @@ export interface WellnessSignal {
 const HEALTHY_DAILY_MIN = 6 * 60; // 6h of deep study is a strong, sustainable day
 const MAX_BEFORE_BREAK_MIN = 90; // take a break after 90 continuous minutes
 
-export function computeWellness(focusMinutesToday: number, plannedMinutes: number): WellnessSignal[] {
+export function computeWellness(
+  focusMinutesToday: number,
+  plannedMinutes: number,
+): WellnessSignal[] {
   const out: WellnessSignal[] = [];
   const total = focusMinutesToday + plannedMinutes;
 
@@ -43,7 +46,9 @@ export function computeWellness(focusMinutesToday: number, plannedMinutes: numbe
       id: "pace",
       tone: "green",
       title: "Healthy pace",
-      body: `${focusMinutesToday} min focused today. Sustainable beats heroic — keep a ` + "`break after ~90 min` habit.",
+      body:
+        `${focusMinutesToday} min focused today. Sustainable beats heroic — keep a ` +
+        "`break after ~90 min` habit.",
     });
   }
 

@@ -19,9 +19,42 @@ export interface MicroDrillInput {
 }
 
 const SUBJECT_WORDS: Record<string, string[]> = {
-  Physics: ["Electrostatics", "Mechanics", "Rotational Motion", "Optics", "Thermodynamics", "Waves", "Gravitation", "Current Electricity", "Magnetism", "Modern Physics"],
-  Chemistry: ["Chemical Bonding", "Thermodynamics", "Electrochemistry", "GOC", "Equilibrium", "Aldehydes", "p-Block", "d-Block", "Coordination", "Solutions"],
-  Mathematics: ["Limits", "Differentiation", "Integration", "Determinants", "Probability", "Vectors", "Trigonometry", "Complex Numbers", "Conic Sections", "Matrices"],
+  Physics: [
+    "Electrostatics",
+    "Mechanics",
+    "Rotational Motion",
+    "Optics",
+    "Thermodynamics",
+    "Waves",
+    "Gravitation",
+    "Current Electricity",
+    "Magnetism",
+    "Modern Physics",
+  ],
+  Chemistry: [
+    "Chemical Bonding",
+    "Thermodynamics",
+    "Electrochemistry",
+    "GOC",
+    "Equilibrium",
+    "Aldehydes",
+    "p-Block",
+    "d-Block",
+    "Coordination",
+    "Solutions",
+  ],
+  Mathematics: [
+    "Limits",
+    "Differentiation",
+    "Integration",
+    "Determinants",
+    "Probability",
+    "Vectors",
+    "Trigonometry",
+    "Complex Numbers",
+    "Conic Sections",
+    "Matrices",
+  ],
 };
 
 /** Deterministic recall templates keyed by mistake tag + subject. Each returns
@@ -92,10 +125,7 @@ export function buildMicroDrill(input: MicroDrillInput): MicroDrillCard[] {
   const subject = mistake?.subject ?? input.subjectPref ?? weak[0]?.subject ?? "Physics";
 
   const w0 = weak[0] as WeakTopic | undefined;
-  const baseTopic =
-    w0
-      ? w0.topic || w0.chapter
-      : SUBJECT_WORDS[subject]?.[0] ?? "core concept";
+  const baseTopic = w0 ? w0.topic || w0.chapter : (SUBJECT_WORDS[subject]?.[0] ?? "core concept");
 
   const cards: MicroDrillCard[] = [];
   const words = SUBJECT_WORDS[subject] ?? [];

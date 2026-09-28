@@ -10,14 +10,22 @@ import { dirname } from "node:path";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const PORT = +(process.argv[2] || 8000);
 const MIME = {
-  ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8",
-  ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml",
-  ".ico": "image/x-icon", ".woff2": "font/woff2",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
 };
 createServer(async (req, res) => {
   try {
-    const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^(\.\.[/\\])+/, "");
+    const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(
+      /^(\.\.[/\\])+/,
+      "",
+    );
     const file = join(ROOT, path === "/" ? "index.html" : path);
     const data = await readFile(file);
     res.writeHead(200, {

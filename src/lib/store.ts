@@ -234,10 +234,7 @@ export class DataStore {
       // - legacy tasks carry `topic` (chapter name) but no `chapter` — fall
       //   back so no UI ever renders "— undefined" and weak-topic matching
       //   (adapt.ts) can actually fire.
-      const status =
-        done[row.id] || row.status === "done"
-          ? "done"
-          : "pending";
+      const status = done[row.id] || row.status === "done" ? "done" : "pending";
       return {
         ...row,
         status,

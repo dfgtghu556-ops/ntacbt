@@ -577,10 +577,7 @@ async function main() {
     fitRanked.some((i) => i.id === "f1"),
     "small planned slot keeps the fitting video",
   );
-  ok(
-    !fitRanked.some((i) => i.id === "f2"),
-    "small planned slot rejects the 4-hour video",
-  );
+  ok(!fitRanked.some((i) => i.id === "f2"), "small planned slot rejects the 4-hour video");
 
   /* ------------------------------------------------------------------ */
   section("Merge: curated-first, no duplicates, bounded");
@@ -916,10 +913,7 @@ async function main() {
     for (const l of set.lessons || []) {
       ok(P.engine.REAL_YT_ID.test(l.id), `board lesson id is a real YT id: ${l.title}`);
       // Only oEmbed-verified entries may carry the embed-allowed flag.
-      ok(
-        l.verifiedReal === true,
-        `board lesson is oEmbed-verified (verifiedReal): ${l.title}`,
-      );
+      ok(l.verifiedReal === true, `board lesson is oEmbed-verified (verifiedReal): ${l.title}`);
       ok(l.teacher && l.channel, `board lesson has teacher+channel: ${l.title}`);
       ok(l.kind && l.depth, `board lesson has kind/depth: ${l.title}`);
       ok(l.target === "board12" || l.target === "cbse27", `board lesson targets board: ${l.title}`);
@@ -992,10 +986,7 @@ async function main() {
           `unverified pick opens a targeted search: ${key}`,
         );
         ok(!it.verified, `unverified pick is NOT marked verified: ${key}`);
-        ok(
-          it.durationEstimated === true,
-          `unverified pick duration labelled estimated: ${key}`,
-        );
+        ok(it.durationEstimated === true, `unverified pick duration labelled estimated: ${key}`);
       }
       ensureValidPlan([it]);
     }

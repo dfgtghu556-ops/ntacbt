@@ -215,7 +215,6 @@ async function tryLovable(
  *  null when the caller should fall back to Gemini (rate limit, error,
  *  or empty response — free-tier models rotate and hiccup). */
 async function tryOpenRouter(
-
   apiKey: string,
   systemPrompt: string,
   recent: ChatMessage[],
@@ -432,7 +431,6 @@ export const Route = createFileRoute("/api/public/ai-chat")({
           { error: "The AI is temporarily unavailable — try again in a moment." },
           { status: 503 },
         );
-
       },
     },
   },

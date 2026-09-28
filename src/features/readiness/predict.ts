@@ -51,7 +51,7 @@ export interface RankPrediction {
  */
 function rankFromPercentile(percentile: number, candidates = 14_00_000): number {
   const p = Math.max(0, Math.min(100, percentile));
-  return Math.max(1, Math.round(candidates * (100 - p) / 100));
+  return Math.max(1, Math.round((candidates * (100 - p)) / 100));
 }
 
 /** Expected college tier for a JEE Main percentile (evidence-based band). */
@@ -68,11 +68,15 @@ function tierFor(percentile: number, target?: string): string {
   if (percentile >= 98.5) return "Old IIT / top NIT zone — NIT CSE, top IIITs are realistic.";
   if (percentile >= 96) return "Strong NIT / IIIT band — NIT CSE/ECE and top-IIIT branches.";
   if (percentile >= 92) return "Good NIT / state-government engineering — NIT branches, GFTIs.";
-  if (percentile >= 85) return "Solid state / private tier-1 — NITs outside the top circle, IIIT state branches.";
+  if (percentile >= 85)
+    return "Solid state / private tier-1 — NITs outside the top circle, IIIT state branches.";
   return "Foundation band — this is a strong target to lift; the plan below gets you up fast.";
 }
 
-function topFixFrom(accuracy: number, weakTopics: Array<{ subject: string; chapter: string }>): string {
+function topFixFrom(
+  accuracy: number,
+  weakTopics: Array<{ subject: string; chapter: string }>,
+): string {
   if (weakTopics.length > 0) {
     const w = weakTopics[0] as { subject: string; chapter: string };
     return `Your biggest mark-leak is ${w.subject} — ${w.chapter}. Do a 10-question PYQ drill there and add ~${Math.max(5, Math.round((100 - accuracy) / 6))} marks.`;

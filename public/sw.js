@@ -57,7 +57,11 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (req.mode === "navigate") {
     event.respondWith(networkFirst(req));
-  } else if (url.pathname.endsWith(".js") || url.pathname.endsWith(".css") || url.pathname.endsWith(".html")) {
+  } else if (
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".html")
+  ) {
     // App code is UNversioned (same /js/app.js URL every deploy) — it must
     // NEVER come from stale cache. Network first, cache only as fallback.
     event.respondWith(networkFirst(req));

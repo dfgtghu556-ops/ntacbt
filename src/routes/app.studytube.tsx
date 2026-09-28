@@ -581,9 +581,9 @@ function StudyTube() {
                       ? "Chemistry"
                       : f === "Mathematics"
                         ? "Maths"
-                      : f === "oneshot"
-                        ? "One-shots"
-                        : "Revision"}
+                        : f === "oneshot"
+                          ? "One-shots"
+                          : "Revision"}
               </Chip>
             ),
           )}

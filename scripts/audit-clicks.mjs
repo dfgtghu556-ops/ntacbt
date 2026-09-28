@@ -16,20 +16,33 @@ const html = readFileSync(resolve(join(__dirname, "..", "public", "jee-cbt.html"
 const PUBLIC_DIR = join(__dirname, "..", "public");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-let passed = 0, failed = 0;
-const failures = [], noopCandidates = [], skipped = [], externalNavs = [];
+let passed = 0,
+  failed = 0;
+const failures = [],
+  noopCandidates = [],
+  skipped = [],
+  externalNavs = [];
 const VERBOSE = !!process.env.VERBOSE; // VERBOSE=1 → per-no-op diagnostics
 const ok = (c, label) => {
-  if (c) { passed++; console.log("  ✓ " + label); }
-  else { failed++; failures.push(label); console.error("  ✗ FAIL: " + label); }
+  if (c) {
+    passed++;
+    console.log("  ✓ " + label);
+  } else {
+    failed++;
+    failures.push(label);
+    console.error("  ✗ FAIL: " + label);
+  }
 };
 
 class LocalResourceLoader extends ResourceLoader {
   fetch(url, options) {
     const path = url.startsWith("file:") ? url : url.replace(/^https?:\/\/ntacbt\.test/, "");
     if (path.startsWith("/js/") || path.startsWith("/css/")) {
-      try { return Promise.resolve(readFileSync(join(PUBLIC_DIR, path.replace(/^\//, "")))); }
-      catch { return Promise.reject(new Error("404 " + path)); }
+      try {
+        return Promise.resolve(readFileSync(join(PUBLIC_DIR, path.replace(/^\//, ""))));
+      } catch {
+        return Promise.reject(new Error("404 " + path));
+      }
     }
     return Promise.resolve(Buffer.from(""));
   }
@@ -52,9 +65,22 @@ const dom = new JSDOM(html, {
   resources: new LocalResourceLoader(),
   virtualConsole: vc,
   beforeParse(window) {
-    window.fetch = async () => ({ ok: false, status: 404, json: async () => ({}), text: async () => "" });
+    window.fetch = async () => ({
+      ok: false,
+      status: 404,
+      json: async () => ({}),
+      text: async () => "",
+    });
     window.indexedDB = globalThis.indexedDB;
-    window.matchMedia = window.matchMedia || (() => ({ matches: false, addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {} }));
+    window.matchMedia =
+      window.matchMedia ||
+      (() => ({
+        matches: false,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
     window.confirm = () => true;
     window.alert = () => {};
     window.scrollTo = window.scrollBy = window.scroll = () => {};
@@ -62,27 +88,93 @@ const dom = new JSDOM(html, {
   },
 });
 const w = dom.window;
-w.addEventListener("error", (e) => errors.push("window: " + String(e.message || (e.error && e.error.message) || e).slice(0, 200)));
-w.addEventListener("unhandledrejection", (e) => errors.push("promise: " + String((e.reason && e.reason.message) || e.reason || e).slice(0, 200)));
-w.console.error = (...a) => errors.push("console: " + a.map((x) => String(x && x.message ? x.message : x)).join(" ").slice(0, 250));
-Object.defineProperty(w.HTMLElement.prototype, "scrollIntoView", { value: () => {}, configurable: true });
-const fakeCtx = new Proxy({}, { get: (_t, p) => (p === "measureText" ? () => ({ width: 10 }) : p === "getImageData" ? () => ({ data: new Uint8ClampedArray(1024) }) : (..._a) => ({ addColorStop: () => {} })), set: () => true });
-w.HTMLCanvasElement.prototype.getContext = function () { return fakeCtx; };
-w.HTMLCanvasElement.prototype.toDataURL = function () { return "data:image/jpeg;base64,/9j/4AAQSkZJRg=="; };
-w.HTMLCanvasElement.prototype.toBlob = function (cb) { cb(new w.Blob(["x"], { type: "image/jpeg" })); };
+w.addEventListener("error", (e) =>
+  errors.push("window: " + String(e.message || (e.error && e.error.message) || e).slice(0, 200)),
+);
+w.addEventListener("unhandledrejection", (e) =>
+  errors.push("promise: " + String((e.reason && e.reason.message) || e.reason || e).slice(0, 200)),
+);
+w.console.error = (...a) =>
+  errors.push(
+    "console: " +
+      a
+        .map((x) => String(x && x.message ? x.message : x))
+        .join(" ")
+        .slice(0, 250),
+  );
+Object.defineProperty(w.HTMLElement.prototype, "scrollIntoView", {
+  value: () => {},
+  configurable: true,
+});
+const fakeCtx = new Proxy(
+  {},
+  {
+    get: (_t, p) =>
+      p === "measureText"
+        ? () => ({ width: 10 })
+        : p === "getImageData"
+          ? () => ({ data: new Uint8ClampedArray(1024) })
+          : (..._a) => ({ addColorStop: () => {} }),
+    set: () => true,
+  },
+);
+w.HTMLCanvasElement.prototype.getContext = function () {
+  return fakeCtx;
+};
+w.HTMLCanvasElement.prototype.toDataURL = function () {
+  return "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+};
+w.HTMLCanvasElement.prototype.toBlob = function (cb) {
+  cb(new w.Blob(["x"], { type: "image/jpeg" }));
+};
 w.openedUrls = [];
-w.open = (u) => { try { w.openedUrls.push(String(u).slice(0, 140)); } catch (e) {} return null; };
+w.open = (u) => {
+  try {
+    w.openedUrls.push(String(u).slice(0, 140));
+  } catch (e) {}
+  return null;
+};
 await new Promise((res) => setTimeout(res, 400));
 
-const g = (expr) => { try { return w.eval(expr); } catch (e) { return "__EVALERR__:" + e.message; } };
-const label = (elm) => ((elm.textContent || elm.value || elm.getAttribute("aria-label") || elm.tagName) + "").replace(/\s+/g, " ").trim().slice(0, 60);
-const errDrain = () => { const e = errors.splice(0); return e; };
+const g = (expr) => {
+  try {
+    return w.eval(expr);
+  } catch (e) {
+    return "__EVALERR__:" + e.message;
+  }
+};
+const label = (elm) =>
+  ((elm.textContent || elm.value || elm.getAttribute("aria-label") || elm.tagName) + "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+const errDrain = () => {
+  const e = errors.splice(0);
+  return e;
+};
 const cleanup = () => {
-  try { w.eval(`aiChatClose()`); } catch {}
-  try { const i = w.document.querySelector("#aiChatInput"); if (i) i.value = ""; } catch {}
-  [...w.document.querySelectorAll(".modal")].forEach((m) => { try { m.remove(); } catch {} });
-  [...w.document.querySelectorAll(".toast")].forEach((t) => { try { t.remove(); } catch {} });
-  if (g(`typeof EX !== "undefined" && !!EX`)) { try { g(`endExamUI()`); } catch {} }
+  try {
+    w.eval(`aiChatClose()`);
+  } catch {}
+  try {
+    const i = w.document.querySelector("#aiChatInput");
+    if (i) i.value = "";
+  } catch {}
+  [...w.document.querySelectorAll(".modal")].forEach((m) => {
+    try {
+      m.remove();
+    } catch {}
+  });
+  [...w.document.querySelectorAll(".toast")].forEach((t) => {
+    try {
+      t.remove();
+    } catch {}
+  });
+  if (g(`typeof EX !== "undefined" && !!EX`)) {
+    try {
+      g(`endExamUI()`);
+    } catch {}
+  }
   w.document.querySelector("#examView")?.classList.add("hide");
 };
 
@@ -119,32 +211,51 @@ ok(bankId === "click-bank", "seed bank+attempt+plan ready");
 errDrain();
 
 // ---------- click rules ----------
-const SKIP = /start exam|resume|start now|start test|start mock|start drill|review now|re-attempt|reset|delete|discard|clear progress|restore|remove|uninstall|sign out|log out/i;
+const SKIP =
+  /start exam|resume|start now|start test|start mock|start drill|review now|re-attempt|reset|delete|discard|clear progress|restore|remove|uninstall|sign out|log out/i;
 const EXAMY = /^(start|resume|review now|open test)/i;
 
 const SEL = "button, a[href], input[type=checkbox], input[type=radio], summary, select";
 async function clickAll(scope, tag) {
   const clicked = new Set(); // tag|label signatures already exercised (re-query each time: clicks re-render)
-  let wired = 0, noop = 0, skip = 0, guard = 0;
+  let wired = 0,
+    noop = 0,
+    skip = 0,
+    guard = 0;
   for (;;) {
     guard++;
     if (guard > 400) break;
     const sc = tag === "drawer" ? w.document.querySelector(".modal") || scope : scope;
-    const els = sc.isConnected === false ? [] : [...sc.querySelectorAll(SEL)].filter((e) => !e.disabled);
+    const els =
+      sc.isConnected === false ? [] : [...sc.querySelectorAll(SEL)].filter((e) => !e.disabled);
     const e = els.find((x) => !clicked.has(x.tagName + "|" + label(x)));
     if (!e) break;
     const lb = label(e);
     clicked.add(e.tagName + "|" + lb);
-    if (e.type === "file" || SKIP.test(lb) || (e.tagName === "A" && /^https?:/.test(e.getAttribute("href") || ""))) { skip++; skipped.push(`${tag} :: ${e.tagName} :: ${lb}`); continue; }
+    if (
+      e.type === "file" ||
+      SKIP.test(lb) ||
+      (e.tagName === "A" && /^https?:/.test(e.getAttribute("href") || ""))
+    ) {
+      skip++;
+      skipped.push(`${tag} :: ${e.tagName} :: ${lb}`);
+      continue;
+    }
     if (e.tagName === "SELECT") {
       try {
         const before = errors.length;
         e.selectedIndex = (e.selectedIndex + 1) % e.options.length;
         e.dispatchEvent(new w.Event("change", { bubbles: true }));
         await sleep(40);
-        if (errors.length > before) { const el2 = errDrain(); ok(false, `${tag} :: select ${lb} threw: ${el2[0]}`); }
-        else { wired++; }
-      } catch (err) { ok(false, `${tag} :: select ${lb} threw sync: ${err.message}`); }
+        if (errors.length > before) {
+          const el2 = errDrain();
+          ok(false, `${tag} :: select ${lb} threw: ${el2[0]}`);
+        } else {
+          wired++;
+        }
+      } catch (err) {
+        ok(false, `${tag} :: select ${lb} threw sync: ${err.message}`);
+      }
       continue;
     }
     const snap = () => ({
@@ -153,55 +264,121 @@ async function clickAll(scope, tag) {
       kids: w.document.body.children.length,
       ex: !!g(`typeof EX !== "undefined" && !!EX`),
       chat: !w.document.querySelector("#aiChatPanel")?.classList.contains("hide"),
-      ds: w.document.documentElement.getAttribute("data-theme") + "|" + w.document.body.getAttribute("data-theme") + "|" + w.document.documentElement.getAttribute("data-density") + "|" + (w.localStorage.getItem("jeecbt.v1") || "").length,
+      ds:
+        w.document.documentElement.getAttribute("data-theme") +
+        "|" +
+        w.document.body.getAttribute("data-theme") +
+        "|" +
+        w.document.documentElement.getAttribute("data-density") +
+        "|" +
+        (w.localStorage.getItem("jeecbt.v1") || "").length,
       mod: w.document.querySelectorAll(".modal").length,
       // Modals (app drawer, StudyTube theatre, backup dialogs) live on
       // document.body, NOT inside #app — so an #app-only snapshot is blind to
       // everything they re-render. Content-length + button-count per modal
       // catches filters, tabs and re-draws inside them.
-      mhtml: [...w.document.querySelectorAll(".modal")].map((m) => m.textContent.replace(/\s+/g, " ").trim().length + "/" + m.querySelectorAll("button").length).join("|"),
+      mhtml: [...w.document.querySelectorAll(".modal")]
+        .map(
+          (m) =>
+            m.textContent.replace(/\s+/g, " ").trim().length +
+            "/" +
+            m.querySelectorAll("button").length,
+        )
+        .join("|"),
       toast: w.document.querySelectorAll(".toast").length,
       opened: w.openedUrls.length,
     });
     const before = snap();
-    const modBefore = w.document.querySelectorAll(".modal").length, toastBefore = w.document.querySelectorAll(".toast").length;
+    const modBefore = w.document.querySelectorAll(".modal").length,
+      toastBefore = w.document.querySelectorAll(".toast").length;
     errDrain();
     try {
-      if (e.type === "checkbox" || e.type === "radio") { e.click(); await sleep(30); if (e.type === "checkbox") e.click(); }
-      else e.click();
+      if (e.type === "checkbox" || e.type === "radio") {
+        e.click();
+        await sleep(30);
+        if (e.type === "checkbox") e.click();
+      } else e.click();
       await sleep(60);
-    } catch (err) { ok(false, `${tag} :: click "${lb}" threw sync: ${String(err.message).slice(0, 160)}`); cleanup(); continue; }
+    } catch (err) {
+      ok(false, `${tag} :: click "${lb}" threw sync: ${String(err.message).slice(0, 160)}`);
+      cleanup();
+      continue;
+    }
     const errs = errDrain().filter((x) => !/navigation|window\.print/i.test(x));
-    if (errs.length) { ok(false, `${tag} :: click "${lb}" threw: ${errs[0].slice(0, 200)}`); }
-    else if (false) { wired++; }
-    else {
+    if (errs.length) {
+      ok(false, `${tag} :: click "${lb}" threw: ${errs[0].slice(0, 200)}`);
+    } else if (false) {
+      wired++;
+    } else {
       const after = snap();
       const changed = JSON.stringify(after) !== JSON.stringify(before);
       if (changed) wired++;
-      else { noop++; if (noopCandidates.length < 60) noopCandidates.push(`${tag} :: ${e.tagName} :: ${lb}`);
-        if (VERBOSE) console.log(`  … DEBUG noop ${tag} :: ${lb} | route=${after.route} mod=${after.mod} toast=${after.toast} kids=${after.kids} mhtml=${String(after.mhtml).slice(0, 40)}`); }
+      else {
+        noop++;
+        if (noopCandidates.length < 60) noopCandidates.push(`${tag} :: ${e.tagName} :: ${lb}`);
+        if (VERBOSE)
+          console.log(
+            `  … DEBUG noop ${tag} :: ${lb} | route=${after.route} mod=${after.mod} toast=${after.toast} kids=${after.kids} mhtml=${String(after.mhtml).slice(0, 40)}`,
+          );
+      }
     }
     cleanup();
-    if (tag !== "drawer" && g(`route`) !== tag) { g(`go("${tag}")`); await sleep(120); }
+    if (tag !== "drawer" && g(`route`) !== tag) {
+      g(`go("${tag}")`);
+      await sleep(120);
+    }
     if (tag === "drawer") {
-      if (!w.document.querySelector(".modal")) { errDrain(); g(`appDrawerOpen(true)`); await sleep(250); errDrain(); }
+      if (!w.document.querySelector(".modal")) {
+        errDrain();
+        g(`appDrawerOpen(true)`);
+        await sleep(250);
+        errDrain();
+      }
       if (!w.document.querySelector(".modal")) break;
     }
   }
-  console.log(`  … ${tag}: ${clicked.size} exercised, ${wired} wired, ${noop} no-op?, ${skip} skipped`);
+  console.log(
+    `  … ${tag}: ${clicked.size} exercised, ${wired} wired, ${noop} no-op?, ${skip} skipped`,
+  );
   return { wired, noop, skip };
 }
 
 // ---------- every route ----------
-const ROUTES = ["dash", "library", "pyq", "planner", "youtube", "live", "practice", "review", "notebook", "mastery", "formulas", "analytics", "upload", "search", "settings"];
+const ROUTES = [
+  "dash",
+  "library",
+  "pyq",
+  "planner",
+  "youtube",
+  "live",
+  "practice",
+  "review",
+  "notebook",
+  "mastery",
+  "formulas",
+  "analytics",
+  "upload",
+  "search",
+  "settings",
+];
 for (const r of ROUTES) {
   errDrain();
   g(`go("${r}")`);
   await sleep(350);
-  if (VERBOSE && r === "mastery") console.log(`  … DEBUG mastery: route=${g(`route`)} kids=${w.document.querySelector("#app").children.length} btns=${w.document.querySelectorAll("#app button").length}`);
+  if (VERBOSE && r === "mastery")
+    console.log(
+      `  … DEBUG mastery: route=${g(`route`)} kids=${w.document.querySelector("#app").children.length} btns=${w.document.querySelectorAll("#app button").length}`,
+    );
   const errs = errDrain();
   ok(errs.length === 0, `render ${r} (${errs[0] || "clean"})`);
-  if (r === "planner") { g(`go("planner")`); await sleep(200); try { w.eval(`document.querySelector('[data-atab="tools"]')?.click()`); await sleep(150); } catch {} }
+  if (r === "planner") {
+    g(`go("planner")`);
+    await sleep(200);
+    try {
+      w.eval(`document.querySelector('[data-atab="tools"]')?.click()`);
+      await sleep(150);
+    } catch {}
+  }
   await clickAll(w.document.querySelector("#app"), r);
   cleanup();
 }
@@ -221,7 +398,10 @@ for (const r of ROUTES) {
   g(`appDrawerOpen(true)`);
   await sleep(300);
   const errs = errDrain();
-  ok(errs.length === 0 && !!w.document.querySelector(".launch-app"), `drawer preview opens with tiles (${errs[0] || "clean"})`);
+  ok(
+    errs.length === 0 && !!w.document.querySelector(".launch-app"),
+    `drawer preview opens with tiles (${errs[0] || "clean"})`,
+  );
   const m = w.document.querySelector(".modal");
   if (m) await clickAll(m, "drawer");
   cleanup();

@@ -62,9 +62,7 @@ function Planner() {
   const minOf = (r: PlannerTaskRow) =>
     r.status === "done" && typeof r.actualMin === "number" ? r.actualMin : r.estMin || 0;
   const totalMin = displayRows.reduce((n, r) => n + minOf(r), 0);
-  const doneMin = displayRows
-    .filter((r) => r.status === "done")
-    .reduce((n, r) => n + minOf(r), 0);
+  const doneMin = displayRows.filter((r) => r.status === "done").reduce((n, r) => n + minOf(r), 0);
 
   return (
     <div className="space-y-6">

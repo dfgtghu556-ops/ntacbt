@@ -31,7 +31,12 @@ import { predictRank } from "@/features/readiness/predict";
 import { useLang, t } from "@/lib/lang";
 import { buildMicroDrill } from "@/features/cbt/microDrill";
 import { mistakeFromStore } from "@/features/cbt/mistake";
-import { loadFocusStore, todayFocusSeconds, focusStreak, type FocusSession } from "@/features/focus/focus";
+import {
+  loadFocusStore,
+  todayFocusSeconds,
+  focusStreak,
+  type FocusSession,
+} from "@/features/focus/focus";
 import { computeHumaneStreak, loadStreakStore } from "@/features/focus/streak";
 import type {
   MicroDrillCard,
@@ -75,8 +80,10 @@ function targetLabel(target: string): string {
 
 function greeting(): { text: string; sub: string } {
   const h = new Date().getHours();
-  if (h < 12) return { text: "Good morning", sub: "Kal ki tarah aaj bhi ek clear goal — let's go." };
-  if (h < 17) return { text: "Good afternoon", sub: "Aaj ka ek mission, aur har card bata raha hai why." };
+  if (h < 12)
+    return { text: "Good morning", sub: "Kal ki tarah aaj bhi ek clear goal — let's go." };
+  if (h < 17)
+    return { text: "Good afternoon", sub: "Aaj ka ek mission, aur har card bata raha hai why." };
   return { text: "Good evening", sub: "Ek chhota sa step bhi progress hai — let's finish strong." };
 }
 
@@ -164,8 +171,7 @@ function Dashboard() {
     !!mission?.kind?.toLowerCase().includes("mock");
 
   // F6 — "your progress, not your loss" reactivation when returning after a gap.
-  const showReactivation =
-    absentDays >= 2 && (snapshot.attempts > 0 || humane.days > 0);
+  const showReactivation = absentDays >= 2 && (snapshot.attempts > 0 || humane.days > 0);
 
   // The survival score drives the whole hero: ring + status + next action.
   const survivalScore = survival?.score ?? 0;
@@ -178,7 +184,8 @@ function Dashboard() {
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[11px] font-semibold text-primary">
-              <ShieldCheck className="h-3.5 w-3.5" /> {targetLabel(snapshot.examTarget)} · Guaranteed System
+              <ShieldCheck className="h-3.5 w-3.5" /> {targetLabel(snapshot.examTarget)} ·
+              Guaranteed System
             </span>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">
               {greeting().text}, future IITian
@@ -216,8 +223,8 @@ function Dashboard() {
               <span className="font-semibold text-green-800">Your progress isn't gone.</span>{" "}
               <span className="text-green-700">
                 You last studied {absentDays} days ago — {snapshot.attempts} test
-                {snapshot.attempts === 1 ? "" : "s"} and a {humane.days}-day streak are safe. Pick up
-                where you left off; no guilt.
+                {snapshot.attempts === 1 ? "" : "s"} and a {humane.days}-day streak are safe. Pick
+                up where you left off; no guilt.
               </span>
             </div>
           </div>
@@ -244,11 +251,12 @@ function Dashboard() {
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold">Our guarantee is the system, not a score</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              No platform can honestly promise a 100% outcome. We guarantee something better and true:
-              <strong> you will never study blind and never get stuck.</strong> Every day you get (1)
-              exactly the one thing to do next, (2) proof of why, (3) an automatic guilt-free fix when
-              you fall behind, (4) a humane streak that never punishes you, and (5) active recall, not
-              passive watching.
+              No platform can honestly promise a 100% outcome. We guarantee something better and
+              true:
+              <strong> you will never study blind and never get stuck.</strong> Every day you get
+              (1) exactly the one thing to do next, (2) proof of why, (3) an automatic guilt-free
+              fix when you fall behind, (4) a humane streak that never punishes you, and (5) active
+              recall, not passive watching.
             </p>
           </div>
         </div>
@@ -436,7 +444,10 @@ function Dashboard() {
       </section>
 
       {/* ─── F10: Trust — how we compute this ─── */}
-      <Panel title="Why you can trust these numbers" icon={<ShieldCheck className="h-4 w-4 text-primary" />}>
+      <Panel
+        title="Why you can trust these numbers"
+        icon={<ShieldCheck className="h-4 w-4 text-primary" />}
+      >
         <p className="text-sm text-muted-foreground">
           The #1 complaint students have about big test-prep apps is a dashboard that shows wrong
           data. Here every number is computed from your real plan, real watch-minutes, real attempts
@@ -445,8 +456,14 @@ function Dashboard() {
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <TrustLine label="Plan completion" how="Completed tasks / total planned tasks." />
           <TrustLine label="Accuracy" how="Correct / (correct + wrong) across submitted tests." />
-          <TrustLine label="Survival score" how="Weighted blend of plan, accuracy, weak topics, mistakes and consistency." />
-          <TrustLine label="Streak" how="Consecutive days of ≥25 min real focus or a completed task." />
+          <TrustLine
+            label="Survival score"
+            how="Weighted blend of plan, accuracy, weak topics, mistakes and consistency."
+          />
+          <TrustLine
+            label="Streak"
+            how="Consecutive days of ≥25 min real focus or a completed task."
+          />
         </div>
       </Panel>
 
@@ -489,8 +506,7 @@ function SurvivalScoreRing({ score, status }: { score: number; status: string })
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, score || 0));
   const off = c - (pct / 100) * c;
-  const color =
-    status === "on-track" ? "#16a34a" : status === "watch" ? "#f59e0b" : "#ef4444";
+  const color = status === "on-track" ? "#16a34a" : status === "watch" ? "#f59e0b" : "#ef4444";
   return (
     <div className="relative h-32 w-32 shrink-0">
       <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
@@ -571,13 +587,19 @@ function SurvivalMission({
               <div className="text-sm font-semibold">{mission.title}</div>
               <div className="text-xs opacity-90">
                 {mission.minutes} min · {mission.kind}
-                {mission.subject || mission.chapter ? ` · ${mission.subject || ""} ${mission.chapter || ""}`.trim() : ""}
+                {mission.subject || mission.chapter
+                  ? ` · ${mission.subject || ""} ${mission.chapter || ""}`.trim()
+                  : ""}
               </div>
             </div>
             {missionIsTest ? (
               <Link
                 to="/cbt"
-                search={{ name: `${mission.subject || ""} ${mission.chapter || ""}`.trim() || "Quick mixed diagnostic drill" }}
+                search={{
+                  name:
+                    `${mission.subject || ""} ${mission.chapter || ""}`.trim() ||
+                    "Quick mixed diagnostic drill",
+                }}
                 className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary"
               >
                 <Play className="h-4 w-4" /> Start mission
@@ -663,9 +685,7 @@ function RankPredictor({ prediction }: { prediction: RankPrediction }) {
         </div>
         <div className="rounded-2xl border bg-gradient-to-br from-violet-500/10 to-violet-500/5 p-4">
           <div className="text-xs font-medium text-muted-foreground">Expected rank (AIR)</div>
-          <div className="mt-1 text-3xl font-bold">
-            ~{p.rank.toLocaleString("en-IN")}
-          </div>
+          <div className="mt-1 text-3xl font-bold">~{p.rank.toLocaleString("en-IN")}</div>
           <div className="mt-1 text-xs text-muted-foreground">JEE Main, ~14 lakh candidates</div>
         </div>
         <div className="rounded-2xl border bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-4 md:col-span-2">
@@ -734,13 +754,21 @@ function LaneCard({
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Humane streak card (F5)                                                    */
 /* ────────────────────────────────────────────────────────────────────────── */
-function StreakCard({ humane, streak }: { humane: ReturnType<typeof computeHumaneStreak>; streak: number }) {
+function StreakCard({
+  humane,
+  streak,
+}: {
+  humane: ReturnType<typeof computeHumaneStreak>;
+  streak: number;
+}) {
   const flameColor = humane.days > 0 ? "text-orange-500" : "text-muted-foreground";
   return (
     <div className="rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground">Consistency</span>
-        <span className={`flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 ${flameColor}`}>
+        <span
+          className={`flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 ${flameColor}`}
+        >
           <Flame className="h-4 w-4" />
         </span>
       </div>
@@ -778,8 +806,12 @@ function MicroDrillPanel({ cards }: { cards: MicroDrillCard[] }) {
             aria-label={isFlipped ? "Show question" : "Show answer"}
           >
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide">
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">{c.subject}</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">{c.tagLabel}</span>
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                {c.subject}
+              </span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                {c.tagLabel}
+              </span>
             </div>
             <div className="mt-3 text-xs font-medium text-muted-foreground">
               {isFlipped ? "Self-check" : "Recall"}
@@ -855,11 +887,7 @@ function ProgressCard({ title, value }: { title: string; value: number }) {
           <div className="text-xs font-medium text-muted-foreground">{title}</div>
           <div className="mt-1 text-2xl font-bold">{pct}%</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {pct >= 80
-              ? "Almost there"
-              : pct >= 50
-                ? "Solid momentum"
-                : "Small start counts"}
+            {pct >= 80 ? "Almost there" : pct >= 50 ? "Solid momentum" : "Small start counts"}
           </div>
         </div>
         <div className="relative h-16 w-16">
