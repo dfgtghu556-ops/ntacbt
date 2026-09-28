@@ -134,3 +134,7 @@ Account provider / Where your preparation lives" on profile, and the
    configurations; the current tree is clean, but the file is on the list for the
    teacher/video verification pass described in the original rebuild plan.
 3. The Eklavya 96-test schedule is deliberately untouched (out of scope).
+4. The brief's "admin dashboard" was not built: NTACBT is a single-student,
+   local-first product, so an admin role exists in the type contract but there is
+   no multi-tenant admin surface to build one against. The mentor report
+   (`/app/report`) is the equivalent read-only "oversight" view.
