@@ -13,7 +13,8 @@ const SAFE = /^[0-9+\-*/.()]*$/;
 export function safeEvaluate(expression: string): number | null {
   if (!SAFE.test(expression) || expression.trim() === "") return null;
   try {
-    // eslint-disable-next-line no-new-func
+    // `Function` is only reached after SAFE has admitted digits, operators and
+    // parentheses alone — there is no way to smuggle an identifier in.
     const value = Function(`"use strict"; return (${expression})`)();
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   } catch {

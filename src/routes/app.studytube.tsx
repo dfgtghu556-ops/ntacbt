@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock3, Flame, MonitorPlay, Play, Search, Target, TrendingUp } from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
@@ -11,6 +11,12 @@ import {
   teachersForTarget,
   findInstituteById,
 } from "@/data/teachers";
+import {
+  goalForTarget,
+  studyTubeTarget,
+  useStudentContext,
+  useStudentContextActions,
+} from "@/features/context";
 import { discover } from "@/features/studytube/service";
 import { dreamChannels, offlineCatalog } from "@/features/studytube/catalog";
 import {
@@ -208,8 +214,18 @@ function Chip({
 function StudyTube() {
   const search = useSearch({ from: Route.id });
   const navigate = useNavigate();
-  const [target, setTarget] = useState<StudyTubeRequest["target"]>("jeemain");
-  const [language, setLanguage] = useState<StudyTubeRequest["language"]>("hinglish");
+  // Seeded from the persisted StudentContext, NOT a hard-coded "jeemain".
+  // Before this, a CBSE student who had never touched the planner was shown
+  // JEE Main content by default — the cross-scope leak this fixes.
+  const student = useStudentContext();
+  const studentActions = useStudentContextActions();
+  // Captured at mount so the seeding effect below stays mount-only: re-running it
+  // when the context changes would undo a target the student just picked.
+  const studentAtMount = useRef(student);
+  const [target, setTarget] = useState<StudyTubeRequest["target"]>(
+    studyTubeTarget(studentAtMount.current),
+  );
+  const [language, setLanguage] = useState<StudyTubeRequest["language"]>(student.lang);
   const [teacher, setTeacher] = useState<string | undefined>(undefined);
   const [institute, setInstitute] = useState<string | undefined>(undefined);
   const [weak, setWeak] = useState<{ subject: string; chapter: string; topic: string }>();
@@ -231,6 +247,9 @@ function StudyTube() {
   function changeTarget(t: StudyTubeRequest["target"]) {
     setTarget(t);
     setTeacher((prev) => (teacherSupportsTarget(prev, t) ? prev : undefined));
+    // Persist the choice so the next visit (and every other surface) agrees.
+    const goal = goalForTarget(t);
+    if (goal && goal !== student.goal) studentActions.setGoal(goal);
   }
 
   function changeInstitute(id: string | undefined) {
@@ -251,7 +270,8 @@ function StudyTube() {
     const store = new DataStore();
     const planner = store.planner;
     const profile = planner?.profile;
-    const loadedTarget = (profile?.target || "jeemain") as StudyTubeRequest["target"];
+    const loadedTarget = (profile?.target ||
+      studyTubeTarget(studentAtMount.current)) as StudyTubeRequest["target"];
     if (profile?.target) setTarget(loadedTarget);
     if (profile?.language) setLanguage(profile.language as StudyTubeRequest["language"]);
     const profileTeachers = (profile as Record<string, unknown> | undefined)?.["teachers"] as

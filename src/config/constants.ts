@@ -66,6 +66,8 @@ export const STORAGE_KEYS = {
   THEME: "theme",
   EXAM_STATE: "ntacbt.exam.v1",
   LANG: "ntacbt.lang.v1",
+  /** Who is studying: goal, class, subjects, institute/teacher prefs, goals. */
+  STUDENT: "ntacbt.student.v1",
 } as const;
 
 /** Milliseconds in a day — kept as a named constant so streak maths is auditable. */
