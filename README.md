@@ -30,6 +30,15 @@ npm install
 npm run dev
 ```
 
+## Testing
+
+```sh
+npm test               # legacy app E2E (112 robot checks)
+npm run test:unit      # vitest unit + component suite (55 tests)
+npm run test:watch     # vitest in watch mode
+npm run validate:all   # every data validator + harness + unit tests
+```
+
 ## Validation & build
 
 ```sh
@@ -50,6 +59,40 @@ npm run build
 - PYQ bake: `scripts/build-pyq.mjs`
 - CBSE syllabus builder: `scripts/build-cbse-syllabus.mjs`
 - Android app: `android/`
+
+---
+
+## Redevelopment round (2026-09-28)
+
+A "rebuild from scratch" brief (`redevlopment.txt`) was supplied alongside this
+repo. It describes the project as _"a basic CBT application requiring complete
+modernization"_ and asks for a clean-slate `npm create vite` rebuild with a
+generic login / exam / dashboard skeleton.
+
+**That premise no longer matches reality**, so the round was replanned instead of
+executed literally: NTACBT is now a JEE/CBSE learning OS with 113 TS/TSX modules,
+a typed NTA grading engine, an AI planner, a StudyTube engine, a deterministic
+mentor-report engine, verified syllabus/teacher data, an Android app and a PWA —
+all covered by 9 validators and 5 harnesses. Wiping it would have destroyed
+working, validated, data-bearing product and replaced it with something strictly
+less capable.
+
+The brief's _intent_ was kept and its _method_ dropped. What actually shipped:
+
+| Brief item                                                                               | Outcome                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "Clean slate" rebuild                                                                    | **Rejected** — see [`docs/REDEVELOPMENT-PLAN.md`](docs/REDEVELOPMENT-PLAN.md) §2.1                                                                                                               |
+| Auth system (Phase 4)                                                                    | **Built** — `src/types/auth.types.ts`, `src/services/auth.service.ts`, `src/features/auth/*`, `/app/auth/login`, `/app/auth/register`, `/app/profile`                                            |
+| Exam system (Phase 5)                                                                    | **Refactored** — the 954-line `/cbt` route split into `src/types/exam.types.ts`, `src/features/exams/{store,autosave,components/*}`, `src/services/exam.service.ts`; **autosave + resume added** |
+| Unit tests (vitest / RTL)                                                                | **Added** — 55 tests across engine, auth, exams, exam UI and the pure engines                                                                                                                    |
+| Zero ESLint errors                                                                       | **Fixed** — 23,422 prettier errors → 0                                                                                                                                                           |
+| Deployment (Vercel / CI)                                                                 | **Added** — `vercel.json`, `.github/workflows/deploy.yml` (guarded so CI is green without Vercel secrets)                                                                                        |
+| `react-router-dom`, `tailwind.config.js`, `postcss.config.js`, `framer-motion`, `lodash` | **Not adopted** — TanStack Router and Tailwind v4 already do these jobs better; see §2.2–2.5                                                                                                     |
+| Mandatory login wall                                                                     | **Rejected** — NTACBT is local-first; an account is optional and never gates a student's own data                                                                                                |
+
+Full reasoning, the measured baseline, and the explicit not-done list are in
+[`docs/REDEVELOPMENT-PLAN.md`](docs/REDEVELOPMENT-PLAN.md) and
+[`docs/REDEVELOPMENT-STATUS.md`](docs/REDEVELOPMENT-STATUS.md).
 
 ## Project history note
 

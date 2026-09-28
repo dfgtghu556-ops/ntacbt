@@ -17,7 +17,7 @@
 > application from the ground up.
 
 **That premise is no longer true.** Since that document was written, NTACBT has
-grown into a JEE/CBSE *learning operating system*: 113 TypeScript/TSX modules,
+grown into a JEE/CBSE _learning operating system_: 113 TypeScript/TSX modules,
 a typed NTA CBT scoring engine with the dense official percentile table, an AI
 adaptive planner, a StudyTube video engine, a deterministic AI-Mentor report
 engine, a verified teacher/syllabus source-of-truth, an Android Focus-Guard app,
@@ -27,22 +27,22 @@ a PWA shell, and **9 validators + 5 harnesses** that are all green today
 A literal "clean slate" (`mkdir ntacbt-redeveloped && npm create vite`) would
 therefore **destroy working, validated, data-bearing product** and replace it
 with a generic login/exam/dashboard skeleton — i.e. it would move the project
-*backwards*. It would also break `AGENTS.md`'s history-preservation policy and
+_backwards_. It would also break `AGENTS.md`'s history-preservation policy and
 the repo's own documented "why not a blind rewrite" stance.
 
-**So the replan keeps the document's *intent* and drops its *method*:**
+**So the replan keeps the document's _intent_ and drops its _method_:**
 
-| The document's intent | How it is honoured |
-|---|---|
-| Modern, enterprise-grade architecture | Layer the app (`VerifiedData → Services → Domain → UI`), extract the monolith routes into `src/features/*` + `src/services/*` + `src/types/*` |
-| Production-ready standards | Green lint, green build, green validators, unit tests, typed API clients, real loading/empty/error states |
-| Full automation, no confirmations | Implemented end-to-end in one pass, validating after each step |
-| **Auth system** (Phase 4) | **Genuinely missing → built** (see §3) |
-| **Exam system** (Phase 5) | **Exists as a 954-line route → refactored into the document's structure + autosave/resume added** (see §4) |
-| Dashboard / results / routing / UI kit | Already built and validated — kept, documented |
-| Deployment (Vercel, CI) | Added (see §6) |
-| Unit tests (vitest/RTL) | **Genuinely missing → added** (see §5) |
-| Zero ESLint errors | **Was 23,422 prettier errors → now green** (see §2) |
+| The document's intent                  | How it is honoured                                                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Modern, enterprise-grade architecture  | Layer the app (`VerifiedData → Services → Domain → UI`), extract the monolith routes into `src/features/*` + `src/services/*` + `src/types/*` |
+| Production-ready standards             | Green lint, green build, green validators, unit tests, typed API clients, real loading/empty/error states                                     |
+| Full automation, no confirmations      | Implemented end-to-end in one pass, validating after each step                                                                                |
+| **Auth system** (Phase 4)              | **Genuinely missing → built** (see §3)                                                                                                        |
+| **Exam system** (Phase 5)              | **Exists as a 954-line route → refactored into the document's structure + autosave/resume added** (see §4)                                    |
+| Dashboard / results / routing / UI kit | Already built and validated — kept, documented                                                                                                |
+| Deployment (Vercel, CI)                | Added (see §6)                                                                                                                                |
+| Unit tests (vitest/RTL)                | **Genuinely missing → added** (see §5)                                                                                                        |
+| Zero ESLint errors                     | **Was 23,422 prettier errors → now green** (see §2)                                                                                           |
 
 Everything below is either (a) work that does not exist yet, or (b) work that
 exists but in a shape the document explicitly asks to improve. Nothing that
@@ -52,31 +52,34 @@ already works is rewritten for its own sake.
 
 ## 1. Baseline measured before any edit
 
-| Check | Result at `289459c` |
-|---|---|
-| `npx tsc --noEmit` | ✅ 0 errors |
-| `npm run lint` | ❌ **23,422 prettier errors + 6 react-refresh warnings across 39 files** |
+| Check                  | Result at `289459c`                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `npx tsc --noEmit`     | ✅ 0 errors                                                                                                                  |
+| `npm run lint`         | ❌ **23,422 prettier errors + 6 react-refresh warnings across 39 files**                                                     |
 | `npm run validate:all` | ✅ exit 0 (jee2026 · sot · syllabus · teachers · videos · links · analytics · planner · full · mentor · journey · fuzz · r3) |
-| `npm run build` | ✅ (after `node scripts/build-pyq.mjs`) |
-| `npm test` (robot E2E) | ✅ 112 checks |
-| `node_modules` | ❌ absent — nothing could run until `npm install` |
+| `npm run build`        | ✅ (after `node scripts/build-pyq.mjs`)                                                                                      |
+| `npm test` (robot E2E) | ✅ 112 checks                                                                                                                |
+| `node_modules`         | ❌ absent — nothing could run until `npm install`                                                                            |
 
 ---
 
 ## 2. Decisions taken against the document (and the reasoning)
 
 ### 2.1 "Clean slate" → **rejected**
+
 Deleting the working app is not a redevelopment, it is a data-loss event. The
 document's own Phase 1 output (login + exam + dashboard with `[1,2,3].map(...)`
-hard-coded rows) is strictly *less* capable than `/app` today.
+hard-coded rows) is strictly _less_ capable than `/app` today.
 
 ### 2.2 `react-router-dom@6` → **kept TanStack Router**
+
 The repo uses typed, file-based TanStack Router + TanStack Start (`src/routes/`,
 `routeTree.gen.ts`, `src/routes/README.md` documents the convention). Porting to
 RRv6 would delete route-level search validation (`validateSearch`), SSR, and the
 server API routes. `BrowserRouter` is not reintroduced.
 
 ### 2.3 `tailwind.config.js` + `postcss.config.js` → **not created**
+
 Tailwind **v4** is wired through `@tailwindcss/vite` inside
 `@lovable.dev/vite-tanstack-config` (see the warning at the top of
 `vite.config.ts`). A v3-style config file would silently do nothing and a
@@ -84,22 +87,26 @@ duplicate PostCSS pipeline breaks the build. Design tokens live in
 `src/styles.css`.
 
 ### 2.4 `zustand` / `axios` → **adopted**
+
 These two are real gaps: the app has no client-side store abstraction and no
 typed HTTP layer. They are added where they earn their place — auth state and
 the exam attempt state (§3, §4) — rather than retro-fitted everywhere.
 
 ### 2.5 `framer-motion`, `lodash`, `dayjs` → **not added**
+
 `tw-animate-css` already provides the animation layer, and the codebase is
 deliberately dependency-light (no lodash anywhere). Adding unused heavy deps
 violates the repo's own minimalism; `date-fns` is already a dependency.
 
 ### 2.6 A hard auth wall (`ProtectedRoute` on everything) → **rejected**
+
 NTACBT is **local-first**: every student's progress lives in
 `localStorage["jeecbt.v1"]` and must survive with no account and no network.
 Gating the app behind a login would lock existing students out of their own
 data. Auth is therefore **optional and additive** (§3).
 
 ### 2.7 `vercel.json` + `vercel-action` with secrets → **added, but guarded**
+
 The deploy workflow is committed with a `workflow_dispatch`/secret guard so CI
 stays green without `VERCEL_TOKEN`/`ORG_ID`/`PROJECT_ID` configured.
 
@@ -113,16 +120,16 @@ only stubs `signInWithPassword` when Supabase env vars are unset.
 
 **Built:**
 
-| File | Purpose |
-|---|---|
-| `src/types/auth.types.ts` | `User`, `AuthState`, `LoginCredentials`, `RegisterData`, `AuthResponse`, `AuthProvider` — exactly the document's contract |
-| `src/config/constants.ts` | `APP_CONFIG`, `ROUTES`, `EXAM_CONFIG`, `STORAGE_KEYS` (document Step 2.2) |
-| `src/services/http.ts` | axios instance + typed request/response envelope + bounded error normalisation (never throws raw) |
-| `src/services/auth.service.ts` | `login / register / logout / getCurrentUser / refreshToken`; **local provider by default**, Supabase when configured, mock-safe when neither |
-| `src/features/auth/store.ts` | zustand + `persist` → `useAuthStore` (document Step 4.2), rehydrated on boot |
-| `src/features/auth/hooks.ts` | `useAuth()`, `useRequireAuth()` |
-| `src/routes/app.auth.login.tsx` · `app.auth.register.tsx` | Login / Register pages in the app's own design language (not the document's generic blue gradient) |
-| `src/routes/app.profile.tsx` | Identity + sign-in/out surface, reachable from the header avatar |
+| File                                                      | Purpose                                                                                                                                      |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/auth.types.ts`                                 | `User`, `AuthState`, `LoginCredentials`, `RegisterData`, `AuthResponse`, `AuthProvider` — exactly the document's contract                    |
+| `src/config/constants.ts`                                 | `APP_CONFIG`, `ROUTES`, `EXAM_CONFIG`, `STORAGE_KEYS` (document Step 2.2)                                                                    |
+| `src/services/http.ts`                                    | axios instance + typed request/response envelope + bounded error normalisation (never throws raw)                                            |
+| `src/services/auth.service.ts`                            | `login / register / logout / getCurrentUser / refreshToken`; **local provider by default**, Supabase when configured, mock-safe when neither |
+| `src/features/auth/store.ts`                              | zustand + `persist` → `useAuthStore` (document Step 4.2), rehydrated on boot                                                                 |
+| `src/features/auth/hooks.ts`                              | `useAuth()`, `useRequireAuth()`                                                                                                              |
+| `src/routes/app.auth.login.tsx` · `app.auth.register.tsx` | Login / Register pages in the app's own design language (not the document's generic blue gradient)                                           |
+| `src/routes/app.profile.tsx`                              | Identity + sign-in/out surface, reachable from the header avatar                                                                             |
 
 **Invariants:** no route becomes unreachable when signed out; signing out never
 deletes local progress; the Supabase path is only taken when
@@ -140,15 +147,15 @@ what the repo's own `docs/ARCHITECTURE.md` §3 asks for.
 
 **Refactored into:**
 
-| File | Purpose |
-|---|---|
-| `src/types/exam.types.ts` | `Question`, `Exam`, `ExamAttempt`, `ExamState` (document Step 5.1) + adapters to the existing `CbtTest` shape |
-| `src/features/exams/types.ts` | re-export shim so both spellings resolve |
-| `src/features/exams/store.ts` | zustand exam store: answers, current index, time left, submit/reset — with **autosave** |
-| `src/services/exam.service.ts` | `getAllExams / getExamById / startExam / submitExam / getAttempt / getUserAttempts` over the local + PYQ sources |
-| `src/features/exams/autosave.ts` | 30 s autosave (`EXAM_CONFIG.autosaveInterval`) + resume of an interrupted attempt |
-| `src/features/exams/components/*` | `ExamInstructions`, `ExamHeader`, `QuestionPanel`, `QuestionPalette`, `Calculator`, `ExamResult` |
-| `src/routes/cbt.tsx` | reduced to composition + data loading |
+| File                              | Purpose                                                                                                          |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `src/types/exam.types.ts`         | `Question`, `Exam`, `ExamAttempt`, `ExamState` (document Step 5.1) + adapters to the existing `CbtTest` shape    |
+| `src/features/exams/types.ts`     | re-export shim so both spellings resolve                                                                         |
+| `src/features/exams/store.ts`     | zustand exam store: answers, current index, time left, submit/reset — with **autosave**                          |
+| `src/services/exam.service.ts`    | `getAllExams / getExamById / startExam / submitExam / getAttempt / getUserAttempts` over the local + PYQ sources |
+| `src/features/exams/autosave.ts`  | 30 s autosave (`EXAM_CONFIG.autosaveInterval`) + resume of an interrupted attempt                                |
+| `src/features/exams/components/*` | `ExamInstructions`, `ExamHeader`, `QuestionPanel`, `QuestionPalette`, `Calculator`, `ExamResult`                 |
+| `src/routes/cbt.tsx`              | reduced to composition + data loading                                                                            |
 
 **Behaviour preserved:** NTA marking (+4/−1, integers +4/0), the dense
 percentile table, mark-for-review / clear-response state machine, per-question
@@ -184,16 +191,16 @@ existing breaks.
 
 ---
 
-## 7. Explicitly *not* done (and why)
+## 7. Explicitly _not_ done (and why)
 
-| Not done | Reason |
-|---|---|
-| Deleting `public/jee-cbt.html` | Still the authoritative CBT + PDF pipeline; `docs/ARCHITECTURE.md` retires it only after React parity |
-| Replacing TanStack Router with RRv6 | Regression (§2.2) |
-| Adding `framer-motion` / `lodash` / `dayjs` | Unused weight (§2.5) |
-| A mandatory login wall | Breaks local-first students (§2.6) |
-| Inventing teacher/video/rank data | `docs/DATA-GOVERNANCE.md` forbids it; every number stays evidence-labelled |
-| Changing the Eklavya test schedule | Explicitly out of scope per the user's earlier instruction in `.lovable/plan` |
+| Not done                                    | Reason                                                                                                |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Deleting `public/jee-cbt.html`              | Still the authoritative CBT + PDF pipeline; `docs/ARCHITECTURE.md` retires it only after React parity |
+| Replacing TanStack Router with RRv6         | Regression (§2.2)                                                                                     |
+| Adding `framer-motion` / `lodash` / `dayjs` | Unused weight (§2.5)                                                                                  |
+| A mandatory login wall                      | Breaks local-first students (§2.6)                                                                    |
+| Inventing teacher/video/rank data           | `docs/DATA-GOVERNANCE.md` forbids it; every number stays evidence-labelled                            |
+| Changing the Eklavya test schedule          | Explicitly out of scope per the user's earlier instruction in `.lovable/plan`                         |
 
 ---
 

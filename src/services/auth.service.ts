@@ -223,19 +223,29 @@ async function supabaseAuth(
     );
   }
 
-  const result =
-    intent.type === "login"
-      ? await mod.supabase.auth.signInWithPassword({
-          email: intent.email,
-          password: intent.password,
-        })
-      : await mod.supabase.auth.signUp({
-          email: intent.email,
-          password: intent.password,
-          options: { data: { name: intent.name } },
-        });
+  const result = await (async () => {
+    try {
+      return intent.type === "login"
+        ? await mod.supabase.auth.signInWithPassword({
+            email: intent.email,
+            password: intent.password,
+          })
+        : await mod.supabase.auth.signUp({
+            email: intent.email,
+            password: intent.password,
+            options: { data: { name: intent.name } },
+          });
+    } catch {
+      // Transport failure. The local device identity is still usable, so surface
+      // an honest message instead of a raw network error.
+      throw new AuthServiceError(
+        "network",
+        "Could not reach the account service. Your work on this device is safe.",
+      );
+    }
+  })();
 
-  if (result.error || !result.data.user) {
+  if (result.error || !result.data?.user) {
     throw new AuthServiceError("invalid_credentials", result.error?.message ?? "Sign-in failed.");
   }
 
