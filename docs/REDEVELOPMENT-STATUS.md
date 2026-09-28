@@ -189,7 +189,71 @@ dev server.
 
 ---
 
-## 7. Why `.github/workflows/deploy.yml` is untracked
+## 7. Phase 1 (rebuild plan) — Trust core: provenance + de-faking ✅
+
+**The problem.** A prose comment is not provenance. The repo had three
+overlapping shapes (`SourceRef` in `academics/types.ts`, an inline provenance
+block in `data/syllabus.ts`, and prose in `cbt/engine.ts`) and no machine
+check, so nothing failed a build when a claim went stale.
+
+**What shipped.**
+
+| File                                | Role                                                                                                                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/academics/source.ts`  | The canonical `Source` record — all six fields the plan names — plus `isCompleteSource`, `missingSourceFields`, `describeSource`, `isVerifiedStatus` and the `SOURCE_RECORDS` registry |
+| `scripts/validate-sources.mjs`      | 35 checks, wired into `validate:all`                                                                                                                                                   |
+| `src/features/readiness/predict.ts` | The predictor, rewritten to label its output honestly                                                                                                                                  |
+
+`SourceRef` now extends `Source`, `SyllabusDataset`'s inline block is replaced
+by it, and teacher provenance is built by one helper instead of hand-written
+per record. `SOURCE_RECORDS` registers five datasets: the NTA percentile table
+(verified), the candidate count (provisional), the JEE syllabus, the legacy
+planner catalog and the PYQ papers.
+
+**The validator fails on:** an incomplete record, guaranteed-outcome phrasing,
+a promised mark gain, and a hard-coded frequency/probability claim that is not
+computed from the verified question bank. It strips comments before matching —
+a validator that fails on the comment _explaining_ the fix is worse than none.
+
+**The predictor, de-faked:**
+
+- `reliable`, `confidence`, `evidence` and `fallback` are now on the result.
+  One attempt at 5/300 returns **rank 0 and "Not enough data to estimate
+  reliably"** instead of a confident AIR from noise. Reliability needs both a
+  sample (≥2 attempts) and paper coverage.
+- The candidate count behind the AIR is recorded `provisional` with its own
+  source record, and the rank inherits that label in the UI.
+- It no longer maps a JEE Main percentile onto an Advanced outcome — that is
+  cross-exam inference between two different exams.
+- It no longer promises a specific mark gain; `topFix` gives a direction.
+- The dashboard gates the rank and band behind `reliable`, shows the attempt
+  count, and links both sources.
+
+**Four real bugs found and fixed while doing it:**
+
+1. **`config/constants.ts` read `import.meta.env` unguarded**, so the module
+   threw in plain Node. `scripts/validate-planner.mjs` bundles the engines for
+   `platform: "node"`, so any engine that transitively imported a storage key
+   took the _whole planner validator_ down (1,212 scenarios / 39,799
+   assertions). Guarded, with a regression test.
+2. **`readiness.ts` had** `planner?.profile?.target || (attempts ? "jeemain" :
+"jeemain")` — the same hard-coded fallback Phase F removed from StudyTube,
+   hidden in a no-op ternary. It now reads the persisted StudentContext.
+3. **All 103 teacher records carry a channel _display name_ and no URL**, so
+   none is verifiable. `channelUrl` is now optional and a record without one is
+   recorded `unverified` rather than given an invented link. See open item 5.
+4. **`validate-sot.mjs`'s textual type check could not see a re-export**, so
+   moving `VerificationStatus` to the canonical module read as a deletion. The
+   check now accepts a definition _or_ a re-export.
+
+**Verification.** `tsc --noEmit` 0 errors · `npm run lint` 0 errors (9 warnings,
+all in vendored `src/components/ui/*`) · `validate:all` exit 0
+(39,799 / 3,202 / 15,482 / 77 / 19 / 49 assertions, 0 failures) · **151 unit
+tests** (131 → 151) · `vite build` exit 0 · all 14 routes 200.
+
+---
+
+## 8. Why `.github/workflows/deploy.yml` is untracked
 
 The file is written and ready at `.github/workflows/deploy.yml`, but it is **not
 committed** because this sandbox's GitHub App does not hold the `workflows`
@@ -229,3 +293,10 @@ and `npm run validate:all` locally (all three are green).
    local-first product, so an admin role exists in the type contract but there is
    no multi-tenant admin surface to build one against. The mentor report
    (`/app/report`) is the equivalent read-only "oversight" view.
+5. **No teacher record has a verifiable channel URL.** All 103 carry a display
+   name only (`channelName: "JEE Wallah"`), so every one is now recorded
+   `unverified` in the academic source-of-truth. Nothing filters on that yet,
+   so StudyTube is unaffected — but the rebuild plan's Phase 5 says unverifiable
+   entries should be _hidden_ from recommendations, which would empty the
+   teacher picker. Supplying the URLs (or accepting the labelling) is a
+   decision for you, not one to make unilaterally.
