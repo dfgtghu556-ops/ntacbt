@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { LANG_LABEL, type Lang, useLang, setLang } from "@/lib/lang";
+import { useAuthStore } from "@/features/auth/store";
 
 export const Route = createFileRoute("/app/_layout")({
   component: AppLayout,
@@ -48,6 +49,7 @@ function AppLayout() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const lang = useLang();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   function submitSearch(e: FormEvent) {
     e.preventDefault();
@@ -113,8 +115,16 @@ function AppLayout() {
           >
             Full platform
           </a>
+          {!isAuthenticated ? (
+            <Link
+              to="/app/auth/login"
+              className="hidden items-center gap-1.5 rounded-full border border-input px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent sm:inline-flex"
+            >
+              <UserRound className="h-3.5 w-3.5" /> Sign in
+            </Link>
+          ) : null}
           <Link
-            to="/app"
+            to="/app/profile"
             className="flex h-8 w-8 items-center justify-center rounded-full border border-input text-muted-foreground"
             aria-label="Profile"
           >

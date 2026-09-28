@@ -16,6 +16,7 @@ import { Route as AppLayoutRouteImport } from './routes/app._layout'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppFocusRouteImport } from './routes/app.focus'
 import { Route as AppPlannerRouteImport } from './routes/app.planner'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppPyqRouteImport } from './routes/app.pyq'
 import { Route as AppReportRouteImport } from './routes/app.report'
 import { Route as AppSaarthiRouteImport } from './routes/app.saarthi'
@@ -26,6 +27,8 @@ import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/li
 import { Route as ApiPublicPdfReformatRouteImport } from './routes/api/public/pdf-reformat'
 import { Route as ApiPublicPyqPapersRouteImport } from './routes/api/public/pyq-papers'
 import { Route as ApiPublicStudyPlannerRouteImport } from './routes/api/public/study-planner'
+import { Route as AppAuthLoginRouteImport } from './routes/app.auth.login'
+import { Route as AppAuthRegisterRouteImport } from './routes/app.auth.register'
 import { Route as AppStudytubeVideoRouteImport } from './routes/app.studytube.$video'
 
 const IndexRoute = IndexRouteImport.update({
@@ -61,6 +64,11 @@ const AppFocusRoute = AppFocusRouteImport.update({
 const AppPlannerRoute = AppPlannerRouteImport.update({
   id: '/app/planner',
   path: '/app/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/app/profile',
+  path: '/app/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppPyqRoute = AppPyqRouteImport.update({
@@ -113,6 +121,16 @@ const ApiPublicStudyPlannerRoute = ApiPublicStudyPlannerRouteImport.update({
   path: '/api/public/study-planner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAuthLoginRoute = AppAuthLoginRouteImport.update({
+  id: '/app/auth/login',
+  path: '/app/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAuthRegisterRoute = AppAuthRegisterRouteImport.update({
+  id: '/app/auth/register',
+  path: '/app/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppStudytubeVideoRoute = AppStudytubeVideoRouteImport.update({
   id: '/$video',
   path: '/$video',
@@ -126,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
   '/app/planner': typeof AppPlannerRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/pyq': typeof AppPyqRoute
   '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
@@ -137,6 +156,8 @@ export interface FileRoutesByFullPath {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/auth/login': typeof AppAuthLoginRoute
+  '/app/auth/register': typeof AppAuthRegisterRoute
   '/app/studytube/$video': typeof AppStudytubeVideoRoute
 }
 export interface FileRoutesByTo {
@@ -146,6 +167,7 @@ export interface FileRoutesByTo {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
   '/app/planner': typeof AppPlannerRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/pyq': typeof AppPyqRoute
   '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
@@ -156,6 +178,8 @@ export interface FileRoutesByTo {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/auth/login': typeof AppAuthLoginRoute
+  '/app/auth/register': typeof AppAuthRegisterRoute
   '/app/studytube/$video': typeof AppStudytubeVideoRoute
 }
 export interface FileRoutesById {
@@ -166,6 +190,7 @@ export interface FileRoutesById {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
   '/app/planner': typeof AppPlannerRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/pyq': typeof AppPyqRoute
   '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
@@ -177,6 +202,8 @@ export interface FileRoutesById {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/auth/login': typeof AppAuthLoginRoute
+  '/app/auth/register': typeof AppAuthRegisterRoute
   '/app/studytube/$video': typeof AppStudytubeVideoRoute
 }
 export interface FileRouteTypes {
@@ -188,6 +215,7 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/focus'
     | '/app/planner'
+    | '/app/profile'
     | '/app/pyq'
     | '/app/report'
     | '/app/saarthi'
@@ -199,6 +227,8 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/auth/login'
+    | '/app/auth/register'
     | '/app/studytube/$video'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -208,6 +238,7 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/focus'
     | '/app/planner'
+    | '/app/profile'
     | '/app/pyq'
     | '/app/report'
     | '/app/saarthi'
@@ -218,6 +249,8 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/auth/login'
+    | '/app/auth/register'
     | '/app/studytube/$video'
   id:
     | '__root__'
@@ -227,6 +260,7 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/focus'
     | '/app/planner'
+    | '/app/profile'
     | '/app/pyq'
     | '/app/report'
     | '/app/saarthi'
@@ -238,6 +272,8 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/auth/login'
+    | '/app/auth/register'
     | '/app/studytube/$video'
   fileRoutesById: FileRoutesById
 }
@@ -248,6 +284,7 @@ export interface RootRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppFocusRoute: typeof AppFocusRoute
   AppPlannerRoute: typeof AppPlannerRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppPyqRoute: typeof AppPyqRoute
   AppReportRoute: typeof AppReportRoute
   AppSaarthiRoute: typeof AppSaarthiRoute
@@ -259,6 +296,8 @@ export interface RootRouteChildren {
   ApiPublicPdfReformatRoute: typeof ApiPublicPdfReformatRoute
   ApiPublicPyqPapersRoute: typeof ApiPublicPyqPapersRoute
   ApiPublicStudyPlannerRoute: typeof ApiPublicStudyPlannerRoute
+  AppAuthLoginRoute: typeof AppAuthLoginRoute
+  AppAuthRegisterRoute: typeof AppAuthRegisterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -310,6 +349,13 @@ declare module '@tanstack/react-router' {
       path: '/app/planner'
       fullPath: '/app/planner'
       preLoaderRoute: typeof AppPlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/app/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/pyq': {
@@ -382,6 +428,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStudyPlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/auth/login': {
+      id: '/app/auth/login'
+      path: '/app/auth/login'
+      fullPath: '/app/auth/login'
+      preLoaderRoute: typeof AppAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/auth/register': {
+      id: '/app/auth/register'
+      path: '/app/auth/register'
+      fullPath: '/app/auth/register'
+      preLoaderRoute: typeof AppAuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/studytube/$video': {
       id: '/app/studytube/$video'
       path: '/$video'
@@ -411,6 +471,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppFocusRoute: AppFocusRoute,
   AppPlannerRoute: AppPlannerRoute,
+  AppProfileRoute: AppProfileRoute,
   AppPyqRoute: AppPyqRoute,
   AppReportRoute: AppReportRoute,
   AppSaarthiRoute: AppSaarthiRoute,
@@ -422,6 +483,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPdfReformatRoute: ApiPublicPdfReformatRoute,
   ApiPublicPyqPapersRoute: ApiPublicPyqPapersRoute,
   ApiPublicStudyPlannerRoute: ApiPublicStudyPlannerRoute,
+  AppAuthLoginRoute: AppAuthLoginRoute,
+  AppAuthRegisterRoute: AppAuthRegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
