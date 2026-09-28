@@ -94,13 +94,13 @@ Wired as `npm run test:unit` / `test:watch`; `validate:all` now includes it.
 
 ## Phase D — Deployment & docs ✅
 
-| File                           | What                                                                                                                                                                 |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vercel.json`                  | SPA fallback that excludes `/api/*`, immutable asset caching, `nosniff` / `X-Frame-Options` / `Referrer-Policy`                                                      |
-| `.github/workflows/deploy.yml` | `verify` job (lint → typecheck → validate:all → robot → build) on every push/PR; `deploy` job **only** when the three Vercel secrets exist, so a fork never fails CI |
-| `.env.example`                 | rewritten with what each var actually does and the "everything works empty" guarantee                                                                                |
-| `README.md`                    | new Testing section + a Redevelopment section stating what was rebuilt, kept and rejected                                                                            |
-| `docs/REDEVELOPMENT-PLAN.md`   | the replan, with every decision and its reasoning                                                                                                                    |
+| File                           | What                                                                                                                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vercel.json`                  | SPA fallback that excludes `/api/*`, immutable asset caching, `nosniff` / `X-Frame-Options` / `Referrer-Policy`                                                                                               |
+| `.github/workflows/deploy.yml` | `verify` job (lint → typecheck → validate:all → robot → build) on every push/PR; `deploy` job **only** when the three Vercel secrets exist, so a fork never fails CI. **Delivered untracked** — see §5 below. |
+| `.env.example`                 | rewritten with what each var actually does and the "everything works empty" guarantee                                                                                                                         |
+| `README.md`                    | new Testing section + a Redevelopment section stating what was rebuilt, kept and rejected                                                                                                                     |
+| `docs/REDEVELOPMENT-PLAN.md`   | the replan, with every decision and its reasoning                                                                                                                                                             |
 
 ---
 
@@ -117,6 +117,28 @@ Rendered content verified on the new pages: "Welcome back / Sign in / Create an
 account / Your data stays yours / Skip for now" on login, "Not signed in /
 Account provider / Where your preparation lives" on profile, and the
 "Preparing your test…" loading shell on `/cbt`.
+
+---
+
+## 5. Why `.github/workflows/deploy.yml` is untracked
+
+The file is written and ready at `.github/workflows/deploy.yml`, but it is **not
+committed** because this sandbox's GitHub App does not hold the `workflows`
+permission, and GitHub rejects any push that creates or updates a file under
+`.github/workflows/` without it:
+
+```
+! [remote rejected] ... (refusing to allow a GitHub App to create or update
+  workflow `.github/workflows/deploy.yml` without `workflows` permission)
+```
+
+To land it, either grant the App the **workflows** permission and re-run
+`git add .github/workflows/deploy.yml && git commit && git push`, or paste the
+file into the repo through the GitHub web UI. Everything else in this round is
+already pushed to `arena/01a0e8ab-ntacbt`.
+
+Until then, CI is not enforced on push — run `npm run lint`, `npx tsc --noEmit`
+and `npm run validate:all` locally (all three are green).
 
 ---
 
