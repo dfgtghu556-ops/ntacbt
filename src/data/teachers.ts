@@ -9,6 +9,13 @@ export interface TeacherRecord {
   specialization?: string;
   examTarget: ExamTarget[];
   channelName: string;
+  /**
+   * The channel's URL, when it can be verified against the official source.
+   * Left EMPTY when it cannot — a guessed URL is worse than no URL, because
+   * `academics` marks a record without one `unverified` and the recommendation
+   * engine hides it. 103 of the current records have only a display name.
+   */
+  channelUrl?: string;
   channelId?: string;
   verified: boolean;
   source: string;

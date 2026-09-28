@@ -43,12 +43,30 @@ const REQUIRED_TYPES = [
   "AcademicRecord",
   "Subject",
 ];
+/**
+ * A contract member may be DEFINED in types.ts or RE-EXPORTED from the
+ * canonical module. Phase 1 moved `VerificationStatus` and `Source` into
+ * `academics/source.ts` so there is exactly one definition; `types.ts`
+ * re-exports them for backwards compatibility, which is a re-export, not a
+ * second definition. Both forms satisfy the check.
+ *
+ * The re-export pattern is built from a plain string, not a template literal:
+ * inside a template literal `\b` is a backspace character, so the pattern would
+ * silently never match. Built this way it is the regex word boundary we want.
+ */
+const RE_EXPORT = (name) => new RegExp("export type\\s*\\{[^}]*\\b" + name + "\\b[^}]*\\}");
+
+function declares(name) {
+  return (
+    typesFile.includes(`type ${name} =`) ||
+    typesFile.includes(`interface ${name}`) ||
+    typesFile.includes(`export type ${name}`) ||
+    RE_EXPORT(name).test(typesFile)
+  );
+}
+
 for (const t of REQUIRED_TYPES) {
-  if (
-    typesFile.includes(`type ${t} =`) ||
-    typesFile.includes(`interface ${t}`) ||
-    typesFile.includes(`export type ${t}`)
-  ) {
+  if (declares(t)) {
     ok(`Source-of-truth contract includes ${t}.`);
     passed++;
   } else {

@@ -7,6 +7,8 @@
  * AI-generated data; never let one exam/year leak into another.
  */
 
+import type { Source } from "./source";
+
 export type ExamId = "JEE_MAIN" | "JEE_ADVANCED" | "CBSE_11" | "CBSE_12";
 
 export const EXAM_IDS = ["JEE_MAIN", "JEE_ADVANCED", "CBSE_11", "CBSE_12"] as const;
@@ -25,15 +27,19 @@ export const SUBJECTS: Subject[] = ["Physics", "Chemistry", "Mathematics"];
 /** Trust layer. Never silently mix these. */
 export type DataCategory = "official" | "verified" | "derived" | "ai";
 
-export type VerificationStatus = "verified" | "provisional" | "unverified";
+export type { VerificationStatus } from "./source";
 
-export interface SourceRef {
+/**
+ * A per-record provenance reference. This is the canonical `Source` record
+ * (see `academics/source.ts`) plus the trust-layer `category`, because a
+ * record needs to say both *where it came from* and *how much to trust it*.
+ *
+ * `category` is required so an academic read can never silently mix official,
+ * verified, derived and AI data.
+ */
+export interface SourceRef extends Source {
   category: DataCategory;
-  source: string;
-  sourceUrl?: string | undefined;
-  sourceType:
-    "official_pdf" | "nta_bulletin" | "cbse_curriculum" | "verified_curated" | "derived" | "ai";
-  verificationStatus: VerificationStatus;
+  /** Legacy alias for `fetchedAt`, kept so existing call sites keep working. */
   verifiedAt?: string | undefined;
 }
 

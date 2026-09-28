@@ -8,6 +8,10 @@
  */
 
 import { DataStore, type AttemptSummary, type PlannerTaskRow } from "../../lib/store";
+// Imported from the module, not the `../context` barrel: the barrel also
+// re-exports the React binding, and this engine is bundled for Node by
+// `scripts/validate-planner.mjs`. A pure engine must not pull React in.
+import { loadStudentContext, studyTubeTarget } from "../context/student-context";
 import type { MissionSummary, ReadinessSnapshot, TodayPlan, WeakTopic } from "../dashboard/types";
 
 const MEANINGFUL_ACCURACY_THRESHOLD = 0.35;
@@ -239,7 +243,10 @@ export function computeReadiness(store: DataStore): ReadinessSnapshot {
   const today = todayPlan(store);
   const messages = recentMessages(store, weak, totals);
   const trendData = trend(store);
-  const target = planner?.profile?.target || (totals.attempts ? "jeemain" : "jeemain");
+  // The student's own persisted goal wins; the planner profile is the legacy
+  // fallback. Both branches used to be the hard-coded string "jeemain", which
+  // is how a CBSE student's readiness was reported on a JEE Main scale.
+  const target = planner?.profile?.target || studyTubeTarget(loadStudentContext());
 
   return {
     examTarget: target,

@@ -7,7 +7,16 @@
  * that lives in the verified source-of-truth (`src/features/academics`).
  */
 
-const env = import.meta.env as Record<string, string | undefined>;
+/**
+ * `import.meta.env` is injected by Vite. It is `undefined` in plain Node —
+ * which is exactly where the data validators run (`scripts/validate-*.mjs`
+ * bundle these modules with rolldown for `platform: "node"`). Reading a
+ * property off it unguarded throws, so the whole module becomes unimportable
+ * from Node. Guard it: an absent env means "local-first, no cloud", which is
+ * also the correct default.
+ */
+const env: Record<string, string | undefined> =
+  (typeof import.meta !== "undefined" && import.meta.env) || {};
 
 export const APP_CONFIG = {
   name: "NTACBT",
@@ -15,7 +24,7 @@ export const APP_CONFIG = {
   description: "Next-Generation Computer-Based Testing Platform",
   /** Base URL for the JSON API. Empty string = same origin (the default). */
   apiUrl: env["VITE_API_URL"] ?? "",
-  isProd: import.meta.env.PROD,
+  isProd: env["PROD"] === "true" || env["NODE_ENV"] === "production",
   /** Supabase is only used when both public env vars are present. */
   supabaseUrl: env["VITE_SUPABASE_URL"] ?? "",
   supabaseKey: env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "",

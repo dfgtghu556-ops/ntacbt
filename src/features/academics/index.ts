@@ -33,6 +33,7 @@ import {
   type SourceRef,
   type Subject,
 } from "./types";
+import { SOURCE_RECORDS, type Source } from "./source";
 
 /** The official JEE Main 2026 scope in `src/data/syllabus.ts`. */
 export const JEE_MAIN_2026_SCOPE: ExamScope = {
@@ -43,10 +44,16 @@ export const JEE_MAIN_2026_SCOPE: ExamScope = {
 /** Source metadata attached to the structured NTA syllabus dataset. */
 export const JEE_SYLLABUS_SOURCE: SourceRef = {
   category: "official",
-  source: JEE_MAIN_2026_SYLLABUS?.source ?? "National Testing Agency (NTA)",
-  sourceUrl: JEE_MAIN_2026_SYLLABUS?.sourceUrl,
-  sourceType: JEE_MAIN_2026_SYLLABUS?.sourceType ?? "nta_bulletin",
-  verificationStatus: JEE_MAIN_2026_SYLLABUS?.verificationStatus ?? "provisional",
+  ...SOURCE_RECORDS.JEE_SYLLABUS,
+  // The dataset's own header wins where it has one, so a refreshed syllabus
+  // file cannot be silently outvoted by the registry.
+  source: JEE_MAIN_2026_SYLLABUS?.source ?? SOURCE_RECORDS.JEE_SYLLABUS.source,
+  sourceUrl: JEE_MAIN_2026_SYLLABUS?.sourceUrl || SOURCE_RECORDS.JEE_SYLLABUS.sourceUrl,
+  sourceType: JEE_MAIN_2026_SYLLABUS?.sourceType ?? SOURCE_RECORDS.JEE_SYLLABUS.sourceType,
+  verificationStatus:
+    JEE_MAIN_2026_SYLLABUS?.verificationStatus ?? SOURCE_RECORDS.JEE_SYLLABUS.verificationStatus,
+  fetchedAt: JEE_MAIN_2026_SYLLABUS?.fetchedAt || SOURCE_RECORDS.JEE_SYLLABUS.fetchedAt,
+  version: JEE_MAIN_2026_SYLLABUS?.version || SOURCE_RECORDS.JEE_SYLLABUS.version,
   verifiedAt: JEE_MAIN_2026_SYLLABUS?.fetchedAt,
 };
 
@@ -55,10 +62,27 @@ export const JEE_SYLLABUS_SOURCE: SourceRef = {
  *  repo's curated list, but its per-record source is the legacy app itself. */
 export const LEGACY_PLANNER_SOURCE: SourceRef = {
   category: "verified",
-  source: "NTACBT legacy planner catalog (public/jee-cbt.html)",
-  sourceType: "verified_curated",
-  verificationStatus: "provisional",
+  ...SOURCE_RECORDS.LEGACY_PLANNER,
 };
+
+/**
+ * A teacher record's provenance. Unverifiable metadata stays EMPTY rather than
+ * invented — a teacher with no channel URL is recorded as `unverified` and the
+ * recommendation engine hides it, which is the rule Phase 1 asks for.
+ */
+function teacherSource(teacher: TeacherRecord): SourceRef {
+  const url = typeof teacher.channelUrl === "string" ? teacher.channelUrl : "";
+  return {
+    category: "verified",
+    source: teacher.source || `${teacher.institute} faculty listing`,
+    sourceType: "verified_curated",
+    sourceUrl: url,
+    fetchedAt: SOURCE_RECORDS.LEGACY_PLANNER.fetchedAt,
+    version: SOURCE_RECORDS.LEGACY_PLANNER.version,
+    verificationStatus: url ? (teacher.verified ? "verified" : "provisional") : "unverified",
+    verifiedAt: SOURCE_RECORDS.LEGACY_PLANNER.fetchedAt,
+  };
+}
 
 function legacyTopicRecords(): AcademicRecord[] {
   const records: AcademicRecord[] = [];
@@ -152,13 +176,7 @@ function toAcademicRecords(): AcademicRecord[] {
         chapter: teacher.supportedTopics?.join(" · ") || "All supported chapters",
         topic: teacher.specialization,
         name: teacher.name,
-        source: {
-          category: "verified",
-          source: teacher.source ?? "",
-          sourceUrl: teacher.channelName,
-          sourceType: "verified_curated",
-          verificationStatus: teacher.verified ? "verified" : "provisional",
-        },
+        source: teacherSource(teacher),
         note: `Faculty match: ${teacher.institute}`,
       });
     }
