@@ -34,7 +34,7 @@ npm run dev
 
 ```sh
 npm test               # legacy app E2E (112 robot checks)
-npm run test:unit      # vitest unit + component suite (55 tests)
+npm run test:unit      # vitest unit + component suite (83 tests)
 npm run test:watch     # vitest in watch mode
 npm run validate:all   # every data validator + harness + unit tests
 ```

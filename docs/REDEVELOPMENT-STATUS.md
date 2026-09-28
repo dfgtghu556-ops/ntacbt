@@ -120,7 +120,28 @@ Account provider / Where your preparation lives" on profile, and the
 
 ---
 
-## 5. Why `.github/workflows/deploy.yml` is untracked
+## 5. Phase E — Tests surface + global search ✅
+
+| File                           | What                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/search/index.ts` | Pure, framework-free global-search engine: builds one index from the verified syllabus, the teacher/institute registry, the PYQ paper list, the student's saved tests and notes; scores with an explainable scheme (exact title > prefix > whole word > keyword > subtitle), AND-matches every term, caps per type, deterministic order. Hyphens/apostrophes **join** words so "Gauss' law" and "gauss-law" both match. |
+| `src/routes/app.search.tsx`    | `/app/search` — grouped results (Topics · Chapters · Teachers · Institutes · Papers · Your tests · Your notes), an honest empty state, and a pre-query "ready to search" panel showing what is indexed. Every academic hit is badged `verified` / `unverified` with its source as the tooltip.                                                                                                                          |
+| `src/routes/app.tests.tsx`     | `/app/tests` — one place to start a paper: the quick diagnostic, tests saved on this device, and the full previous-year library (API first, baked fallback). Each hands the paper to the exam service so the runner never guesses.                                                                                                                                                                                      |
+| `src/components/layout/nav.ts` | `NAV` + `SHELF` extracted out of the route file so they are importable and testable. Nav is now Home · Planner · **Learn** · **Tests** · PYQ · **Progress**.                                                                                                                                                                                                                                                            |
+| `src/test/search.test.ts`      | 20 tests: index invariants (no duplicates, every academic record carries a source), ranking, AND-matching, hyphen joining, per-type caps, type restriction, determinism, grouping.                                                                                                                                                                                                                                      |
+| `src/test/nav.test.ts`         | 8 tests: unique paths/labels, label length, thumb-zone budget, and — critically — that the mobile grid derives its column count from `NAV.length`.                                                                                                                                                                                                                                                                      |
+
+**Bug caught while doing this:** adding "Tests" to a hard-coded `grid-cols-5`
+mobile bar wrapped the sixth item onto a second row. The bar now renders
+`repeat(${NAV.length}, minmax(0, 1fr))`, and `nav.test.ts` guards the contract.
+
+**Header search now searches everything.** It used to hard-code a jump to
+StudyTube; it now goes to `/app/search`, so one box covers papers, chapters,
+topics, teachers, institutes, saved tests and notes.
+
+---
+
+## 6. Why `.github/workflows/deploy.yml` is untracked
 
 The file is written and ready at `.github/workflows/deploy.yml`, but it is **not
 committed** because this sandbox's GitHub App does not hold the `workflows`

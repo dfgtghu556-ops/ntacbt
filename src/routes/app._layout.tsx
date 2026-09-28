@@ -1,47 +1,13 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import {
-  BarChart3,
-  Bell,
-  Bookmark,
-  CalendarDays,
-  Clock3,
-  FileText,
-  Flame,
-  LayoutDashboard,
-  MonitorPlay,
-  Play,
-  Search,
-  Sparkles,
-  UserRound,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Bell, Bookmark, Clock3, Flame, Play, Search, Sparkles, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { LANG_LABEL, type Lang, useLang, setLang } from "@/lib/lang";
 import { useAuthStore } from "@/features/auth/store";
+import { NAV, SHELF } from "@/components/layout/nav";
 
 export const Route = createFileRoute("/app/_layout")({
   component: AppLayout,
 });
-
-const NAV: Array<{ to: string; label: string; icon: LucideIcon }> = [
-  { to: "/app", label: "Home", icon: LayoutDashboard },
-  { to: "/app/planner", label: "Planner", icon: CalendarDays },
-  { to: "/app/studytube", label: "StudyTube", icon: MonitorPlay },
-  { to: "/app/pyq", label: "PYQ", icon: FileText },
-  { to: "/app/analytics", label: "Stats", icon: BarChart3 },
-];
-
-const SHELF: Array<{
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  search?: { q: string };
-}> = [
-  { to: "/app/studytube", label: "Home feed", icon: Play },
-  { to: "/app/studytube", label: "One-shot", icon: Flame, search: { q: "one shot" } },
-  { to: "/app/studytube", label: "Revision", icon: Clock3, search: { q: "revision" } },
-  { to: "/app/pyq", label: "PYQ practice", icon: FileText },
-];
 
 function AppLayout() {
   const matches = useRouterState({ select: (s) => s.matches.map((m) => m.routeId) });
@@ -54,7 +20,8 @@ function AppLayout() {
   function submitSearch(e: FormEvent) {
     e.preventDefault();
     const q = query.trim();
-    navigate({ to: "/app/studytube", search: q ? { q } : {} });
+    // Global search across papers, chapters, topics, teachers, tests and notes.
+    navigate({ to: "/app/search", search: { q } });
   }
 
   const onStudyTube = current.startsWith("/app/studytube");
@@ -76,9 +43,9 @@ function AppLayout() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search StudyTube — topic, chapter, teacher…"
+            placeholder="Search papers, chapters, topics, teachers, tests…"
             className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none"
-            aria-label="Search StudyTube"
+            aria-label="Search NTACBT"
           />
           <button
             type="submit"
@@ -211,7 +178,10 @@ function AppLayout() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-        <div className="mx-auto grid max-w-5xl grid-cols-5">
+        <div
+          className="mx-auto grid max-w-5xl"
+          style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}
+        >
           {NAV.map((item) => {
             const active = current === item.to || current.startsWith(`${item.to}.`);
             const Icon = item.icon;

@@ -20,7 +20,9 @@ import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppPyqRouteImport } from './routes/app.pyq'
 import { Route as AppReportRouteImport } from './routes/app.report'
 import { Route as AppSaarthiRouteImport } from './routes/app.saarthi'
+import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppStudytubeRouteImport } from './routes/app.studytube'
+import { Route as AppTestsRouteImport } from './routes/app.tests'
 import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat'
 import { Route as ApiPublicCloudConfigRouteImport } from './routes/api/public/cloud-config'
 import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/live-classes'
@@ -86,9 +88,19 @@ const AppSaarthiRoute = AppSaarthiRouteImport.update({
   path: '/app/saarthi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/app/search',
+  path: '/app/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppStudytubeRoute = AppStudytubeRouteImport.update({
   id: '/app/studytube',
   path: '/app/studytube',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppTestsRoute = AppTestsRouteImport.update({
+  id: '/app/tests',
+  path: '/app/tests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAiChatRoute = ApiPublicAiChatRouteImport.update({
@@ -148,7 +160,9 @@ export interface FileRoutesByFullPath {
   '/app/pyq': typeof AppPyqRoute
   '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
+  '/app/search': typeof AppSearchRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
+  '/app/tests': typeof AppTestsRoute
   '/app/': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
@@ -171,7 +185,9 @@ export interface FileRoutesByTo {
   '/app/pyq': typeof AppPyqRoute
   '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
+  '/app/search': typeof AppSearchRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
+  '/app/tests': typeof AppTestsRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
@@ -194,7 +210,9 @@ export interface FileRoutesById {
   '/app/pyq': typeof AppPyqRoute
   '/app/report': typeof AppReportRoute
   '/app/saarthi': typeof AppSaarthiRoute
+  '/app/search': typeof AppSearchRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
+  '/app/tests': typeof AppTestsRoute
   '/app/': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
@@ -219,7 +237,9 @@ export interface FileRouteTypes {
     | '/app/pyq'
     | '/app/report'
     | '/app/saarthi'
+    | '/app/search'
     | '/app/studytube'
+    | '/app/tests'
     | '/app/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
@@ -242,7 +262,9 @@ export interface FileRouteTypes {
     | '/app/pyq'
     | '/app/report'
     | '/app/saarthi'
+    | '/app/search'
     | '/app/studytube'
+    | '/app/tests'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
@@ -264,7 +286,9 @@ export interface FileRouteTypes {
     | '/app/pyq'
     | '/app/report'
     | '/app/saarthi'
+    | '/app/search'
     | '/app/studytube'
+    | '/app/tests'
     | '/app/'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
@@ -288,7 +312,9 @@ export interface RootRouteChildren {
   AppPyqRoute: typeof AppPyqRoute
   AppReportRoute: typeof AppReportRoute
   AppSaarthiRoute: typeof AppSaarthiRoute
+  AppSearchRoute: typeof AppSearchRoute
   AppStudytubeRoute: typeof AppStudytubeRouteWithChildren
+  AppTestsRoute: typeof AppTestsRoute
   AppIndexRoute: typeof AppIndexRoute
   ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
   ApiPublicCloudConfigRoute: typeof ApiPublicCloudConfigRoute
@@ -379,11 +405,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSaarthiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/search': {
+      id: '/app/search'
+      path: '/app/search'
+      fullPath: '/app/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/studytube': {
       id: '/app/studytube'
       path: '/app/studytube'
       fullPath: '/app/studytube'
       preLoaderRoute: typeof AppStudytubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/tests': {
+      id: '/app/tests'
+      path: '/app/tests'
+      fullPath: '/app/tests'
+      preLoaderRoute: typeof AppTestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ai-chat': {
@@ -475,7 +515,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppPyqRoute: AppPyqRoute,
   AppReportRoute: AppReportRoute,
   AppSaarthiRoute: AppSaarthiRoute,
+  AppSearchRoute: AppSearchRoute,
   AppStudytubeRoute: AppStudytubeRouteWithChildren,
+  AppTestsRoute: AppTestsRoute,
   AppIndexRoute: AppIndexRoute,
   ApiPublicAiChatRoute: ApiPublicAiChatRoute,
   ApiPublicCloudConfigRoute: ApiPublicCloudConfigRoute,
