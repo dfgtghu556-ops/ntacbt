@@ -49,6 +49,7 @@ export function Calculator() {
       <div
         className="rounded-md border px-3 py-2 text-right text-lg font-medium"
         aria-live="polite"
+        data-testid="calc-display"
       >
         {display}
       </div>
