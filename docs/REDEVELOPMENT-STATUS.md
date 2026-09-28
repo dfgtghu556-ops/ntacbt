@@ -110,8 +110,11 @@ All routes returned **200**:
 
 `/` · `/app` · `/app/auth/login` · `/app/auth/register` · `/app/profile` ·
 `/cbt` · `/app/planner` · `/app/pyq` · `/app/analytics` · `/app/report` ·
-`/app/focus` · `/app/saarthi` · `/app/studytube` · `/jee-cbt.html` ·
-`/api/public/study-planner`
+`/app/focus` · `/app/saarthi` · `/app/studytube` · `/app/tests` ·
+`/app/search?q=electrostatics` · `/jee-cbt.html` · `/api/public/study-planner`
+
+(`/app/search` without a `q` param returns **307 → `?q=`**, which is TanStack
+Router normalising the required search param — expected, not a failure.)
 
 Rendered content verified on the new pages: "Welcome back / Sign in / Create an
 account / Your data stays yours / Skip for now" on login, "Not signed in /
@@ -141,7 +144,52 @@ topics, teachers, institutes, saved tests and notes.
 
 ---
 
-## 6. Why `.github/workflows/deploy.yml` is untracked
+## 6. Phase F — StudentContext (the cross-scope leakage fix) ✅
+
+**The bug.** Every surface invented its own answer to "what am I preparing for":
+`app.studytube.tsx` initialised `target` to a hard-coded `"jeemain"`, the planner
+kept its own `profile.target`, language lived under its own key, and goals lived
+in the legacy settings blob. A CBSE Class 12 student who had never opened the
+planner was therefore served **JEE Main content by default**, and a JEE student
+could be shown board-only educators.
+
+**The fix.** One persisted, typed description of who is studying, read by every
+engine through a single module store:
+
+| File                                          | Role                                                                                                                                                                        |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/context/student-context.ts`     | `StudentContext`, `normalizeContext` (never throws), persistence under `STORAGE_KEYS.STUDENT`, `seedFromLegacy` (read-only), `scopeOf`, `studyTubeTarget`, `checkScopeLeak` |
+| `src/features/context/use-student-context.ts` | `useSyncExternalStore` binding with lazy hydration and cross-tab `storage`-event sync                                                                                       |
+| `src/routes/app.studytube.tsx`                | Seeds `target`/`language` from the context and persists a target change so the choice survives the next visit                                                               |
+
+It is **derived state, not a second source of academic truth** — it selects a
+scope, it never defines one. Seeding reads the legacy `jeecbt.v1` blob (planner
+`profile.target`, `settings.examDate`/`targetPercentile`/`dailyGoal`/`focusGoal`/
+`lang`) and never writes back, so an existing student loses no preference.
+
+**Three real bugs found and fixed while testing it:**
+
+1. `seedFromLegacy` tested `target in GOAL_TO_TARGET`, which checks **goal
+   names**, not target values — so every legacy planner target (`jeemain`,
+   `board12`, …) silently failed to seed and the student always fell back to the
+   JEE default. Replaced with `goalForTarget`, which searches the values.
+2. `normalizeContext` trusted a stored `syllabusYear` that contradicted the
+   goal, which is how a Class 11 student ends up reading the 2025-26 syllabus.
+   The year is now derived from the goal.
+3. Legacy `settings.dailyGoal` is a **question count**, not minutes — the legacy
+   app divides it against `dailyQuestions` (`public/js/app.js:23218`,
+   `q14 / (goal*14)`). It is stored as `dailyQuestions`; `focusGoal` genuinely is
+   minutes and keeps its legacy 10–600 range.
+
+**Verification.** `tsc --noEmit` 0 errors · `npm run lint` 0 errors (9 warnings,
+all in vendored `src/components/ui/*`) · `validate:all` exit 0
+(39,799 / 3,202 / 15,482 / 77 / 19 / 49 assertions) · **131 unit tests**
+(83 → 131: +35 pure, +13 hook) · `vite build` exit 0 · all 15 routes 200 on the
+dev server.
+
+---
+
+## 7. Why `.github/workflows/deploy.yml` is untracked
 
 The file is written and ready at `.github/workflows/deploy.yml`, but it is **not
 committed** because this sandbox's GitHub App does not hold the `workflows`

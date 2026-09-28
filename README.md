@@ -34,7 +34,7 @@ npm run dev
 
 ```sh
 npm test               # legacy app E2E (112 robot checks)
-npm run test:unit      # vitest unit + component suite (83 tests)
+npm run test:unit      # vitest unit + component suite (131 tests)
 npm run test:watch     # vitest in watch mode
 npm run validate:all   # every data validator + harness + unit tests
 ```
@@ -84,11 +84,12 @@ The brief's _intent_ was kept and its _method_ dropped. What actually shipped:
 | "Clean slate" rebuild                                                                    | **Rejected** — see [`docs/REDEVELOPMENT-PLAN.md`](docs/REDEVELOPMENT-PLAN.md) §2.1                                                                                                               |
 | Auth system (Phase 4)                                                                    | **Built** — `src/types/auth.types.ts`, `src/services/auth.service.ts`, `src/features/auth/*`, `/app/auth/login`, `/app/auth/register`, `/app/profile`                                            |
 | Exam system (Phase 5)                                                                    | **Refactored** — the 954-line `/cbt` route split into `src/types/exam.types.ts`, `src/features/exams/{store,autosave,components/*}`, `src/services/exam.service.ts`; **autosave + resume added** |
-| Unit tests (vitest / RTL)                                                                | **Added** — 55 tests across engine, auth, exams, exam UI and the pure engines                                                                                                                    |
-| Zero ESLint errors                                                                       | **Fixed** — 23,422 prettier errors → 0                                                                                                                                                           |
+| Unit tests (vitest / RTL)                                                                | **Added** — 131 tests across engine, auth, exams, exam UI, search, nav, StudentContext and its React binding                                                                                     |
+| Zero ESLint errors                                                                       | **Fixed** — 23,422 prettier errors → 0 errors (9 warnings, all in vendored `src/components/ui/*`)                                                                                                |
 | Deployment (Vercel / CI)                                                                 | **Added** — `vercel.json`, `.github/workflows/deploy.yml` (guarded so CI is green without Vercel secrets)                                                                                        |
 | `react-router-dom`, `tailwind.config.js`, `postcss.config.js`, `framer-motion`, `lodash` | **Not adopted** — TanStack Router and Tailwind v4 already do these jobs better; see §2.2–2.5                                                                                                     |
 | Mandatory login wall                                                                     | **Rejected** — NTACBT is local-first; an account is optional and never gates a student's own data                                                                                                |
+| Cross-scope leakage (a CBSE student shown JEE content)                                   | **Fixed** — `src/features/context/*`: one persisted `StudentContext` read by every surface, seeded from the legacy blob, plus `checkScopeLeak`                                                   |
 
 Full reasoning, the measured baseline, and the explicit not-done list are in
 [`docs/REDEVELOPMENT-PLAN.md`](docs/REDEVELOPMENT-PLAN.md) and
