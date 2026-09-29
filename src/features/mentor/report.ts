@@ -757,7 +757,9 @@ const NTA: Array<[number, number]> = [
   [300, 99.99999],
 ];
 function ntaPercentile(marks: number): number {
-  const m = clamp(marks, 0, 300);
+  // See the comment on the engine's copy: a NaN must not fall through to the
+  // top percentile. Two implementations of the same curve, one invariant.
+  const m = Number.isNaN(marks) ? 0 : clamp(marks, 0, 300);
   for (let i = 1; i < NTA.length; i++) {
     const [m1, p1] = NTA[i] as [number, number];
     const [m0, p0] = NTA[i - 1] as [number, number];

@@ -142,3 +142,43 @@ describe("ntaPercentile", () => {
     expect(ntaPercentile(120)).toBe(ntaPercentile(120));
   });
 });
+
+/**
+ * A NaN reaching the percentile curve is the one failure mode that would make
+ * the product lie in the flattering direction, so it gets its own block.
+ */
+describe("ntaPercentile — a score that is not a number", () => {
+  it("never reports the top percentile for NaN", () => {
+    // Before the fix, `Math.max(0, Math.min(300, NaN))` is NaN, every
+    // `m <= hi[0]` comparison is false, and the function falls through to the
+    // final `return 99.99999` — the highest percentile on the table, for a
+    // number that is not a number.
+    expect(ntaPercentile(NaN)).toBe(ntaPercentile(0));
+    expect(ntaPercentile(NaN)).toBeLessThan(1);
+  });
+
+  it("treats NaN as no score rather than a perfect one", () => {
+    const none = ntaPercentile(NaN);
+    const zero = ntaPercentile(0);
+    const full = ntaPercentile(300);
+    expect(none).toBe(zero);
+    expect(full).toBeGreaterThan(none);
+    // The direction of the error matters as much as its size.
+    expect(none).not.toBeGreaterThan(full);
+  });
+
+  it("still clamps genuine infinities the way it always did", () => {
+    expect(ntaPercentile(Infinity)).toBe(ntaPercentile(300));
+    expect(ntaPercentile(-Infinity)).toBe(ntaPercentile(0));
+  });
+
+  it("is unaffected for every whole mark on the paper", () => {
+    // The guard must not move a single real answer.
+    for (let marks = 0; marks <= 300; marks += 5) {
+      const p = ntaPercentile(marks);
+      expect(Number.isFinite(p)).toBe(true);
+      expect(p).toBeGreaterThanOrEqual(0);
+      expect(p).toBeLessThanOrEqual(100);
+    }
+  });
+});

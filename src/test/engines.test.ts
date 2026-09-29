@@ -88,6 +88,35 @@ describe("buildMentorReport", () => {
     ).not.toThrow();
   });
 
+  it("keeps every derived number bounded for hostile stored marks", () => {
+    // "Does not throw" is the weaker half of the contract. The mentor report has
+    // its own copy of the percentile curve, and a stored total that is NaN,
+    // Infinity, a string or wildly out of range must not be able to push a
+    // derived figure out of its bounds. The percentile itself is internal — it
+    // feeds the readiness score — so the score is what we can observe.
+    const cases: unknown[] = [
+      { totals: { marks: NaN, attempted: 10, correct: 3 } },
+      { totals: { marks: Infinity, attempted: 10, correct: 3 } },
+      { totals: { marks: "42", attempted: 10, correct: 3 } },
+      { totals: { marks: -9999, attempted: 10, correct: 3 } },
+      { totals: { marks: 1e9, attempted: 10, correct: 3 } },
+      { totals: null },
+      { totals: "not-an-object" },
+      { totals: { marks: 180, attempted: 10, correct: 3 } },
+    ];
+    for (const totals of cases) {
+      const report = buildMentorReport({
+        store: new DataStore({ ...(totals as object) } as never),
+        now: 1_700_000_000_000,
+      });
+      expect(Number.isFinite(report.readinessScore), JSON.stringify(totals)).toBe(true);
+      expect(report.readinessScore).toBeGreaterThanOrEqual(0);
+      expect(report.readinessScore).toBeLessThanOrEqual(100);
+      // A good score must come from good work, never from a broken number.
+      expect(report.readinessScore).toBeLessThan(50);
+    }
+  });
+
   it("keeps the AI context inside its character bound", () => {
     const report = buildMentorReport({ store: new DataStore() });
     expect(mentorContextForAI(report, 2400).length).toBeLessThanOrEqual(2400);

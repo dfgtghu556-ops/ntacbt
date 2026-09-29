@@ -165,7 +165,12 @@ const NTA_ANCHORS: Array<[number, number]> = [
 ];
 
 export function ntaPercentile(marks: number): number {
-  const m = Math.max(0, Math.min(300, marks));
+  // `Math.max`/`Math.min` propagate NaN instead of clamping it, so a non-finite
+  // score would fail every `m <= hi[0]` comparison and fall straight through to
+  // the return below — reporting the TOP percentile for a number that is not a
+  // number. On a page that exists to be trusted, "99.99" for a broken score is
+  // the worst possible failure. NaN is not a score; it is no score.
+  const m = Math.max(0, Math.min(300, Number.isNaN(marks) ? 0 : marks));
   for (let i = 1; i < NTA_ANCHORS.length; i++) {
     const hi = NTA_ANCHORS[i];
     const lo = NTA_ANCHORS[i - 1];
