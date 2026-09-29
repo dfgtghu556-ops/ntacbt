@@ -1,10 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock, Flame, Play, RefreshCw, Sparkles } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Flame,
+  GraduationCap,
+  Layers,
+  Play,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
 import { DataStore, localDayKey, type PlannerTaskRow } from "@/lib/store";
 import type { WeakTopic } from "@/features/dashboard/types";
 import { computeReadiness } from "@/features/readiness/readiness";
 import { adaptTasks, type AdaptedTask } from "@/features/planner/adapt";
+import {
+  syllabusCoverage,
+  type ChapterState,
+  type SyllabusCoverage,
+} from "@/features/planner/coverage";
 
 export const Route = createFileRoute("/app/planner")({
   component: Planner,
@@ -18,6 +33,7 @@ function fmtDate(key: string): string {
 function Planner() {
   const [allTasks, setAllTasks] = useState<PlannerTaskRow[]>([]);
   const [weak, setWeak] = useState<WeakTopic[]>([]);
+  const [target, setTarget] = useState("");
   const [adapted, setAdapted] = useState(true);
   const [showAll, setShowAll] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -25,6 +41,7 @@ function Planner() {
   useEffect(() => {
     const store = new DataStore();
     setWeak(computeReadiness(store).weakTopics);
+    setTarget(store.planner?.profile?.target || "");
     const planner = store.planner;
     const tasks = planner?.tasks ?? [];
     const sorted = [...tasks]
@@ -33,6 +50,13 @@ function Planner() {
     setAllTasks(sorted);
     setLoaded(true);
   }, []);
+
+  // Read-only lens over the stored plan, measured against the real published
+  // syllabus map. This never edits the plan.
+  const coverage = useMemo<SyllabusCoverage>(
+    () => syllabusCoverage(allTasks, target),
+    [allTasks, target],
+  );
 
   const rows = useMemo(() => {
     if (showAll) return allTasks;
@@ -112,6 +136,10 @@ function Planner() {
           </div>
         </section>
       ) : null}
+
+      {/* Syllabus coverage sits above the task list: it is the "what am I
+          missing" view, and a student should see the gap before the schedule. */}
+      {loaded ? <CoveragePanel coverage={coverage} /> : null}
 
       {!loaded ? (
         <div className="h-40 animate-pulse rounded-xl border bg-muted/40" />
@@ -221,4 +249,163 @@ function adaptationSummaryFor(adapted: boolean, summary: string): string {
   return adapted
     ? summary
     : "Showing the planner's stored order. Turn on adaptation to move weak-topic work first.";
+}
+
+/* ------------------------------------------------------------------ *
+ * Syllabus coverage panel
+ *
+ * A read-only view of the stored plan measured against the published
+ * curriculum map. It never edits the plan — it only reports what the plan
+ * covers and what it skips.
+ *
+ * The marks column is the one place a wrong number would actively mislead a
+ * student, so a unit with no corroborated weightage renders "not published
+ * here" rather than 0. Physics is entirely unmarked, because published
+ * per-unit figures conflict and several sum to 133 for a 70-mark paper.
+ * ------------------------------------------------------------------ */
+
+function coverageTone(state: ChapterState): string {
+  if (state === "done") return "bg-green-100 text-green-700 border-green-200";
+  if (state === "in-progress") return "bg-amber-100 text-amber-700 border-amber-200";
+  if (state === "planned") return "bg-accent text-foreground border-primary/30";
+  return "bg-muted/50 text-muted-foreground border-dashed";
+}
+
+function coverageLabel(state: ChapterState): string {
+  if (state === "done") return "Done";
+  if (state === "in-progress") return "In progress";
+  if (state === "planned") return "Planned";
+  return "Not planned";
+}
+
+function MarksCell({ marks }: { marks: number | null }) {
+  if (marks === null) {
+    return (
+      <span
+        className="text-[11px] text-muted-foreground"
+        title="The board does not publish a per-unit mark weight for this unit."
+      >
+        not published here
+      </span>
+    );
+  }
+  return <span className="text-[11px] tabular-nums text-muted-foreground">{marks} marks</span>;
+}
+
+function CoveragePanel({ coverage }: { coverage: SyllabusCoverage }) {
+  const [open, setOpen] = useState(false);
+
+  if (!coverage.key) {
+    // No published map for this objective. Saying nothing is better than
+    // showing a coverage figure computed against the wrong syllabus.
+    return (
+      <section className="rounded-xl border border-dashed p-4 text-sm">
+        <div className="flex items-start gap-2">
+          <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <div>
+            <h2 className="font-semibold">Syllabus coverage</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{coverage.note}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const pct =
+    coverage.totalChapters > 0
+      ? Math.round((coverage.coveredChapters / coverage.totalChapters) * 100)
+      : 0;
+
+  return (
+    <section className="rounded-xl border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <Layers className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div>
+            <h2 className="text-sm font-semibold">
+              Syllabus coverage · CBSE Class {coverage.key.classLevel} {coverage.key.academicYear}
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">{coverage.note}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium"
+        >
+          <Layers className="h-3.5 w-3.5" /> {open ? "Hide chapters" : "Show by chapter"}
+        </button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="tabular-nums">
+          {coverage.coveredChapters}/{coverage.totalChapters} chapters · {pct}%
+        </span>
+        <span className="tabular-nums">
+          {coverage.doneMin}/{coverage.plannedMin} min done
+        </span>
+        {coverage.unmatched.length ? (
+          <span className="text-amber-700 dark:text-amber-400">
+            {coverage.unmatched.length} plan row
+            {coverage.unmatched.length === 1 ? "" : "s"} not on this syllabus
+          </span>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="mt-4 space-y-4">
+          {coverage.subjects.map((subject) => (
+            <div key={subject.subject}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {subject.subject}
+                </h3>
+                <span className="text-[11px] text-muted-foreground">
+                  {subject.coveredChapters}/{subject.totalChapters} chapters ·{" "}
+                  {subject.theoryMarks === null
+                    ? "no published unit weightage"
+                    : `${subject.theoryMarks} theory marks`}
+                </span>
+              </div>
+              <div className="mt-2 space-y-3">
+                {subject.units.map((unit) => (
+                  <div key={`${subject.subject}-${unit.numeral}`} className="rounded-md border p-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h4 className="text-xs font-medium">
+                        Unit {unit.numeral} — {unit.name}
+                      </h4>
+                      <MarksCell marks={unit.marks} />
+                    </div>
+                    <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                      {unit.chapters.map((chapter) => (
+                        <li
+                          key={`${subject.subject}-${chapter.chapterNumber}`}
+                          className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs ${coverageTone(
+                            chapter.state,
+                          )}`}
+                        >
+                          <span className="min-w-0 truncate">
+                            <span className="tabular-nums text-muted-foreground">
+                              {chapter.chapterNumber}.
+                            </span>{" "}
+                            {chapter.chapterName}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-medium">
+                            {coverageLabel(chapter.state)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground tabular-nums">
+                      {unit.coveredChapters}/{unit.chapters.length} chapters planned ·{" "}
+                      {unit.doneMin}/{unit.plannedMin} min done
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
 }
