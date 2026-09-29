@@ -4,12 +4,14 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BadgeCheck,
   BookOpen,
   BrainCircuit,
   CalendarCheck,
   CircleAlert,
   Flame,
   Gauge,
+  Layers,
   ListChecks,
   Target,
   TrendingUp,
@@ -258,6 +260,93 @@ function Report() {
         )}
       </section>
 
+      {/* My preparation — the combined per-chapter row the report exists for:
+          syllabus progress, videos done, PYQs attempted and accuracy in one
+          place, with the next action attached. */}
+      <section className="rounded-xl border p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Layers className="h-4 w-4 text-primary" /> My preparation, chapter by chapter
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {report.preparation.chaptersTouched === 0
+            ? "Nothing tracked yet — sit a test or finish a lesson and this fills in."
+            : `${report.preparation.chaptersTouched} chapter${report.preparation.chaptersTouched === 1 ? "" : "s"} touched · ${report.preparation.questionsAttempted} questions · ${report.preparation.pyqAttempts} from previous-year papers · ${report.preparation.lessonsFinished} lesson${report.preparation.lessonsFinished === 1 ? "" : "s"} finished${report.preparation.accuracy === null ? "" : ` · ${report.preparation.accuracy}% mean accuracy over judged chapters`}`}
+        </p>
+        {report.preparation.rows.length ? (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="pb-2 pr-3 font-medium">Chapter</th>
+                  <th className="pb-2 pr-3 font-medium">State</th>
+                  <th className="pb-2 pr-3 text-right font-medium">Accuracy</th>
+                  <th className="pb-2 pr-3 text-right font-medium">Qs</th>
+                  <th className="pb-2 pr-3 text-right font-medium">PYQ</th>
+                  <th className="pb-2 pr-3 text-right font-medium">Videos</th>
+                  <th className="pb-2 font-medium">Next</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.preparation.rows.slice(0, 10).map((r) => (
+                  <tr key={`${r.subject}|${r.chapter}`} className="border-t align-top">
+                    <td className="py-2 pr-3">
+                      <span className="font-medium">{r.chapter}</span>
+                      <span className="ml-1 text-xs text-muted-foreground">{r.subject}</span>
+                      <p className="text-xs text-muted-foreground">{r.reason}</p>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span
+                        className={
+                          "whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium " +
+                          masteryTone(r.state)
+                        }
+                      >
+                        {r.state}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 text-right font-semibold">
+                      {r.accuracy === null ? (
+                        <span className="text-xs font-normal text-muted-foreground">too few</span>
+                      ) : (
+                        `${r.accuracy}%`
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-right">{r.attempts}</td>
+                    <td className="py-2 pr-3 text-right">{r.pyqAttempts}</td>
+                    <td className="py-2 pr-3 text-right">{r.lessonsFinished}</td>
+                    <td className="py-2 text-xs text-muted-foreground">{r.nextAction}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">
+            No chapter evidence yet. A test attempt or a finished lesson creates the first row.
+          </p>
+        )}
+      </section>
+
+      {/* Strengths — previously always empty because strongTopics was never
+          filled. Now read from the mastery store. */}
+      {report.mastery.strongTopics.length ? (
+        <section className="rounded-xl border p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <BadgeCheck className="h-4 w-4 text-primary" /> What is already working
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {report.mastery.strongTopics.map((t, i) => (
+              <span
+                key={`${t.subject}|${t.chapter}|${i}`}
+                className="rounded-full border px-3 py-1 text-xs font-medium"
+              >
+                {t.chapter} · {t.accuracy}%
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         <Link
           to="/app/planner"
@@ -274,6 +363,22 @@ function Report() {
       </div>
     </div>
   );
+}
+
+/** A chapter's state, coloured by whether it needs attention. */
+function masteryTone(state: string): string {
+  switch (state) {
+    case "Mastered":
+      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+    case "Strong":
+      return "bg-blue-500/15 text-blue-700 dark:text-blue-300";
+    case "Improving":
+      return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+    case "Learning":
+      return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
 }
 
 function Kpi({
