@@ -72,8 +72,9 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 
 const PRIORITY_COLOR: Record<string, string> = {
-  critical: "border-rose-300 bg-rose-50 text-rose-700",
-  high: "border-amber-300 bg-amber-50 text-amber-700",
+  critical:
+    "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
+  high: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
   medium: "border-sky-300 bg-sky-50 text-sky-700",
   low: "border-muted bg-muted text-muted-foreground",
 };
@@ -297,7 +298,10 @@ function Report() {
           {report.risks.length ? (
             <div className="mt-3 space-y-2">
               {report.risks.map((r, i) => (
-                <div key={i} className="rounded-md border border-amber-200 bg-amber-50/50 p-3">
+                <div
+                  key={i}
+                  className="rounded-md border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/30"
+                >
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <CircleAlert className="h-4 w-4 text-amber-600" /> {r.title}
                   </div>

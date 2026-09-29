@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,9 +10,9 @@ import {
   CheckCircle2,
   Clock,
   Coffee,
-  Info,
   Flame,
   HeartPulse,
+  Info,
   LineChart,
   MonitorPlay,
   Play,
@@ -63,6 +62,27 @@ import type {
   DualLaneReadiness,
   RankPrediction,
 } from "@/features/dashboard/types";
+import {
+  SurvivalScoreRing,
+  SurvivalMission,
+  DualLane,
+  RankPredictor,
+  LaneCard,
+  StreakCard,
+  MicroDrillPanel,
+  WellnessStrip,
+  ProgressCard,
+  StatCard,
+  QuickAction,
+  Panel,
+  InsightCard,
+  TrustLine,
+  EmptyPanel,
+  LoadingCards,
+  AwardsCard,
+  DppCard,
+  TodayStrip,
+} from "@/features/dashboard/components";
 import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/")({
@@ -283,7 +303,7 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       {/* ─── Greeting / hero ─── */}
-      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-background to-violet-50 p-6 sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-background to-violet-50 p-6 sm:p-8 dark:from-blue-950/40 dark:via-background dark:to-violet-950/40">
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[11px] font-semibold text-primary">
@@ -320,7 +340,7 @@ function Dashboard() {
         </div>
 
         {showReactivation ? (
-          <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm">
+          <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm dark:border-green-900 dark:bg-green-950/40">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
             <div className="flex-1">
               <span className="font-semibold text-green-800">Your progress isn't gone.</span>{" "}
@@ -667,576 +687,21 @@ function Dashboard() {
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Mission / Survival card                                                    */
 /* ────────────────────────────────────────────────────────────────────────── */
-function SurvivalScoreRing({ score, status }: { score: number; status: string }) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(100, score || 0));
-  const off = c - (pct / 100) * c;
-  const color = status === "on-track" ? "#16a34a" : status === "watch" ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="relative h-32 w-32 shrink-0">
-      <svg viewBox="0 0 120 120" className="h-32 w-32 -rotate-90">
-        <circle cx="60" cy="60" r={r} fill="none" className="stroke-muted" strokeWidth="10" />
-        <circle
-          cx="60"
-          cy="60"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={off}
-          className="transition-all duration-500"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold" style={{ color }}>
-          {score}
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          on track
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function SurvivalMission({
-  score,
-  status,
-  headline,
-  nextAction,
-  basis,
-  components,
-  mission,
-  missionIsTest,
-  lang,
-}: {
-  score: number;
-  status: string;
-  headline: string;
-  nextAction: string;
-  basis: string;
-  components: SurvivalScore["components"];
-  mission: ReadinessSnapshot["nextMission"];
-  missionIsTest: boolean;
-  lang: string;
-}) {
-  return (
-    <div className="relative z-10 mt-6 grid gap-4 rounded-2xl border bg-primary p-5 text-primary-foreground lg:grid-cols-[auto_1fr]">
-      <div className="flex items-center justify-center lg:items-start">
-        <div className="rounded-2xl bg-primary-foreground/95 p-3">
-          <SurvivalScoreRing score={score} status={status} />
-        </div>
-      </div>
-      <div className="min-w-0">
-        <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
-          {t("onTrack", lang as "hinglish")}
-        </div>
-        <h2 className="mt-1 text-xl font-semibold">{headline}</h2>
-
-        {/* The single executable next action */}
-        <div className="mt-3 rounded-xl bg-primary-foreground/10 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
-            {t("doThisNext", lang as "hinglish")}
-          </div>
-          <p className="mt-1 text-sm font-medium">{nextAction}</p>
-        </div>
-
-        {mission ? (
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-primary-foreground/10 p-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
-                {t("nextMission", lang as "hinglish")}
-              </div>
-              <div className="text-sm font-semibold">{mission.title}</div>
-              <div className="text-xs opacity-90">
-                {mission.minutes} min · {mission.kind}
-                {mission.subject || mission.chapter
-                  ? ` · ${mission.subject || ""} ${mission.chapter || ""}`.trim()
-                  : ""}
-              </div>
-            </div>
-            {missionIsTest ? (
-              <Link
-                to="/cbt"
-                search={{
-                  name:
-                    `${mission.subject || ""} ${mission.chapter || ""}`.trim() ||
-                    "Quick mixed diagnostic drill",
-                }}
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary"
-              >
-                <Play className="h-4 w-4" /> Start mission
-              </Link>
-            ) : (
-              <Link
-                to="/app/studytube"
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary"
-              >
-                <Play className="h-4 w-4" /> Start mission
-              </Link>
-            )}
-          </div>
-        ) : null}
-
-        {/* Survscore components — explainable, honest */}
-        <div className="mt-3 grid gap-1.5">
-          {components.map((c) => (
-            <div key={c.key} className="flex items-center gap-2 text-xs">
-              <span className="w-32 shrink-0 opacity-90">{c.label}</span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary-foreground/15">
-                <div
-                  className="h-full rounded-full bg-primary-foreground/80"
-                  style={{ width: `${c.rating}%` }}
-                />
-              </div>
-              <span className="w-8 shrink-0 text-right font-semibold">{c.rating}</span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-[11px] opacity-70">{basis}</p>
-      </div>
-    </div>
-  );
-}
-
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Dual-lane readiness (F7)                                                   */
 /* ────────────────────────────────────────────────────────────────────────── */
-function DualLane({ dual }: { dual: DualLaneReadiness }) {
-  return (
-    <section className="rounded-2xl border bg-card p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-        <Rocket className="h-4 w-4 text-primary" /> Two lanes, one balanced plan
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <LaneCard
-          icon={<Rocket className="h-4 w-4 text-blue-600" />}
-          title="JEE readiness"
-          score={dual.jee.score}
-          label={dual.jee.label}
-          message={dual.jee.message}
-          accent="from-blue-500/10 to-blue-500/5"
-        />
-        <LaneCard
-          icon={<BookOpen className="h-4 w-4 text-emerald-600" />}
-          title="Board readiness"
-          score={dual.board.score}
-          label={dual.board.label}
-          message={dual.board.message}
-          accent="from-emerald-500/10 to-emerald-500/5"
-        />
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">{dual.split}</p>
-    </section>
-  );
-}
-
-function RankPredictor({ prediction }: { prediction: RankPrediction }) {
-  const p = prediction;
-  return (
-    <section className="rounded-2xl border bg-card p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-        <BarChart3 className="h-4 w-4 text-primary" /> Mock to reality — where this score lands
-      </div>
-      <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-4">
-          <div className="text-xs font-medium text-muted-foreground">Percentile</div>
-          <div className="mt-1 text-3xl font-bold">{p.percentile}%</div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {p.marks}/{p.maxMarks} marks
-            {p.evidence.percentileVerified ? " · verified table" : " · provisional"}
-          </div>
-        </div>
-        {p.reliable ? (
-          <>
-            <div className="rounded-2xl border bg-gradient-to-br from-violet-500/10 to-violet-500/5 p-4">
-              <div className="text-xs font-medium text-muted-foreground">Estimated rank (AIR)</div>
-              <div className="mt-1 text-3xl font-bold">~{p.rank.toLocaleString("en-IN")}</div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                JEE Main, ~14 lakh candidates · an estimate
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-4 md:col-span-2">
-              <div className="text-xs font-medium text-muted-foreground">Where you land</div>
-              <div className="mt-1 text-sm font-semibold">{p.tier}</div>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-2xl border border-dashed bg-muted/20 p-4 md:col-span-3">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Info className="h-3.5 w-3.5" /> Not enough data to estimate reliably
-            </div>
-            <p className="mt-2 text-sm">{p.fallback}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Confidence: {p.confidence}. The percentile above is from a verified table; the rank
-              and band are withheld rather than guessed.
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl border bg-muted/20 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Honest expectation
-          </div>
-          <p className="mt-1 text-sm">{p.expectation}</p>
-        </div>
-        <div className="rounded-xl border bg-muted/20 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            The one thing to fix
-          </div>
-          <p className="mt-1 text-sm">{p.topFix}</p>
-        </div>
-      </div>
-
-      <p className="mt-3 text-[11px] text-muted-foreground">{p.basis}</p>
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        <a
-          className="underline underline-offset-2 hover:text-foreground"
-          href={p.evidence.percentileSource.sourceUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          Percentile source
-        </a>
-        <a
-          className="underline underline-offset-2 hover:text-foreground"
-          href={p.evidence.rankSource.sourceUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          Candidate-count source
-        </a>
-        <span>
-          {p.evidence.attempts} attempt{p.evidence.attempts === 1 ? "" : "s"} behind this figure
-        </span>
-      </div>
-    </section>
-  );
-}
-
-function LaneCard({
-  icon,
-  title,
-  score,
-  label,
-  message,
-  accent,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  score: number;
-  label: string;
-  message: string;
-  accent: string;
-}) {
-  return (
-    <div className={`rounded-2xl border bg-gradient-to-br ${accent} p-4`}>
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm font-semibold">
-          {icon} {title}
-        </span>
-        <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <div className="text-3xl font-bold">{score}</div>
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-blue-600"
-            style={{ width: `${score}%` }}
-          />
-        </div>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">{message}</p>
-    </div>
-  );
-}
-
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Humane streak card (F5)                                                    */
 /* ────────────────────────────────────────────────────────────────────────── */
-function StreakCard({
-  humane,
-  streak,
-}: {
-  humane: ReturnType<typeof computeHumaneStreak>;
-  streak: number;
-}) {
-  const flameColor = humane.days > 0 ? "text-orange-500" : "text-muted-foreground";
-  return (
-    <div className="rounded-2xl border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">Consistency</span>
-        <span
-          className={`flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 ${flameColor}`}
-        >
-          <Flame className="h-4 w-4" />
-        </span>
-      </div>
-      <div className="mt-2 text-2xl font-bold">{humane.days}d</div>
-      <div className="mt-1 text-xs text-muted-foreground">
-        {humane.atRiskToday
-          ? `Streak is at risk today — ${humane.microWin}`
-          : humane.frozen
-            ? "Streak protected (freeze) — no loss"
-            : humane.nudge
-              ? humane.nudge
-              : `${humane.freezesLeft} freeze${humane.freezesLeft === 1 ? "" : "s"} available`}
-      </div>
-    </div>
-  );
-}
-
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Micro-drill panel (F4)                                                     */
 /* ────────────────────────────────────────────────────────────────────────── */
-function MicroDrillPanel({ cards }: { cards: MicroDrillCard[] }) {
-  const [flipped, setFlipped] = useState<Record<string, boolean>>({});
-  const first = cards[0] as MicroDrillCard | undefined;
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((c) => {
-        const isFlipped = !!flipped[c.id];
-        return (
-          <button
-            key={c.id}
-            onClick={() => setFlipped((m) => ({ ...m, [c.id]: !isFlipped }))}
-            className={`group relative min-h-[11rem] overflow-hidden rounded-2xl border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${
-              isFlipped ? "border-primary/40 bg-primary/5" : ""
-            }`}
-            aria-label={isFlipped ? "Show question" : "Show answer"}
-          >
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide">
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">
-                {c.subject}
-              </span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-                {c.tagLabel}
-              </span>
-            </div>
-            <div className="mt-3 text-xs font-medium text-muted-foreground">
-              {isFlipped ? "Self-check" : "Recall"}
-              <span className="ml-1 text-[10px] text-muted-foreground/70">— tap to flip</span>
-            </div>
-            {isFlipped ? (
-              <p className="mt-2 text-sm font-medium">{c.answer}</p>
-            ) : (
-              <p className="mt-2 text-sm">{c.prompt}</p>
-            )}
-          </button>
-        );
-      })}
-
-      {first ? (
-        <div className="flex flex-col justify-center gap-2 rounded-2xl border border-dashed p-4 text-center">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Why this drill
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Built from your{" "}
-            <span className="font-medium text-foreground">{first.tagLabel.toLowerCase()}</span>{" "}
-            strongest mistake pattern on {first.subject}. Retrieving beats re-watching — say the
-            answer, then check.
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Wellness strip (F9)                                                        */
 /* ────────────────────────────────────────────────────────────────────────── */
-function WellnessStrip({ focusMin, plannedMin }: { focusMin: number; plannedMin: number }) {
-  const signals = useMemo(() => computeWellness(focusMin, plannedMin), [focusMin, plannedMin]);
-  const tones = {
-    green: "text-green-600 border-green-200 bg-green-50",
-    amber: "text-amber-600 border-amber-200 bg-amber-50",
-    blue: "text-blue-600 border-blue-200 bg-blue-50",
-  } as const;
-  return (
-    <section>
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-        <HeartPulse className="h-4 w-4 text-primary" /> Balance, not burnout
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {signals.map((s) => (
-          <div key={s.id} className={`rounded-2xl border p-4 ${tones[s.tone]}`}>
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <Coffee className="h-4 w-4" /> {s.title}
-            </div>
-            <p className="mt-2 text-xs opacity-90">{s.body}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Shared UI                                                                  */
 /* ────────────────────────────────────────────────────────────────────────── */
-function ProgressCard({ title, value }: { title: string; value: number }) {
-  const r = 26;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(100, value || 0));
-  const off = c - (pct / 100) * c;
-  return (
-    <div className="rounded-2xl border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">{title}</div>
-          <div className="mt-1 text-2xl font-bold">{pct}%</div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {pct >= 80 ? "Almost there" : pct >= 50 ? "Solid momentum" : "Small start counts"}
-          </div>
-        </div>
-        <div className="relative h-16 w-16">
-          <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90">
-            <circle cx="32" cy="32" r={r} fill="none" className="stroke-muted" strokeWidth="7" />
-            <circle
-              cx="32"
-              cy="32"
-              r={r}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeDasharray={c}
-              strokeDashoffset={off}
-              className="text-primary transition-all duration-500"
-            />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  accent,
-  bg,
-}: {
-  icon: typeof Clock;
-  label: string;
-  value: string;
-  sub: string;
-  accent: string;
-  bg: string;
-}) {
-  return (
-    <div className="rounded-2xl border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${bg} ${accent}`}>
-          <Icon className="h-4 w-4" />
-        </span>
-      </div>
-      <div className="mt-2 text-2xl font-bold">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
-    </div>
-  );
-}
-
-function QuickAction({
-  href,
-  icon: Icon,
-  title,
-  sub,
-  accent,
-}: {
-  href: string;
-  icon: typeof Play;
-  title: string;
-  sub: string;
-  accent: string;
-}) {
-  return (
-    <a
-      href={href}
-      className={`group rounded-2xl border bg-gradient-to-br ${accent} p-4 transition-all hover:-translate-y-0.5 hover:shadow-md`}
-    >
-      <Icon className="h-5 w-5 text-primary" />
-      <div className="mt-3 text-sm font-semibold">{title}</div>
-      <div className="text-xs text-muted-foreground">{sub}</div>
-      <ArrowRight className="mt-3 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-    </a>
-  );
-}
-
-function Panel({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border bg-card p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-        {icon} {title}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function InsightCard({
-  icon: Icon,
-  tone,
-  title,
-  body,
-}: {
-  icon: typeof CheckCircle2;
-  tone: "green" | "amber" | "blue";
-  title: string;
-  body: string;
-}) {
-  const toneCls =
-    tone === "green" ? "text-green-600" : tone === "amber" ? "text-amber-500" : "text-blue-600";
-  return (
-    <div className="rounded-2xl border bg-card p-4">
-      <div className={`flex items-center gap-2 text-xs font-semibold ${toneCls}`}>
-        <Icon className="h-4 w-4" /> {title}
-      </div>
-      <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-    </div>
-  );
-}
-
-function TrustLine({ label, how }: { label: string; how: string }) {
-  return (
-    <div className="rounded-xl border bg-muted/20 p-3 text-sm">
-      <div className="font-semibold">{label}</div>
-      <div className="mt-0.5 text-xs text-muted-foreground">{how}</div>
-    </div>
-  );
-}
-
-function EmptyPanel({ text }: { text: string }) {
-  return <p className="text-sm text-muted-foreground">{text}</p>;
-}
-
-function LoadingCards() {
-  return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="h-28 animate-pulse rounded-2xl border bg-muted/40" />
-      ))}
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ *
  * AwardsCard — XP, level and badges (A9)
  *
@@ -1248,81 +713,6 @@ function LoadingCards() {
  * countdown, no "you missed" copy, and nothing ranks a student against anyone
  * but their own previous best.
  * ------------------------------------------------------------------ */
-
-function AwardsCard({ awards }: { awards: AchievementSummary }) {
-  const pct = Math.round((awards.level.xpIntoLevel / awards.level.levelSpan) * 100);
-  // Show earned badges first, then the closest unearned ones with real progress.
-  const shown = [
-    ...awards.earned,
-    ...awards.badges.filter((b) => !b.earned && b.progress > 0).slice(0, 3),
-  ].slice(0, 8);
-
-  return (
-    <section className="rounded-2xl border p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" /> Level {awards.level.level} ·{" "}
-            {awards.level.title}
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {awards.xp.toLocaleString()} XP · {awards.level.toNext} to level{" "}
-            {awards.level.level + 1}
-          </p>
-        </div>
-        {awards.beatPersonalBest ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-50 px-3 py-1 text-[11px] font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-            <Flame className="h-3.5 w-3.5" /> Beat your own best
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-      </div>
-
-      <p className="mt-2 text-xs text-muted-foreground">{awards.note}</p>
-
-      {shown.length > 0 ? (
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-          {shown.map((b) => (
-            <li
-              key={b.id}
-              className={`rounded-md border px-3 py-2 text-xs ${
-                b.earned ? "border-primary/40 bg-primary/5" : ""
-              }`}
-            >
-              <span className="flex items-center justify-between gap-2">
-                <span className="font-medium">{b.label}</span>
-                {b.earned ? (
-                  <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-green-600" />
-                ) : (
-                  <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                    {Math.round(b.progress * 100)}%
-                  </span>
-                )}
-              </span>
-              <span className="mt-0.5 block text-muted-foreground">{b.description}</span>
-              {!b.earned ? (
-                <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <span
-                    className="block h-full rounded-full bg-primary/60"
-                    style={{ width: `${Math.round(b.progress * 100)}%` }}
-                  />
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        XP is counted from your own focus sessions, attempts, lessons and mastered chapters — never
-        from anything you did not do. No badge here can be lost.
-      </p>
-    </section>
-  );
-}
 
 /* ------------------------------------------------------------------ *
  * DppCard — Today's DPP (A4)
@@ -1337,60 +727,6 @@ function AwardsCard({ awards }: { awards: AchievementSummary }) {
  * bank carries no difficulty field and inventing one would be worse than
  * saying nothing.
  * ------------------------------------------------------------------ */
-
-function DppCard({ set }: { set: DailyPracticeSet }) {
-  const navigate = useNavigate();
-  if (set.questions.length === 0) return null;
-  const runnable = set.questions.length >= MIN_DPP_SIZE;
-
-  function start() {
-    const test = dppToCbtTest(set, Date.now());
-    if (!test) return;
-    // Saving it first means /cbt can resolve it by id, and the attempt lands in
-    // the same store every other test uses.
-    saveCbtTest(test as unknown as CbtTest);
-    navigate({ to: "/cbt", search: { testId: test.id } });
-  }
-
-  return (
-    <section className="rounded-2xl border p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Target className="h-4 w-4 text-primary" /> Today&apos;s DPP
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">{set.note}</p>
-        </div>
-        <button
-          onClick={start}
-          disabled={!runnable}
-          title={runnable ? undefined : "Not enough questions on this device for a timed set."}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Play className="h-3.5 w-3.5" /> Start {set.questions.length} questions
-        </button>
-      </div>
-
-      {set.focus.length > 0 ? (
-        <ul className="mt-3 space-y-1.5">
-          {set.focus.slice(0, 4).map((f) => (
-            <li key={`${f.subject}-${f.chapter}`} className="rounded-md border px-3 py-2 text-xs">
-              <span className="font-medium">
-                {f.subject} — {f.chapter}
-              </span>
-              <span className="mt-0.5 block text-muted-foreground">{f.reason}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        {Math.round((set.questions.length * DPP_SEC_PER_QUESTION) / 60)} min · no difficulty labels:
-        the question bank does not carry them, and a wrong label would be worse than none.
-      </p>
-    </section>
-  );
-}
 
 /* ------------------------------------------------------------------ *
  * TodayStrip — the dashboard's information order, per Phase 6:
@@ -1410,123 +746,3 @@ function DppCard({ set }: { set: DailyPracticeSet }) {
  * route: the baked payload is immutable once built, and four routes each
  * fetching it with `no-store` re-downloaded ~254 KB on every navigation.
  */
-
-function TodayStrip({ plan }: { plan: TodayPlan }) {
-  const pending = plan.tasks.filter((t) => t.status !== "done");
-
-  return (
-    <section className="rounded-2xl border bg-card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold">
-            {plan.isToday ? "Today" : `Next up · ${plan.dayKey}`}
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {plan.note ||
-              `${plan.tasks.length} task${plan.tasks.length === 1 ? "" : "s"} · ${
-                plan.chaptersTouched
-              } chapter${plan.chaptersTouched === 1 ? "" : "s"} · ${plan.doneMin}/${
-                plan.plannedMin
-              } min done`}
-          </p>
-        </div>
-        <Link
-          to={plan.primary.to}
-          {...(plan.primary.search ? { search: plan.primary.search } : {})}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-        >
-          <Play className="h-4 w-4" /> {plan.primary.label}
-        </Link>
-      </div>
-
-      <p className="mt-2 text-xs text-muted-foreground">
-        <Info className="mr-1 inline h-3 w-3 align-[-2px]" />
-        {plan.primary.reason}
-      </p>
-
-      {plan.tasks.length > 0 ? (
-        <ul className="mt-4 space-y-1.5">
-          {plan.tasks.slice(0, 6).map((task) => (
-            <li
-              key={task.id}
-              className={`flex items-center gap-3 rounded-md border px-3 py-2 text-sm ${
-                task.isWeakTarget ? "border-primary/40 bg-accent/30" : ""
-              }`}
-            >
-              <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                  task.status === "done"
-                    ? "bg-green-100 text-green-700"
-                    : "border text-muted-foreground"
-                }`}
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1 truncate">
-                <span className="font-medium">
-                  {task.subject} — {task.chapter}
-                </span>
-                {task.isWeakTarget ? (
-                  <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
-                    Weak target
-                  </span>
-                ) : null}
-              </span>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {task.kind} · {task.estMin || 45} min
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {plan.tasks.length > 6 ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          +{plan.tasks.length - 6} more today ·{" "}
-          <Link to="/app/planner" className="text-primary underline">
-            open planner
-          </Link>
-        </p>
-      ) : null}
-
-      {plan.weakAreas.length > 0 ? (
-        <div className="mt-4 border-t pt-3">
-          <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <AlertTriangle className="h-3.5 w-3.5" /> Weak areas to work on
-          </h3>
-          <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-            {plan.weakAreas.map((w) => (
-              <li
-                key={`${w.subject}-${w.chapter}`}
-                className="flex items-center justify-between gap-2 rounded-md border px-2.5 py-2 text-xs"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">
-                    {w.subject} — {w.chapter}
-                  </span>
-                  <span className="block truncate text-muted-foreground">{w.reason}</span>
-                </span>
-                <span
-                  className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                    w.accuracy === null
-                      ? "bg-muted text-muted-foreground"
-                      : w.accuracy < 50
-                        ? "bg-red-100 text-red-700"
-                        : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {w.accuracy === null ? "not enough data" : `${w.accuracy}%`}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            {pending.length > 0
-              ? "Ranked from your own attempts and finished lessons — the same evidence the mentor report uses."
-              : "Ranked from your own attempts and finished lessons. Nothing here is estimated."}
-          </p>
-        </div>
-      ) : null}
-    </section>
-  );
-}
