@@ -1,15 +1,23 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Bookmark, Clock3, Flame, Play, Search, Sparkles, UserRound } from "lucide-react";
+import { Menu, Play, Search, Sparkles, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { LANG_LABEL, type Lang, useLang, setLang } from "@/lib/lang";
 import { useAuthStore } from "@/features/auth/store";
-import { NAV, SHELF } from "@/components/layout/nav";
+import { NAV } from "@/components/layout/nav";
+import { NavPanel } from "@/components/layout/NavPanel";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { hasCompletedOnboarding, loadStudyProfile } from "@/features/onboarding/profile";
 
-export const Route = createFileRoute("/app/_layout")({
+export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
@@ -18,6 +26,9 @@ function AppLayout() {
   const current = (matches[matches.length - 1] ?? "").replace(/\/$/, "");
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  // The mobile drawer. Closed on first render so SSR and the first client pass
+  // agree — a drawer that flashes open after hydration looks like a bug.
+  const [navOpen, setNavOpen] = useState(false);
   const lang = useLang();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -40,6 +51,20 @@ function AppLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur">
+        {/*
+          Mobile nav trigger. The sidebar below is `hidden lg:flex`, so without
+          this a phone had no way to reach Memory Locker, the syllabus map,
+          Focus, Saarthi or the progress report — the bottom bar's six items
+          were the entire navigation.
+        */}
+        <button
+          type="button"
+          onClick={() => setNavOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-input text-muted-foreground hover:bg-accent lg:hidden"
+          aria-label="Open navigation menu"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
         <Link to="/app" className="flex items-center gap-2 font-semibold tracking-tight">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
             <Play className="h-4 w-4" />
@@ -113,69 +138,7 @@ function AppLayout() {
       </header>
 
       <aside className="fixed top-14 bottom-0 left-0 z-20 hidden w-52 flex-col gap-1 overflow-y-auto border-r bg-background px-2 py-3 lg:flex">
-        <div className="grid gap-1">
-          {SHELF.map((item) => {
-            const Icon = item.icon;
-            const active = item.to === "/app/studytube" && onStudyTube;
-            return (
-              <Link
-                key={item.label}
-                to={item.to}
-                {...(item.search ? { search: item.search } : {})}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                  active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground/80 hover:bg-accent/60"
-                }`}
-              >
-                <Icon className="h-5 w-5" /> {item.label}
-              </Link>
-            );
-          })}
-          <div className="my-2 border-t" />
-        </div>
-
-        <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Learning OS
-        </div>
-        <div className="grid gap-1">
-          {NAV.map((item) => {
-            const active = current === item.to || current.startsWith(`${item.to}.`);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                  active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground/80 hover:bg-accent/60"
-                }`}
-              >
-                <Icon className="h-5 w-5" /> {item.label}
-              </Link>
-            );
-          })}
-          <Link
-            to="/app/focus"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-accent/60"
-          >
-            <Clock3 className="h-5 w-5" /> Focus
-          </Link>
-          <Link
-            to="/app/saarthi"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-accent/60"
-          >
-            <Sparkles className="h-5 w-5" /> Saarthi
-          </Link>
-          <Link
-            to="/app/studytube"
-            search={{ q: "board exams" }}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-accent/60"
-          >
-            <Bookmark className="h-5 w-5" /> Boards
-          </Link>
-        </div>
+        <NavPanel current={current} />
       </aside>
 
       <main className="mx-auto w-full max-w-[1500px] flex-1 px-3 pt-6 pb-24 sm:px-5 lg:pl-60">
@@ -227,6 +190,24 @@ function AppLayout() {
           About
         </Link>
       </div>
+      {/*
+        Mobile navigation drawer.
+        Renders the same NavPanel as the desktop sidebar, so the two surfaces
+        can never drift. It closes on navigation, because a drawer left open
+        over the page you just asked for reads as broken.
+      */}
+      <Sheet open={navOpen} onOpenChange={setNavOpen}>
+        <SheetContent side="left" className="w-72 overflow-y-auto p-0">
+          <SheetHeader className="border-b px-4 py-3 text-left">
+            <SheetTitle>NTACBT</SheetTitle>
+            <SheetDescription>Everywhere in the app</SheetDescription>
+          </SheetHeader>
+          <div className="px-2 py-3">
+            <NavPanel current={current} onNavigate={() => setNavOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {needsOnboarding ? (
         <OnboardingWizard
           onDone={() => setNeedsOnboarding(false)}

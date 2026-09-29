@@ -11,11 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as CbtRouteImport } from './routes/cbt'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as AppLayoutRouteImport } from './routes/app._layout'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppFocusRouteImport } from './routes/app.focus'
 import { Route as AppMapRouteImport } from './routes/app.map'
@@ -48,6 +48,11 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CbtRoute = CbtRouteImport.update({
   id: '/cbt',
   path: '/cbt',
@@ -64,74 +69,69 @@ const TermsRoute = TermsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/app/',
-  path: '/app/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppLayoutRoute = AppLayoutRouteImport.update({
-  id: '/app/_layout',
-  path: '/app',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
-  id: '/app/analytics',
-  path: '/app/analytics',
-  getParentRoute: () => rootRouteImport,
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppFocusRoute = AppFocusRouteImport.update({
-  id: '/app/focus',
-  path: '/app/focus',
-  getParentRoute: () => rootRouteImport,
+  id: '/focus',
+  path: '/focus',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppMapRoute = AppMapRouteImport.update({
-  id: '/app/map',
-  path: '/app/map',
-  getParentRoute: () => rootRouteImport,
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppMemoryRoute = AppMemoryRouteImport.update({
-  id: '/app/memory',
-  path: '/app/memory',
-  getParentRoute: () => rootRouteImport,
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppPlannerRoute = AppPlannerRouteImport.update({
-  id: '/app/planner',
-  path: '/app/planner',
-  getParentRoute: () => rootRouteImport,
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/app/profile',
-  path: '/app/profile',
-  getParentRoute: () => rootRouteImport,
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppPyqRoute = AppPyqRouteImport.update({
-  id: '/app/pyq',
-  path: '/app/pyq',
-  getParentRoute: () => rootRouteImport,
+  id: '/pyq',
+  path: '/pyq',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppReportRoute = AppReportRouteImport.update({
-  id: '/app/report',
-  path: '/app/report',
-  getParentRoute: () => rootRouteImport,
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSaarthiRoute = AppSaarthiRouteImport.update({
-  id: '/app/saarthi',
-  path: '/app/saarthi',
-  getParentRoute: () => rootRouteImport,
+  id: '/saarthi',
+  path: '/saarthi',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSearchRoute = AppSearchRouteImport.update({
-  id: '/app/search',
-  path: '/app/search',
-  getParentRoute: () => rootRouteImport,
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppStudytubeRoute = AppStudytubeRouteImport.update({
-  id: '/app/studytube',
-  path: '/app/studytube',
-  getParentRoute: () => rootRouteImport,
+  id: '/studytube',
+  path: '/studytube',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppTestsRoute = AppTestsRouteImport.update({
-  id: '/app/tests',
-  path: '/app/tests',
-  getParentRoute: () => rootRouteImport,
+  id: '/tests',
+  path: '/tests',
+  getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicAiChatRoute = ApiPublicAiChatRouteImport.update({
   id: '/api/public/ai-chat',
@@ -164,14 +164,14 @@ const ApiPublicStudyPlannerRoute = ApiPublicStudyPlannerRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAuthLoginRoute = AppAuthLoginRouteImport.update({
-  id: '/app/auth/login',
-  path: '/app/auth/login',
-  getParentRoute: () => rootRouteImport,
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAuthRegisterRoute = AppAuthRegisterRouteImport.update({
-  id: '/app/auth/register',
-  path: '/app/auth/register',
-  getParentRoute: () => rootRouteImport,
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppStudytubeVideoRoute = AppStudytubeVideoRouteImport.update({
   id: '/$video',
@@ -182,10 +182,10 @@ const AppStudytubeVideoRoute = AppStudytubeVideoRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/app': typeof AppRouteWithChildren
   '/cbt': typeof CbtRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/app': typeof AppLayoutRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
   '/app/map': typeof AppMapRoute
@@ -215,7 +215,6 @@ export interface FileRoutesByTo {
   '/cbt': typeof CbtRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/app': typeof AppIndexRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
   '/app/map': typeof AppMapRoute
@@ -228,6 +227,7 @@ export interface FileRoutesByTo {
   '/app/search': typeof AppSearchRoute
   '/app/studytube': typeof AppStudytubeRouteWithChildren
   '/app/tests': typeof AppTestsRoute
+  '/app': typeof AppIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/cloud-config': typeof ApiPublicCloudConfigRoute
   '/api/public/live-classes': typeof ApiPublicLiveClassesRoute
@@ -242,10 +242,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/app': typeof AppRouteWithChildren
   '/cbt': typeof CbtRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/app/_layout': typeof AppLayoutRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
   '/app/map': typeof AppMapRoute
@@ -274,10 +274,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/app'
     | '/cbt'
     | '/privacy'
     | '/terms'
-    | '/app'
     | '/app/analytics'
     | '/app/focus'
     | '/app/map'
@@ -307,7 +307,6 @@ export interface FileRouteTypes {
     | '/cbt'
     | '/privacy'
     | '/terms'
-    | '/app'
     | '/app/analytics'
     | '/app/focus'
     | '/app/map'
@@ -320,6 +319,7 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/app/studytube'
     | '/app/tests'
+    | '/app'
     | '/api/public/ai-chat'
     | '/api/public/cloud-config'
     | '/api/public/live-classes'
@@ -333,10 +333,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/app'
     | '/cbt'
     | '/privacy'
     | '/terms'
-    | '/app/_layout'
     | '/app/analytics'
     | '/app/focus'
     | '/app/map'
@@ -364,31 +364,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AppRoute: typeof AppRouteWithChildren
   CbtRoute: typeof CbtRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
-  AppLayoutRoute: typeof AppLayoutRoute
-  AppAnalyticsRoute: typeof AppAnalyticsRoute
-  AppFocusRoute: typeof AppFocusRoute
-  AppMapRoute: typeof AppMapRoute
-  AppMemoryRoute: typeof AppMemoryRoute
-  AppPlannerRoute: typeof AppPlannerRoute
-  AppProfileRoute: typeof AppProfileRoute
-  AppPyqRoute: typeof AppPyqRoute
-  AppReportRoute: typeof AppReportRoute
-  AppSaarthiRoute: typeof AppSaarthiRoute
-  AppSearchRoute: typeof AppSearchRoute
-  AppStudytubeRoute: typeof AppStudytubeRouteWithChildren
-  AppTestsRoute: typeof AppTestsRoute
-  AppIndexRoute: typeof AppIndexRoute
   ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
   ApiPublicCloudConfigRoute: typeof ApiPublicCloudConfigRoute
   ApiPublicLiveClassesRoute: typeof ApiPublicLiveClassesRoute
   ApiPublicPdfReformatRoute: typeof ApiPublicPdfReformatRoute
   ApiPublicPyqPapersRoute: typeof ApiPublicPyqPapersRoute
   ApiPublicStudyPlannerRoute: typeof ApiPublicStudyPlannerRoute
-  AppAuthLoginRoute: typeof AppAuthLoginRoute
-  AppAuthRegisterRoute: typeof AppAuthRegisterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -405,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cbt': {
@@ -430,101 +422,94 @@ declare module '@tanstack/react-router' {
     }
     '/app/': {
       id: '/app/'
-      path: '/app'
+      path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/_layout': {
-      id: '/app/_layout'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppLayoutRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/analytics': {
       id: '/app/analytics'
-      path: '/app/analytics'
+      path: '/analytics'
       fullPath: '/app/analytics'
       preLoaderRoute: typeof AppAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/focus': {
       id: '/app/focus'
-      path: '/app/focus'
+      path: '/focus'
       fullPath: '/app/focus'
       preLoaderRoute: typeof AppFocusRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/map': {
       id: '/app/map'
-      path: '/app/map'
+      path: '/map'
       fullPath: '/app/map'
       preLoaderRoute: typeof AppMapRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/memory': {
       id: '/app/memory'
-      path: '/app/memory'
+      path: '/memory'
       fullPath: '/app/memory'
       preLoaderRoute: typeof AppMemoryRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/planner': {
       id: '/app/planner'
-      path: '/app/planner'
+      path: '/planner'
       fullPath: '/app/planner'
       preLoaderRoute: typeof AppPlannerRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/profile': {
       id: '/app/profile'
-      path: '/app/profile'
+      path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/pyq': {
       id: '/app/pyq'
-      path: '/app/pyq'
+      path: '/pyq'
       fullPath: '/app/pyq'
       preLoaderRoute: typeof AppPyqRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/report': {
       id: '/app/report'
-      path: '/app/report'
+      path: '/report'
       fullPath: '/app/report'
       preLoaderRoute: typeof AppReportRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/saarthi': {
       id: '/app/saarthi'
-      path: '/app/saarthi'
+      path: '/saarthi'
       fullPath: '/app/saarthi'
       preLoaderRoute: typeof AppSaarthiRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/search': {
       id: '/app/search'
-      path: '/app/search'
+      path: '/search'
       fullPath: '/app/search'
       preLoaderRoute: typeof AppSearchRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/studytube': {
       id: '/app/studytube'
-      path: '/app/studytube'
+      path: '/studytube'
       fullPath: '/app/studytube'
       preLoaderRoute: typeof AppStudytubeRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/tests': {
       id: '/app/tests'
-      path: '/app/tests'
+      path: '/tests'
       fullPath: '/app/tests'
       preLoaderRoute: typeof AppTestsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/public/ai-chat': {
       id: '/api/public/ai-chat'
@@ -570,17 +555,17 @@ declare module '@tanstack/react-router' {
     }
     '/app/auth/login': {
       id: '/app/auth/login'
-      path: '/app/auth/login'
+      path: '/auth/login'
       fullPath: '/app/auth/login'
       preLoaderRoute: typeof AppAuthLoginRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/auth/register': {
       id: '/app/auth/register'
-      path: '/app/auth/register'
+      path: '/auth/register'
       fullPath: '/app/auth/register'
       preLoaderRoute: typeof AppAuthRegisterRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/studytube/$video': {
       id: '/app/studytube/$video'
@@ -604,13 +589,25 @@ const AppStudytubeRouteWithChildren = AppStudytubeRoute._addFileChildren(
   AppStudytubeRouteChildren,
 )
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
-  CbtRoute: CbtRoute,
-  PrivacyRoute: PrivacyRoute,
-  TermsRoute: TermsRoute,
-  AppLayoutRoute: AppLayoutRoute,
+interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppFocusRoute: typeof AppFocusRoute
+  AppMapRoute: typeof AppMapRoute
+  AppMemoryRoute: typeof AppMemoryRoute
+  AppPlannerRoute: typeof AppPlannerRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppPyqRoute: typeof AppPyqRoute
+  AppReportRoute: typeof AppReportRoute
+  AppSaarthiRoute: typeof AppSaarthiRoute
+  AppSearchRoute: typeof AppSearchRoute
+  AppStudytubeRoute: typeof AppStudytubeRouteWithChildren
+  AppTestsRoute: typeof AppTestsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppAuthLoginRoute: typeof AppAuthLoginRoute
+  AppAuthRegisterRoute: typeof AppAuthRegisterRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppFocusRoute: AppFocusRoute,
   AppMapRoute: AppMapRoute,
@@ -624,14 +621,25 @@ const rootRouteChildren: RootRouteChildren = {
   AppStudytubeRoute: AppStudytubeRouteWithChildren,
   AppTestsRoute: AppTestsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAuthLoginRoute: AppAuthLoginRoute,
+  AppAuthRegisterRoute: AppAuthRegisterRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AppRoute: AppRouteWithChildren,
+  CbtRoute: CbtRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   ApiPublicAiChatRoute: ApiPublicAiChatRoute,
   ApiPublicCloudConfigRoute: ApiPublicCloudConfigRoute,
   ApiPublicLiveClassesRoute: ApiPublicLiveClassesRoute,
   ApiPublicPdfReformatRoute: ApiPublicPdfReformatRoute,
   ApiPublicPyqPapersRoute: ApiPublicPyqPapersRoute,
   ApiPublicStudyPlannerRoute: ApiPublicStudyPlannerRoute,
-  AppAuthLoginRoute: AppAuthLoginRoute,
-  AppAuthRegisterRoute: AppAuthRegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

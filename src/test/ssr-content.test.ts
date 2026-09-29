@@ -229,7 +229,7 @@ describe("the legal pages exist as real routes", () => {
     }
     // A policy nobody can find is not a policy. The shell links them on every
     // screen, and the pages cross-link each other.
-    const layout = read("src/routes/app._layout.tsx");
+    const layout = read("src/routes/app.tsx");
     expect(layout, "shell footer").toContain('to="/privacy"');
     expect(layout, "shell footer").toContain('to="/terms"');
     expect(layout, "shell footer").toContain('to="/about"');

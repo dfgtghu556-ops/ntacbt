@@ -101,7 +101,7 @@ const MIN_TARGET = 44;
 const MIN_GAP = 8;
 
 describe("Phase 6 — primary touch targets", () => {
-  const layout = read("src/routes/app._layout.tsx");
+  const layout = read("src/routes/app.tsx");
 
   /**
    * The bottom bar's `<Link>` blocks, with the icon element included.
