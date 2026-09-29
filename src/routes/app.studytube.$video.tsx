@@ -56,8 +56,6 @@ function StudyTheater() {
   const studentScope = scopeOf(useStudentContext());
   const search = useSearch({ from: Route.id }) as TheaterSearch;
   const title = search.title || "Video lesson";
-  const duration = search.topic ? undefined : undefined;
-  void duration;
 
   const [tab, setTab] = useState("notes");
   const [note, setNoteText] = useState("");
