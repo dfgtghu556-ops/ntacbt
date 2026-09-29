@@ -309,6 +309,7 @@ function Saarthi() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
+            aria-label="Ask Saarthi about a topic, a mistake, or what to revise"
             placeholder="Ask about a topic, a mistake, or what to revise…"
             className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />

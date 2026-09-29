@@ -254,6 +254,7 @@ function StudyTheater() {
               <textarea
                 value={note}
                 onChange={(e) => setNoteText(e.target.value)}
+                aria-label="Your active-recall notes for this lecture"
                 placeholder="Write your own active-recall notes here — in your own words."
                 rows={10}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"

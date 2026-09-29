@@ -176,6 +176,7 @@ function Focus() {
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
+          aria-label="What are you working on"
           placeholder={
             mission?.chapter ? `Focusing on ${mission.chapter}` : "What are you working on?"
           }

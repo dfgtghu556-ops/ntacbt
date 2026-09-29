@@ -570,6 +570,7 @@ function StudyTube() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && openSearchQuery(query)}
+              aria-label="Search a topic, chapter or teacher"
               placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
               className="w-full rounded-2xl border border-border bg-background py-3 pr-4 pl-11 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring"
             />
