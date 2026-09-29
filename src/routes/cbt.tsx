@@ -13,8 +13,18 @@
  *   - auto-submit at zero
  * Behaviour added: autosave every 30s + resume of an interrupted attempt.
  */
-import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker, useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { evaluate } from "@/features/cbt/engine";
 import { getCbtTest } from "@/features/cbt/store";
 import { loadPaperQuestions } from "@/features/pyq/store";
@@ -187,11 +197,58 @@ function Cbt() {
   const [attempt, setAttempt] = useState<CbtAttemptRecord | null>(null);
   const [calcOpen, setCalcOpen] = useState(false);
   const [draft, setDraft] = useState<AttemptDraft | null>(null);
+  // Leaving mid-paper, and submitting, both ask first. Two separate dialogs
+  // because they ask different questions and neither should be a native
+  // `confirm()` in the flow where the app most needs to look trustworthy.
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
 
+  const navigate = useNavigate();
   const startedAt = useRef(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const submitRef = useRef<() => void>(() => undefined);
+
+  /**
+   * True only while a paper is genuinely being sat.
+   *
+   * This single condition is what every guard below keys off, and getting it
+   * right is the whole job: a warning that fires on the instructions screen, or
+   * on a result page, or after an auto-submit, is noise a student learns to
+   * click through — and then the real warning stops working.
+   */
+  const attemptLive = mode === "exam";
+
+  // Leaving the tab or reloading mid-paper.
+  //
+  // The draft is autosaved every 30s and can be resumed, so the work is never
+  // actually lost — but nothing told the student that, so a swipe-back or a
+  // refresh read as "I just threw away 40 minutes" and they started again.
+  useEffect(() => {
+    if (!attemptLive) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Legacy browsers need returnValue set; modern ones need preventDefault.
+      e.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [attemptLive]);
+
+  // Navigating away inside the app. `beforeunload` does not fire for a
+  // client-side route change, so this is the half that covers tapping a nav
+  // item mid-paper.
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!attemptLive) return false;
+      // Asking here rather than blocking outright, because the honest answer is
+      // that the draft is safe — the student deserves to be told that instead
+      // of being trapped.
+      setLeaveOpen(true);
+      return true;
+    },
+  });
 
   const exam: Exam | null = useMemo(() => (test ? fromCbtTest(test) : null), [test]);
   const examQuestions = useMemo(() => (test ? test.questions.map(fromCbtQuestion) : []), [test]);
@@ -209,6 +266,14 @@ function Cbt() {
     hydrate,
     setCurrentExam,
   } = useExamStore();
+
+  // How many questions carry a real answer. Derived from `answers`, which is
+  // what the header already counts, so the submit dialog can never quote a
+  // different number from the one on screen.
+  const answeredCount = useMemo(
+    () => Object.values(answers).filter((a) => a !== null && a !== undefined).length,
+    [answers],
+  );
 
   /* ---------------- load the paper ---------------- */
   useEffect(() => {
@@ -449,10 +514,56 @@ function Cbt() {
         timeRemaining={left}
         calculatorOpen={calcOpen}
         onToggleCalculator={() => setCalcOpen((v) => !v)}
-        onSubmit={() => {
-          if (window.confirm("Submit test?")) submit();
-        }}
+        onSubmit={() => setSubmitOpen(true)}
       />
+
+      {/*
+        Leaving mid-paper. The message says the draft is safe, because it is —
+        autosave runs every 30s and the attempt can be resumed. A warning that
+        only threatens, when nothing is actually at risk, is a warning students
+        learn to dismiss.
+      */}
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave the test?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your answers are saved automatically every 30 seconds, so you can come back and carry
+              on from where you stopped. Leaving now ends this session.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep going</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate({ to: "/app" })}>Leave</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/*
+        Submitting. Replaces the native browser confirm that used to sit here — a
+        dialog, in the one flow where the app most needs to look like it belongs
+        to itself.
+      */}
+      <AlertDialog open={submitOpen} onOpenChange={setSubmitOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit the test?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {answeredCount} of {test.questions.length} questions answered. Once you submit, the
+              paper is graded and cannot be reopened.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not yet</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => submit()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid flex-1 lg:grid-cols-[1fr_260px]">
         <QuestionPanel
