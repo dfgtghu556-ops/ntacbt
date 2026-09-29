@@ -193,15 +193,18 @@ existing breaks.
 
 ## 7. Explicitly _not_ done (and why)
 
-| Not done                                    | Reason                                                                                                |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Deleting `public/jee-cbt.html`              | Still the authoritative CBT + PDF pipeline; `docs/ARCHITECTURE.md` retires it only after React parity |
-| Replacing TanStack Router with RRv6         | Regression (§2.2)                                                                                     |
-| Adding `framer-motion` / `lodash` / `dayjs` | Unused weight (§2.5)                                                                                  |
-| A mandatory login wall                      | Breaks local-first students (§2.6)                                                                    |
-| Inventing teacher/video/rank data           | `docs/DATA-GOVERNANCE.md` forbids it; every number stays evidence-labelled                            |
-| Changing the Eklavya test schedule          | Explicitly out of scope per the user's earlier instruction in `.lovable/plan`                         |
-| A CBSE Class XI 2026-27 curriculum map     | Class XII is transcribed and published; Class XI resolves to `null` and says so, rather than borrowing Class XII chapters |
+| Not done                                    | Reason                                                                                                                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deleting `public/jee-cbt.html`              | Still the authoritative CBT + PDF pipeline; `docs/ARCHITECTURE.md` retires it only after React parity                                                                      |
+| Replacing TanStack Router with RRv6         | Regression (§2.2)                                                                                                                                                          |
+| Adding `framer-motion` / `lodash` / `dayjs` | Unused weight (§2.5)                                                                                                                                                       |
+| A mandatory login wall                      | Breaks local-first students (§2.6)                                                                                                                                         |
+| Inventing teacher/video/rank data           | `docs/DATA-GOVERNANCE.md` forbids it; every number stays evidence-labelled                                                                                                 |
+| Changing the Eklavya test schedule          | Explicitly out of scope per the user's earlier instruction in `.lovable/plan`                                                                                              |
+| A public leaderboard or study-partner layer | Local-first product with no peer data source; A5 already delivers accountability with a real person. Research doc §A6 itself warns it "can backfire (comparison/pressure)" |
+| Phase 2's 14 further JEE 2026 papers        | Source PDFs are gitignored and absent; transcribing needs the files                                                                                                        |
+| A1 Snap & Solve                             | Needs a vision API key the environment does not have                                                                                                                       |
+| Phase 6 device QA                           | Needs a real browser or device lab; static checks cannot confirm touch targets, contrast or scroll on a phone                                                              |
 
 ---
 
@@ -218,3 +221,18 @@ existing breaks.
 
 Each step is verified before the next begins; the branch is left in a working
 state at every commit.
+
+### 8.1 Corrections made since this plan was written
+
+Two entries in this document were overtaken by later work and are recorded here
+rather than left to contradict §7:
+
+- **A CBSE Class XI 2026-27 map _was_ built** (`08d027a`). The Class XI map
+  resolves properly now: Physics 10 units / 14 chapters with unit marks `null`
+  (CBSE publishes bands of 23 / 17 / 20 / 10, and secondary per-unit figures
+  disagree), Chemistry 9 units / 9 chapters unanimous at 70, Mathematics 5 units
+  / 14 chapters unanimous at 80. `assertClassLevelIsolation` throws at import
+  if a chapter id, name or number repeats across the two class levels.
+- **The curriculum and question-store validators were text checks.** They now
+  load the registry and read the shipped store (`5f67cad`, §26 of the status
+  doc), and the build fails on corrupted data.

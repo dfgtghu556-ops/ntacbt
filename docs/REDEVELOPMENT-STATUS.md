@@ -337,7 +337,7 @@ of its records were teacher/playlist catalog entries whose `chapter` field
 held marketing strings ("Organic Chemistry Maestro") and whose `topic`
 field held playlist names. So `chapterForTopic` for a CBSE scope had no
 syllabus to resolve against, and its nearest-string fallback matched a
-*teacher's name* — asking for the real chapter "Atoms" resolved to a video
+_teacher's name_ — asking for the real chapter "Atoms" resolved to a video
 series. **All 37 real CBSE Class XII chapters returned `null`.**
 
 **What was built.**
@@ -528,7 +528,7 @@ the display-mode media query and `navigator.standalone`.
   chosen so the student can see the logic.
 - Selection order: weak chapters (a real sample below 50%) weakest first; then
   thin samples one question each, because a chapter with two attempts is
-  *unmeasured* rather than failing, and this also stops the set only ever
+  _unmeasured_ rather than failing, and this also stops the set only ever
   reinforcing what is already known; then the highest-weightage chapters; then
   the remainder spread across subjects.
 - Deterministic per day (mulberry32 seeded from the day key), so a reload does
@@ -585,7 +585,7 @@ the display-mode media query and `navigator.standalone`.
 - `src/features/curriculum/map.ts` + `/app/map`.
 - **No prerequisite edges are drawn.** A prerequisite is a claim about how
   knowledge works, and a wrong one is worse than a missing one: a student told
-  chapter B *requires* chapter A will skip B believing they are not ready, and
+  chapter B _requires_ chapter A will skip B believing they are not ready, and
   the dependency may not even be real. The published CBSE syllabus states no
   prerequisites, so inventing a topic-level dependency graph would be fabricated
   data of exactly the kind the rebuild plan forbids.
@@ -712,7 +712,7 @@ which B7 forbids.
 
 **`src/features/notify/schedule.ts`** is the pure rule set. Quiet hours are
 absolute and override all evidence. A nudge needs evidence, not a schedule —
-"it has been six hours" is not a reason. Loss framing is *earned*: a real streak
+"it has been six hours" is not a reason. Loss framing is _earned_: a real streak
 (≥2 days) **and** genuine time left (≥2h), and it always names the fix alongside
 the risk so the message leads with what the student can still do. Nothing is
 invented to create urgency. `hoursLeft` is computed from the clock, never taken
@@ -776,7 +776,7 @@ exam date, ready.
   working default rather than a blocked app. A wizard that punishes skipping is
   a dark pattern, and B7 sits directly next to B6.
 - **Every derived number is checkable arithmetic.** 60 min/day is shown as
-  "about 7 hours a week" *before* the student commits, not afterwards.
+  "about 7 hours a week" _before_ the student commits, not afterwards.
 - **The exam date is optional, and a past date is rejected** rather than stored
   and counted down to. `daysUntilExam` returns `null`, never a negative number.
 - **No promised outcomes.** The summary states the inputs; it never mentions a
@@ -866,13 +866,176 @@ tests themselves: the explanatory comment contained a literal `<details>`, so
 `indexOf` matched the comment and the "not open by default" assertion was
 passing for the wrong reason. A test that cannot fail is worse than no test.
 
+## 26. Build integrity gate — the validators now check the data, not the text
+
+Two validators were checking the wrong thing. Neither was a rounding error in
+the build; both meant the gate could pass on a broken dataset.
+
+### 26.1 Nothing validated the shipped question store
+
+`public/pyq/` is baked at build time by `scripts/build-pyq.mjs` and is
+gitignored. Every existing validator therefore skipped it — the one that would
+have checked the transcribed papers reads `data/jee2026/transcribed/`, which
+does not exist in a fresh clone. The result was that the ~254 KB of JSON the
+app actually serves had no integrity check at all, in the build or anywhere
+else.
+
+`scripts/validate-pyq-store.mjs` now validates the shipped store directly:
+
+| Check                                                                       | Severity |
+| --------------------------------------------------------------------------- | -------- |
+| Question numbers start at 1 with no gaps                                    | critical |
+| Duplicate question number within one paper                                  | critical |
+| Missing or blank question text                                              | critical |
+| `type` is neither `mcq` nor `integer`                                       | critical |
+| MCQ with fewer than two options                                             | critical |
+| Duplicate option labels                                                     | critical |
+| MCQ or integer with no answer                                               | critical |
+| Answer that is not one of the option labels                                 | critical |
+| Subject outside Physics / Chemistry / Mathematics                           | critical |
+| Index drift — `total`, `counts`, `mcq`, `integer` disagree with the file    | critical |
+| Index entry pointing at a missing file, or a file with no index entry       | critical |
+| `id` shift or day disagreeing with `meta.label`                             | critical |
+| The same question appearing in two different papers (two shifts of one day) | advisory |
+| Missing worked solution                                                     | advisory |
+
+The severity split matters. A duplicate within a paper is unambiguously a
+transcription error. The same question appearing in the morning and the evening
+shift of the same day is a known property of JEE Main, not a bug — flagging it
+as one would train whoever runs the gate to ignore it. It passes clean on the
+current bake: **5 papers, 375 questions, 0 critical, 0 advisory**.
+
+The validator was verified to actually fail, not just to print a summary. Three
+independent break batches each produced exit 1 with the right error lines:
+
+1. renumbering one question so the sequence had a gap — also correctly caught
+   the resulting index drift and the per-subject count drift;
+2. duplicating a question number — also caught the missing answer, the single
+   remaining option and a subject of `Biology`;
+3. shifting one paper's `id` day and rewriting an answer to `z` — also caught
+   the shift/label mismatch and a dangling index entry.
+
+The store was restored from a backup and re-verified clean after each.
+
+### 26.2 The curriculum validator grepped text instead of loading the registry
+
+`scripts/validate-curriculum.mjs` parsed `cbse-class-12-2026-27.ts` with
+regexes. Two consequences:
+
+- It could not see `cbse-class-11-2026-27.ts` at all, so the Class XI map added
+  in `08d027a` was entirely unvalidated.
+- It could not run any invariant that only exists at runtime — including
+  `assertClassLevelIsolation`, which the Class XI map uses to guard itself at
+  import. A chapter number duplicated across two units parses as two perfectly
+  well-formed chapters, so the regex approach is blind to it by construction.
+
+The validator now bundles `src/data/curriculum/index.ts` with esbuild and
+imports it, checking **both** published maps for real: isolation, complete
+provenance, every chapter carrying topics, chapter ids derived from chapter
+numbers, all three subjects present in board order, and unit marks summing to
+the published theory total — or explicitly `null` where sources conflict, which
+is what Physics correctly is. It also checks that a Class XI key never resolves
+the Class XII map and vice versa. 48 checks, up from 29.
+
+`vite-node` cannot be used for this: the app's Vite config pulls in the
+TanStack Start plugin, which crashes under a plain node runner. esbuild needs
+none of it.
+
+### 26.3 The gate is now wired in, and is offline
+
+`validate:data` runs the ten offline validators and is prepended to `build` and
+`build:dev`, so `vite build` never starts on data that fails. All eleven
+validators were timed individually at **36–309 ms** and none of them touches the
+network — the one that does (`validate-links`) is deliberately excluded, so the
+gate cannot fail spuriously on a deploy runner with no outbound access.
+
+**The gate was verified to be real.** Corrupting `public/pyq/*.json` does _not_
+fail the build, and the reason is instructive: `build-pyq.mjs` re-bakes the
+store before the validators run, so the corruption is overwritten — the gate
+protects the baker's _output_, not a file someone hand-edited. Corrupting
+`cbse-class-11-2026-27.ts` also did not fail before §26.2, because the validator
+only read text. It does now: duplicating a chapter number fails
+`npm run build` with the isolation error before Vite starts.
+
+## 27. Phase 6 — dataset loading and review pagination
+
+Two of the three items left in Phase 6's accessibility and performance pass.
+(The third, device QA, is in §28.)
+
+### 27.1 The baked bank was fetched once per route
+
+Four routes each fetched `/pyq/index.json` and then every paper, with
+`cache: "no-store"` on all 15 fetch sites. The payload is ~254 KB of JSON that
+is immutable once built, so navigating Home → PYQs → Tests re-downloaded and
+re-parsed the whole bank three times.
+
+`src/features/pyq/store.ts` now owns the load:
+
+- the baked files are read with the browser's default cache instead of being
+  invalidated on every request;
+- each payload is memoised in module scope, so later routes cost no
+  round-trips and no re-parse;
+- the live `/api/public/pyq-papers` route stays `no-store` — it proxies an
+  upstream snapshot whose answers change between deploys;
+- **an empty result is not cached.** The first version remembered a dropped
+  connection as "the bank is empty" for the rest of the session, which is the
+  exact bug the module was written to prevent. `src/test/pyq-store.test.ts`
+  caught it: the memo now evicts an empty result so the next caller retries,
+  while callers that arrive mid-flight still share one promise.
+
+The four local `PyqQuestion` declarations the routes had drifted apart on are
+gone. The store owns the shape, and types `options` and `type` the way the
+baker actually emits them — the baked options are `{label, text}[]` objects and
+integers carry `[]`, both of which a consumer had been re-declaring slightly
+wrong.
+
+### 27.2 The result page's question review was dumped, not paged
+
+A 75-question paper built 75 `<details>` subtrees, each carrying its options
+and worked solution, the moment the result screen opened — on a low-end phone
+that is a visible stall before anything on the page is interactive. It now
+pages at 20 on the same helpers the paper list uses, with no paginator at all
+for a short drill.
+
+The elision hazard is covered: a run of exactly one hidden page is shown rather
+than elided, and the suite asserts every page of a full paper is reachable. The
+probe that proved this check has teeth used a deliberately naive window that
+elides any gap, including runs of one, and confirmed it leaves pages
+unreachable while the shipped helper leaves none. The scope is stated honestly
+in the test: with four pages every page is on screen or one click from one that
+is; at ten pages that is no longer true of _any_ windowed paginator, so the
+claim is not made there.
+
+## 28. What is left, and why it is left
+
+| Item                                           | State            | Why                                                                                                                                     |
+| ---------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 6 device QA (5 breakpoints × light/dark) | not done         | Needs a real browser or a device lab. Static checks cannot confirm touch-target size, contrast or scroll behaviour on a physical phone. |
+| A1 Snap & Solve                                | not started      | Needs a vision API key the sandbox does not have.                                                                                       |
+| A6 peer / study-partner layer                  | not started      | Deliberately. See below.                                                                                                                |
+| Phase 2 — 14 further JEE 2026 papers           | not started      | The source PDFs are gitignored and absent; transcribing them needs the files.                                                           |
+| Legacy PDF paper builder                       | product decision | The React planner still cannot parse an arbitrary PDF the student brings. The legacy shell can, and is kept for exactly that.           |
+
+**A6 is deferred on purpose, not skipped for time.** `docs/NEXT-FEATURES-RESEARCH.md`
+§A6 asks for shared Pomodoro rooms, a public leaderboard and study-partner
+matching, and its own caveat is that it "can backfire (comparison/pressure)"
+and should come "only after trust built". This app is local-first: there is no
+peer data source anywhere in the repository, so a leaderboard would be a
+rendered lie and study-partner matching would have nothing to match on. The
+accountability half of A6's intent is already delivered by A5 — the shareable
+parent/mentor one-pager — which puts a real person who already knows the
+student in front of their progress without inventing strangers to compare
+against. If a backend ever arrives, the honest version of A6 is a private,
+rotating comparison against a named partner who opted in, never a public board.
+
 ## Verification
 
-Current gate on `HEAD` (`a63726c`):
+Current gate on `HEAD` (`acf2057`):
 
 - `tsc --noEmit` — 0 errors
-- `vitest run` — 638 passed (36 suites)
+- `vitest run` — 680 passed (38 suites)
 - `npm run lint` — 0 errors, 9 pre-existing warnings
 - `npm run validate:all` — exit 0
 - `vite build` — exit 0
 - All 16 routes — HTTP 200
+- `validate:data` — 10 offline validators, 36–309 ms each
