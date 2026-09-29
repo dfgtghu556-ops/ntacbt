@@ -200,6 +200,11 @@ describe("focus is never removed without a replacement", () => {
    * `outline-none` with nothing in its place leaves a keyboard user with no
    * idea where they are.
    *
+   * Both `focus:` and `focus-visible:` count — the shadcn primitives use the
+   * latter, and a class list of `focus-visible:outline-none focus-visible:ring-1`
+   * is a correct pairing, not an offender. `focus-within:` counts for the
+   * enclosing element too.
+   *
    * The indicator does not have to be on the same element. The two search bars
    * put it on the wrapper with `focus-within:ring-2`, which is the better
    * treatment for a control that spans a whole pill-shaped container — so an
@@ -220,9 +225,11 @@ describe("focus is never removed without a replacement", () => {
       for (const m of classLists) {
         const cls = m[1] ?? m[2] ?? "";
         if (!cls.includes("outline-none")) continue;
-        if (/focus:(ring|border|outline|visible)/.test(cls)) continue;
+        if (/focus(?:-visible)?:(ring|border|outline)/.test(cls)) continue;
         // The ring may live on the enclosing element.
-        if (/focus-within:(ring|border|outline)/.test(enclosingClassName(src, m.index ?? 0))) {
+        if (/focus(?:-within|-visible)?:(ring|border|outline)/.test(
+          enclosingClassName(src, m.index ?? 0),
+        )) {
           continue;
         }
         offenders.push(`${path}:${src.slice(0, m.index).split("\n").length}  ${cls.slice(0, 60)}`);
