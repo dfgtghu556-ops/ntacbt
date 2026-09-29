@@ -356,238 +356,291 @@ function Dashboard() {
       {/* A9 — XP, level and badges. Earning-based, never guilt. */}
       {awards ? <AwardsCard awards={awards} /> : null}
 
-      {/* ─── Key stats ─── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <ProgressCard title="Today's plan" value={planPct} />
-        <StreakCard humane={humane} streak={streak} />
-        <StatCard
-          icon={Clock}
-          label="Focus today"
-          value={`${focusMin}m`}
-          sub="Tracked focus"
-          accent="text-blue-600"
-          bg="bg-blue-600/10"
-        />
-        <StatCard
-          icon={Target}
-          label="Accuracy"
-          value={`${snapshot.accuracy}%`}
-          sub={`${snapshot.marks}/${snapshot.maxMarks} marks`}
-          accent="text-violet-600"
-          bg="bg-violet-600/10"
-        />
-      </div>
-
-      {/* ─── F7: JEE + Board dual-lane readiness ─── */}
-      {dual ? <DualLane dual={dual} /> : null}
-
-      {/* ─── A3: Rank / College predictor "Mock → Reality" ─── */}
-      {prediction && prediction.maxMarks > 0 ? <RankPredictor prediction={prediction} /> : null}
-
-      {/* ─── Quick actions (incl. F8 5-min micro-win) ─── */}
-      <section>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-          <Sparkles className="h-4 w-4 text-primary" /> Quick actions
-        </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <QuickAction
-            href="/app/studytube"
-            icon={MonitorPlay}
-            title="StudyTube"
-            sub="Watch + practice"
-            accent="from-red-500/10 to-red-500/5"
-          />
-          <QuickAction
-            href="/app/pyq"
-            icon={BarChart3}
-            title="PYQ papers"
-            sub="Full-length papers"
-            accent="from-blue-500/10 to-blue-500/5"
-          />
-          <QuickAction
-            href="/app/planner"
-            icon={BookOpen}
-            title="Planner"
-            sub="Adaptive plan"
-            accent="from-violet-500/10 to-violet-500/5"
-          />
-          <QuickAction
-            href="#micro-win"
-            icon={Zap}
-            title="5-min micro win"
-            sub={humane.microWin}
-            accent="from-orange-500/10 to-orange-500/5"
-          />
+      {/* ─── Continue learning: the next surface, always one tap away ─── */}
+      <section className="rounded-2xl border bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Keep going</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Lessons, papers and the planner — pick up wherever you left off.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/app/studytube"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"
+            >
+              <MonitorPlay className="h-3.5 w-3.5" /> Continue learning
+            </Link>
+            <Link
+              to="/app/planner"
+              className="inline-flex items-center gap-1.5 rounded-full border border-input px-3 py-2 text-xs"
+            >
+              <BookOpen className="h-3.5 w-3.5" /> Open planner
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ─── F4: Mistake-DNA micro-drill ─── */}
-      {microDrill.length ? (
-        <section id="micro-win" className="scroll-mt-20">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <Repeat className="h-4 w-4 text-primary" /> Mistake-DNA micro-drill
-            <span className="ml-auto text-xs font-normal text-muted-foreground">
-              Active recall — say the answer, then flip to check.
-            </span>
-          </div>
-          <MicroDrillPanel cards={microDrill} />
-        </section>
-      ) : null}
-
-      {/* ─── Focus row ─── */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Recent performance" icon={<TrendingUp className="h-4 w-4 text-blue-600" />}>
-          {hasData ? (
-            <div className="space-y-2">
-              {snapshot.recentTrend.slice(0, 5).map((p) => (
-                <div
-                  key={p.at}
-                  className="flex items-center justify-between rounded-xl border bg-muted/20 px-3 py-2 text-sm"
-                >
-                  <span className="text-muted-foreground">
-                    {new Date(p.at).toLocaleDateString()}
-                  </span>
-                  <span className="font-semibold">
-                    {p.marks} marks · <span className="text-foreground">{p.accuracy}%</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyPanel text="Submit a mock or PYQ paper and your trend will appear here." />
-          )}
-        </Panel>
-
-        <Panel title="Weakest topic" icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}>
-          {snapshot.weakTopics.length ? (
-            <ul className="space-y-2">
-              {snapshot.weakTopics.slice(0, 3).map((w) => (
-                <li
-                  key={`${w.subject}-${w.chapter}-${w.topic}`}
-                  className="rounded-xl border bg-muted/20 px-3 py-2 text-sm"
-                >
-                  <div className="font-semibold">
-                    {w.subject} — {w.chapter}
-                  </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">{w.reason}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyPanel text="No weak topics yet — do a short drill to get evidence-based targeting." />
-          )}
-          <Link
-            to="/app/studytube"
-            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-          >
-            Find targeted lectures <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </Panel>
-
-        <Panel title="Study plan" icon={<LineChart className="h-4 w-4 text-violet-600" />}>
-          <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Syllabus completion</span>
-            <span className="font-semibold text-foreground">{snapshot.syllabusCompletionPct}%</span>
-          </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-blue-600"
-              style={{ width: `${snapshot.syllabusCompletionPct}%` }}
+      {/* ─── Deep analytics, behind a disclosure ───
+          Phase 6: "optional deep analytics behind disclosure". Everything below
+          this line is interesting rather than actionable, and a student who has
+          just been told what to do should not have to scroll past four charts to
+          find it. A native disclosure element is used, so it is keyboard-openable
+          and works with JS disabled. */}
+      <details className="rounded-2xl border bg-card p-4 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <span className="text-sm font-semibold">Deep analytics</span>
+          <span className="text-xs text-muted-foreground">
+            {hasData ? "Readiness, rank estimate, trends" : "Nothing measured yet"}
+          </span>
+        </summary>
+        <div className="mt-4 space-y-6">
+          {/* ─── Key stats ─── */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ProgressCard title="Today's plan" value={planPct} />
+            <StreakCard humane={humane} streak={streak} />
+            <StatCard
+              icon={Clock}
+              label="Focus today"
+              value={`${focusMin}m`}
+              sub="Tracked focus"
+              accent="text-blue-600"
+              bg="bg-blue-600/10"
+            />
+            <StatCard
+              icon={Target}
+              label="Accuracy"
+              value={`${snapshot.accuracy}%`}
+              sub={`${snapshot.marks}/${snapshot.maxMarks} marks`}
+              accent="text-violet-600"
+              bg="bg-violet-600/10"
             />
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {today.totalTasks > 0
-              ? `${today.doneTasks}/${today.totalTasks} tasks done today · ${today.completedMinutes}/${today.plannedMinutes} min`
-              : "Planner se aaj ke tasks set karo, phir progress yahan dikhega."}
-          </p>
-          <Link
-            to="/app/planner"
-            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+
+          {/* ─── F7: JEE + Board dual-lane readiness ─── */}
+          {dual ? <DualLane dual={dual} /> : null}
+
+          {/* ─── A3: Rank / College predictor "Mock → Reality" ─── */}
+          {prediction && prediction.maxMarks > 0 ? <RankPredictor prediction={prediction} /> : null}
+
+          {/* ─── Quick actions (incl. F8 5-min micro-win) ─── */}
+          <section>
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" /> Quick actions
+            </div>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <QuickAction
+                href="/app/studytube"
+                icon={MonitorPlay}
+                title="StudyTube"
+                sub="Watch + practice"
+                accent="from-red-500/10 to-red-500/5"
+              />
+              <QuickAction
+                href="/app/pyq"
+                icon={BarChart3}
+                title="PYQ papers"
+                sub="Full-length papers"
+                accent="from-blue-500/10 to-blue-500/5"
+              />
+              <QuickAction
+                href="/app/planner"
+                icon={BookOpen}
+                title="Planner"
+                sub="Adaptive plan"
+                accent="from-violet-500/10 to-violet-500/5"
+              />
+              <QuickAction
+                href="#micro-win"
+                icon={Zap}
+                title="5-min micro win"
+                sub={humane.microWin}
+                accent="from-orange-500/10 to-orange-500/5"
+              />
+            </div>
+          </section>
+
+          {/* ─── F4: Mistake-DNA micro-drill ─── */}
+          {microDrill.length ? (
+            <section id="micro-win" className="scroll-mt-20">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                <Repeat className="h-4 w-4 text-primary" /> Mistake-DNA micro-drill
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                  Active recall — say the answer, then flip to check.
+                </span>
+              </div>
+              <MicroDrillPanel cards={microDrill} />
+            </section>
+          ) : null}
+
+          {/* ─── Focus row ─── */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel
+              title="Recent performance"
+              icon={<TrendingUp className="h-4 w-4 text-blue-600" />}
+            >
+              {hasData ? (
+                <div className="space-y-2">
+                  {snapshot.recentTrend.slice(0, 5).map((p) => (
+                    <div
+                      key={p.at}
+                      className="flex items-center justify-between rounded-xl border bg-muted/20 px-3 py-2 text-sm"
+                    >
+                      <span className="text-muted-foreground">
+                        {new Date(p.at).toLocaleDateString()}
+                      </span>
+                      <span className="font-semibold">
+                        {p.marks} marks · <span className="text-foreground">{p.accuracy}%</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel text="Submit a mock or PYQ paper and your trend will appear here." />
+              )}
+            </Panel>
+
+            <Panel
+              title="Weakest topic"
+              icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
+            >
+              {snapshot.weakTopics.length ? (
+                <ul className="space-y-2">
+                  {snapshot.weakTopics.slice(0, 3).map((w) => (
+                    <li
+                      key={`${w.subject}-${w.chapter}-${w.topic}`}
+                      className="rounded-xl border bg-muted/20 px-3 py-2 text-sm"
+                    >
+                      <div className="font-semibold">
+                        {w.subject} — {w.chapter}
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">{w.reason}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyPanel text="No weak topics yet — do a short drill to get evidence-based targeting." />
+              )}
+              <Link
+                to="/app/studytube"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+              >
+                Find targeted lectures <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Panel>
+
+            <Panel title="Study plan" icon={<LineChart className="h-4 w-4 text-violet-600" />}>
+              <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Syllabus completion</span>
+                <span className="font-semibold text-foreground">
+                  {snapshot.syllabusCompletionPct}%
+                </span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-blue-600"
+                  style={{ width: `${snapshot.syllabusCompletionPct}%` }}
+                />
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {today.totalTasks > 0
+                  ? `${today.doneTasks}/${today.totalTasks} tasks done today · ${today.completedMinutes}/${today.plannedMinutes} min`
+                  : "Planner se aaj ke tasks set karo, phir progress yahan dikhega."}
+              </p>
+              <Link
+                to="/app/planner"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+              >
+                Open planner <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Panel>
+          </div>
+
+          {/* ─── F9: Wellness / balance ─── */}
+          <WellnessStrip focusMin={focusMin} plannedMin={today.plannedMinutes} />
+
+          {/* ─── Insights ─── */}
+          <section className="grid gap-3 md:grid-cols-3">
+            {(snapshot.messages.good ?? []).slice(0, 1).map((m) => (
+              <InsightCard
+                key={m}
+                icon={CheckCircle2}
+                tone="green"
+                title="What's going well"
+                body={m}
+              />
+            ))}
+            {(snapshot.messages.holdingBack ?? []).slice(0, 1).map((m) => (
+              <InsightCard
+                key={m}
+                icon={AlertTriangle}
+                tone="amber"
+                title="Holding you back"
+                body={m}
+              />
+            ))}
+            {(snapshot.messages.next ?? []).slice(0, 1).map((m) => (
+              <InsightCard key={m} icon={Sparkles} tone="blue" title="What to do next" body={m} />
+            ))}
+          </section>
+
+          {/* ─── F10: Trust — how we compute this ─── */}
+          <Panel
+            title="Why you can trust these numbers"
+            icon={<ShieldCheck className="h-4 w-4 text-primary" />}
           >
-            Open planner <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </Panel>
-      </div>
+            <p className="text-sm text-muted-foreground">
+              The #1 complaint students have about big test-prep apps is a dashboard that shows
+              wrong data. Here every number is computed from your real plan, real watch-minutes,
+              real attempts and real focus minutes — nothing is guessed, nothing is a promo.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <TrustLine label="Plan completion" how="Completed tasks / total planned tasks." />
+              <TrustLine
+                label="Accuracy"
+                how="Correct / (correct + wrong) across submitted tests."
+              />
+              <TrustLine
+                label="Survival score"
+                how="Weighted blend of plan, accuracy, weak topics, mistakes and consistency."
+              />
+              <TrustLine
+                label="Streak"
+                how="Consecutive days of ≥25 min real focus or a completed task."
+              />
+            </div>
+          </Panel>
 
-      {/* ─── F9: Wellness / balance ─── */}
-      <WellnessStrip focusMin={focusMin} plannedMin={today.plannedMinutes} />
-
-      {/* ─── Insights ─── */}
-      <section className="grid gap-3 md:grid-cols-3">
-        {(snapshot.messages.good ?? []).slice(0, 1).map((m) => (
-          <InsightCard
-            key={m}
-            icon={CheckCircle2}
-            tone="green"
-            title="What's going well"
-            body={m}
-          />
-        ))}
-        {(snapshot.messages.holdingBack ?? []).slice(0, 1).map((m) => (
-          <InsightCard
-            key={m}
-            icon={AlertTriangle}
-            tone="amber"
-            title="Holding you back"
-            body={m}
-          />
-        ))}
-        {(snapshot.messages.next ?? []).slice(0, 1).map((m) => (
-          <InsightCard key={m} icon={Sparkles} tone="blue" title="What to do next" body={m} />
-        ))}
-      </section>
-
-      {/* ─── F10: Trust — how we compute this ─── */}
-      <Panel
-        title="Why you can trust these numbers"
-        icon={<ShieldCheck className="h-4 w-4 text-primary" />}
-      >
-        <p className="text-sm text-muted-foreground">
-          The #1 complaint students have about big test-prep apps is a dashboard that shows wrong
-          data. Here every number is computed from your real plan, real watch-minutes, real attempts
-          and real focus minutes — nothing is guessed, nothing is a promo.
-        </p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <TrustLine label="Plan completion" how="Completed tasks / total planned tasks." />
-          <TrustLine label="Accuracy" how="Correct / (correct + wrong) across submitted tests." />
-          <TrustLine
-            label="Survival score"
-            how="Weighted blend of plan, accuracy, weak topics, mistakes and consistency."
-          />
-          <TrustLine
-            label="Streak"
-            how="Consecutive days of ≥25 min real focus or a completed task."
-          />
+          {/* ─── Mock test CTA ─── */}
+          <section className="flex flex-wrap items-center gap-4 rounded-2xl border bg-gradient-to-br from-primary/5 to-blue-500/5 p-5">
+            <div className="flex-1">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <Rocket className="h-4 w-4 text-primary" /> NTA-style mock test
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Full-length ya diagnostic run. Marking NTA rules (+4/−1, numerical no penalty)
+                follow karta hai aur result aapke Mistake Doctor + readiness model me feed hota hai.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/cbt"
+                search={{ name: "Quick mixed diagnostic drill" }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Play className="h-4 w-4" /> Start diagnostic
+              </Link>
+              <Link
+                to="/app/pyq"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-input px-4 py-2 text-sm"
+              >
+                Full-length papers
+              </Link>
+            </div>
+          </section>
         </div>
-      </Panel>
-
-      {/* ─── Mock test CTA ─── */}
-      <section className="flex flex-wrap items-center gap-4 rounded-2xl border bg-gradient-to-br from-primary/5 to-blue-500/5 p-5">
-        <div className="flex-1">
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
-            <Rocket className="h-4 w-4 text-primary" /> NTA-style mock test
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Full-length ya diagnostic run. Marking NTA rules (+4/−1, numerical no penalty) follow
-            karta hai aur result aapke Mistake Doctor + readiness model me feed hota hai.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/cbt"
-            search={{ name: "Quick mixed diagnostic drill" }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-          >
-            <Play className="h-4 w-4" /> Start diagnostic
-          </Link>
-          <Link
-            to="/app/pyq"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-input px-4 py-2 text-sm"
-          >
-            Full-length papers
-          </Link>
-        </div>
-      </section>
+      </details>
     </div>
   );
 }
