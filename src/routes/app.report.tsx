@@ -13,6 +13,7 @@ import {
   Gauge,
   Layers,
   ListChecks,
+  Share2,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -20,6 +21,13 @@ import { DataStore } from "@/lib/store";
 import { loadFocusStore } from "@/features/focus/focus";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { buildMentorReport, type MentorReport } from "@/features/mentor/report";
+import {
+  PRIVACY,
+  buildWeeklyReport,
+  reportToMarkdown,
+  reportToText,
+  type ShareableReport,
+} from "@/features/report/share";
 
 export const Route = createFileRoute("/app/report")({
   component: Report,
@@ -52,19 +60,45 @@ function pctBar(value: number, color?: string) {
 
 function Report() {
   const [report, setReport] = useState<MentorReport | null>(null);
+  const [weekly, setWeekly] = useState<ShareableReport | null>(null);
+  const [copied, setCopied] = useState<"text" | "markdown" | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const store = new DataStore();
+    const focus = loadFocusStore();
+    const studytube = loadStudyTubeProgress();
     setReport(
       buildMentorReport({
         store,
-        focus: loadFocusStore(),
-        studytube: loadStudyTubeProgress(),
+        focus,
+        studytube,
       }),
     );
+    // The shareable one-pager is built from the same stores through an explicit
+    // allowlist, so it can never carry the private fields the mentor report has
+    // access to.
+    try {
+      setWeekly(buildWeeklyReport({ store, focus, studytube }));
+    } catch {
+      setWeekly(null);
+    }
     setLoaded(true);
   }, []);
+
+  async function copy(label: "text" | "markdown") {
+    if (!weekly) return;
+    const body = label === "text" ? reportToText(weekly) : reportToMarkdown(weekly);
+    try {
+      await navigator.clipboard.writeText(body);
+      setCopied(label);
+      window.setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // Clipboard is unavailable (insecure context, denied permission). The
+      // textarea below is the fallback, so a failure here is not an error.
+      setCopied(null);
+    }
+  }
 
   if (!loaded || !report) {
     return <div className="h-96 animate-pulse rounded-xl border bg-muted/40" />;
@@ -111,6 +145,10 @@ function Report() {
         </div>
         <p className="mt-4 text-sm text-muted-foreground">{report.summary}</p>
       </section>
+
+      {/* A5 — shareable parent / mentee one-pager. Sits directly under the hero
+          because it is the thing a student came to this page to hand over. */}
+      {weekly ? <SharePanel weekly={weekly} copied={copied} onCopy={copy} /> : null}
 
       {/* KPI grid */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -420,6 +458,136 @@ function StatBox({ label, value, tone }: { label: string; value: string; tone?: 
     <div className="rounded-lg border p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`mt-1 text-xl font-bold ${tone === "warn" ? "text-amber-600" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * SharePanel — the A5 parent / mentee one-pager.
+ *
+ * Two rules shape this component:
+ *
+ *  1. **It shows the student what will be shared BEFORE they share it.** The
+ *     full one-pager is rendered inline, so nobody has to trust that the
+ *     clipboard copy matches what they read.
+ *  2. **It states the privacy boundary out loud.** The allowlist is printed
+ *     under the copy, because "no private data" is a claim the student should be
+ *     able to check rather than take on faith.
+ * ------------------------------------------------------------------ */
+
+function SharePanel({
+  weekly,
+  copied,
+  onCopy,
+}: {
+  weekly: ShareableReport;
+  copied: "text" | "markdown" | null;
+  onCopy: (label: "text" | "markdown") => void;
+}) {
+  const [showRaw, setShowRaw] = useState(false);
+  const raw = showRaw ? reportToMarkdown(weekly) : reportToText(weekly);
+
+  return (
+    <section className="rounded-2xl border p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Share2 className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Share with a parent or mentor</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              A read-only one-pager: attendance, completion, weak chapters and the next step.{" "}
+              {weekly.window.from} → {weekly.window.to}.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => onCopy("text")}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"
+          >
+            <Share2 className="h-3.5 w-3.5" /> {copied === "text" ? "Copied" : "Copy as text"}
+          </button>
+          <button
+            onClick={() => onCopy("markdown")}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium"
+          >
+            {copied === "markdown" ? "Copied" : "Copy as Markdown"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ShareStat
+          label="Days studied"
+          value={`${weekly.attendance.daysStudied}/${weekly.attendance.daysInWindow}`}
+        />
+        <ShareStat label="Focus time" value={`${weekly.effort.focusMinutes} min`} />
+        <ShareStat
+          label="Tasks done"
+          value={`${weekly.completion.tasksDone}/${weekly.completion.tasksPlanned}`}
+        />
+        <ShareStat
+          label="Mean accuracy"
+          value={
+            weekly.evidence.accuracy === null ? "not enough data" : `${weekly.evidence.accuracy}%`
+          }
+        />
+      </div>
+
+      <div className="mt-4 rounded-xl border bg-muted/30 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Exactly what gets shared
+          </h3>
+          <button onClick={() => setShowRaw((v) => !v)} className="text-xs text-primary underline">
+            {showRaw ? "Show plain text" : "Show Markdown"}
+          </button>
+        </div>
+        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed">
+          {raw}
+        </pre>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border p-3">
+          <h4 className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400">
+            <BadgeCheck className="h-3.5 w-3.5" /> Included
+          </h4>
+          <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+            {PRIVACY.included.map((item) => (
+              <li key={item}>· {item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-xl border p-3">
+          <h4 className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
+            <CircleAlert className="h-3.5 w-3.5" /> Never included
+          </h4>
+          <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+            {PRIVACY.excluded.map((item) => (
+              <li key={item}>· {item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        The one-pager is built from an explicit allowlist, so a field that is not listed above is
+        never read — it cannot leak even by accident.
+      </p>
+    </section>
+  );
+}
+
+function ShareStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

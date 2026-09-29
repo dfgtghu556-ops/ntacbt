@@ -53,16 +53,34 @@ export function localKey(ts: number): string {
   ).padStart(2, "0")}`;
 }
 
+/**
+ * Drop anything that is not a real session.
+ *
+ * `loadFocusStore` parses localStorage, so a partially-written or hand-edited
+ * entry can leave a null or field-less object in the array. Every consumer here
+ * reads `.completed`, `.seconds` and `.startedAt` unguarded, so one bad entry
+ * used to throw and blank the dashboard instead of degrading. Filtering once at
+ * the top of each helper is cheaper and safer than guarding every read.
+ */
+function validSessions(sessions: FocusSession[]): FocusSession[] {
+  return (Array.isArray(sessions) ? sessions : []).filter(
+    (s): s is FocusSession =>
+      !!s && typeof s.startedAt === "number" && typeof s.seconds === "number",
+  );
+}
+
 export function todayFocusSeconds(sessions: FocusSession[], now: number): number {
   const key = localKey(now);
-  return sessions
+  return validSessions(sessions)
     .filter((s) => s.completed && localKey(s.startedAt) === key)
     .reduce((n, s) => n + s.seconds, 0);
 }
 
 export function focusStreak(sessions: FocusSession[], now: number, minSec = 25 * 60): number {
   const days = new Set(
-    sessions.filter((s) => s.completed && s.seconds >= minSec).map((s) => localKey(s.startedAt)),
+    validSessions(sessions)
+      .filter((s) => s.completed && s.seconds >= minSec)
+      .map((s) => localKey(s.startedAt)),
   );
   let streak = 0;
   const cursor = new Date(now);
