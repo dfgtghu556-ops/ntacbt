@@ -9,12 +9,15 @@ import {
   Layers,
   Play,
   RefreshCw,
+  RotateCcw,
   Sparkles,
 } from "lucide-react";
 import { DataStore, localDayKey, type PlannerTaskRow } from "@/lib/store";
 import type { WeakTopic } from "@/features/dashboard/types";
 import { computeReadiness } from "@/features/readiness/readiness";
 import { adaptTasks, type AdaptedTask } from "@/features/planner/adapt";
+import { buildTodoPlan, goalProgress, recoveryNote, type TodoItem } from "@/features/planner/todo";
+import { loadDoneIds, toggleDoneId, clearDone } from "@/features/planner/todo-store";
 import {
   syllabusCoverage,
   type ChapterState,
@@ -37,6 +40,7 @@ function Planner() {
   const [adapted, setAdapted] = useState(true);
   const [showAll, setShowAll] = useState(true);
   const [loaded, setLoaded] = useState(false);
+  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const store = new DataStore();
@@ -48,6 +52,7 @@ function Planner() {
       .filter((t) => t && t.date)
       .sort((a, b) => String(a.date).localeCompare(String(b.date)));
     setAllTasks(sorted);
+    setDoneIds(loadDoneIds());
     setLoaded(true);
   }, []);
 
@@ -116,6 +121,14 @@ function Planner() {
           </button>
         </div>
       </section>
+
+      {/* F1 — today's goals. The page still leads with the full plan below;
+          this is the surface a student actually acts on, and it counts goals
+          rather than minutes because "3 of 5 goals done" is something the
+          student did and "2.5 hours sat" is something that happened to them. */}
+      {loaded ? (
+        <TodayGoals tasks={allTasks} weak={weak} doneIds={doneIds} onToggle={setDoneIds} />
+      ) : null}
 
       {loaded ? (
         <section className="rounded-2xl border border-primary/30 bg-accent/40 p-3 text-sm">
@@ -407,5 +420,176 @@ function CoveragePanel({ coverage }: { coverage: SyllabusCoverage }) {
         </div>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * TodayGoals — the F1 surface.
+ *
+ * Goal-based, not time-based. The headline number is goals done of goals on
+ * today's list; the minutes are shown but never as the measure of the day.
+ *
+ * Three things this does that the timetable below cannot:
+ *  - it carries a missed goal forward with the date it was meant for, so a slip
+ *    is visible instead of silently re-appearing tomorrow;
+ *  - when today is finished it offers exactly one more thing, rather than
+ *    leaving the student at a dead end or pulling a whole future day forward;
+ *  - every item states why it is where it is, from the student's own answers.
+ *
+ * The checkbox writes to this app's own overlay key, never to the stored plan.
+ */
+function TodayGoals({
+  tasks,
+  weak,
+  doneIds,
+  onToggle,
+}: {
+  tasks: PlannerTaskRow[];
+  weak: WeakTopic[];
+  doneIds: Set<string>;
+  onToggle: (next: Set<string>) => void;
+}) {
+  const plan = useMemo(
+    () => buildTodoPlan({ rows: tasks, weak, doneOverlay: doneIds, now: Date.now() }),
+    [tasks, weak, doneIds],
+  );
+  const overall = useMemo(() => goalProgress(tasks, doneIds), [tasks, doneIds]);
+  const recovery = recoveryNote(plan);
+
+  const pct = Math.round(plan.progress.fraction * 100);
+
+  return (
+    <section className="rounded-2xl border bg-card p-4" aria-labelledby="today-goals-heading">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="today-goals-heading" className="text-lg font-semibold">
+            Today's goals
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {plan.items.length > 0
+              ? `${plan.progress.done} of ${plan.progress.total} done · ${plan.progress.remainingMin} min of work left`
+              : "Nothing scheduled for today."}
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {overall.done} of {overall.total} goals in the whole plan
+        </span>
+      </div>
+
+      {plan.items.length > 0 ? (
+        <div
+          className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Today's goal progress"
+        >
+          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+        </div>
+      ) : null}
+
+      {plan.note ? (
+        <p className="mt-3 rounded-2xl border border-dashed p-3 text-sm text-muted-foreground">
+          {plan.note}
+        </p>
+      ) : null}
+
+      {recovery ? (
+        <p className="mt-3 flex items-start gap-2 rounded-2xl border bg-muted/40 p-3 text-sm">
+          <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{recovery}</span>
+        </p>
+      ) : null}
+
+      {plan.summary ? <p className="mt-3 text-sm text-muted-foreground">{plan.summary}</p> : null}
+
+      {plan.items.length > 0 ? (
+        <ul className="mt-3 grid gap-2">
+          {plan.items.map((it) => (
+            <GoalRow
+              key={it.id}
+              item={it}
+              done={it.status === "done"}
+              onToggle={() => onToggle(toggleDoneId(it.id, doneIds))}
+            />
+          ))}
+        </ul>
+      ) : null}
+
+      {plan.finishedEarly && plan.pullForward ? (
+        <div className="mt-3 rounded-2xl border bg-muted/40 p-3">
+          <p className="text-sm font-medium">Today's goals are done.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            One more is waiting whenever you want it — {plan.pullForward.subject},{" "}
+            {plan.pullForward.chapter} ({plan.pullForward.estMin} min). Stopping here is a complete
+            day, not an unfinished one.
+          </p>
+        </div>
+      ) : null}
+
+      {doneIds.size > 0 ? (
+        <button
+          type="button"
+          onClick={() => {
+            clearDone();
+            onToggle(new Set());
+          }}
+          className="mt-3 text-xs text-muted-foreground underline hover:text-foreground"
+        >
+          Clear {doneIds.size} checked goal{doneIds.size === 1 ? "" : "s"}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+function GoalRow({
+  item,
+  done,
+  onToggle,
+}: {
+  item: TodoItem;
+  done: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li
+      className={
+        done
+          ? "flex items-start gap-3 rounded-2xl border bg-muted/40 p-3 opacity-70"
+          : "flex items-start gap-3 rounded-2xl border p-3"
+      }
+    >
+      <input
+        type="checkbox"
+        checked={done}
+        onChange={onToggle}
+        aria-label={`Mark ${item.chapter} (${item.kind}) done`}
+        className="mt-1 h-4 w-4 shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">
+            {item.subject} · {item.chapter}
+          </span>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            {item.kind}
+          </span>
+          {item.isCarryOver ? (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+              carried from {item.carriedFrom}
+            </span>
+          ) : null}
+          {item.isWeakTarget ? (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">
+              weak target
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{item.reason}</p>
+      </div>
+      <span className="shrink-0 text-xs text-muted-foreground">{item.estMin} min</span>
+    </li>
   );
 }
