@@ -1,15 +1,51 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { pageSummary, pageWindow, paginate } from "@/features/ui/pagination";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
 import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
 import { toSubject } from "@/features/academics/subject";
 import { saveCbtTest } from "@/features/cbt/store";
-import { loadPaperIndex, loadPaperWithFallback, type PyqQuestion } from "@/features/pyq/store";
+import {
+  loadPaperIndex,
+  loadPaperWithFallback,
+  type PaperMeta,
+  type PyqQuestion,
+} from "@/features/pyq/store";
 
 type PyqSource = "api" | "baked" | "error";
 
+/**
+ * The paper list, read on the server at request time.
+ *
+ * This is the fix for the app's biggest publishing gap. Every data route used to
+ * fetch in `useEffect`, so the HTML shipped with a spinner and no content —
+ * verified with `curl /app/pyq`, which returned the heading and the literal
+ * string "Loading papers" and none of the 375 questions. A crawler therefore saw
+ * an empty page, and the entire value of the app — real previous-year questions
+ * — did not exist as far as search was concerned.
+ *
+ * The baked files are build artifacts on disk, so reading them in a loader costs
+ * nothing and needs no network. The client effect below still runs afterwards
+ * and upgrades to the live library API when it can reach the upstream snapshot,
+ * so this only ever *seeds* the render; it never removes the fuller list.
+ */
+const loadBakedPapers = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const raw = readFileSync(join(process.cwd(), "public", "pyq", "index.json"), "utf8");
+    const data = JSON.parse(raw) as { papers?: PaperMeta[]; index?: PaperMeta[] };
+    return data.papers ?? data.index ?? [];
+  } catch {
+    // A missing or partial bake is a normal state. Return nothing and let the
+    // client effect show its own error rather than failing the whole render.
+    return [];
+  }
+});
+
 export const Route = createFileRoute("/app/pyq")({
+  loader: () => loadBakedPapers(),
   component: Pyq,
 });
 
@@ -31,9 +67,15 @@ interface PaperFile {
 
 function Pyq() {
   const navigate = useNavigate();
-  const [papers, setPapers] = useState<Paper[]>([]);
+  // Seeded from the server so the first HTML already lists the papers.
+  const baked = Route.useLoaderData();
+  const [papers, setPapers] = useState<Paper[]>(() => (baked as Paper[]) ?? []);
   const [source, setSource] = useState<PyqSource>("baked");
-  const [loading, setLoading] = useState(true);
+  // Only show the spinner when there is nothing to show. The loader has already
+  // put the baked papers in `papers`, so gating the render on this flag would
+  // hide them on the server and ship a spinner instead of content — which is
+  // the exact defect this loader was added to fix.
+  const [loading, setLoading] = useState(baked.length === 0);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Paper | null>(null);
   /**
