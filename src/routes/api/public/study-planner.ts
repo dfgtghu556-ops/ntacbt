@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sanitizePlannerRequest } from "../../../features/planner/normalize";
+import { resolveScope } from "../../../features/planner/scope";
 import {
   planRecommendations,
   parseSearchPage,
@@ -77,6 +78,11 @@ export const Route = createFileRoute("/api/public/study-planner")({
           req.maxMinutes,
           req.minMinutes,
         ].join("|");
+        // Syllabus scope is derived, not fetched, so it is recomputed on a cache
+        // hit too — a cached recommendation list must never report a stale or
+        // missing scope annotation.
+        const scope = resolveScope(req.topic, req.subject, req.target);
+
         const hit = cache.get(key);
         if (hit && Date.now() - hit.at < TTL) {
           return Response.json({
@@ -84,13 +90,14 @@ export const Route = createFileRoute("/api/public/study-planner")({
             fetchedAt: hit.at,
             fallback: hit.fallback,
             cached: true,
+            scope,
           });
         }
 
         const { items, fallback } = await planRecommendations(req, fetchSearch);
         cache.set(key, { at: Date.now(), items, fallback });
         if (cache.size > 500) cache.clear();
-        return Response.json({ items, fetchedAt: Date.now(), fallback });
+        return Response.json({ items, fetchedAt: Date.now(), fallback, scope });
       },
     },
   },
