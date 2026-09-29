@@ -136,10 +136,16 @@ describe("resolveScope — off-syllabus requests", () => {
 
   it("flags a Class XII chapter asked for on the Class XI syllabus", () => {
     const scope = resolveScope("Electrostatics", "Physics", "board11");
-    // Class XI has no published map yet, so the honest verdict is "no map",
-    // never an invented Class XI chapter list.
-    expect(scope.verdict).toBe("no-map");
-    expect(scope.note).toContain("No CBSE Class 11 2026-27 syllabus map is published");
+    // Class XI has its own published map now, so the honest verdict is that
+    // "Electrostatics" is off-syllabus for it — never an invented Class XI
+    // chapter list, and never a silent fall back to the Class XII map.
+    expect(scope.verdict).toBe("off-syllabus");
+    expect(scope.note).toContain('"Electrostatics" is not in the CBSE Class 11 2026-27');
+  });
+
+  it("resolves a real Class XI chapter in the Class XI scope", () => {
+    const scope = resolveScope("Gravitation", "Physics", "board11");
+    expect(scope.verdict).toBe("in-syllabus");
   });
 });
 

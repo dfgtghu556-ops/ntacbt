@@ -15,6 +15,7 @@
 
 import { isCompleteSource, type Source } from "@/features/academics/source";
 import type { Subject } from "@/features/academics/types";
+import { CBSE_CLASS_11_2026_27 } from "./cbse-class-11-2026-27";
 import {
   CBSE_CLASS_12_2026_27,
   assertClassLevelIsolation,
@@ -51,7 +52,7 @@ export interface CurriculumKey {
  * Every published map, newest academic year last so a later one wins on a
  * duplicate key rather than being silently shadowed.
  */
-const MAPS: CurriculumMap[] = [CBSE_CLASS_12_2026_27];
+const MAPS: CurriculumMap[] = [CBSE_CLASS_12_2026_27, CBSE_CLASS_11_2026_27];
 
 /** Look up a map, or `null` when that syllabus is not published. */
 export function curriculumFor(key: CurriculumKey): CurriculumMap | null {
@@ -175,4 +176,11 @@ export function matchCurriculum(
   return miss;
 }
 
-export { CBSE_CLASS_12_2026_27, assertClassLevelIsolation, chaptersOf, theoryMarks, unitOfChapter };
+export {
+  CBSE_CLASS_11_2026_27,
+  CBSE_CLASS_12_2026_27,
+  assertClassLevelIsolation,
+  chaptersOf,
+  theoryMarks,
+  unitOfChapter,
+};

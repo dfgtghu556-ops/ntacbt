@@ -29,11 +29,12 @@ describe("curriculum bridge — scope mapping", () => {
     expect(hasCurriculumMap("JEE_MAIN", "2025-26")).toBe(false);
   });
 
-  it("knows a CBSE_12 map is published but CBSE_11 is not yet", () => {
+  it("knows both CBSE class levels are published for 2026-27", () => {
     expect(hasCurriculumMap("CBSE_12", "2026-27")).toBe(true);
-    // Class XI is in the registry's key space but has no transcribed map yet, so
-    // it must report false rather than fall back to the Class XII map.
-    expect(hasCurriculumMap("CBSE_11", "2026-27")).toBe(false);
+    // Class XI is published now, and it resolves to the Class XI map rather
+    // than falling back to the Class XII one.
+    expect(hasCurriculumMap("CBSE_11", "2026-27")).toBe(true);
+    expect(hasCurriculumMap("CBSE_11", "2027-28")).toBe(false);
   });
 });
 
@@ -116,8 +117,13 @@ describe("curriculum bridge — JEE scope is untouched", () => {
     expect(curriculumChapterName("JEE_MAIN", "2025-26", "Physics", "Electrostatics")).toBeNull();
   });
 
-  it("resolves nothing for the unpublished CBSE_11 scope", () => {
-    expect(hasCurriculumMap(CBSE_11.exam, CBSE_11.academicYear)).toBe(false);
-    expect(chapterForTopic(CBSE_11, "Physics", "Units and Measurement")).toBeNull();
+  it("resolves a published CBSE_11 scope to its own chapters", () => {
+    expect(hasCurriculumMap(CBSE_11.exam, CBSE_11.academicYear)).toBe(true);
+    // The Class XI map's own chapter, resolved — not the Class XII one.
+    expect(chapterForTopic(CBSE_11, "Physics", "Units and Measurements")).toBe(
+      "Units and Measurements",
+    );
+    // And a Class XII chapter must not resolve here.
+    expect(chapterForTopic(CBSE_11, "Physics", "Electrostatics")).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CBSE_CLASS_11_2026_27,
   CBSE_CLASS_12_2026_27,
   allChapters,
   assertClassLevelIsolation,
@@ -20,10 +21,17 @@ const CLASS_12_2026_27 = {
   academicYear: "2026-27",
 };
 
+const CLASS_11_2026_27 = {
+  board: "CBSE" as const,
+  classLevel: 11 as const,
+  academicYear: "2026-27",
+};
+
 describe("curriculum registry", () => {
-  it("publishes exactly one syllabus today", () => {
-    expect(publishedCurricula()).toHaveLength(1);
-    expect(publishedCurricula()[0]).toBe(CBSE_CLASS_12_2026_27);
+  it("publishes both class levels for 2026-27", () => {
+    expect(publishedCurricula()).toHaveLength(2);
+    expect(publishedCurricula()).toContain(CBSE_CLASS_12_2026_27);
+    expect(publishedCurricula()).toContain(CBSE_CLASS_11_2026_27);
   });
 
   it("resolves a map from an explicit key", () => {
@@ -34,8 +42,14 @@ describe("curriculum registry", () => {
     // A student on the 2027-28 syllabus must not be planned against 2026-27
     // chapters, so a miss is null and never a fallback.
     expect(curriculumFor({ ...CLASS_12_2026_27, academicYear: "2027-28" })).toBeNull();
+    expect(curriculumFor({ ...CLASS_11_2026_27, academicYear: "2027-28" })).toBeNull();
     expect(curriculumFor({ ...CLASS_12_2026_27, board: "ICSE" as never })).toBeNull();
-    expect(curriculumFor({ ...CLASS_12_2026_27, classLevel: 11 as never })).toBeNull();
+    // Both class levels are published for 2026-27, so the two must never
+    // resolve each other's map. This is the cross-scope leak Phase F removed.
+    expect(curriculumFor(CLASS_11_2026_27)).toBe(CBSE_CLASS_11_2026_27);
+    expect(curriculumFor(CLASS_12_2026_27)).toBe(CBSE_CLASS_12_2026_27);
+    expect(curriculumFor(CLASS_11_2026_27)).not.toBe(CBSE_CLASS_12_2026_27);
+    expect(curriculumFor(CLASS_12_2026_27)).not.toBe(CBSE_CLASS_11_2026_27);
   });
 
   it("carries a complete provenance record", () => {

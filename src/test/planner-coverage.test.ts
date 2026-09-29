@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { syllabusCoverage } from "@/features/planner/coverage";
+import { curriculumFor } from "@/data/curriculum";
 import type { PlannerTaskRow } from "@/lib/store";
 
 /** A plan row shaped like the store's, with only the fields coverage reads. */
@@ -38,11 +39,23 @@ describe("syllabusCoverage — honest silence", () => {
     expect(c.note).toContain('"unknown"');
   });
 
-  it("measures nothing for the unpublished Class XI map rather than falling back", () => {
-    const c = syllabusCoverage([row("Physics", "Units and Measurement", 60)], "board11");
+  it("measures the real Class XI map rather than falling back to Class XII", () => {
+    const c = syllabusCoverage([row("Physics", "Units and Measurements", 60)], "board11");
     expect(c.key).toEqual({ board: "CBSE", classLevel: 11, academicYear: "2026-27" });
-    expect(c.subjects).toEqual([]);
-    expect(c.note).toContain("not published here yet");
+    // The Class XI map is published, so coverage is measured against it.
+    expect(c.subjects).toHaveLength(3);
+    expect(c.totalChapters).toBe(14 + 9 + 14);
+    // The planned row resolves to its own Class XI chapter, not a Class XII one.
+    const physics = c.subjects.find((s) => s.subject === "Physics");
+    expect(physics?.coveredChapters).toBe(1);
+    expect(c.note).not.toContain("not published here yet");
+  });
+
+  it("still measures nothing for a genuinely unpublished syllabus", () => {
+    const c = syllabusCoverage([row("Physics", "Units and Measurements", 60)], "board11");
+    expect(c.coveredChapters).toBeGreaterThan(0);
+    // 2027-28 is not transcribed, so the honest silence survives there.
+    expect(curriculumFor({ board: "CBSE", classLevel: 11, academicYear: "2027-28" })).toBeNull();
   });
 
   it("survives an empty or malformed plan", () => {

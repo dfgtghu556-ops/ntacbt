@@ -26,164 +26,38 @@
 import type { Source } from "@/features/academics/source";
 import type { Subject } from "@/features/academics/types";
 
-export type BoardId = "CBSE";
-export type ClassLevel = 11 | 12;
+import {
+  assertClassLevelIsolation,
+  buildSubject,
+  chaptersOf,
+  slug,
+  theoryMarks,
+  unitOfChapter,
+  type BoardId,
+  type ClassLevel,
+  type CurriculumChapter,
+  type CurriculumMap,
+  type CurriculumSubject,
+  type CurriculumTopic,
+  type CurriculumUnit,
+  type RawChapter,
+  type RawUnit,
+} from "./build";
 
-/** One topic inside a chapter. */
-export interface CurriculumTopic {
-  id: string;
-  name: string;
-}
-
-/** One chapter inside a unit. */
-export interface CurriculumChapter {
-  id: string;
-  /** The NCERT chapter number, for cross-referencing a textbook. */
-  number: number;
-  name: string;
-  topics: CurriculumTopic[];
-}
-
-/**
- * One unit. `marks` is `null` when the board's published per-unit marks could
- * not be corroborated — never a guessed number.
- */
-export interface CurriculumUnit {
-  id: string;
-  /** Roman numeral as the board prints it, e.g. "III". */
-  numeral: string;
-  name: string;
-  /** Theory marks for this unit, or null when not corroborated. */
-  marks: number | null;
-  chapters: CurriculumChapter[];
-}
-
-export interface CurriculumSubject {
-  subject: Subject;
-  units: CurriculumUnit[];
-}
-
-/** A complete, versioned curriculum map for one class and academic year. */
-export interface CurriculumMap {
-  board: BoardId;
-  classLevel: ClassLevel;
-  academicYear: string;
-  /** Dataset version, so a future syllabus refresh is diffable. */
-  version: string;
-  source: Source;
-  /** Total theory marks across the subject, or null when units are unmarked. */
-  subjects: CurriculumSubject[];
-  note?: string | undefined;
-}
-
-/* ------------------------------------------------------------------ *
- * Helpers for building the map without repeating ids by hand
- * ------------------------------------------------------------------ */
-
-interface RawChapter {
-  n: number;
-  name: string;
-  topics: string[];
-}
-interface RawUnit {
-  numeral: string;
-  name: string;
-  marks: number | null;
-  chapters: RawChapter[];
-}
-
-function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function buildSubject(subject: Subject, rawUnits: RawUnit[]): CurriculumSubject {
-  return {
-    subject,
-    units: rawUnits.map((u, ui) => ({
-      id: `${slug(subject)}-u${ui + 1}-${slug(u.name)}`,
-      numeral: u.numeral,
-      name: u.name,
-      marks: u.marks,
-      chapters: u.chapters.map((c) => ({
-        id: `${slug(subject)}-ch${c.n}-${slug(c.name)}`,
-        number: c.n,
-        name: c.name,
-        topics: c.topics.map((t) => ({ id: `${slug(subject)}-ch${c.n}-${slug(t)}`, name: t })),
-      })),
-    })),
-  };
-}
-
-/** Sum of unit marks, or null when any unit is unmarked. */
-export function theoryMarks(map: CurriculumMap, subject: Subject): number | null {
-  const s = map.subjects.find((x) => x.subject === subject);
-  if (!s) return null;
-  const units = s.units;
-  if (units.length === 0) return null;
-  if (units.some((u) => u.marks === null)) return null;
-  return units.reduce((sum, u) => sum + (u.marks ?? 0), 0);
-}
-
-/** Every chapter in a subject, in board order. */
-export function chaptersOf(map: CurriculumMap, subject: Subject): CurriculumChapter[] {
-  const s = map.subjects.find((x) => x.subject === subject);
-  if (!s) return [];
-  return s.units.flatMap((u) => u.chapters);
-}
-
-/** Look up the unit a chapter belongs to. */
-export function unitOfChapter(
-  map: CurriculumMap,
-  subject: Subject,
-  chapterName: string,
-): CurriculumUnit | null {
-  const s = map.subjects.find((x) => x.subject === subject);
-  if (!s) return null;
-  const wanted = chapterName.trim().toLowerCase();
-  for (const u of s.units) {
-    if (u.chapters.some((c) => c.name.trim().toLowerCase() === wanted)) return u;
-  }
-  return null;
-}
-
-/**
- * True only when every chapter in the map belongs to exactly one unit and the
- * map's classLevel matches. A Class XI chapter can therefore never appear in a
- * Class XII map.
- *
- * Two kinds of duplication are rejected, because both produce a plan the student
- * cannot trust:
- *
- *  - the same chapter NAME in two units, which would create two mastery rows for
- *    one chapter and split its evidence between them;
- *  - the same chapter NUMBER twice in one subject, which would break every
- *    `chaptersOf` ordering and any "chapter 7" reference.
- *
- * The check is scoped per subject, so Chemistry ch. 1 and Physics ch. 1 are not
- * a collision — they are genuinely different chapters.
- */
-export function assertClassLevelIsolation(map: CurriculumMap, expected: ClassLevel): boolean {
-  if (map.classLevel !== expected) return false;
-  for (const s of map.subjects) {
-    const seenIds = new Set<string>();
-    const seenNames = new Set<string>();
-    const seenNumbers = new Set<number>();
-    for (const u of s.units) {
-      for (const c of u.chapters) {
-        if (seenIds.has(c.id)) return false; // identical chapter in two units
-        if (seenNames.has(c.name.toLowerCase())) return false; // one chapter, two units
-        if (seenNumbers.has(c.number)) return false; // numbering collision
-        seenIds.add(c.id);
-        seenNames.add(c.name.toLowerCase());
-        seenNumbers.add(c.number);
-      }
-    }
-  }
-  return true;
-}
+// Re-exported so every existing importer of this module keeps working, and so
+// there is exactly one definition of the curriculum types and invariants.
+export { assertClassLevelIsolation, buildSubject, chaptersOf, slug, theoryMarks, unitOfChapter };
+export type {
+  BoardId,
+  ClassLevel,
+  CurriculumChapter,
+  CurriculumMap,
+  CurriculumSubject,
+  CurriculumTopic,
+  CurriculumUnit,
+  RawChapter,
+  RawUnit,
+};
 
 /* ------------------------------------------------------------------ *
  * The CBSE Class XII 2026–27 map

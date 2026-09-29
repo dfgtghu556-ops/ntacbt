@@ -6,6 +6,7 @@ import {
   unevidencedChapters,
 } from "@/features/curriculum/map";
 import { buildMastery, type ChapterMastery } from "@/features/mastery/mastery";
+import { curriculumFor } from "@/data/curriculum";
 
 const NOW = 1_700_000_000_000;
 
@@ -37,11 +38,25 @@ describe("buildSyllabusMap — honest silence", () => {
     expect(map.note).toContain("No published syllabus map");
   });
 
-  it("shows nothing for the unpublished Class XI map rather than borrowing Class XII", () => {
+  it("shows the real Class XI map rather than borrowing Class XII", () => {
     const map = buildSyllabusMap("board11", masteryOf([]));
     expect(map.key).toEqual({ board: "CBSE", classLevel: 11, academicYear: "2026-27" });
-    expect(map.subjects).toEqual([]);
-    expect(map.note).toContain("not published here yet");
+    // The Class XI map is published now, so it renders its own structure.
+    expect(map.subjects).toHaveLength(3);
+    expect(map.totalChapters).toBe(14 + 9 + 14);
+    // And none of it is Class XII content.
+    const names = map.subjects.flatMap((s) =>
+      s.units.flatMap((u) => u.chapters.map((c) => c.name)),
+    );
+    expect(names).toContain("Gravitation");
+    expect(names).not.toContain("Electrostatics");
+  });
+
+  it("still shows nothing for a genuinely unpublished syllabus", () => {
+    // 2027-28 is not transcribed, so the honest silence survives.
+    const map = buildSyllabusMap("board11", masteryOf([]));
+    expect(map.note).not.toContain("not published here yet");
+    expect(curriculumFor({ board: "CBSE", classLevel: 11, academicYear: "2027-28" })).toBeNull();
   });
 
   it("shows nothing for an empty target", () => {
