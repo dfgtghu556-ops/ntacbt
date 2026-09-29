@@ -253,7 +253,59 @@ tests** (131 → 151) · `vite build` exit 0 · all 14 routes 200.
 
 ---
 
-## 8. Why `.github/workflows/deploy.yml` is untracked
+## 8. Phase 3 (rebuild plan) — the learning loop: one mastery store ✅
+
+**The gap.** Mastery lived in three places that never spoke to each other:
+
+| Where                   | What it tracked                                                      |
+| ----------------------- | -------------------------------------------------------------------- |
+| `readiness.ts`          | Per-chapter accuracy, from CBT attempts alone                        |
+| `studytube/progress.ts` | Mastery **per video** (keyed on `videoId`)                           |
+| `mentor/report.ts`      | Video counts and chapter accuracy, side by side but never in one row |
+
+So "videos done", "PYQs attempted" and "accuracy" for the **same chapter**
+could not be answered — which is the one question the combined report exists
+to answer. Finishing an Electrostatics lecture never moved the Electrostatics
+chapter.
+
+**What shipped.**
+
+| File                              | Role                                                                                                                                                                              |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/mastery/mastery.ts` | `buildMastery` — pure over the evidence; one record per chapter with attempts, PYQ attempts, lessons finished, recall, last activity, state, score, reason and next action        |
+| `src/features/mastery/collect.ts` | `masteryFromStores` — reads the real stores. A PYQ paper is a `CbtTest` with `pyq: true`, so it is counted through the same path as any test: **one question bank, one accuracy** |
+| `src/features/mentor/report.ts`   | `preparation` — the combined per-chapter row                                                                                                                                      |
+| `src/routes/app.report.tsx`       | The "My preparation, chapter by chapter" table                                                                                                                                    |
+| `src/features/academics/index.ts` | `chapterForTopic()` — resolves a topic to its chapter **within the student's scope**, or `null`                                                                                   |
+
+Handshakes now record `subject`/`chapter`/`topic` at write time, so the store
+never has to re-resolve a video id against the catalog. A handshake with no
+chapter is **skipped rather than guessed** into the nearest one — missing
+evidence is honest, wrong evidence is not.
+
+**Two real bugs found and fixed:**
+
+1. **`strongTopics` was hard-coded to `[]`** with a "filled below" comment that
+   never filled it, so the report's strengths section was permanently empty. It
+   now reads the real per-chapter accuracy from the mastery store.
+2. **`priorityChapters` silently dropped every chapter with 1–2 attempts.**
+   `weak` needs `>= MIN_SAMPLE` and `untouched` needs 0 attempts, so a chapter
+   with one attempt fell through all three bands and **vanished from the
+   report entirely** — exactly the student who most needs the nudge. Added a
+   `thin` band, with a regression test.
+
+Also extracted the `toSubject()` duplicated across `app.tests.tsx` and
+`app.pyq.tsx` into `features/academics/subject.ts` rather than adding a third
+copy.
+
+**Verification.** `tsc --noEmit` 0 errors · `npm run lint` 0 errors (9 warnings,
+all in vendored `src/components/ui/*`) · `validate:all` exit 0
+(39,799 / 3,202 / 15,482 / 77 / 19 / 49) · **182 unit tests** (151 → 182) ·
+`vite build` exit 0 · all 14 routes 200.
+
+---
+
+## 9. Why `.github/workflows/deploy.yml` is untracked
 
 The file is written and ready at `.github/workflows/deploy.yml`, but it is **not
 committed** because this sandbox's GitHub App does not hold the `workflows`

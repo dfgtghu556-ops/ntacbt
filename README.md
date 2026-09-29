@@ -34,7 +34,7 @@ npm run dev
 
 ```sh
 npm test               # legacy app E2E (112 robot checks)
-npm run test:unit      # vitest unit + component suite (151 tests)
+npm run test:unit      # vitest unit + component suite (182 tests)
 npm run test:watch     # vitest in watch mode
 npm run validate:all   # every data validator + harness + unit tests
 ```
@@ -92,6 +92,7 @@ The brief's _intent_ was kept and its _method_ dropped. What actually shipped:
 | Cross-scope leakage (a CBSE student shown JEE content)                                   | **Fixed** — `src/features/context/*`: one persisted `StudentContext` read by every surface, seeded from the legacy blob, plus `checkScopeLeak`                                                   |
 | Data provenance / fabricated numbers                                                     | **Fixed** — `src/features/academics/source.ts`: one canonical `Source` record on every dataset, a `SOURCE_RECORDS` registry, and `scripts/validate-sources.mjs` (35 checks) in `validate:all`    |
 | Rank / percentile prediction presented as fact                                           | **Fixed** — `src/features/readiness/predict.ts`: labelled estimates with the evidence attached, and "Not enough data to estimate reliably" instead of a confident AIR from one attempt           |
+| Mastery tracked per-video, so a lesson never counted for its chapter                     | **Fixed** — `src/features/mastery/*`: one store per chapter fed by tests, PYQ attempts and watched lessons, rendered as the report's "My preparation" table                                      |
 
 Full reasoning, the measured baseline, and the explicit not-done list are in
 [`docs/REDEVELOPMENT-PLAN.md`](docs/REDEVELOPMENT-PLAN.md) and
