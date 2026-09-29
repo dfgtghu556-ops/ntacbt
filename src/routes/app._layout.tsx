@@ -6,6 +6,8 @@ import { useAuthStore } from "@/features/auth/store";
 import { NAV, SHELF } from "@/components/layout/nav";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { hasCompletedOnboarding, loadStudyProfile } from "@/features/onboarding/profile";
 
 export const Route = createFileRoute("/app/_layout")({
   component: AppLayout,
@@ -27,6 +29,13 @@ function AppLayout() {
   }
 
   const onStudyTube = current.startsWith("/app/studytube");
+
+  // First-run wizard (B6). Read once on mount rather than in an effect so the
+  // SSR pass and the first client render agree — a wizard that flashes open
+  // after hydration looks like a bug, and a wizard that never opens is worse.
+  const [needsOnboarding, setNeedsOnboarding] = useState(
+    () => typeof window !== "undefined" && !hasCompletedOnboarding(),
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -198,6 +207,13 @@ function AppLayout() {
           })}
         </div>
       </nav>
+      {needsOnboarding ? (
+        <OnboardingWizard
+          onDone={() => setNeedsOnboarding(false)}
+          startTo="/app/planner"
+          startLabel="See my first session"
+        />
+      ) : null}
     </div>
   );
 }
