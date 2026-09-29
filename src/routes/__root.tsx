@@ -35,10 +35,39 @@ function NotFoundComponent() {
   );
 }
 
+/**
+ * The 500 page.
+ *
+ * The boundary already existed and already did the right things — log, report,
+ * offer a retry — but it rendered HTTP 200. A server that answers a crash with
+ * "200 OK" is lying to every monitor watching it, and it tells a student's
+ * browser the page loaded correctly, so a broken page can sit in a cache looking
+ * healthy. Setting the status is the difference between an error boundary and a
+ * 500 page.
+ *
+ * It is set in an effect rather than during render because the boundary also
+ * renders on the client, and calling `setResponseStatus` while rendering is not
+ * safe. On a client-side failure there is no response to set and the call is a
+ * no-op, which is the correct behaviour there.
+ */
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    // The tab title on a failed render.
+    //
+    // The status code is already right — a throwing route loader returns HTTP
+    // 500, verified against the production build. But the `<title>` keeps
+    // whatever the route set, because the head was rendered before the error
+    // surfaced. So a crashed page's tab reads "Focus Timer for JEE
+    // Preparation", which tells a student the page loaded and is merely broken
+    // rather than that the request failed.
+    //
+    // `document.title` is the right tool here precisely because the error can
+    // arrive after hydration: this runs on both the server pass and on any
+    // client navigation that fails, and there is no server response to set at
+    // that point.
+    document.title = "Something went wrong — NTACBT";
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
