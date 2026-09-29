@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { pageSummary, pageWindow, paginate } from "@/features/ui/pagination";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
 import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
@@ -46,6 +47,12 @@ function Pyq() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Paper | null>(null);
+  /**
+   * The paper list is paginated because the full historical library can be
+   * hundreds of papers, and rendering every card at once is the difference
+   * between usable and not on a low-end phone.
+   */
+  const [paperPage, setPaperPage] = useState(1);
   const [questions, setQuestions] = useState<PyqQuestion[]>([]);
   const [qLoading, setQLoading] = useState(false);
 
@@ -147,6 +154,11 @@ function Pyq() {
     void navigate({ to: "/cbt", search: { testId: test.id, name: test.name } });
   }
 
+  // One page of papers at a time. The full historical library can be hundreds
+  // of papers, and rendering every card at once is the difference between usable
+  // and not on a low-end phone.
+  const page = paginate(papers, { page: paperPage, pageSize: 24 });
+
   return (
     <div className="space-y-6">
       <section>
@@ -202,24 +214,27 @@ function Pyq() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {papers.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => open(p)}
-              className="rounded-xl border p-4 text-left transition-colors hover:bg-accent/60"
-            >
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <FileText className="h-4 w-4" /> {p.year} · {p.label}
-              </div>
-              <p className="mt-2 text-lg font-semibold">{p.total} questions</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Phy {p.counts.Physics} · Chem {p.counts.Chemistry} · Math {p.counts.Mathematics} ·{" "}
-                {p.mcq} MCQ · {p.integer} integer
-              </p>
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {page.items.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => open(p)}
+                className="rounded-xl border p-4 text-left transition-colors hover:bg-accent/60"
+              >
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FileText className="h-4 w-4" /> {p.year} · {p.label}
+                </div>
+                <p className="mt-2 text-lg font-semibold">{p.total} questions</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Phy {p.counts.Physics} · Chem {p.counts.Chemistry} · Math {p.counts.Mathematics} ·{" "}
+                  {p.mcq} MCQ · {p.integer} integer
+                </p>
+              </button>
+            ))}
+          </div>
+          <PaperPager page={page} onGo={setPaperPage} noun="papers" />
+        </>
       )}
 
       {selected ? (
@@ -274,5 +289,86 @@ function Pyq() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * PaperPager — accessible pagination controls for the paper grid.
+ *
+ * Phase 6 asks for pagination *and* accessibility, and the two meet here: a
+ * pager that only works with a mouse excludes keyboard and screen-reader users
+ * from navigating the library at all.
+ *
+ * So the controls are real `<button>` elements in a labelled `<nav>`, the
+ * summary is announced through a live region, the current page carries
+ * `aria-current="page"`, and elided gaps render as "…" text rather than a
+ * disabled button that invites a pointless click.
+ */
+function PaperPager({
+  page,
+  onGo,
+  noun,
+}: {
+  page: ReturnType<typeof paginate>;
+  onGo: (page: number) => void;
+  noun: string;
+}) {
+  if (page.totalPages <= 1) {
+    return (
+      <p className="mt-3 text-xs text-muted-foreground" role="status">
+        {pageSummary(page, noun)}
+      </p>
+    );
+  }
+
+  return (
+    <nav aria-label="Paper pages" className="mt-4 flex flex-wrap items-center gap-2">
+      <button
+        onClick={() => onGo(page.page - 1)}
+        disabled={!page.hasPrev}
+        className="rounded-md border border-input px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Previous
+      </button>
+
+      <ul className="flex flex-wrap items-center gap-1">
+        {pageWindow(page.page, page.totalPages).map((p, i) =>
+          p === null ? (
+            <li key={`gap-${i}`} aria-hidden="true" className="px-1 text-xs text-muted-foreground">
+              …
+            </li>
+          ) : (
+            <li key={p}>
+              <button
+                onClick={() => onGo(p)}
+                aria-current={p === page.page ? "page" : undefined}
+                aria-label={`Page ${p} of ${page.totalPages}`}
+                className={
+                  p === page.page
+                    ? "min-w-8 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground"
+                    : "min-w-8 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent/60"
+                }
+              >
+                {p}
+              </button>
+            </li>
+          ),
+        )}
+      </ul>
+
+      <button
+        onClick={() => onGo(page.page + 1)}
+        disabled={!page.hasNext}
+        className="rounded-md border border-input px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+      </button>
+
+      {/* Announced when the page changes, so a screen-reader user knows the
+          grid below is a different set of papers. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {pageSummary(page, noun)}
+      </p>
+    </nav>
   );
 }
