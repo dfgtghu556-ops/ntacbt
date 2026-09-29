@@ -1,8 +1,8 @@
 {
-  "name": "NTACBT JEE CBT Platform",
-  "short_name": "JEE CBT",
-  "description": "NTA-style JEE Main computer based test platform with AI planning, StudyTube, PYQ, analytics and revision.",
-  "start_url": "/jee-cbt.html",
+  "name": "NTACBT — JEE & CBSE Learning OS",
+  "short_name": "NTACBT",
+  "description": "NTA-style CBT practice, an adaptive study plan, PYQ bank, mastery tracking and a mentor report — offline-first.",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
@@ -30,8 +30,8 @@
   ],
   "shortcuts": [
     {
-      "name": "Full platform",
-      "url": "/jee-cbt.html",
+      "name": "Today",
+      "url": "/app",
       "icons": [
         {
           "src": "/icon-192.png",
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "name": "Start mock test",
+      "name": "Start a mock test",
       "url": "/cbt",
       "icons": [
         {
@@ -50,8 +50,18 @@
       ]
     },
     {
-      "name": "Learning OS",
-      "url": "/app",
+      "name": "PYQ papers",
+      "url": "/app/pyq",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Mentor report",
+      "url": "/app/report",
       "icons": [
         {
           "src": "/icon-192.png",
@@ -59,5 +69,8 @@
         }
       ]
     }
-  ]
+  ],
+  "offline_fallback": {
+    "url": "/offline.html"
+  }
 }

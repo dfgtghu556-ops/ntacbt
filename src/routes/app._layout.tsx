@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { LANG_LABEL, type Lang, useLang, setLang } from "@/lib/lang";
 import { useAuthStore } from "@/features/auth/store";
 import { NAV, SHELF } from "@/components/layout/nav";
+import { InstallPrompt } from "@/components/layout/InstallPrompt";
 
 export const Route = createFileRoute("/app/_layout")({
   component: AppLayout,
@@ -174,6 +175,8 @@ function AppLayout() {
       </aside>
 
       <main className="mx-auto w-full max-w-[1500px] flex-1 px-3 pt-6 pb-24 sm:px-5 lg:pl-60">
+        {/* A10 — the install ask sits above the page, never over it. */}
+        <InstallPrompt />
         <Outlet />
       </main>
 
