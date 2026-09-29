@@ -6,6 +6,8 @@
  * sixth item wrapped onto a second row and was effectively hidden on phones.
  * These tests exist so that can never happen silently again.
  */
+import * as nodeFs from "node:fs";
+import * as nodePath from "node:path";
 import { describe, expect, it } from "vitest";
 import { NAV, SHELF } from "@/components/layout/nav";
 
@@ -47,10 +49,21 @@ describe("NAV", () => {
 });
 
 describe("SHELF", () => {
-  it("only links to destinations that also exist in NAV", () => {
-    const navPaths = new Set(NAV.map((n) => n.to));
+  it("only links to destinations that exist as real route files", () => {
+    // The property that protects the student is that a shortcut resolves, not
+    // that it happens to sit in the primary nav. A shelf entry pointing at a
+    // route nobody wrote is a dead link; a shelf entry pointing at a real but
+    // secondary surface (Memory Locker) is fine — the primary nav stays at the
+    // six Phase 6 destinations so the mobile bottom bar does not wrap.
+    const fs = nodeFs;
+    const path = nodePath;
     for (const item of SHELF) {
-      expect(navPaths.has(item.to), `${item.to} is not in NAV`).toBe(true);
+      const routeFile = path.join(
+        process.cwd(),
+        "src/routes",
+        `${item.to.replace(/^\//, "").replace(/\//g, ".")}.tsx`,
+      );
+      expect(fs.existsSync(routeFile), `${item.to} has no route file`).toBe(true);
     }
   });
 

@@ -11,6 +11,7 @@
  */
 import {
   BarChart3,
+  BrainCircuit,
   CalendarDays,
   Clock3,
   FileText,
@@ -44,4 +45,8 @@ export const SHELF: Array<NavItem & { search?: { q: string } }> = [
   { to: "/app/studytube", label: "One-shot", icon: Flame, search: { q: "one shot" } },
   { to: "/app/studytube", label: "Revision", icon: Clock3, search: { q: "revision" } },
   { to: "/app/pyq", label: "PYQ practice", icon: FileText },
+  // A secondary surface, not a primary destination: the primary nav stays at
+  // the six Phase 6 destinations, and the mobile bottom bar is grid-locked to
+  // NAV.length. Adding Memory there would wrap the bar onto two rows.
+  { to: "/app/memory", label: "Memory Locker", icon: BrainCircuit },
 ];
