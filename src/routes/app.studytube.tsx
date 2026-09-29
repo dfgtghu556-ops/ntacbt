@@ -56,6 +56,45 @@ const YT_ID = /^[A-Za-z0-9_-]{11}$/;
 interface ShelfState {
   loading: boolean;
   result: StudyTubeResult | null;
+  /**
+   * Offline picks shown until the live fetch resolves.
+   *
+   * Present only in the synchronously seeded state. It is what makes the page
+   * server-render real lecture shelves instead of an empty shell, and it is
+   * replaced by `result` the moment the live fetch lands.
+   */
+  seed?: StudyTubeVideo[];
+}
+
+/**
+ * The objective seeded into the shelves when the student has no context yet.
+ *
+ * Deliberately the app's primary objective rather than an empty string: a
+ * shelf built for "unknown" would render generic picks that a crawler cannot
+ * connect to anything, and a JEE Main student with no saved profile still
+ * wants JEE Main lectures.
+ */
+const DEFAULT_STUDY_TARGET: StudyTubeRequest["target"] = "jeemain";
+
+/**
+ * A shelf's videos: the live result once it lands, the offline seed before.
+ *
+ * The seed exists so the first render has real content, which is what makes the
+ * page server-renderable. It is never additive — a live result replaces it
+ * outright rather than being appended to, so a student never sees the same
+ * lecture twice under two different headings.
+ */
+function shelfItems(sections: Record<string, ShelfState>, id: string): StudyTubeVideo[] {
+  const shelf = sections[id];
+  if (!shelf) return [];
+  return shelf.result?.items ?? shelf.seed ?? [];
+}
+
+/** A seeded shelf already has content, so it must not render as loading. */
+function shelfLoading(sections: Record<string, ShelfState>, id: string): boolean {
+  const shelf = sections[id];
+  if (!shelf) return false;
+  return shelf.result ? shelf.loading : false;
 }
 
 function sectionForWeak(
@@ -243,7 +282,44 @@ function StudyTube() {
   const [query, setQuery] = useState("");
   const [manual, setManual] = useState<StudyTubeResult | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
-  const [sections, setSections] = useState<Record<string, ShelfState>>({});
+  const [sections, setSections] = useState<Record<string, ShelfState>>(() => {
+    // Seeded synchronously from the offline catalog.
+    //
+    // This is the fix for the page's publishing problem. The shelves were only
+    // filled by an effect that awaited a live fetch, so the server shipped an
+    // empty page and every section rendered "Finding lectures…". A crawler
+    // therefore saw a shell with no lectures on the app's study-video surface.
+    //
+    // The offline catalog is a pure function over the request, so it needs no
+    // network and runs during SSR. The fetch effect below still runs and
+    // replaces each shelf with the live result, so this only ever *seeds* the
+    // shelves; it never removes a fuller list.
+    const defs = sectionForWeak(
+      undefined,
+      DEFAULT_STUDY_TARGET,
+      "en",
+      undefined,
+      undefined,
+      undefined,
+    );
+    const seeded: Record<string, ShelfState> = {};
+    for (const d of defs)
+      seeded[d.id] = { loading: false, result: null, seed: offlineCatalog(d.request) };
+    if (search.q?.trim())
+      seeded["search"] = {
+        loading: false,
+        result: null,
+        seed: offlineCatalog({
+          topic: search.q,
+          subject: "Physics",
+          language: "en",
+          kind: "learn",
+          depth: "lecture",
+          target: DEFAULT_STUDY_TARGET,
+        }),
+      };
+    return seeded;
+  });
   const [filter, setFilter] = useState("all");
   const [todayTopic, setTodayTopic] = useState<{
     subject: string;
@@ -705,8 +781,8 @@ function StudyTube() {
           title="Today's planned lecture"
           subtitle="From your planner"
           icon={MonitorPlay}
-          items={(sections["today"].result?.items ?? []).filter(matches)}
-          loading={sections["today"].loading}
+          items={shelfItems(sections, "today").filter(matches)}
+          loading={shelfLoading(sections, "today")}
           fallback={!!sections["today"].result?.fallback}
           onPlay={openVideo}
           onSave={saveVideo}
@@ -735,8 +811,8 @@ function StudyTube() {
           title={weak ? "Weak topic — fix this first" : "Weak topic"}
           subtitle={weak ? `${weak.subject} — ${weak.chapter}` : "From your evidence"}
           icon={Flame}
-          items={(sections["weak"].result?.items ?? []).filter(matches)}
-          loading={sections["weak"].loading}
+          items={shelfItems(sections, "weak").filter(matches)}
+          loading={shelfLoading(sections, "weak")}
           fallback={!!sections["weak"].result?.fallback}
           onPlay={openVideo}
           onSave={saveVideo}
@@ -765,8 +841,8 @@ function StudyTube() {
           title="Revision due"
           subtitle="Spaced recall for recently learned topics"
           icon={Clock3}
-          items={(sections["revision"].result?.items ?? []).filter(matches)}
-          loading={sections["revision"].loading}
+          items={shelfItems(sections, "revision").filter(matches)}
+          loading={shelfLoading(sections, "revision")}
           fallback={!!sections["revision"].result?.fallback}
           onPlay={openVideo}
           onSave={saveVideo}

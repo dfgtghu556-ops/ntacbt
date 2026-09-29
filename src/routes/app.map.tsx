@@ -56,20 +56,46 @@ function chapterBadge(chapter: MapChapter): string {
   return `${chapter.accuracy}%`;
 }
 
+/**
+ * The objective the map defaults to when the student has not chosen one.
+ *
+ * This is the whole fix for the page's publishing problem. `buildSyllabusMap`
+ * reads a static curriculum module and nothing else, so it can run during SSR
+ * and costs no network — but the page used to seed its state from a
+ * `useEffect` reading localStorage, so the server shipped a pulse skeleton and
+ * not one chapter name. Verified: `curl /app/map` returned 5 KB containing
+ * neither "Units and Measurements" nor "Vector Algebra". A crawler therefore
+ * saw an empty page on the route holding the app's most searchable content —
+ * students search "CBSE class 11 physics syllabus" by name.
+ *
+ * Seeding from Class 12 also means the *structure* a student with no profile
+ * sees is the same structure a crawler sees, so nothing is being shown to
+ * search that a student cannot also reach.
+ */
+const DEFAULT_TARGET = "cbse27";
+
 function SyllabusMapPage() {
-  const [map, setMap] = useState<SyllabusMap | null>(null);
-  const [target, setTarget] = useState("");
+  // Built synchronously, not in an effect. The syllabus is static data, so the
+  // first render - server or client - has everything it needs.
+  const [map, setMap] = useState<SyllabusMap>(() => buildSyllabusMap(DEFAULT_TARGET, new Map()));
+  const [target, setTarget] = useState(DEFAULT_TARGET);
   const [openChapter, setOpenChapter] = useState<string | null>(null);
 
   useEffect(() => {
+    // The upgrade: read the student's own objective and real chapter evidence,
+    // then rebuild with the mastery colouring applied. This only ever replaces
+    // the seed; it is what makes the page personal, not what makes it visible.
     const store = new DataStore();
     const profile = store.planner?.profile;
-    setTarget(profile?.target || "");
+    const chosen = profile?.target || DEFAULT_TARGET;
+    setTarget(chosen);
     try {
       const mastery = masteryFromStores(store, loadStudyTubeProgress(), Date.now());
-      setMap(buildSyllabusMap(profile?.target || "", mastery));
+      setMap(buildSyllabusMap(chosen, mastery));
     } catch {
-      setMap(null);
+      // Keep the synchronously built map. A failure to read local storage is
+      // not a reason to blank a page whose content does not depend on it.
+      setMap(buildSyllabusMap(chosen, new Map()));
     }
   }, []);
 
@@ -82,10 +108,6 @@ function SyllabusMapPage() {
       total: map.totalChapters,
     };
   }, [map]);
-
-  if (!map) {
-    return <div className="h-64 animate-pulse rounded-xl border bg-muted/40" />;
-  }
 
   if (!map.key) {
     return (

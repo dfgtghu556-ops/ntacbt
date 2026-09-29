@@ -257,3 +257,70 @@ describe("the legal pages exist as real routes", () => {
     expect(about).not.toMatch(/"375|375 questions/);
   });
 });
+
+describe("the syllabus map is server-rendered, not fetched in an effect", () => {
+  const src = read("src/routes/app.map.tsx");
+
+  it("seeds its state synchronously rather than from null", () => {
+    // The page used to start at null and fill in from a useEffect reading
+    // localStorage, so the server shipped a pulse skeleton and no chapters.
+    // Measured: 5 KB of HTML with neither a chapter name nor a subject count.
+    expect(src).toMatch(/useState<SyllabusMap>\(\(\) =>/);
+    expect(src).not.toMatch(/useState<SyllabusMap \| null>\(null\)/);
+  });
+
+  it("builds the default map from a real objective, not an empty string", () => {
+    // An empty target resolves to `key: null` and renders the "no syllabus
+    // map" panel - so the seeded target must be one that resolves.
+    expect(src).toContain('DEFAULT_TARGET = "cbse27"');
+  });
+
+  it("still upgrades to the student's own objective and evidence", () => {
+    // The seed exists so a crawler sees the syllabus; the effect is what makes
+    // the page personal. Removing it would fix SEO and break the product.
+    expect(src).toContain("masteryFromStores");
+    expect(src).toContain("profile?.target");
+  });
+
+  it("does not blank the page when local storage cannot be read", () => {
+    // A failure to read the store is not a reason to hide content that does
+    // not depend on it.
+    expect(src).toMatch(/Keep the synchronously built map/);
+    expect(src).toMatch(/buildSyllabusMap\(chosen, new Map\(\)\)/);
+  });
+
+  it("no longer renders a pulse skeleton in place of content", () => {
+    expect(src).not.toContain("animate-pulse");
+  });
+});
+
+describe("the study shelves are server-rendered, not fetched first", () => {
+  const src = read("src/routes/app.studytube.tsx");
+
+  it("seeds the shelves synchronously from the offline catalog", () => {
+    // The shelves were only filled by an effect awaiting a live fetch, so the
+    // server shipped an empty shell and every shelf said "Finding lectures".
+    expect(src).toMatch(/useState<Record<string, ShelfState>>\(\(\) =>/);
+    expect(src).toContain("offlineCatalog(d.request)");
+  });
+
+  it("renders the seed until the live result replaces it", () => {
+    expect(src).toContain("shelf.result?.items ?? shelf.seed ?? []");
+  });
+
+  it("never shows the seed and the live result together", () => {
+    // The seed is a fallback, not an addition — otherwise a student sees the
+    // same lecture twice under two different headings.
+    expect(src).not.toMatch(/\.\.\.shelf\.seed/);
+  });
+
+  it("treats a seeded shelf as loaded, not loading", () => {
+    expect(src).toContain("shelf.result ? shelf.loading : false");
+  });
+
+  it("seeds for the primary objective, not an unknown one", () => {
+    // A shelf built for an unknown target renders generic picks a crawler
+    // cannot connect to anything.
+    expect(src).toContain('"jeemain"');
+  });
+});
