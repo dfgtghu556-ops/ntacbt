@@ -13,7 +13,7 @@
  * `src/test/result-page.test.ts` asserts this order, so the comment above
  * cannot drift from the code the way it did before.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, Clock, X, XCircle } from "lucide-react";
 import {
@@ -25,6 +25,7 @@ import {
   type QuestionInsight,
 } from "@/features/cbt/analytics";
 import { ntaPercentile, SUBJECTS } from "@/features/cbt/engine";
+import { pageSummary, pageWindow, paginate } from "@/features/ui/pagination";
 import type { CbtAttemptRecord, CbtResult, CbtTest } from "@/features/cbt/types";
 
 export function ExamResult({
@@ -41,6 +42,13 @@ export function ExamResult({
     [test, result, attempt.responses],
   );
   const topics = useMemo(() => topicBreakdown(test, insights), [test, insights]);
+  // A full JEE paper is 75 questions and each one carries its options and
+  // worked solution, so the review used to build 75 detail subtrees the moment
+  // the result screen opened — on a low-end phone that is a visible stall
+  // before anything on the page is interactive. It is paginated now, on the
+  // same helpers the paper list uses, so the first paint is one page's worth.
+  const [reviewPage, setReviewPage] = useState(1);
+  const review = paginate(insights, { page: reviewPage, pageSize: 20 });
   const doctor = useMemo(
     () =>
       mistakeDoctor(
@@ -187,7 +195,7 @@ export function ExamResult({
       <section className="rounded-2xl border p-4">
         <h2 className="mb-3 text-sm font-semibold">Question review</h2>
         <div className="space-y-2">
-          {insights.map((ins) => {
+          {review.items.map((ins) => {
             const q = test.questions.find((x) => x.id === ins.questionId);
             if (!q) return null;
             const r = attempt.responses[q.id];
@@ -232,6 +240,58 @@ export function ExamResult({
             );
           })}
         </div>
+        {review.totalPages > 1 ? (
+          <nav
+            aria-label="Question review pages"
+            className="mt-4 flex flex-wrap items-center gap-2"
+          >
+            <button
+              onClick={() => setReviewPage(review.page - 1)}
+              disabled={!review.hasPrev}
+              className="rounded-md border border-input px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <ul className="flex flex-wrap items-center gap-1">
+              {pageWindow(review.page, review.totalPages).map((p, i) =>
+                p === null ? (
+                  <li
+                    key={`gap-${i}`}
+                    aria-hidden="true"
+                    className="px-1 text-xs text-muted-foreground"
+                  >
+                    …
+                  </li>
+                ) : (
+                  <li key={p}>
+                    <button
+                      onClick={() => setReviewPage(p)}
+                      aria-current={p === review.page ? "page" : undefined}
+                      aria-label={`Page ${p} of ${review.totalPages}`}
+                      className={
+                        p === review.page
+                          ? "min-w-8 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground"
+                          : "min-w-8 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent/60"
+                      }
+                    >
+                      {p}
+                    </button>
+                  </li>
+                ),
+              )}
+            </ul>
+            <button
+              onClick={() => setReviewPage(review.page + 1)}
+              disabled={!review.hasNext}
+              className="rounded-md border border-input px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+            <span className="text-xs text-muted-foreground" role="status">
+              {pageSummary(review, "questions")}
+            </span>
+          </nav>
+        ) : null}
       </section>
 
       <section className="rounded-2xl border p-4">

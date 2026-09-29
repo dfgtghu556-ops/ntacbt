@@ -17,6 +17,7 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { evaluate } from "@/features/cbt/engine";
 import { getCbtTest } from "@/features/cbt/store";
+import { loadPaperQuestions } from "@/features/pyq/store";
 import type {
   CbtAttemptRecord,
   CbtQuestion,
@@ -133,12 +134,9 @@ function buildDiagnostic(
 async function loadDiagnosticTest(name: string): Promise<CbtTest | null> {
   // 1) Baked paper (offline-friendly). Start from the fullest 2026 paper we ship.
   try {
-    const r = await fetch(`/pyq/${DIAGNOSTIC_PAPER}.json`, { cache: "no-store" });
-    if (r.ok) {
-      const data = (await r.json()) as DiagnosticPaper;
-      const t = buildDiagnostic(data.questions ?? data.paper?.questions, name);
-      if (t) return t;
-    }
+    const data = await loadPaperQuestions(DIAGNOSTIC_PAPER);
+    const t = buildDiagnostic(data, name);
+    if (t) return t;
   } catch {
     /* fall through */
   }

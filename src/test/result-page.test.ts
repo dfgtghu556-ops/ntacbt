@@ -35,6 +35,7 @@ import {
   idealTimeFor,
   mistakeDoctor,
 } from "../features/cbt/analytics";
+import { pageWindow, paginate } from "../features/ui/pagination";
 import type { CbtQuestion, CbtResult, CbtTest } from "../features/cbt/types";
 
 const read = (rel: string) => readFileSync(join(process.cwd(), rel), "utf8");
@@ -248,5 +249,62 @@ describe("the card system now covers the result page", () => {
       expect(c).toMatch(/\brounded-2xl\b/);
       expect(c).toMatch(/\bborder\b/);
     }
+  });
+});
+
+describe("the question review is paginated, not dumped", () => {
+  const src = read("src/features/exams/components/ExamResult.tsx");
+
+  it("renders one page of the review rather than every question", () => {
+    // A 75-question paper used to build 75 detail subtrees — each carrying its
+    // options and worked solution — the moment the result screen opened.
+    expect(src).toContain("paginate(insights");
+    expect(src).toContain("review.items.map");
+  });
+
+  it("keeps the paginator out of the way for a short review", () => {
+    // A 6-question drill gets no paginator at all; it would be pure chrome.
+    expect(src).toContain("review.totalPages > 1");
+  });
+
+  it("labels the paginator and states where you are", () => {
+    const nav = src.slice(src.indexOf('aria-label="Question review pages"'));
+    expect(nav).toContain('aria-label="Question review pages"');
+    expect(nav).toContain("Previous");
+    expect(nav).toContain("Next");
+    expect(nav).toContain("pageSummary(review");
+    expect(nav).toMatch(/disabled=\{!review\.hasPrev\}/);
+    expect(nav).toMatch(/disabled=\{!review\.hasNext\}/);
+  });
+
+  it("lets every page of a full paper be reached", () => {
+    // The elision bug: `1 · 2 · 3 · … · 5` makes page 4 unreachable, because
+    // there is no way to navigate to a page the paginator never shows and
+    // nothing links to.
+    //
+    // A full JEE paper paginates to 4 pages, so that is the case asserted here
+    // — with four pages, every page is either on screen or a single click from
+    // one that is. (At ten pages that is no longer true of any windowed
+    // paginator, including this one, so the scope is deliberately narrow.)
+    const full = paginate(
+      Array.from({ length: 75 }, (_, i) => i),
+      { pageSize: 20 },
+    );
+    expect(full.totalPages).toBe(4);
+    for (let page = 1; page <= full.totalPages; page++) {
+      const reachable = pageWindow(page, full.totalPages).filter((p): p is number => p !== null);
+      for (let target = 1; target <= full.totalPages; target++) {
+        // Every page is either on screen or one click from a page on screen.
+        const onScreen = reachable.includes(target);
+        const oneClickAway = reachable.some((p) => pageWindow(p, full.totalPages).includes(target));
+        expect(onScreen || oneClickAway, `page ${target} from page ${page}`).toBe(true);
+      }
+    }
+  });
+
+  it("clamps a page past the end instead of showing nothing", () => {
+    const review = paginate([1, 2, 3], { page: 99, pageSize: 20 });
+    expect(review.page).toBe(1);
+    expect(review.items).toEqual([1, 2, 3]);
   });
 });

@@ -21,6 +21,7 @@ import { FileText, Loader2, Play, RefreshCw, Save, TestTube2, Upload } from "luc
 import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
 import { toSubject } from "@/features/academics/subject";
 import { loadCbtStore, saveCbtTest } from "@/features/cbt/store";
+import { loadPaperIndex, loadPaperWithFallback, type PyqQuestion } from "@/features/pyq/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -33,18 +34,6 @@ interface PaperMeta {
   counts?: { Physics: number; Chemistry: number; Mathematics: number };
   mcq?: number;
   integer?: number;
-}
-
-interface PyqQuestion {
-  no: number;
-  subject: string;
-  chapter: string;
-  topic: string;
-  type: "mcq" | "integer";
-  text: string;
-  options: { label: string; text: string }[];
-  answer: string;
-  sol?: string;
 }
 
 export const Route = createFileRoute("/app/tests")({
@@ -84,10 +73,7 @@ function TestsPage() {
         throw new Error("empty");
       } catch {
         try {
-          const b = await fetch("/pyq/index.json", { cache: "no-store" });
-          if (!b.ok) throw new Error(`HTTP ${b.status}`);
-          const data = (await b.json()) as { index?: PaperMeta[]; papers?: PaperMeta[] };
-          const list = data.index ?? data.papers ?? [];
+          const list = await loadPaperIndex();
           if (!alive) return;
           setPapers(list);
           setSource(list.length ? "baked" : "error");
@@ -113,18 +99,12 @@ function TestsPage() {
     try {
       let questions: PyqQuestion[] = [];
       try {
-        const r = await fetch(`/api/public/pyq-papers?paper=${encodeURIComponent(paper.id)}`, {
-          cache: "no-store",
-        });
-        if (r.ok) {
-          const data = (await r.json()) as { paper?: { questions?: PyqQuestion[] } };
-          questions = data.paper?.questions ?? [];
-        }
+        questions = await loadPaperWithFallback(paper.id);
       } catch {
         /* fall through to the baked file */
       }
       if (!questions.length) {
-        const r = await fetch(`/pyq/${encodeURIComponent(paper.id)}.json`, { cache: "no-store" });
+        const r = await fetch(`/pyq/${encodeURIComponent(paper.id)}.json`);
         if (r.ok) {
           const data = (await r.json()) as {
             questions?: PyqQuestion[];

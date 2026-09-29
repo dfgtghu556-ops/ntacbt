@@ -43,9 +43,9 @@ import {
   buildDailyPracticeSet,
   DPP_SEC_PER_QUESTION,
   dppToCbtTest,
-  type BankQuestion,
   type DailyPracticeSet,
 } from "@/features/practice/dpp";
+import { loadQuestionBank } from "@/features/pyq/store";
 import { masteryFromStores } from "@/features/mastery/collect";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import {
@@ -1387,56 +1387,10 @@ function DppCard({ set }: { set: DailyPracticeSet }) {
 /**
  * The baked question bank, read from the same files the CBT diagnostic uses.
  *
- * `public/pyq` is generated at build time and gitignored, so a missing or
- * partial bake is a normal state — the caller degrades to no DPP rather than
- * showing an empty set.
+ * See `@/features/pyq/store` for why this is cached rather than fetched per
+ * route: the baked payload is immutable once built, and four routes each
+ * fetching it with `no-store` re-downloaded ~254 KB on every navigation.
  */
-async function loadQuestionBank(): Promise<BankQuestion[]> {
-  try {
-    const indexRes = await fetch("/pyq/index.json", { cache: "no-store" });
-    if (!indexRes.ok) return [];
-    const index = (await indexRes.json()) as { papers?: Array<{ id: string }> };
-    const ids = (index.papers ?? []).map((p) => p?.id).filter((id): id is string => !!id);
-    // Fetch the papers in parallel. Awaiting them in a loop costs one round-trip
-    // per paper, which on the slow connections this app targets is the whole
-    // difference between the DPP appearing and not.
-    const perPaper = await Promise.all(
-      ids.map(async (id) => {
-        try {
-          const res = await fetch(`/pyq/${id}.json`, { cache: "no-store" });
-          if (!res.ok) return [];
-          const data = (await res.json()) as {
-            paper?: { questions?: Array<Record<string, unknown>> };
-          };
-          const rows: BankQuestion[] = [];
-          for (const q of data.paper?.questions ?? []) {
-            const text = q["text"];
-            const subject = q["subject"];
-            if (typeof text !== "string" || typeof subject !== "string" || !text.trim()) continue;
-            rows.push({
-              id: `${id}::${String(q["no"] ?? rows.length)}`,
-              subject,
-              chapter: String(q["chapter"] ?? ""),
-              topic: String(q["topic"] ?? ""),
-              type: q["type"] === "integer" ? "integer" : "mcq",
-              text,
-              options: Array.isArray(q["options"]) ? (q["options"] as BankQuestion["options"]) : [],
-              answer: String(q["answer"] ?? ""),
-              ...(typeof q["sol"] === "string" ? { sol: q["sol"] as string } : {}),
-            });
-          }
-          return rows;
-        } catch {
-          // One failed paper must not blank the whole set.
-          return [];
-        }
-      }),
-    );
-    return perPaper.flat();
-  } catch {
-    return [];
-  }
-}
 
 function TodayStrip({ plan }: { plan: TodayPlan }) {
   const pending = plan.tasks.filter((t) => t.status !== "done");

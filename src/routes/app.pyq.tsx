@@ -5,6 +5,7 @@ import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
 import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
 import { toSubject } from "@/features/academics/subject";
 import { saveCbtTest } from "@/features/cbt/store";
+import { loadPaperIndex, loadPaperWithFallback, type PyqQuestion } from "@/features/pyq/store";
 
 type PyqSource = "api" | "baked" | "error";
 
@@ -26,18 +27,6 @@ interface Paper {
 interface PaperFile {
   paper?: { meta?: Paper; questions?: PyqQuestion[] };
   questions?: PyqQuestion[];
-}
-
-interface PyqQuestion {
-  no: number;
-  subject: string;
-  chapter: string;
-  topic: string;
-  type: "mcq" | "integer";
-  text: string;
-  options: { label: string; text: string }[];
-  answer: string;
-  sol: string;
 }
 
 function Pyq() {
@@ -76,10 +65,7 @@ function Pyq() {
     }
     // 2) Offline fallback: papers baked into the build (public/pyq/).
     try {
-      const r = await fetch("/pyq/index.json", { cache: "no-store" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as { index?: Paper[]; papers?: Paper[] };
-      const list = data.index ?? data.papers ?? [];
+      const list = await loadPaperIndex();
       if (!list.length) throw new Error("No papers baked yet.");
       setPapers(list);
       setSource("baked");
@@ -102,26 +88,8 @@ function Pyq() {
     // fall back to the baked per-paper file when the server can't reach the
     // upstream snapshot (offline builds, preview sandboxes, etc.).
     try {
-      const r = await fetch(`/api/public/pyq-papers?paper=${encodeURIComponent(paper.id)}`, {
-        cache: "no-store",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as { paper?: { questions?: PyqQuestion[] } };
-      const qs = data.paper?.questions ?? [];
-      if (qs.length) {
-        setQuestions(qs);
-        setQLoading(false);
-        return;
-      }
-      throw new Error("No questions in API payload.");
-    } catch {
-      /* fall through to baked paper */
-    }
-    try {
-      const r = await fetch(`/pyq/${paper.id}.json`, { cache: "no-store" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as PaperFile;
-      setQuestions(data.questions ?? data.paper?.questions ?? []);
+      const qs = await loadPaperWithFallback(paper.id);
+      setQuestions(qs);
     } catch {
       setQuestions([]);
     } finally {
