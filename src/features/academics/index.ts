@@ -34,6 +34,7 @@ import {
   type Subject,
 } from "./types";
 import { SOURCE_RECORDS, type Source } from "./source";
+import { curriculumChapterName, hasCurriculumMap } from "./curriculum-bridge";
 
 /** The official JEE Main 2026 scope in `src/data/syllabus.ts`. */
 export const JEE_MAIN_2026_SCOPE: ExamScope = {
@@ -230,6 +231,16 @@ export function chapterForTopic(
 ): string | null {
   const wanted = (topic || "").trim().toLowerCase();
   if (!wanted) return null;
+
+  // A published curriculum map is the authority on what a chapter IS, so it is
+  // consulted first. Without this, a CBSE scope resolves against the legacy
+  // teacher catalog, whose `chapter` field holds playlist marketing strings
+  // ("Organic Chemistry Maestro") and whose nearest-string fallback could match
+  // a teacher's name instead of the chapter the student asked about.
+  if (hasCurriculumMap(scope.exam, scope.academicYear)) {
+    return curriculumChapterName(scope.exam, scope.academicYear, subject, wanted);
+  }
+
   const records = forScope(scope).filter((r) => r.subject === subject);
   // Exact topic match first, then a record whose name contains the topic.
   const exact = records.find(

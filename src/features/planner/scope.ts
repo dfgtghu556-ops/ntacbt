@@ -28,9 +28,10 @@
 import {
   chaptersOf,
   curriculumFor,
+  matchCurriculum,
+  normaliseQuery,
   subjectsOf,
   theoryMarks,
-  unitOfChapter,
   type CurriculumChapter,
   type CurriculumMap,
   type CurriculumUnit,
@@ -98,17 +99,7 @@ export function curriculumKeyForTarget(
 }
 
 function normalise(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-/** True when `haystack` contains every word of `needle` in order-independent fashion. */
-function looseMatch(haystack: string, needle: string): boolean {
-  const words = normalise(needle)
-    .split(" ")
-    .filter((w) => w.length > 2);
-  if (words.length === 0) return false;
-  const h = normalise(haystack);
-  return words.every((w) => h.includes(w));
+  return normaliseQuery(s);
 }
 
 /** Off-syllabus request: name the best in-syllabus alternatives. */
@@ -187,55 +178,48 @@ export function resolveScope(
     };
   }
 
-  const unit = unitOfChapter(map, resolved, topic);
-  if (unit) {
-    const chapter = unit.chapters.find((c) => normalise(c.name) === normalise(topic)) ?? null;
+  // One shared matcher, so a chapter resolves identically here, in the academic
+  // adapter and in the mastery store. Exact chapter name wins over a topic
+  // match, because "Current Electricity" is both and the chapter is what the
+  // student is examined on.
+  const match = matchCurriculum(map, resolved, topic);
+
+  if (match.kind === "chapter" && match.unit) {
     return {
       verdict: "in-syllabus",
       board: key.board,
       classLevel: key.classLevel,
       academicYear: key.academicYear,
       subject: resolved,
-      chapter: chapter ?? null,
-      unit,
-      unitMarks: unit.marks,
+      chapter: match.chapter,
+      unit: match.unit,
+      unitMarks: match.unit.marks,
       subjectTheoryMarks: theoryMarks(map, resolved),
-      note: chapterNote(chapter, unit, key.classLevel, key.academicYear),
+      note: chapterNote(match.chapter, match.unit, key.classLevel, key.academicYear),
       suggestions: [],
     };
   }
 
-  // Not a chapter name — maybe it names a topic inside one.
-  for (const u of map.subjects.find((s) => s.subject === resolved)?.units ?? []) {
-    for (const c of u.chapters) {
-      if (c.topics.some((t) => looseMatch(t.name, topic))) {
-        return {
-          verdict: "in-syllabus-topic",
-          board: key.board,
-          classLevel: key.classLevel,
-          academicYear: key.academicYear,
-          subject: resolved,
-          chapter: c,
-          unit: u,
-          unitMarks: u.marks,
-          subjectTheoryMarks: theoryMarks(map, resolved),
-          note: `"${topic}" is a topic inside ${c.name} (Unit ${u.numeral} — ${u.name}), CBSE Class ${key.classLevel} ${key.academicYear}.`,
-          suggestions: [],
-        };
-      }
-    }
+  if (match.kind === "topic" && match.unit && match.chapter) {
+    return {
+      verdict: "in-syllabus-topic",
+      board: key.board,
+      classLevel: key.classLevel,
+      academicYear: key.academicYear,
+      subject: resolved,
+      chapter: match.chapter,
+      unit: match.unit,
+      unitMarks: match.unit.marks,
+      subjectTheoryMarks: theoryMarks(map, resolved),
+      note: `"${topic}" is a topic inside ${match.chapter.name} (Unit ${match.unit.numeral} — ${match.unit.name}), CBSE Class ${key.classLevel} ${key.academicYear}.`,
+      suggestions: [],
+    };
   }
 
-  // Not a chapter name and not a topic — maybe it names the UNIT itself.
-  // Students ask for "Optics" and "Calculus" far more often than for the
-  // chapter names the board prints, so a unit hit is a first-class resolution
-  // rather than an off-syllabus rejection.
-  const subjectUnits = map.subjects.find((s) => s.subject === resolved)?.units ?? [];
-  const wantedUnit =
-    subjectUnits.find((u) => normalise(u.name) === normalise(topic)) ??
-    subjectUnits.find((u) => looseMatch(u.name, topic)) ??
-    null;
-  if (wantedUnit) {
+  // Students ask for "Optics" and "Calculus" far more often than for the chapter
+  // names the board prints, so a unit hit is a first-class resolution rather
+  // than an off-syllabus rejection.
+  if (match.kind === "unit" && match.unit) {
     return {
       verdict: "in-syllabus",
       board: key.board,
@@ -245,10 +229,10 @@ export function resolveScope(
       // A unit is not a chapter, so `chapter` stays null and `unit` carries the
       // resolution. The UI renders a unit row, not a chapter row.
       chapter: null,
-      unit: wantedUnit,
-      unitMarks: wantedUnit.marks,
+      unit: match.unit,
+      unitMarks: match.unit.marks,
       subjectTheoryMarks: theoryMarks(map, resolved),
-      note: unitNote(wantedUnit, key.classLevel, key.academicYear),
+      note: unitNote(match.unit, key.classLevel, key.academicYear),
       suggestions: [],
     };
   }

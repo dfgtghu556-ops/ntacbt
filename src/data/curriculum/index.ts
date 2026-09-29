@@ -94,4 +94,85 @@ export function subjectsOf(map: CurriculumMap): Subject[] {
   return map.subjects.map((s) => s.subject);
 }
 
+/* ------------------------------------------------------------------ *
+ * Matching
+ *
+ * One matcher, used by the planner scope and the academic adapter, so a
+ * chapter resolves the same way everywhere. A student who types "Optics" in
+ * the planner and "optics" on a test question must land in the same row.
+ * ------------------------------------------------------------------ */
+
+/** What kind of thing a query resolved to. */
+export type CurriculumMatchKind =
+  /** The query names a chapter exactly. */
+  | "chapter"
+  /** The query names a topic inside a chapter. */
+  | "topic"
+  /** The query names a unit. */
+  | "unit"
+  /** Nothing in the map matches. */
+  | "none";
+
+export interface CurriculumMatch {
+  kind: CurriculumMatchKind;
+  subject: Subject;
+  chapter: CurriculumChapter | null;
+  unit: CurriculumUnit | null;
+}
+
+export function normaliseQuery(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** True when `haystack` contains every significant word of `needle`. */
+export function looseMatch(haystack: string, needle: string): boolean {
+  const words = normaliseQuery(needle)
+    .split(" ")
+    .filter((w) => w.length > 2);
+  if (words.length === 0) return false;
+  const h = normaliseQuery(haystack);
+  return words.every((w) => h.includes(w));
+}
+
+/**
+ * Resolve a free-text query against one subject of a map.
+ *
+ * Order matters: an exact chapter name wins over a topic match, because
+ * "Current Electricity" is both a chapter and a topic name elsewhere, and the
+ * chapter is what the student is being examined on. A unit name is tried last,
+ * so "Optics" still resolves when no chapter or topic carries that word.
+ */
+export function matchCurriculum(
+  map: CurriculumMap,
+  subject: Subject,
+  query: string,
+): CurriculumMatch {
+  const miss: CurriculumMatch = { kind: "none", subject, chapter: null, unit: null };
+  if (!query.trim()) return miss;
+  const units = map.subjects.find((s) => s.subject === subject)?.units ?? [];
+  if (units.length === 0) return miss;
+  const wanted = normaliseQuery(query);
+
+  const chapter = units.flatMap((u) => u.chapters).find((c) => normaliseQuery(c.name) === wanted);
+  if (chapter) {
+    const unit = units.find((u) => u.chapters.some((c) => c.number === chapter.number)) ?? null;
+    return { kind: "chapter", subject, chapter, unit };
+  }
+
+  for (const u of units) {
+    for (const c of u.chapters) {
+      if (c.topics.some((t) => looseMatch(t.name, query))) {
+        return { kind: "topic", subject, chapter: c, unit: u };
+      }
+    }
+  }
+
+  const unit = units.find((u) => normaliseQuery(u.name) === wanted);
+  if (unit) return { kind: "unit", subject, chapter: null, unit };
+  const looseUnit = units.find((u) => looseMatch(u.name, query));
+  if (looseUnit) return { kind: "unit", subject, chapter: null, unit: looseUnit };
+
+  return miss;
+}
+
 export { CBSE_CLASS_12_2026_27, assertClassLevelIsolation, chaptersOf, theoryMarks, unitOfChapter };
