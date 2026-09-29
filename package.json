@@ -7,7 +7,7 @@
     "dev": "vite dev",
     "build": "node scripts/build-pyq.mjs && npm run validate:data && vite build",
     "build:dev": "node scripts/build-pyq.mjs && npm run validate:data && vite build --mode development",
-    "preview": "vite preview",
+    "preview": "npm run preview:build && node .output/server/index.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "bake-pyq": "node scripts/build-pyq.mjs",
@@ -38,7 +38,8 @@
     "audit:clicks": "node scripts/audit-clicks.mjs",
     "audit": "node scripts/audit-wires.mjs && node scripts/audit-clicks.mjs",
     "perf:drawer": "node scripts/drawerperf.mjs 400",
-    "validate:data": "node scripts/validate-jee2026.mjs && node scripts/validate-pyq-store.mjs && node scripts/validate-sot.mjs && node scripts/validate-sources.mjs && node scripts/validate-syllabus.mjs && node scripts/validate-curriculum.mjs && node scripts/validate-teachers.mjs && node scripts/validate-videos.mjs && node scripts/validate-analytics.mjs && node scripts/validate-planner.mjs"
+    "validate:data": "node scripts/validate-jee2026.mjs && node scripts/validate-pyq-store.mjs && node scripts/validate-sot.mjs && node scripts/validate-sources.mjs && node scripts/validate-syllabus.mjs && node scripts/validate-curriculum.mjs && node scripts/validate-teachers.mjs && node scripts/validate-videos.mjs && node scripts/validate-analytics.mjs && node scripts/validate-planner.mjs",
+    "preview:build": "node scripts/build-pyq.mjs && NITRO_PRESET=node-server vite build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
