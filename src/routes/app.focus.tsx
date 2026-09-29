@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
+  Clock3,
   Minus,
   Pause,
   Play,
@@ -257,7 +258,18 @@ function Focus() {
               ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-muted-foreground">No focus blocks yet.</p>
+          // An empty state that says what to do, not just that there is nothing.
+          // "No focus blocks yet" leaves a student staring at a blank card; this
+          // names the one action that fills it, and says what it will produce,
+          // because the whole point of the timer is the record it leaves behind.
+          <div className="mt-3 rounded-xl border border-dashed p-6 text-center">
+            <Clock3 className="mx-auto h-7 w-7 text-muted-foreground" aria-hidden="true" />
+            <p className="mt-2 text-sm font-medium">No focus blocks yet</p>
+            <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">
+              Start a 25-minute block and name what you are working on. Each finished block is
+              counted here in goals, not hours.
+            </p>
+          </div>
         )}
       </section>
     </div>
