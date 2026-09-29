@@ -7,10 +7,17 @@
  *   • papers saved on this device,
  *   • the baked / full previous-year library,
  * and hands each one to the exam service so the runner never has to guess.
+ *
+ * It also carries the reverse half of the shell bridge. `public/jee-cbt.html`
+ * has always linked *to* `/app`, but nothing in the React app linked *back*,
+ * so a student who had bookmarked the old PDF uploader had no way to find it
+ * from here. The two shells stay separate products — the legacy tool can parse
+ * an arbitrary PDF the student brings, which the React runner cannot — but the
+ * bridge now runs in both directions.
  */
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileText, Loader2, Play, RefreshCw, Save, TestTube2 } from "lucide-react";
+import { FileText, Loader2, Play, RefreshCw, Save, TestTube2, Upload } from "lucide-react";
 import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
 import { toSubject } from "@/features/academics/subject";
 import { loadCbtStore, saveCbtTest } from "@/features/cbt/store";
@@ -182,6 +189,32 @@ function TestsPage() {
             <Link to="/cbt">
               <Play className="mr-2 h-4 w-4" /> Start diagnostic
             </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/*
+        The one capability the React runner still lacks: building a paper from a
+        PDF the student brings. Rather than hiding that the old tool exists, say
+        exactly what it does and what it does not — the student should not have
+        to guess which of two "CBT" buttons to press.
+      */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Upload className="h-5 w-5" /> Turn your own PDF into a test
+          </CardTitle>
+          <CardDescription>
+            Upload a Physics, Chemistry or Maths paper PDF and the classic tool builds a 75-question
+            NTA-style test from it. Everything else — planner, PYQ library, analytics — stays in the
+            Learning OS, so a test built here still counts towards your progress.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <a href="/jee-cbt.html">
+              <FileText className="mr-2 h-4 w-4" /> Open the PDF paper builder
+            </a>
           </Button>
         </CardContent>
       </Card>
