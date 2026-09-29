@@ -15,6 +15,8 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppLayoutRouteImport } from './routes/app._layout'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppFocusRouteImport } from './routes/app.focus'
+import { Route as AppMapRouteImport } from './routes/app.map'
+import { Route as AppMemoryRouteImport } from './routes/app.memory'
 import { Route as AppPlannerRouteImport } from './routes/app.planner'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppPyqRouteImport } from './routes/app.pyq'
@@ -61,6 +63,16 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
 const AppFocusRoute = AppFocusRouteImport.update({
   id: '/app/focus',
   path: '/app/focus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppMapRoute = AppMapRouteImport.update({
+  id: '/app/map',
+  path: '/app/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppMemoryRoute = AppMemoryRouteImport.update({
+  id: '/app/memory',
+  path: '/app/memory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppPlannerRoute = AppPlannerRouteImport.update({
@@ -155,6 +167,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppLayoutRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
+  '/app/map': typeof AppMapRoute
+  '/app/memory': typeof AppMemoryRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/profile': typeof AppProfileRoute
   '/app/pyq': typeof AppPyqRoute
@@ -180,6 +194,8 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
+  '/app/map': typeof AppMapRoute
+  '/app/memory': typeof AppMemoryRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/profile': typeof AppProfileRoute
   '/app/pyq': typeof AppPyqRoute
@@ -205,6 +221,8 @@ export interface FileRoutesById {
   '/app/_layout': typeof AppLayoutRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/focus': typeof AppFocusRoute
+  '/app/map': typeof AppMapRoute
+  '/app/memory': typeof AppMemoryRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/profile': typeof AppProfileRoute
   '/app/pyq': typeof AppPyqRoute
@@ -232,6 +250,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/analytics'
     | '/app/focus'
+    | '/app/map'
+    | '/app/memory'
     | '/app/planner'
     | '/app/profile'
     | '/app/pyq'
@@ -257,6 +277,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/analytics'
     | '/app/focus'
+    | '/app/map'
+    | '/app/memory'
     | '/app/planner'
     | '/app/profile'
     | '/app/pyq'
@@ -281,6 +303,8 @@ export interface FileRouteTypes {
     | '/app/_layout'
     | '/app/analytics'
     | '/app/focus'
+    | '/app/map'
+    | '/app/memory'
     | '/app/planner'
     | '/app/profile'
     | '/app/pyq'
@@ -307,6 +331,8 @@ export interface RootRouteChildren {
   AppLayoutRoute: typeof AppLayoutRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppFocusRoute: typeof AppFocusRoute
+  AppMapRoute: typeof AppMapRoute
+  AppMemoryRoute: typeof AppMemoryRoute
   AppPlannerRoute: typeof AppPlannerRoute
   AppProfileRoute: typeof AppProfileRoute
   AppPyqRoute: typeof AppPyqRoute
@@ -368,6 +394,20 @@ declare module '@tanstack/react-router' {
       path: '/app/focus'
       fullPath: '/app/focus'
       preLoaderRoute: typeof AppFocusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/map': {
+      id: '/app/map'
+      path: '/app/map'
+      fullPath: '/app/map'
+      preLoaderRoute: typeof AppMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/memory': {
+      id: '/app/memory'
+      path: '/app/memory'
+      fullPath: '/app/memory'
+      preLoaderRoute: typeof AppMemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/planner': {
@@ -510,6 +550,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppLayoutRoute: AppLayoutRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppFocusRoute: AppFocusRoute,
+  AppMapRoute: AppMapRoute,
+  AppMemoryRoute: AppMemoryRoute,
   AppPlannerRoute: AppPlannerRoute,
   AppProfileRoute: AppProfileRoute,
   AppPyqRoute: AppPyqRoute,

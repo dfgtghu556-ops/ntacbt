@@ -12,6 +12,7 @@
 import {
   BarChart3,
   BrainCircuit,
+  Map as MapIcon,
   CalendarDays,
   Clock3,
   FileText,
@@ -49,4 +50,5 @@ export const SHELF: Array<NavItem & { search?: { q: string } }> = [
   // the six Phase 6 destinations, and the mobile bottom bar is grid-locked to
   // NAV.length. Adding Memory there would wrap the bar onto two rows.
   { to: "/app/memory", label: "Memory Locker", icon: BrainCircuit },
+  { to: "/app/map", label: "Syllabus map", icon: MapIcon },
 ];
