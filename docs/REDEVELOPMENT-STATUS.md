@@ -428,6 +428,156 @@ filter invalid sessions at the top. Regression tests in
 
 ---
 
+---
+
+## 13. A8 — audio summary
+
+- `src/lib/speech.ts` — Web Speech API wrapper. No API key, nothing sent
+  anywhere, works offline, which matters more than voice quality for the
+  low-connectivity case the research doc calls out.
+- `src/features/mentor/speech.ts` — composes the spoken version from the
+  same numbers the page renders, in the page's own order.
+- Three rules: availability is **reported**, never assumed (the voice list
+  populates asynchronously and varies by device, so the button disables
+  with a reason); markdown is stripped and the text capped, because the
+  2,400-character AI context string read aloud is noise; one utterance at
+  a time, and leaving the page stops the speech.
+- Hinglish is read with an Indian English voice, because it is
+  Roman-script Hindi and a Hindi voice would mispronounce the Latin
+  letters.
+- A student with no attempts hears "not attempted any questions yet",
+  never "0 percent accuracy".
+
+---
+
+## 14. A10 — PWA install, offline fallback, real asset caching
+
+A manifest and service worker already existed, but three things meant the
+app was not actually installable or offline-capable.
+
+1. **`start_url` was `/jee-cbt.html`** — the legacy HTML shell. Installing
+   dropped a student into the app the rebuild is moving away from. Now
+   `/app`, with shortcuts for Today, a mock test, PYQ papers and the
+   mentor report.
+2. **No offline fallback.** A navigation miss served `/`, the marketing
+   page. `public/offline.html` is now the declared fallback and says
+   plainly that attempts and the plan are stored on the device, not in the
+   cloud.
+3. **Hashed assets were never cached**, so "works offline" was
+   aspirational. Vite emits `/assets/app.index-A1b2C3.js`, so the hash
+   changes every build and a cached copy is immutable by construction —
+   those are now cache-first permanently. Unversioned URLs (`/js/app.js`,
+   `/css/legacy.css`) stay network-first, because caching those is the
+   original v1 bug that froze every student on the first version they ever
+   loaded.
+
+The classification rules live in `public/sw-classify.js` and are loaded by
+`sw.js` via `importScripts`, so they are testable. The suite checks them
+against the filenames Vite actually emits.
+
+Install is a real ask rather than Chrome's easy-to-miss mini-infobar. A
+dismissal is respected for two weeks and declining the browser dialog
+counts as a dismissal. iOS gets the real share-sheet instructions instead
+of a button that does nothing. Already-installed is detected through both
+the display-mode media query and `navigator.standalone`.
+
+---
+
+---
+
+## 15. A2 — Memory Locker (spaced repetition)
+
+- `src/features/memory/srs.ts` — real **SM-2**, not the legacy app's fixed
+  1→3→7→21→45-day ladder. The ladder does not adapt: a card a student keeps
+  failing comes back on the same timing as one they find trivial. SM-2 carries a
+  per-card ease factor, so failures shorten the interval and successes lengthen
+  it. A failing grade resets the ladder to one day and counts a lapse. Ease is
+  bounded below at 1.3 so a card can never become unschedulable.
+- Four grades (Again / Hard / Good / Easy) rather than Anki's 0–5, mapped onto
+  SM-2's quality scale — on a phone, fewer buttons that get pressed beat six
+  that do not.
+- `src/features/memory/use-deck.ts` — **auto-seeds from the student's real wrong
+  answers**, reading the same legacy test store the mastery engine reads. Never
+  from a right answer. The card front is the real question text and the back is
+  the real answer; there is no invented "suggested formula" anywhere, and a
+  question with no readable text is skipped rather than turned into a
+  placeholder.
+- `/app/memory` shows one card at a time with the answer hidden until the
+  student commits, because active recall is the mechanism and showing both sides
+  turns it into re-reading. There is no peek — a peek inflates the grade and
+  corrupts the schedule. A session is 20 cards so the queue can be finished.
+- Memory sits in the sidebar `SHELF`, not the primary `NAV`: the primary nav
+  stays at Phase 6's six destinations and the mobile bottom bar is grid-locked
+  to `NAV.length`. The `SHELF` test now checks a shortcut resolves to a real
+  route file rather than that it is in `NAV` — the property that actually
+  protects the student, and stronger than the old check.
+
+---
+
+---
+
+## 16. A4 — Today's DPP (adaptive practice)
+
+- `src/features/practice/dpp.ts` builds the set; a card on `/app` launches it.
+- **It does not label questions easy/medium/hard.** The baked PYQ bank carries
+  `subject`, `chapter`, `topic`, `type`, `text`, `options`, `answer`, `sol` — and
+  no difficulty field. Inventing one would be the fabricated data the rebuild
+  plan forbids, and a wrong label actively misleads: a student shown "easy" on a
+  question they keep failing learns to distrust the whole app. The adaptation is
+  in the **selection**, not in a label — every question carries the reason it was
+  chosen so the student can see the logic.
+- Selection order: weak chapters (a real sample below 50%) weakest first; then
+  thin samples one question each, because a chapter with two attempts is
+  *unmeasured* rather than failing, and this also stops the set only ever
+  reinforcing what is already known; then the highest-weightage chapters; then
+  the remainder spread across subjects.
+- Deterministic per day (mulberry32 seeded from the day key), so a reload does
+  not reshuffle the set and a student can finish what they started.
+- Launched by saving the set as a real `CbtTest`, so `/cbt` resolves it by id and
+  the student gets the full exam runtime — timer, palette, negative marking,
+  autosave, and a result that feeds the same mastery store every other test
+  uses. A DPP attempt is therefore counted by the same accuracy the mentor
+  report uses.
+- `dppToCbtTest` returns null below 6 questions: a three-question "test" would
+  produce a result that looks like evidence and is not.
+- Fixed a real robustness bug: `?? []` is not enough for a payload that could be
+  a string or object, and calling `.filter` on it took down the practice page.
+- Three tests run against the real baked bank (5 papers, 375 questions), reading
+  the same `paper.questions` shape `cbt.tsx` reads. They skip when the bake has
+  not run, since `public/pyq` is gitignored.
+
+---
+
+---
+
+## 17. A9 — XP, levels and badges (gamification done right)
+
+- `src/features/focus/achievements.ts`, surfaced as a card on `/app`.
+- **Everything is derived, never accumulated.** XP is recomputed from the
+  student's evidence on every read. A stored counter would drift — it would
+  survive a data wipe, inflate on a re-import, and quietly disagree with the
+  numbers elsewhere on the page. Deriving it means the XP shown always equals
+  what the focus minutes, attempts, lessons and mastered chapters add up to, and
+  it cannot be inflated by editing localStorage.
+- **No badge can be earned by NOT doing something.** Every predicate asserts a
+  completed positive act, and a test greps every label and description for
+  failure-framed language. No countdown, no loss framing, no locked-badge wall —
+  an unearned badge is shown with a real progress bar toward a completed act, or
+  not shown at all.
+- **No leaderboard.** The research doc puts peer comparison in A6 and flags it as
+  the item most likely to backfire. The only comparison is "beat your own best",
+  against the student's own previous streak, and a first-ever streak is not
+  treated as a personal best because there is nothing to beat.
+- Only **completed** focus sessions earn XP, so a timer left running does not.
+- Fixed a real bug on the way: the dashboard effect passed the `humane` **state**
+  to the awards builder, which still held its initial value because the setState
+  in the same effect had not applied — a student with a real streak would have
+  been awarded for an empty one. The lint rule caught it; the computed value is
+  now captured locally, matching how the effect already handles the survival
+  score.
+
+---
+
 ## Open items for the user
 
 1. **A `.env` containing real Supabase credentials is committed to the repo.**
