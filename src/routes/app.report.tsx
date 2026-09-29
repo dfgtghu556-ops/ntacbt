@@ -16,11 +16,23 @@ import {
   Share2,
   Target,
   TrendingUp,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { DataStore } from "@/lib/store";
+import { getLang, type Lang } from "@/lib/lang";
 import { loadFocusStore } from "@/features/focus/focus";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { buildMentorReport, type MentorReport } from "@/features/mentor/report";
+import { mentorSpeechScript } from "@/features/mentor/speech";
+import {
+  hasVoiceFor,
+  isSpeechSupported,
+  speak,
+  speechLocale,
+  stopSpeaking,
+  whenVoicesReady,
+} from "@/lib/speech";
 import {
   PRIVACY,
   buildWeeklyReport,
@@ -62,6 +74,9 @@ function Report() {
   const [report, setReport] = useState<MentorReport | null>(null);
   const [weekly, setWeekly] = useState<ShareableReport | null>(null);
   const [copied, setCopied] = useState<"text" | "markdown" | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [voiceReady, setVoiceReady] = useState(false);
+  const [lang, setLangState] = useState<Lang>("hinglish");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -85,6 +100,33 @@ function Report() {
     }
     setLoaded(true);
   }, []);
+
+  // The voice list populates asynchronously on most browsers, so availability
+  // is checked once after mount rather than assumed during the first render.
+  useEffect(() => {
+    let alive = true;
+    setLangState(getLang());
+    void whenVoicesReady().then(() => {
+      if (alive) setVoiceReady(true);
+    });
+    // Leaving the page mid-sentence must not keep talking.
+    return () => {
+      alive = false;
+      stopSpeaking();
+    };
+  }, []);
+
+  function listen() {
+    if (!report) return;
+    if (speaking) {
+      stopSpeaking();
+      setSpeaking(false);
+      return;
+    }
+    const ok = speak(mentorSpeechScript(report), lang);
+    setSpeaking(ok);
+    if (!ok) setVoiceReady(true);
+  }
 
   async function copy(label: "text" | "markdown") {
     if (!weekly) return;
@@ -143,7 +185,31 @@ function Report() {
             <p className="mt-1 text-xs capitalize text-muted-foreground">{report.readinessLevel}</p>
           </div>
         </div>
-        <p className="mt-4 text-sm text-muted-foreground">{report.summary}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <p className="min-w-0 flex-1 text-sm text-muted-foreground">{report.summary}</p>
+          <button
+            onClick={listen}
+            disabled={!isSpeechSupported() || (voiceReady && !hasVoiceFor(speechLocale(lang)))}
+            title={
+              isSpeechSupported()
+                ? voiceReady && !hasVoiceFor(speechLocale(lang))
+                  ? `No ${speechLocale(lang)} voice is installed on this device.`
+                  : "Read the summary aloud"
+                : "This browser has no speech support."
+            }
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+            {speaking ? "Stop" : "Listen"}
+          </button>
+        </div>
+        {/* Say why the button is dead rather than leaving a silent control. */}
+        {isSpeechSupported() && voiceReady && !hasVoiceFor(speechLocale(lang)) ? (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            No {speechLocale(lang)} voice is installed on this device, so the audio summary is
+            unavailable. The written report is unaffected.
+          </p>
+        ) : null}
       </section>
 
       {/* A5 — shareable parent / mentee one-pager. Sits directly under the hero
