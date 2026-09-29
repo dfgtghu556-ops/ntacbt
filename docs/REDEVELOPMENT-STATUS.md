@@ -578,6 +578,35 @@ the display-mode media query and `navigator.standalone`.
 
 ---
 
+---
+
+## 18. A7 — Syllabus Map
+
+- `src/features/curriculum/map.ts` + `/app/map`.
+- **No prerequisite edges are drawn.** A prerequisite is a claim about how
+  knowledge works, and a wrong one is worse than a missing one: a student told
+  chapter B *requires* chapter A will skip B believing they are not ready, and
+  the dependency may not even be real. The published CBSE syllabus states no
+  prerequisites, so inventing a topic-level dependency graph would be fabricated
+  data of exactly the kind the rebuild plan forbids.
+- What **is** published, and what the map shows: the unit order, the chapter order
+  inside each unit, the topic list, the class level and the per-unit marks. The
+  map renders the board's own structure — the order a student is actually
+  examined in — coloured by the student's chapter-level evidence, with "what
+  comes next" being the chapter after the weakest one in the board's order.
+- **Topics are listed, not coloured.** Mastery is measured per chapter because
+  that is the granularity the question bank carries; painting a topic green
+  because its chapter is green would be a claim the evidence does not support.
+  The expanded chapter view says so.
+- Physics units show "unit marks not published here" rather than a number, for the
+  same reason the planner and coverage panel do.
+- A JEE objective gets an explicit "no syllabus map for this objective" with the
+  reason, rather than a structure the student is not examined on.
+- Syllabus map sits in the sidebar `SHELF` alongside Memory Locker; the primary
+  nav stays at Phase 6's six destinations.
+
+---
+
 ## Open items for the user
 
 1. **A `.env` containing real Supabase credentials is committed to the repo.**
