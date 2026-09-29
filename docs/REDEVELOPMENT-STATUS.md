@@ -675,10 +675,15 @@ Unchanged from earlier sections, plus what remains from the research doc:
    rebuild plan says unverifiable entries should be hidden from
    recommendations, which would empty the teacher picker — supply URLs or
    accept honest labelling.
-4. **CBSE Class XI 2026-27 has no published map.**
-   `curriculumKeyForExam` resolves `CBSE_11`, but no Class XI map is
-   transcribed, so a `board11` student gets an honest "not published here"
-   rather than the Class XII chapters.
+4. ~~**CBSE Class XI 2026-27 has no published map.**~~ **Resolved in `08d027a`.**
+   The Class XI map is transcribed and published: Physics 10 units / 14 chapters
+   with unit marks `null` (CBSE publishes _bands_ of 23 / 17 / 20 / 10, and
+   secondary per-unit figures disagree), Chemistry 9 units / 9 chapters
+   unanimous at 70, Mathematics 5 units / 14 chapters unanimous at 80 with "no
+   chapter-wise weightage" stated explicitly. `assertClassLevelIsolation`
+   throws at import if a chapter id, name or number repeats across the two class
+   levels, and `scripts/validate-curriculum.mjs` now loads the registry and
+   checks both maps rather than grepping Class XII source as text (§26.2).
 5. **`public/pyq` is gitignored and baked at build time.** This sandbox
    cannot reach HuggingFace, so the bake falls back to its pinned baseline of
    5 papers / 375 questions. The full historical library only appears in a
@@ -1028,14 +1033,55 @@ student in front of their progress without inventing strangers to compare
 against. If a backend ever arrives, the honest version of A6 is a private,
 rotating comparison against a named partner who opted in, never a public board.
 
+## 29. Production deploy was wired to a target the build never produced
+
+The build emitted a Cloudflare Worker into `.output/` because that is the
+Lovable config's default nitro preset. `vercel.json` and
+`.github/workflows/deploy.yml` both deploy to **Vercel**, reading a `dist/`
+directory the build never creates. There is no wrangler config anywhere in the
+repo, so Cloudflare was never an intentional target — it was a default nobody
+chose. The production deploy served nothing.
+
+`vite.config.ts` now pins `preset: "vercel"`, so the build emits the Vercel
+Build Output API layout in `.vercel/output/`: static assets — including the
+baked question bank, which is what makes the app work offline — plus the SSR
+server function. `vercel.json` loses `framework: "vite"` and
+`outputDirectory: "dist"`, which would have made Vercel run its own Vite
+detection and look in a directory that does not exist, and loses its SPA
+`rewrites` to `/index.html`, which is wrong for an SSR app; the generated
+`config.json` already routes everything to the server function. A
+`Permissions-Policy` denying camera, microphone, geolocation and payment is
+added. The app uses none of them — Saarthi's image upload is a plain file input,
+not `getUserMedia`, so the picker is unaffected.
+
+**`npm run preview` was broken too, and that mattered more.** `vite preview`
+looks for `dist/server/server.js`, which no preset here produces, so it returned
+500 on every route. A broken production build was therefore undetectable before
+it shipped. The preset stays overridable through `NITRO_PRESET`, and `preview`
+now builds with `node-server` and runs the result. Verified end to end against
+the real production bundle: `/`, `/app`, `/app/pyq`, `/app/tests`, `/app/planner`,
+`/app/map` and `/cbt` all return 200, and `/pyq/index.json` serves the baked
+bank.
+
+Also removed from `app.studytube.$video.tsx`:
+`const duration = search.topic ? undefined : undefined;` followed by
+`void duration;` — a value that is `undefined` on both branches, kept alive only
+to satisfy the unused-variable check. Leftover from an earlier shape of the
+search params; the route never had a duration to show.
+
 ## Verification
 
-Current gate on `HEAD` (`acf2057`):
+Current gate on `HEAD` (`88bdb3a`):
 
 - `tsc --noEmit` — 0 errors
-- `vitest run` — 680 passed (38 suites)
+- `vitest run` — 684 passed (39 suites)
 - `npm run lint` — 0 errors, 9 pre-existing warnings
 - `npm run validate:all` — exit 0
 - `vite build` — exit 0
-- All 16 routes — HTTP 200
+- All 16 routes — HTTP 200 (dev)
+- `npm run preview` — builds with `node-server`, serves the real production
+  bundle; `/`, `/app`, `/app/pyq`, `/app/tests`, `/app/planner`, `/app/map`,
+  `/cbt` all 200, `/pyq/index.json` serves the baked bank
+- `npm run build` — emits `.vercel/output/` (Build Output API v3) with the
+  question bank in `static/pyq/`
 - `validate:data` — 10 offline validators, 36–309 ms each
