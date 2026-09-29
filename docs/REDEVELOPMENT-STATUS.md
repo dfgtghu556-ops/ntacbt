@@ -686,19 +686,144 @@ Unchanged from earlier sections, plus what remains from the research doc:
 6. **A1 Snap & Solve needs an API key.** The Saarthi surface already accepts
    an uploaded image; the solve step needs a vision model key. Nothing was
    faked to fill the gap.
-7. **B1 shell unification is not done.** `jee-cbt.html` and `/app` still have
-   different navigation. The React app is now the product, but the legacy
-   shell still ships and is linked from the header. Unifying them is a larger
-   change than a single session should make blind.
+7. **B1 shell unification is partly done.** The bridge now runs in both
+   directions (§22) and the legacy shell is not deleted, per the standing scope
+   decision. What remains is a product decision, not an engineering one: the
+   legacy shell still has its own navigation, and collapsing it into `/app`
+   means deciding what happens to the PDF paper builder, which the React
+   runner cannot yet replace.
 8. **Phase 2 (transcribing the other 14 JEE 2026 papers)** is not started: the
    source PDFs are gitignored and not present in this sandbox.
+9. **A6 peer accountability layer** is not started and is the item most likely
+   to backfire. The audit ranks peer comparison as the highest-risk feature in
+   the set; A9 deliberately ships no leaderboard for the same reason. If it is
+   built, it should be opt-in and never show another student's numbers to
+   someone who has not asked.
+10. **The React planner still cannot replace the legacy PDF paper builder.**
+    `buildTodoPlan` reads the stored plan; it does not generate one. Generating
+    a schedule is explicitly out of scope per the standing decision not to
+    change the Eklavya planner.
+
+## 21. A10 — notifications (the dead bell)
+
+The header bell was a `<button aria-label="Notifications">` with no `onClick`.
+A control that looks like a feature and does nothing is worse than no control,
+which B7 forbids.
+
+**`src/features/notify/schedule.ts`** is the pure rule set. Quiet hours are
+absolute and override all evidence. A nudge needs evidence, not a schedule —
+"it has been six hours" is not a reason. Loss framing is *earned*: a real streak
+(≥2 days) **and** genuine time left (≥2h), and it always names the fix alongside
+the risk so the message leads with what the student can still do. Nothing is
+invented to create urgency. `hoursLeft` is computed from the clock, never taken
+from the caller, because a nudge that says "five hours left" when there are two
+is a lie the student can check. Malformed quiet hours are normalised rather than
+crashing — an unvalidated `NaN` makes every comparison false and silently
+disables quiet hours entirely.
+
+**`src/features/notify/use-nudges.ts`** is the React binding. In-app first: the
+nudges render whether or not permission is granted, because the message is
+useful on its own. Permission is only ever requested from a user gesture. The
+recompute logic had been written twice — once for the interval, once for the
+quiet-hours editor — and the two copies had already drifted, one passing
+`primaryAction` and the other `null`. Collapsed into one `recompute`.
+
+**`src/components/layout/NotificationBell.tsx`** is the panel. Every nudge
+carries the evidence string `dueNudges` used to decide it, so the student can
+check the reasoning instead of taking it on faith. Quiet hours are stated and
+editable from the panel, so a student who wonders why nothing arrived at 23:00
+gets an answer in the same place they set it. Escape and an outside click close
+it.
+
+**`src/features/focus/active-days.ts`** — `buildActiveDays` was a local function
+in `app.index.tsx`; extracted so the nudges, the streak and the survival score
+share one definition. Three numbers that should match is how they quietly stop
+matching. The 25-minute bar is the same one `focusStreak` uses.
+
+## 22. B1 — the shell bridge runs both ways
+
+`public/jee-cbt.html` has linked to `/app` since the React app landed. Nothing
+in the React app ever linked back, so a student who had bookmarked the old PDF
+paper builder had to type the URL from memory. The Tests page now carries a card
+linking to `/jee-cbt.html` and naming the one capability the React runner still
+lacks — building a 75-question NTA-style test from a PDF the student brings.
+Saying what the other shell does, and does not, matters more than the link: a
+student faced with two "CBT" buttons should not have to guess which to press.
+
+`src/test/shell-bridge.test.ts` guards both directions. These are text
+assertions over the source, not render assertions, because the bridge is a plain
+anchor between two separately-built bundles and has to survive a refactor of
+either one. It also asserts the link is a plain anchor rather than a TanStack
+Link — TanStack only knows its own routes, so a router Link to `/jee-cbt.html`
+would 404.
+
+Scope decision unchanged: `public/jee-cbt.html` is not deleted. The two products
+stay separate; only the path between them is fixed.
+
+## 23. B6 — first-run onboarding
+
+Nothing in the React app ever asked a new student what they are preparing for.
+The planner profile lives inside the monolithic legacy blob at
+`localStorage["jeecbt.v1"]`, which `public/js/app.js` writes and this app only
+reads — so there was nowhere to put the answer.
+
+`src/features/onboarding/profile.ts` owns its own versioned key,
+`ntacbt.profile.v1`, following the isolation pattern of `memory/srs.ts` and
+`studytube/progress.ts`. Four screens, one question each: goal, daily minutes,
+exam date, ready.
+
+- **Skip is real.** On the first screen, same size as Next, and it produces a
+  working default rather than a blocked app. A wizard that punishes skipping is
+  a dark pattern, and B7 sits directly next to B6.
+- **Every derived number is checkable arithmetic.** 60 min/day is shown as
+  "about 7 hours a week" *before* the student commits, not afterwards.
+- **The exam date is optional, and a past date is rejected** rather than stored
+  and counted down to. `daysUntilExam` returns `null`, never a negative number.
+- **No promised outcomes.** The summary states the inputs; it never mentions a
+  rank, a seat or a score.
+- **A malformed store degrades to the default** instead of breaking the first
+  thing a new student sees.
+
+The wizard is gated on `hasCompletedOnboarding()` read in the initial state
+rather than an effect, so the SSR pass and the first client render agree — a
+wizard that flashes open after hydration looks like a bug.
+
+## 24. F1 + F3 — goal-based to-do engine and auto re-plan
+
+The two features the roadmap audit ranks as fixing the top quitting trigger
+existed only inside `public/jee-cbt.html` and had no React equivalent.
+
+`src/features/planner/todo.ts` is a derived and **non-destructive** view. The
+scope decision says not to change the Eklavya planner schedule, and the stored
+planner is the legacy app's, so the engine rewrites nothing.
+
+- **F1** — progress is counted in goals, never in hours. "3 of 5 goals done" is
+  something the student did; "2.5 hours sat" is something that happened to them,
+  and it is the number that makes a short day feel like a failure. The planner
+  page led with minutes; `TodayGoals` replaces that with a goal count.
+- **F3** — a missed task is carried forward once, with the date it was meant
+  for, so a slip is visible instead of silently re-appearing tomorrow. A carried
+  task never outranks today's own work. Finishing early offers exactly one more
+  thing rather than a whole future day, because pulling a day forward is how a
+  good day becomes an overrun.
+
+The ranking is a lexicographic sort, not a magic-number score. The first version
+scored weakness at −1000 and carry-over at +500, so a carried weak task
+outranked today's pending work and a finished weak task outranked pending work —
+both caught by the new tests, both backwards from the intent. Precedence that
+must hold absolutely cannot be expressed as a trade-off.
+
+`src/features/planner/todo-store.ts` holds the check-off overlay on
+`ntacbt.todo.done.v1`. A tick here never becomes "done" in the legacy plan, so
+the two products' completion states stay distinct. Clearing is explicit and
+surfaced in the UI rather than a hidden reset.
 
 ## Verification
 
-Current gate on `HEAD`:
+Current gate on `HEAD` (`efbc33f`):
 
 - `tsc --noEmit` — 0 errors
-- `vitest run` — 518 passed / 518 (29 suites)
+- `vitest run` — 616 passed (34 suites)
 - `npm run lint` — 0 errors, 9 pre-existing warnings
 - `npm run validate:all` — exit 0
 - `vite build` — exit 0
