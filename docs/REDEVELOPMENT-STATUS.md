@@ -1085,3 +1085,68 @@ Current gate on `HEAD` (`88bdb3a`):
 - `npm run build` — emits `.vercel/output/` (Build Output API v3) with the
   question bank in `static/pyq/`
 - `validate:data` — 10 offline validators, 36–309 ms each
+
+---
+
+## Publishing round — making the app crawlable (`166e33b` → `7db4549`)
+
+The rebuild had left the app functionally complete but invisible: every data
+route fetched in a `useEffect`, so the HTML shipped a spinner and no content,
+and a crawler reading markup saw an empty page. This round closed the gap
+against the publishing checklist, working in the priority order the prompt set.
+
+| #   | Item                                                                 | State   | Commit    |
+| --- | -------------------------------------------------------------------- | ------- | --------- |
+| 1   | Content server-rendered (`/app/pyq`)                                 | ✅ done | `166e33b` |
+| 2   | Per-route title + description (18 routes)                            | ✅ done | `9c3c064` |
+| 3   | Sitemap generated at build time + robots directive                   | ✅ done | `aa3c908` |
+| 4   | JSON-LD (`Organization`, `WebSite`+`SearchAction`, `WebApplication`) | ✅ done | `aa3c908` |
+| 5   | Legal routes `/privacy` `/terms` `/about`                            | ✅ done | `e60edab` |
+| 6   | 500 page — status verified, tab title fixed                          | ✅ done | `95f6646` |
+| 7   | Social cards — real image, per-route, no duplicate canonical         | ✅ done | `ca53e4a` |
+| 8   | `/app/map` + `/app/studytube` server-rendered                        | ✅ done | `66059be` |
+| 9   | Site root is real content, not a redirect                            | ✅ done | `7db4549` |
+
+### Measured, not asserted
+
+Every claim below was checked against the **production bundle**
+(`NITRO_PRESET=node-server vite build` + `node .output/server/index.mjs`), not
+the dev server.
+
+| Route            | Before                                         | After                                                                              |
+| ---------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `/app/pyq`       | 5 KB, "Loading papers", 0 questions in the DOM | 5 papers, 375 questions, subject counts, `>21 Jan · Evening Shift<` as a text node |
+| `/app/map`       | 5 KB, 0 chapters                               | 50 KB, all 37 chapters, all six subjects                                           |
+| `/app/studytube` | 5 KB, every shelf empty                        | 139 KB, all four shelf variants                                                    |
+| `/`              | 515 B, meta-refresh to `jee-cbt.html`          | 5.3 KB landing page, no refresh                                                    |
+| `/cbt`           | inherited root metadata                        | own title + `noindex, nofollow`                                                    |
+
+- `/sitemap.xml` → 200, 16 URLs, **all 16 resolve to 200**.
+- `robots.txt` carries a `Sitemap:` directive and disallows `/cbt`,
+  `/app/auth/` and `/app/search`.
+- `/app/pyq` serves exactly **one** canonical and one `og:image`; the root no
+  longer emits a canonical, which would otherwise appear alongside the route's.
+- The OG image is a real 1200×630 PNG, 139 KB, served from this site. It
+  previously pointed at a Google Storage URL that no longer resolves
+  (connection refused), so `summary_large_image` promised an image that 404'd.
+- JSON-LD parses cleanly into `Organization`, `WebSite` and `WebApplication`.
+
+### What was deliberately not done
+
+- **No AstroJS rewrite.** An interactive local-first exam runner cannot be a
+  static site. The videos' "Astro beats React for ranking" advice assumes a
+  content site.
+- **No ads.** Ads inside a timed exam, a result page or a focus timer would be
+  actively harmful. This stays a product decision, not an implementation.
+- **No predicted rank, no leaderboard.** Unchanged, and now stated in the terms.
+- **`/app/search` removed from the sitemap.** It 307-redirects to
+  `/app/search?q=` because the route validates its search params — a sitemap
+  entry that redirects is a URL a crawler is told to index but cannot read.
+- **No CSP.** Nothing in this round required one and adding one blind would
+  risk the app.
+
+### Gate
+
+`tsc --noEmit` 0 · `vitest run` 747 passed (43 suites) · `eslint scripts src
+--max-warnings=0` 0 errors / 9 pre-existing warnings · `validate:all` 0 ·
+`npm run build` 0 · all 16 sitemap URLs 200 on the production bundle.
