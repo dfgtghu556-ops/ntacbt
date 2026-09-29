@@ -13,6 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/app/profile")({
+  head: () => ({
+    meta: [
+      { title: "Your JEE Profile — Exam, Class and Daily Study Target" },
+      {
+        name: "description",
+        content:
+          "Set your exam, class and daily study target once, and every surface adapts to your scope.",
+      },
+    ],
+  }),
   component: ProfilePage,
 });
 

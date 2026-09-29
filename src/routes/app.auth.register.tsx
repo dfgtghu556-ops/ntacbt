@@ -14,6 +14,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/app/auth/register")({
+  head: () => ({
+    meta: [
+      { title: "Create your NTACBT account" },
+      {
+        name: "description",
+        content:
+          "Create an NTACBT account to sync your JEE practice across devices. Everything works without one too.",
+      },
+    ],
+  }),
   component: RegisterPage,
 });
 

@@ -65,6 +65,16 @@ import type {
 } from "@/features/dashboard/types";
 
 export const Route = createFileRoute("/app/")({
+  head: () => ({
+    meta: [
+      { title: "NTACBT — JEE Main & CBSE Practice, Planner and Analytics" },
+      {
+        name: "description",
+        content:
+          "One place for JEE Main and CBSE practice: previous-year papers, an adaptive planner, spaced repetition, focus sessions and honest progress analytics.",
+      },
+    ],
+  }),
   component: Dashboard,
 });
 

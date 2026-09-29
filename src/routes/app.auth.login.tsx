@@ -15,6 +15,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/app/auth/login")({
+  head: () => ({
+    meta: [
+      { title: "Sign in to NTACBT" },
+      {
+        name: "description",
+        content:
+          "Sign in to sync your JEE practice across devices. Practising without an account still works.",
+      },
+    ],
+  }),
   component: LoginPage,
 });
 

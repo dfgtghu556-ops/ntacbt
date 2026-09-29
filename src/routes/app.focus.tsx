@@ -23,6 +23,16 @@ import {
 } from "@/features/focus/focus";
 
 export const Route = createFileRoute("/app/focus")({
+  head: () => ({
+    meta: [
+      { title: "Focus Timer for JEE Preparation — 25-Minute Sessions" },
+      {
+        name: "description",
+        content:
+          "A 25-minute focus timer that records what you worked on, so study time is counted in goals rather than hours.",
+      },
+    ],
+  }),
   component: Focus,
 });
 

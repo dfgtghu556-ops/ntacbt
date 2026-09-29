@@ -16,6 +16,16 @@ import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { buildMentorReport, mentorContextForAI } from "@/features/mentor/report";
 
 export const Route = createFileRoute("/app/saarthi")({
+  head: () => ({
+    meta: [
+      { title: "Saarthi — JEE Mentor for Doubts and What to Revise" },
+      {
+        name: "description",
+        content:
+          "Ask about a topic, a mistake, or what to revise next. Answers come from your own attempt history, not a generic script.",
+      },
+    ],
+  }),
   component: Saarthi,
 });
 

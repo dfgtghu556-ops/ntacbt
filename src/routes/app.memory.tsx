@@ -27,6 +27,16 @@ import { useMemoryDeck } from "@/features/memory/use-deck";
 import { deckStats, retentionPct, type ReviewGrade } from "@/features/memory/srs";
 
 export const Route = createFileRoute("/app/memory")({
+  head: () => ({
+    meta: [
+      { title: "Spaced Repetition for JEE — Revision Cards That Actually Come Back" },
+      {
+        name: "description",
+        content:
+          "A spaced-repetition locker built on SM-2, seeded automatically from the questions you got wrong.",
+      },
+    ],
+  }),
   component: MemoryLocker,
 });
 

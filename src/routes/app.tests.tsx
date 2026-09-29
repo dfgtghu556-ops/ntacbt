@@ -37,6 +37,16 @@ interface PaperMeta {
 }
 
 export const Route = createFileRoute("/app/tests")({
+  head: () => ({
+    meta: [
+      { title: "JEE Mock Tests — Full Papers and Sectional Practice" },
+      {
+        name: "description",
+        content:
+          "Take full-length JEE Main mock tests or sectional practice, with the NTA interface, question palette and a detailed result analysis.",
+      },
+    ],
+  }),
   component: TestsPage,
 });
 

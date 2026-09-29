@@ -39,6 +39,26 @@ export const Route = createFileRoute("/app/studytube/$video")({
     if (channel) out.channel = channel;
     return out;
   },
+  // The lesson identity lives in the search params, so the title has to be
+  // derived from them. A generic "Video lesson" title on every lesson page is
+  // the duplicate-title problem the metadata pass exists to fix.
+  head: ({ match }) => {
+    const search = match.search as TheaterSearch;
+    const title = search.title || "Video lesson";
+    const who = search.channel || search.teacher || "Verified educator";
+    const what = [search.subject, search.topic].filter(Boolean).join(" · ");
+    return {
+      meta: [
+        { title: `${title} — ${who} | NTACBT` },
+        {
+          name: "description",
+          content: what
+            ? `${title}. ${what}, taught by ${who}. Watch, then check your own recall.`
+            : `${title}, taught by ${who}. Watch, then check your own recall.`,
+        },
+      ],
+    };
+  },
   component: StudyTheater,
 });
 

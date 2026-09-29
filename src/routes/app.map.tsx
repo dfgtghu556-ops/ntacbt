@@ -26,6 +26,16 @@ import { buildSyllabusMap, type MapChapter } from "@/features/curriculum/map";
 import type { SyllabusMap } from "@/features/curriculum/map";
 
 export const Route = createFileRoute("/app/map")({
+  head: () => ({
+    meta: [
+      { title: "CBSE Class 11 & 12 Syllabus 2026-27 — Unit-wise Chapters and Topics" },
+      {
+        name: "description",
+        content:
+          "The complete rationalised CBSE Class 11 and Class 12 syllabus for Physics, Chemistry and Mathematics, unit by unit, with every topic listed.",
+      },
+    ],
+  }),
   component: SyllabusMapPage,
 });
 

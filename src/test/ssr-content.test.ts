@@ -79,3 +79,65 @@ describe("the syllabus map needs no client fetch at all", () => {
     expect(src).not.toMatch(/await fetch\(/);
   });
 });
+
+describe("every route sets its own metadata", () => {
+  const routes = [
+    "app.pyq.tsx",
+    "app.map.tsx",
+    "app.planner.tsx",
+    "app.tests.tsx",
+    "app.index.tsx",
+    "app.analytics.tsx",
+    "app.studytube.tsx",
+    "app.memory.tsx",
+    "app.focus.tsx",
+    "app.saarthi.tsx",
+    "app.report.tsx",
+    "app.search.tsx",
+    "app.profile.tsx",
+    "app.auth.login.tsx",
+    "app.auth.register.tsx",
+    "cbt.tsx",
+  ];
+
+  it("covers every content route", () => {
+    // 16 routes carry metadata; the layout deliberately does not, because its
+    // children each set their own.
+    expect(routes).toHaveLength(16);
+    for (const r of routes) {
+      expect(read(`src/routes/${r}`), r).toMatch(/head: \(/);
+    }
+  });
+
+  it("gives every route a distinct title", () => {
+    // A shared title is the duplicate-title problem this pass fixes.
+    const titles = routes
+      .map((r) => read(`src/routes/${r}`))
+      .map((src) => /\{ title: "([^"]+)"/.exec(src)?.[1])
+      .filter((t): t is string => !!t);
+    expect(titles).toHaveLength(routes.length);
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("gives every indexable route a description, not just a title", () => {
+    // The exam runner is excluded: it is noindex, so a description would be
+    // written for a page no crawler is meant to read.
+    for (const r of routes.filter((x) => x !== "cbt.tsx")) {
+      const src = read(`src/routes/${r}`);
+      expect(src, r).toContain('name: "description"');
+    }
+  });
+
+  it("keeps the exam runner out of the index", () => {
+    // A timed attempt is private in-progress state. Indexing it would publish a
+    // half-finished paper and the student's own answers.
+    const src = read("src/routes/cbt.tsx");
+    expect(src).toMatch(/name: "robots", content: "noindex, nofollow"/);
+  });
+
+  it("derives the lesson title from the lesson rather than using one for all", () => {
+    const src = read("src/routes/app.studytube.$video.tsx");
+    expect(src).toMatch(/head: \(\{ match \}\)/);
+    expect(src).toContain("search.title");
+  });
+});

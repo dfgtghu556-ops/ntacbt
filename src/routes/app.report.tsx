@@ -42,6 +42,16 @@ import {
 } from "@/features/report/share";
 
 export const Route = createFileRoute("/app/report")({
+  head: () => ({
+    meta: [
+      { title: "Shareable JEE Progress Report for Parents and Mentors" },
+      {
+        name: "description",
+        content:
+          "A one-page report of what you have practised, where you are strong, and what to do next — shareable with a parent or mentor.",
+      },
+    ],
+  }),
   component: Report,
 });
 

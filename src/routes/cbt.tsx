@@ -45,6 +45,15 @@ import { Calculator } from "@/features/exams/components/Calculator";
 import { ExamResult } from "@/features/exams/components/ExamResult";
 
 export const Route = createFileRoute("/cbt")({
+  // The exam runner must never be indexed. It is a private, timed attempt
+  // whose content is the student's own in-progress state - a crawler reaching
+  // it would either see nothing useful or index a half-finished paper.
+  head: () => ({
+    meta: [
+      { title: "Exam in progress — NTACBT" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): CbtSearch => ({
     testId: typeof search["testId"] === "string" && search["testId"] ? search["testId"] : undefined,
     name: typeof search["name"] === "string" && search["name"] ? search["name"] : undefined,

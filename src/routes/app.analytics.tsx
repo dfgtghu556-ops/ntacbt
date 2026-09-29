@@ -14,6 +14,16 @@ import {
 import { DataStore, type AttemptSummary } from "@/lib/store";
 
 export const Route = createFileRoute("/app/analytics")({
+  head: () => ({
+    meta: [
+      { title: "JEE Progress Analytics — Accuracy, Speed and Weak Chapters" },
+      {
+        name: "description",
+        content:
+          "See where your marks actually come from: accuracy by chapter, time per question, and which chapters to revise first.",
+      },
+    ],
+  }),
   component: Analytics,
 });
 

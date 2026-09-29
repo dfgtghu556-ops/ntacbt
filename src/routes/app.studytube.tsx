@@ -34,6 +34,16 @@ import type {
 import { VideoCard, ChannelCard, EmptyState } from "@/features/studytube/components/VideoCard";
 
 export const Route = createFileRoute("/app/studytube")({
+  head: () => ({
+    meta: [
+      { title: "JEE & CBSE Video Lectures — Curated by Subject and Topic" },
+      {
+        name: "description",
+        content:
+          "Video lessons mapped to the CBSE and JEE syllabus, so a watched lecture counts towards the chapter it teaches.",
+      },
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): { q?: string } => {
     const q = typeof search["q"] === "string" && search["q"].trim() ? search["q"] : undefined;
     return q ? { q } : {};

@@ -45,6 +45,16 @@ const loadBakedPapers = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const Route = createFileRoute("/app/pyq")({
+  head: () => ({
+    meta: [
+      { title: "JEE Main 2026 Previous Year Papers — 375 Solved Questions" },
+      {
+        name: "description",
+        content:
+          "Practise real JEE Main 2026 questions shift by shift. 375 transcribed questions with answers and worked solutions, in an NTA-style CBT runner.",
+      },
+    ],
+  }),
   loader: () => loadBakedPapers(),
   component: Pyq,
 });

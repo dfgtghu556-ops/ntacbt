@@ -33,6 +33,16 @@ interface PaperMeta {
 }
 
 export const Route = createFileRoute("/app/search")({
+  head: () => ({
+    meta: [
+      { title: "Search JEE Papers, Chapters, Topics and Teachers" },
+      {
+        name: "description",
+        content:
+          "Search across previous-year questions, syllabus chapters and topics, teachers, institutes and your own notes in one place.",
+      },
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): { q: string } => ({
     q: typeof search["q"] === "string" ? search["q"] : "",
   }),

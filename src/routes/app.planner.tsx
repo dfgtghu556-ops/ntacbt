@@ -25,6 +25,16 @@ import {
 } from "@/features/planner/coverage";
 
 export const Route = createFileRoute("/app/planner")({
+  head: () => ({
+    meta: [
+      { title: "Adaptive JEE Study Planner — Daily Plan from Your Weak Areas" },
+      {
+        name: "description",
+        content:
+          "A daily study plan that orders chapters by your weak areas and their exam weightage, and carries a missed task forward exactly once.",
+      },
+    ],
+  }),
   component: Planner,
 });
 
