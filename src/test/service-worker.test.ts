@@ -63,7 +63,8 @@ describe("service worker classification", () => {
       "/favicon.ico",
       "/manifest.webmanifest",
       "/fonts/inter.woff2",
-      "/data/papers.json",
+      // Note: /data/papers.json is deliberately absent — unversioned JSON must
+      // revalidate, so it is not an immutable asset.
     ]) {
       expect(S.strategyFor(p, false), p).toBe("cache-forever");
     }
@@ -95,6 +96,27 @@ describe("service worker classification", () => {
 
   it("rejects a path outside /assets/ even when it looks hashed", () => {
     expect(S.isHashedAsset("/js/app-A1b2C3d4.js")).toBe(false);
+  });
+
+  it("revalidates the baked PYQ payloads, which are unversioned", () => {
+    // public/pyq is regenerated on every build and the filenames do not change,
+    // so caching them forever would strand a returning student on the previous
+    // deploy's paper list with no way to refresh.
+    for (const p of [
+      "/pyq/index.json",
+      "/pyq/jee-main-2026-online-22-january-morning-shift.json",
+    ]) {
+      expect(S.isImmutableAsset(p), p).toBe(false);
+      expect(S.strategyFor(p, false), p).toBe("network-first-code");
+    }
+  });
+
+  it("defaults to network-first for anything it does not recognise", () => {
+    // The safe default. Caching an unknown URL forever can strand a student on
+    // stale content; revalidating costs one request.
+    for (const p of ["/totally/unknown/path.bin", "/api/thing", "/data/x.json"]) {
+      expect(S.strategyFor(p, false), p).toBe("network-first-code");
+    }
   });
 
   it("survives junk input without throwing", () => {

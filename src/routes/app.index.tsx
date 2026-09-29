@@ -1354,31 +1354,42 @@ async function loadQuestionBank(): Promise<BankQuestion[]> {
     if (!indexRes.ok) return [];
     const index = (await indexRes.json()) as { papers?: Array<{ id: string }> };
     const ids = (index.papers ?? []).map((p) => p?.id).filter((id): id is string => !!id);
-    const out: BankQuestion[] = [];
-    for (const id of ids) {
-      const res = await fetch(`/pyq/${id}.json`, { cache: "no-store" });
-      if (!res.ok) continue;
-      const data = (await res.json()) as {
-        paper?: { questions?: Array<Record<string, unknown>> };
-      };
-      for (const q of data.paper?.questions ?? []) {
-        const text = q["text"];
-        const subject = q["subject"];
-        if (typeof text !== "string" || typeof subject !== "string" || !text.trim()) continue;
-        out.push({
-          id: `${id}::${String(q["no"] ?? out.length)}`,
-          subject,
-          chapter: String(q["chapter"] ?? ""),
-          topic: String(q["topic"] ?? ""),
-          type: q["type"] === "integer" ? "integer" : "mcq",
-          text,
-          options: Array.isArray(q["options"]) ? (q["options"] as BankQuestion["options"]) : [],
-          answer: String(q["answer"] ?? ""),
-          ...(typeof q["sol"] === "string" ? { sol: q["sol"] as string } : {}),
-        });
-      }
-    }
-    return out;
+    // Fetch the papers in parallel. Awaiting them in a loop costs one round-trip
+    // per paper, which on the slow connections this app targets is the whole
+    // difference between the DPP appearing and not.
+    const perPaper = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const res = await fetch(`/pyq/${id}.json`, { cache: "no-store" });
+          if (!res.ok) return [];
+          const data = (await res.json()) as {
+            paper?: { questions?: Array<Record<string, unknown>> };
+          };
+          const rows: BankQuestion[] = [];
+          for (const q of data.paper?.questions ?? []) {
+            const text = q["text"];
+            const subject = q["subject"];
+            if (typeof text !== "string" || typeof subject !== "string" || !text.trim()) continue;
+            rows.push({
+              id: `${id}::${String(q["no"] ?? rows.length)}`,
+              subject,
+              chapter: String(q["chapter"] ?? ""),
+              topic: String(q["topic"] ?? ""),
+              type: q["type"] === "integer" ? "integer" : "mcq",
+              text,
+              options: Array.isArray(q["options"]) ? (q["options"] as BankQuestion["options"]) : [],
+              answer: String(q["answer"] ?? ""),
+              ...(typeof q["sol"] === "string" ? { sol: q["sol"] as string } : {}),
+            });
+          }
+          return rows;
+        } catch {
+          // One failed paper must not blank the whole set.
+          return [];
+        }
+      }),
+    );
+    return perPaper.flat();
   } catch {
     return [];
   }

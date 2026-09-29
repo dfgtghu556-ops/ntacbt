@@ -28,15 +28,21 @@
   }
 
   /**
-   * Static payloads that never change under a stable URL: icons, fonts, images,
-   * JSON and the manifest itself.
+   * Static payloads that never change under a stable URL: icons, fonts, images
+   * and the manifest itself.
+   *
+   * **JSON is deliberately excluded unless it is genuinely static.** `public/pyq`
+   * is regenerated on every build and the filenames do not change, so
+   * `/pyq/index.json` and `/pyq/<id>.json` are unversioned: caching them forever
+   * would leave a returning student on the previous deploy's paper list with no
+   * way to refresh. They are treated as code to revalidate instead.
    */
   function isImmutableAsset(pathname) {
     if (typeof pathname !== "string") return false;
     if (pathname === "/manifest.webmanifest") return true;
-    return /\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|json|webmanifest)$/i.test(
-      pathname,
-    );
+    // Build-generated PYQ payloads: unversioned, so revalidate.
+    if (pathname.startsWith("/pyq/")) return false;
+    return /\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot)$/i.test(pathname);
   }
 
   /**
@@ -49,12 +55,19 @@
     return /\.(?:js|mjs|css)$/.test(pathname);
   }
 
-  /** The caching strategy for one request path. */
+  /**
+   * The caching strategy for one request path.
+   *
+   * **The default is network-first.** Anything this module does not explicitly
+   * recognise is assumed to be unversioned, because that is the failure mode
+   * that matters: caching an unknown URL forever can strand a student on stale
+   * content, whereas revalidating it costs one request. Recognising a URL as
+   * immutable must be deliberate, not a default.
+   */
   function strategyFor(pathname, isNavigation) {
     if (isNavigation) return "network-first-navigation";
     if (isHashedAsset(pathname) || isImmutableAsset(pathname)) return "cache-forever";
-    if (isUnversionedCode(pathname)) return "network-first-code";
-    return "cache-forever";
+    return "network-first-code";
   }
 
   scope.NTACBT_SW = {
