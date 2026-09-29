@@ -21,6 +21,9 @@
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const fail = (msg) => {
@@ -242,6 +245,147 @@ if (leaked.length) {
   fail(`Class XI chapters found in the Class XII map: ${leaked.join(", ")}.`);
 } else {
   ok("No Class XI-only chapter appears in the Class XII map.");
+}
+
+/* ── 5. Load the real registry and check the live invariants ───────── */
+
+/**
+ * Everything above parses the Class XII source as text, which cannot see the
+ * Class XI map at all and cannot check an invariant that only exists at
+ * runtime — `assertClassLevelIsolation` in particular.
+ *
+ * So bundle the registry with esbuild and import it. `vite-node` cannot be used
+ * here: the app's Vite config pulls in the TanStack Start plugin, which crashes
+ * under a plain node runner. esbuild needs none of that.
+ *
+ * A text check is also fooled by its own regexes: a chapter numbered 13 twice
+ * parses as two perfectly well-formed chapters. Only loading the module runs
+ * the guard.
+ */
+{
+  const tmp = mkdtempSync(join(tmpdir(), "curriculum-"));
+  const out = join(tmp, "curriculum.mjs");
+  try {
+    execFileSync(
+      join("node_modules", ".bin", "esbuild"),
+      [
+        "src/data/curriculum/index.ts",
+        "--bundle",
+        "--format=esm",
+        "--platform=node",
+        "--alias:@=./src",
+        `--outfile=${out}`,
+        "--log-level=error",
+      ],
+      { cwd: root, stdio: ["ignore", "ignore", "pipe"] },
+    );
+  } catch (err) {
+    fail(`Could not bundle the curriculum registry for a live check: ${err.message}`);
+  }
+
+  let mod;
+  try {
+    mod = await import(out);
+  } catch (err) {
+    // A module that throws on import is exactly the failure this catches: the
+    // Class XI map guards itself with a module-level isolation assertion.
+    fail(`The curriculum registry throws on import: ${err.message}`);
+  }
+
+  if (mod) {
+    const maps = mod.publishedCurricula();
+    if (maps.length === 0) fail("The registry publishes no maps.");
+    else ok(`The registry publishes ${maps.length} map(s).`);
+
+    const SUBJECTS = ["Physics", "Chemistry", "Mathematics"];
+    for (const map of maps) {
+      const label = `${map.board} Class ${map.classLevel} ${map.academicYear}`;
+
+      // The isolation invariant, run for real.
+      if (mod.assertClassLevelIsolation(map, map.classLevel)) {
+        ok(`${label}: passes its class-level isolation check.`);
+      } else {
+        fail(
+          `${label}: FAILS its class-level isolation check (duplicate chapter id, name or number).`,
+        );
+      }
+
+      // A complete provenance record on every map.
+      const missing = mod.missingSourceFields
+        ? mod.missingSourceFields(map.source)
+        : Object.entries(map.source ?? {})
+            .filter(([, v]) => typeof v !== "string" || !v.trim())
+            .map(([k]) => k);
+      if (missing.length === 0) ok(`${label}: provenance record is complete.`);
+      else fail(`${label}: provenance record is missing ${missing.join(", ")}.`);
+
+      // Every chapter carries topics, and ids are derived not hand-written.
+      let topicless = 0;
+      let badId = 0;
+      for (const s of map.subjects) {
+        for (const u of s.units) {
+          for (const c of u.chapters) {
+            if (!c.topics || c.topics.length === 0) topicless++;
+            // A derived id always embeds the chapter number.
+            if (!String(c.id).includes(`-c${c.number}-`)) badId++;
+          }
+        }
+      }
+      if (topicless === 0) ok(`${label}: every chapter has at least one topic.`);
+      else fail(`${label}: ${topicless} chapter(s) have no topics.`);
+      if (badId === 0) ok(`${label}: every chapter id is derived from its chapter number.`);
+      else fail(`${label}: ${badId} chapter id(s) do not match their chapter number.`);
+
+      // The three subjects, in board order.
+      const got = map.subjects.map((s) => s.subject);
+      if (JSON.stringify(got) === JSON.stringify(SUBJECTS)) {
+        ok(`${label}: covers Physics, Chemistry and Mathematics in board order.`);
+      } else {
+        fail(`${label}: subject list is ${got.join(", ")}, expected ${SUBJECTS.join(", ")}.`);
+      }
+
+      // Marks honesty: a marked subject must sum to its published theory total,
+      // and an unmarked one must be unmarked rather than guessed.
+      for (const s of map.subjects) {
+        const marks = s.units.map((u) => u.marks);
+        const total = mod.theoryMarks ? mod.theoryMarks(map, s.subject) : null;
+        const published = { Physics: 70, Chemistry: 70, Mathematics: 80 }[s.subject];
+        if (total === null) {
+          if (marks.every((m) => m === null)) {
+            ok(`${label} ${s.subject}: every unit is explicitly unmarked.`);
+          } else {
+            fail(`${label} ${s.subject}: mixed null and numeric unit marks — pick one.`);
+          }
+        } else if (published !== undefined && total !== published) {
+          fail(
+            `${label} ${s.subject}: unit marks sum to ${total} but the theory paper is ${published}.`,
+          );
+        } else {
+          ok(`${label} ${s.subject}: unit marks sum to the ${total}-mark theory paper.`);
+        }
+      }
+    }
+
+    // Cross-scope: a Class XII key must never resolve the Class XI map.
+    for (const map of maps) {
+      const wrongClass = maps.find((m) => m.classLevel !== map.classLevel);
+      if (!wrongClass) continue;
+      const resolved = mod.curriculumFor({
+        board: map.board,
+        classLevel: map.classLevel,
+        academicYear: map.academicYear,
+      });
+      if (resolved === wrongClass) {
+        fail(
+          `A Class ${map.classLevel} key resolved the Class ${wrongClass.classLevel} map — cross-scope leak.`,
+        );
+      } else {
+        ok(`A Class ${map.classLevel} key never resolves the Class ${wrongClass.classLevel} map.`);
+      }
+    }
+  }
+
+  rmSync(tmp, { recursive: true, force: true });
 }
 
 /* ── summary ───────────────────────────────────────────────────────── */
