@@ -167,6 +167,10 @@ describe("Phase 6 — the card system", () => {
       "src/routes/app.pyq.tsx",
       "src/routes/app.map.tsx",
       "src/routes/app.memory.tsx",
+      // The result page is a full surface of its own and Phase 6 calls it out
+      // by name. It was missing here, so its sections drifted to rounded-xl
+      // while every other page was on the card system.
+      "src/features/exams/components/ExamResult.tsx",
     ];
     for (const rel of surfaces) {
       const src = read(rel);
