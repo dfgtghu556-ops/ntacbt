@@ -327,6 +327,107 @@ and `npm run validate:all` locally (all three are green).
 
 ---
 
+## 10. Phase 4 (rebuild plan) — the real curriculum map + planner scope
+
+**The finding that started this.** The only CBSE data in the repo was
+`cbse27Topics` in `src/data/sot/legacy-inline.json` — a flat
+`[name, ?, ?, classLevel]` chapter list with no units, no topics and no
+source. Worse, an audit of the `CBSE_12` academic scope showed all **116**
+of its records were teacher/playlist catalog entries whose `chapter` field
+held marketing strings ("Organic Chemistry Maestro") and whose `topic`
+field held playlist names. So `chapterForTopic` for a CBSE scope had no
+syllabus to resolve against, and its nearest-string fallback matched a
+*teacher's name* — asking for the real chapter "Atoms" resolved to a video
+series. **All 37 real CBSE Class XII chapters returned `null`.**
+
+**What was built.**
+
+- `src/data/curriculum/cbse-class-12-2026-27.ts` — the real CBSE Class XII
+  2026-27 syllabus: 3 subjects, 25 units, 37 chapters, 240 topics, with
+  `theoryMarks`, `chaptersOf`, `unitOfChapter` and
+  `assertClassLevelIsolation`.
+- `src/data/curriculum/index.ts` — a versioned registry. `curriculumFor`
+  takes an explicit `(board, classLevel, academicYear)` and returns `null`
+  on a miss; it never falls back to the nearest year, so a student on a
+  future syllabus cannot be planned against stale chapters.
+- `src/features/academics/curriculum-bridge.ts` — makes `chapterForTopic`
+  resolve CBSE scopes through the map. JEE scopes map to no curriculum key
+  and keep using the structured JEE syllabus records untouched.
+- `src/features/planner/scope.ts` — resolves a planner request against the
+  map and returns `in-syllabus` / `in-syllabus-topic` / `off-syllabus` /
+  `no-map` / `unknown-subject` plus one honest note. It **annotates** the
+  request, it never rewrites it.
+- `src/features/planner/coverage.ts` + a panel on `/app/planner` — measures
+  the stored plan against the map: per chapter, planned and actually-done
+  minutes and a state, rolled up per unit.
+- `scripts/validate-curriculum.mjs` — 29 checks, wired into
+  `validate:all` after `validate:syllabus`.
+
+**Marks honesty.** Unit marks are recorded only where every source agrees.
+Chemistry sums to exactly **70** and Mathematics to exactly **80**.
+**Physics unit marks are `null` throughout**, because published per-unit
+figures conflict and several sum to 133 for a 70-mark theory paper. The
+UI renders "not published here", never 0, and the subject total is null too
+because a partial sum would be a fabricated weight.
+
+**One matcher, everywhere.** `matchCurriculum` lives in the curriculum
+registry so the planner scope and the academic adapter share it — a student
+who types "Optics" in the planner and "optics" on a test question must land
+in the same mastery row.
+
+**The Eklavya schedule was not touched**, per the instruction in
+`.lovable/plan`. The coverage panel is a read-only lens over the stored
+plan.
+
+---
+
+## 11. Phase 6 (rebuild plan) — dashboard information order
+
+The rebuild plan asks for: greeting → today's focus + ONE primary action →
+today's tasks → progress → 3–5 weak areas → continue learning → optional
+deep analytics behind disclosure. The dashboard had a hero, nine stat
+panels and **no today's task list**.
+
+- `src/features/planner/today.ts` + a `TodayStrip` on `/app` — today's
+  tasks read from the student's own plan, falling back to the nearest
+  upcoming day when today is empty. The 3–5 weak areas come from
+  `priorityChapters`, the same ranking the mentor report uses, so Home and
+  the report can never disagree.
+- The primary action is chosen from what the evidence supports. A student
+  with no attempts is sent to a diagnostic, because every other number on
+  the dashboard depends on there being at least one attempt.
+
+The result page already matched the plan's order (header score → "What
+should you do next?" → strengths → breakdown → mistakes → weakest topics →
+question review), and `NAV` already had the six specified destinations, so
+needed no change.
+
+---
+
+## 12. A5 — shareable parent / mentor report
+
+- `src/features/report/share.ts` + a `SharePanel` on `/app/report`.
+- **The privacy contract is the feature.** The store holds notes, YouTube
+  notes, bookmarks, watch-later lists, SRS card contents, goal and contract
+  free text. The module does not copy the store; it builds a
+  `ShareableReport` from an explicit allowlist and documents both sides in
+  `PRIVACY`, which the report page prints next to the output. Tests assert
+  poisoned private fields never reach the report object, the text one-pager
+  or the markdown one-pager, and that no account identifier leaks even when
+  the store has one.
+- Tone follows the "no shame" requirement: a missed day is a number, never
+  a verdict, and every weak chapter is paired with a constructive note.
+- The report page shows the full one-pager inline **before** the student
+  copies it, so the clipboard copy can never differ from what they read.
+
+**Latent bug fixed on the way:** `loadFocusStore` parses localStorage, so
+one null or field-less session made `todayFocusSeconds` and `focusStreak`
+throw, blanking the whole dashboard instead of degrading. Both helpers now
+filter invalid sessions at the top. Regression tests in
+`src/test/focus.test.ts`.
+
+---
+
 ## Open items for the user
 
 1. **A `.env` containing real Supabase credentials is committed to the repo.**
@@ -345,7 +446,11 @@ and `npm run validate:all` locally (all three are green).
    local-first product, so an admin role exists in the type contract but there is
    no multi-tenant admin surface to build one against. The mentor report
    (`/app/report`) is the equivalent read-only "oversight" view.
-5. **No teacher record has a verifiable channel URL.** All 103 carry a display
+5. **CBSE Class XI 2026-27 has no published map.** `curriculumKeyForExam`
+   resolves `CBSE_11`, but no Class XI map has been transcribed yet, so a
+   `board11` student gets an honest "not published here" rather than the
+   Class XII chapters. Transcribing Class XI is the obvious next map.
+6. **No teacher record has a verifiable channel URL.** All 103 carry a display
    name only (`channelName: "JEE Wallah"`), so every one is now recorded
    `unverified` in the academic source-of-truth. Nothing filters on that yet,
    so StudyTube is unaffected — but the rebuild plan's Phase 5 says unverifiable
