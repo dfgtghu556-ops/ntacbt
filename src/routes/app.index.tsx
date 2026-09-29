@@ -55,6 +55,7 @@ import {
   type FocusSession,
 } from "@/features/focus/focus";
 import { computeHumaneStreak, loadStreakStore } from "@/features/focus/streak";
+import { buildActiveDays } from "@/features/focus/active-days";
 import type {
   MicroDrillCard,
   ReadinessSnapshot,
@@ -115,17 +116,6 @@ function daysSinceLastVisit(): number {
   } catch {
     return 0;
   }
-}
-
-function buildActiveDays(store: DataStore, focus: FocusSession[]): Set<string> {
-  const days = new Set<string>();
-  for (const s of focus) {
-    if (s.completed && s.seconds >= 25 * 60) days.add(localDayKey(s.startedAt));
-  }
-  for (const t of store.planner?.tasks ?? []) {
-    if (t.status === "done" && t.date) days.add(t.date);
-  }
-  return days;
 }
 
 function Dashboard() {

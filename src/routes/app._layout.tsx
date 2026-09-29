@@ -1,10 +1,11 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Bell, Bookmark, Clock3, Flame, Play, Search, Sparkles, UserRound } from "lucide-react";
+import { Bookmark, Clock3, Flame, Play, Search, Sparkles, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { LANG_LABEL, type Lang, useLang, setLang } from "@/lib/lang";
 import { useAuthStore } from "@/features/auth/store";
 import { NAV, SHELF } from "@/components/layout/nav";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export const Route = createFileRoute("/app/_layout")({
   component: AppLayout,
@@ -98,13 +99,7 @@ function AppLayout() {
           >
             <UserRound className="h-4 w-4" />
           </Link>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
+          <NotificationBell />
         </div>
       </header>
 
