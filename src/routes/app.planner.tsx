@@ -118,7 +118,7 @@ function Planner() {
       </section>
 
       {loaded ? (
-        <section className="rounded-xl border border-primary/30 bg-accent/40 p-3 text-sm">
+        <section className="rounded-2xl border border-primary/30 bg-accent/40 p-3 text-sm">
           <div className="flex items-start gap-2">
             <Flame className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <div>
@@ -144,7 +144,7 @@ function Planner() {
       {!loaded ? (
         <div className="h-40 animate-pulse rounded-xl border bg-muted/40" />
       ) : displayRows.length === 0 ? (
-        <section className="rounded-xl border border-dashed p-8 text-center">
+        <section className="rounded-2xl border border-dashed p-8 text-center">
           <CalendarDays className="mx-auto h-8 w-8 text-muted-foreground" />
           <h2 className="mt-3 font-semibold">No plan yet</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ function Planner() {
             const done = list.filter((r) => r.status === "done").length;
             const mins = list.reduce((n, r) => n + minOf(r), 0);
             return (
-              <section key={date} className="rounded-xl border p-4">
+              <section key={date} className="rounded-2xl border p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">
                     {isToday ? <Sparkles className="h-4 w-4 text-primary" /> : null}
@@ -299,7 +299,7 @@ function CoveragePanel({ coverage }: { coverage: SyllabusCoverage }) {
     // No published map for this objective. Saying nothing is better than
     // showing a coverage figure computed against the wrong syllabus.
     return (
-      <section className="rounded-xl border border-dashed p-4 text-sm">
+      <section className="rounded-2xl border border-dashed p-4 text-sm">
         <div className="flex items-start gap-2">
           <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <div>
@@ -317,7 +317,7 @@ function CoveragePanel({ coverage }: { coverage: SyllabusCoverage }) {
       : 0;
 
   return (
-    <section className="rounded-xl border p-4">
+    <section className="rounded-2xl border p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-2">
           <Layers className="mt-0.5 h-4 w-4 shrink-0 text-primary" />

@@ -167,7 +167,7 @@ function Pyq() {
           Official-style previous-year papers from the verified academic snapshot. Answers carry the
           exact NTA keys (including ranges, accepted values and bonus questions).
         </p>
-        <div className="mt-3 rounded-xl border border-primary/30 bg-accent/40 p-4 text-sm">
+        <div className="mt-3 rounded-2xl border border-primary/30 bg-accent/40 p-4 text-sm">
           <p className="font-medium">
             {source === "api"
               ? `Full historical PYQ library loaded — ${papers.length} papers, every available session, shift and year.`
@@ -204,7 +204,7 @@ function Pyq() {
           <Loader2 className="h-4 w-4 animate-spin" /> Loading papers…
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-dashed p-6 text-center">
+        <div className="rounded-2xl border border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">{error}</p>
           <button
             onClick={loadIndex}
@@ -220,7 +220,7 @@ function Pyq() {
               <button
                 key={p.id}
                 onClick={() => open(p)}
-                className="rounded-xl border p-4 text-left transition-colors hover:bg-accent/60"
+                className="rounded-2xl border p-4 text-left transition-colors hover:bg-accent/60"
               >
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <FileText className="h-4 w-4" /> {p.year} · {p.label}
@@ -238,7 +238,7 @@ function Pyq() {
       )}
 
       {selected ? (
-        <section className="rounded-xl border p-4">
+        <section className="rounded-2xl border p-4">
           <h2 className="text-sm font-semibold">
             {selected.label} — {selected.total} questions
           </h2>
