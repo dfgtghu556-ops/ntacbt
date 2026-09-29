@@ -141,3 +141,75 @@ describe("every route sets its own metadata", () => {
     expect(src).toContain("search.title");
   });
 });
+
+describe("the sitemap and robots.txt are generated, not hand-written", () => {
+  const sitemap = read("public/sitemap.xml");
+  const robots = read("public/robots.txt");
+
+  it("lists the content routes students actually search for", () => {
+    for (const path of ["/app/pyq", "/app/map", "/app/studytube", "/app/tests"]) {
+      expect(sitemap, path).toContain(`<loc>`);
+      expect(sitemap).toMatch(new RegExp(`<loc>[^<]*${path.replace("/", "\\/")}</loc>`));
+    }
+  });
+
+  it("never advertises the exam runner or the auth screens", () => {
+    // A sitemap is a list of things you want crawled. A timed attempt and a
+    // login form are not.
+    expect(sitemap).not.toMatch(/<loc>[^<]*\/cbt<\/loc>/);
+    expect(sitemap).not.toMatch(/<loc>[^<]*\/app\/auth/);
+  });
+
+  it("points crawlers at itself from robots.txt", () => {
+    expect(robots).toMatch(/^Sitemap: https?:\/\//m);
+  });
+
+  it("disallows the exam runner in robots.txt as well as noindexing it", () => {
+    expect(robots).toMatch(/Disallow: \/cbt/);
+  });
+
+  it("is generated from the route list, so it cannot drift", () => {
+    // A hand-maintained sitemap advertises URLs that 404, which is a quality
+    // signal against the whole site.
+    const script = read("scripts/build-sitemap.mjs");
+    expect(script).toContain("readdirSync");
+    expect(script).toContain("sitemap.xml");
+    // And the build runs it before vite copies public/ into the output.
+    const pkg = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
+    expect(pkg.scripts["build"]).toContain("build-sitemap");
+    expect(pkg.scripts["build"]).toContain("vite build");
+  });
+});
+
+describe("structured data is present and parseable", () => {
+  const src = read("src/routes/__root.tsx");
+
+  it("declares the organisation, the site and the app", () => {
+    expect(src).toContain("application/ld+json");
+    for (const type of ["Organization", "WebSite", "WebApplication"]) {
+      expect(src, type).toContain(`"@type": "${type}"`);
+    }
+  });
+
+  it("wires a sitelinks search box to the real search route", () => {
+    expect(src).toContain("SearchAction");
+    expect(src).toContain("/app/search?q={search_term_string}");
+  });
+
+  it("claims nothing the app does not do", () => {
+    // The feature list is the shipped one. A structured-data claim the app
+    // cannot back is a false advertisement to a crawler and to a student.
+    const block = src.slice(src.indexOf("featureList"));
+    for (const claim of [
+      "previous-year papers",
+      "computer-based test runner",
+      "study planner",
+      "syllabus map",
+      "Spaced repetition",
+      "Focus timer",
+      "analytics",
+    ]) {
+      expect(block, claim).toContain(claim);
+    }
+  });
+});

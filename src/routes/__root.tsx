@@ -119,6 +119,59 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#2563eb" },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
+    scripts: [
+      // Structured data. Without it a search result is a blue link; with it the
+      // site can appear as an organisation, a sitelinks search box, and — on the
+      // content routes — as learning resources. Nothing here claims anything
+      // the app does not do: the feature list is the shipped one.
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://ntacbt.vercel.app/#organization",
+              name: "NTACBT",
+              url: "https://ntacbt.vercel.app",
+              description:
+                "A JEE Main and CBSE practice platform: previous-year papers, an adaptive planner, spaced repetition, focus sessions and honest progress analytics.",
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://ntacbt.vercel.app/#website",
+              url: "https://ntacbt.vercel.app",
+              name: "NTACBT",
+              publisher: { "@id": "https://ntacbt.vercel.app/#organization" },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: "https://ntacbt.vercel.app/app/search?q={search_term_string}",
+                },
+                "query-input": "required name=search_term_string",
+              },
+            },
+            {
+              "@type": "WebApplication",
+              name: "NTACBT",
+              applicationCategory: "EducationalApplication",
+              operatingSystem: "Any",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+              featureList: [
+                "JEE Main previous-year papers with worked solutions",
+                "NTA-style computer-based test runner",
+                "Adaptive daily study planner",
+                "CBSE Class 11 and 12 syllabus map",
+                "Spaced repetition revision cards",
+                "Focus timer",
+                "Progress analytics",
+              ],
+            },
+          ],
+        }),
+      },
+    ],
     links: [
       {
         rel: "stylesheet",
