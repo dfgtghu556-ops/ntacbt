@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowRight,
@@ -33,7 +34,17 @@ import { useLang, t } from "@/lib/lang";
 import { buildMicroDrill } from "@/features/cbt/microDrill";
 import { mistakeFromStore } from "@/features/cbt/mistake";
 import { adaptTasks } from "@/features/planner/adapt";
+import { saveCbtTest } from "@/features/cbt/store";
+import type { CbtTest } from "@/features/cbt/types";
 import { buildTodayPlan, type TodayPlan } from "@/features/planner/today";
+import {
+  MIN_DPP_SIZE,
+  buildDailyPracticeSet,
+  DPP_SEC_PER_QUESTION,
+  dppToCbtTest,
+  type BankQuestion,
+  type DailyPracticeSet,
+} from "@/features/practice/dpp";
 import { masteryFromStores } from "@/features/mastery/collect";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import {
@@ -129,6 +140,7 @@ function Dashboard() {
   const [focusMin, setFocusMin] = useState(0);
   const [absentDays, setAbsentDays] = useState(0);
   const [todayPlan, setTodayPlan] = useState<TodayPlan | null>(null);
+  const [dpp, setDpp] = useState<DailyPracticeSet | null>(null);
 
   useEffect(() => {
     const store = new DataStore();
@@ -165,6 +177,25 @@ function Dashboard() {
       }),
     );
     setAbsentDays(daysSinceLastVisit());
+
+    // Today's DPP: the same weak chapters the Today strip shows, turned into a
+    // runnable set from the baked question bank. Built in the effect because it
+    // fetches the bank, and a failure here must never blank the dashboard.
+    void (async () => {
+      try {
+        const bank = await loadQuestionBank();
+        if (!bank.length) return;
+        const weak = computeReadiness(store).weakTopics.map((w) => ({
+          subject: w.subject,
+          chapter: w.chapter,
+          accuracy: w.accuracy,
+          attempts: w.attemptCount,
+        }));
+        setDpp(buildDailyPracticeSet({ bank, weak, dayKey: localDayKey(Date.now()), size: 10 }));
+      } catch {
+        setDpp(null);
+      }
+    })();
 
     // Today's strip is built from the student's own stores: their stored plan,
     // their mastery evidence, and the adaptive planner's weak-target flags. It
@@ -301,6 +332,10 @@ function Dashboard() {
 
       {/* ─── Today: focus + tasks + weak areas (Phase 6 information order) ─── */}
       {todayPlan ? <TodayStrip plan={todayPlan} /> : null}
+
+      {/* A4 — Today's DPP. Sits directly under the Today strip because it is the
+          one-tap answer to "what should I practise right now". */}
+      {dpp ? <DppCard set={dpp} /> : null}
 
       {/* ─── Key stats ─── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1112,6 +1147,74 @@ function LoadingCards() {
 }
 
 /* ------------------------------------------------------------------ *
+ * DppCard — Today's DPP (A4)
+ *
+ * The set is built by `buildDailyPracticeSet` from the student's own weak
+ * chapters and the syllabus weightage, and it is launched by saving it as a
+ * real `CbtTest` so the student gets the full exam runtime — timer, palette,
+ * negative marking, autosave and a result that feeds the mastery store —
+ * rather than a second, weaker practice surface.
+ *
+ * The card states plainly that difficulty is not labelled, because the baked
+ * bank carries no difficulty field and inventing one would be worse than
+ * saying nothing.
+ * ------------------------------------------------------------------ */
+
+function DppCard({ set }: { set: DailyPracticeSet }) {
+  const navigate = useNavigate();
+  if (set.questions.length === 0) return null;
+  const runnable = set.questions.length >= MIN_DPP_SIZE;
+
+  function start() {
+    const test = dppToCbtTest(set, Date.now());
+    if (!test) return;
+    // Saving it first means /cbt can resolve it by id, and the attempt lands in
+    // the same store every other test uses.
+    saveCbtTest(test as unknown as CbtTest);
+    navigate({ to: "/cbt", search: { testId: test.id } });
+  }
+
+  return (
+    <section className="rounded-2xl border p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Target className="h-4 w-4 text-primary" /> Today&apos;s DPP
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">{set.note}</p>
+        </div>
+        <button
+          onClick={start}
+          disabled={!runnable}
+          title={runnable ? undefined : "Not enough questions on this device for a timed set."}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Play className="h-3.5 w-3.5" /> Start {set.questions.length} questions
+        </button>
+      </div>
+
+      {set.focus.length > 0 ? (
+        <ul className="mt-3 space-y-1.5">
+          {set.focus.slice(0, 4).map((f) => (
+            <li key={`${f.subject}-${f.chapter}`} className="rounded-md border px-3 py-2 text-xs">
+              <span className="font-medium">
+                {f.subject} — {f.chapter}
+              </span>
+              <span className="mt-0.5 block text-muted-foreground">{f.reason}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        {Math.round((set.questions.length * DPP_SEC_PER_QUESTION) / 60)} min · no difficulty labels:
+        the question bank does not carry them, and a wrong label would be worse than none.
+      </p>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * TodayStrip — the dashboard's information order, per Phase 6:
  * greeting → today's focus + ONE primary action → today's tasks →
  * 3–5 weak areas.
@@ -1121,6 +1224,49 @@ function LoadingCards() {
  * instead of 0%, and why a student with no attempts is sent to a
  * diagnostic rather than to a confident recommendation built on nothing.
  * ------------------------------------------------------------------ */
+
+/**
+ * The baked question bank, read from the same files the CBT diagnostic uses.
+ *
+ * `public/pyq` is generated at build time and gitignored, so a missing or
+ * partial bake is a normal state — the caller degrades to no DPP rather than
+ * showing an empty set.
+ */
+async function loadQuestionBank(): Promise<BankQuestion[]> {
+  try {
+    const indexRes = await fetch("/pyq/index.json", { cache: "no-store" });
+    if (!indexRes.ok) return [];
+    const index = (await indexRes.json()) as { papers?: Array<{ id: string }> };
+    const ids = (index.papers ?? []).map((p) => p?.id).filter((id): id is string => !!id);
+    const out: BankQuestion[] = [];
+    for (const id of ids) {
+      const res = await fetch(`/pyq/${id}.json`, { cache: "no-store" });
+      if (!res.ok) continue;
+      const data = (await res.json()) as {
+        paper?: { questions?: Array<Record<string, unknown>> };
+      };
+      for (const q of data.paper?.questions ?? []) {
+        const text = q["text"];
+        const subject = q["subject"];
+        if (typeof text !== "string" || typeof subject !== "string" || !text.trim()) continue;
+        out.push({
+          id: `${id}::${String(q["no"] ?? out.length)}`,
+          subject,
+          chapter: String(q["chapter"] ?? ""),
+          topic: String(q["topic"] ?? ""),
+          type: q["type"] === "integer" ? "integer" : "mcq",
+          text,
+          options: Array.isArray(q["options"]) ? (q["options"] as BankQuestion["options"]) : [],
+          answer: String(q["answer"] ?? ""),
+          ...(typeof q["sol"] === "string" ? { sol: q["sol"] as string } : {}),
+        });
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
 function TodayStrip({ plan }: { plan: TodayPlan }) {
   const pending = plan.tasks.filter((t) => t.status !== "done");

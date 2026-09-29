@@ -2,14 +2,18 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  DPP_SEC_PER_QUESTION,
+  MIN_DPP_SIZE,
   buildDailyPracticeSet,
   dppQuestionId,
   dppSubjects,
+  dppToCbtTest,
   type BankQuestion,
   type WeakChapterInput,
 } from "@/features/practice/dpp";
 
 const DAY = "2026-09-29";
+const NOW = new Date("2026-09-29T12:00:00").getTime();
 
 /** The real baked bank, when the build produced it. */
 function realBank(): BankQuestion[] {
@@ -254,5 +258,60 @@ describe("buildDailyPracticeSet — against the real baked bank", () => {
     const a = buildDailyPracticeSet({ bank: BANK, weak: [], dayKey: DAY, size: 15 });
     const b = buildDailyPracticeSet({ bank: BANK, weak: [], dayKey: DAY, size: 15 });
     expect(a.questions.map((q) => q.id)).toEqual(b.questions.map((q) => q.id));
+  });
+});
+
+describe("dppToCbtTest — launching a set as a real test", () => {
+  const weak: WeakChapterInput[] = [
+    { subject: "Physics", chapter: "Electrostatics", accuracy: 20, attempts: 5 },
+    { subject: "Chemistry", chapter: "Solutions", accuracy: 30, attempts: 4 },
+  ];
+
+  it("converts a set into the same CbtTest shape the PYQ browser produces", () => {
+    const set = buildDailyPracticeSet({ bank: fakeBank(), weak, dayKey: DAY, size: 10 });
+    const test = dppToCbtTest(set, NOW);
+    expect(test).not.toBeNull();
+    expect(test?.questions).toHaveLength(10);
+    expect(test?.practice).toBe(true);
+    // Numbered from 1, exactly like a baked paper.
+    expect(test?.questions.map((q) => q.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    for (const q of test?.questions ?? []) {
+      expect(["Physics", "Chemistry", "Mathematics"]).toContain(q.subject);
+      expect(q.text.length).toBeGreaterThan(0);
+      expect(q.answer.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("times the set as a short focused run, not a three-hour paper", () => {
+    const set = buildDailyPracticeSet({ bank: fakeBank(), weak, dayKey: DAY, size: 10 });
+    const test = dppToCbtTest(set, NOW);
+    // 10 questions at 90s each is 15 minutes — a set that actually fits a day.
+    expect(test?.durationSec).toBe(10 * DPP_SEC_PER_QUESTION);
+  });
+
+  it("names the set after the day so it is recognisable in the test list", () => {
+    const set = buildDailyPracticeSet({ bank: fakeBank(), weak, dayKey: DAY, size: 8 });
+    expect(dppToCbtTest(set, NOW)?.name).toBe(`Today's DPP · ${DAY}`);
+  });
+
+  it("returns null for a set too small to be worth a timed run", () => {
+    // A three-question "test" produces a result that looks like evidence and is
+    // not, so it is not offered.
+    const set = buildDailyPracticeSet({ bank: fakeBank(), weak, dayKey: DAY, size: 3 });
+    expect(set.questions).toHaveLength(3);
+    expect(dppToCbtTest(set, NOW)).toBeNull();
+  });
+
+  it("keeps the solution so the result page can explain the answer", () => {
+    const set = buildDailyPracticeSet({ bank: fakeBank(), weak, dayKey: DAY, size: 6 });
+    const test = dppToCbtTest(set, NOW);
+    expect(test?.questions.every((q) => q.sol === "Because.")).toBe(true);
+  });
+
+  it("is stable across calls for the same day", () => {
+    const set = buildDailyPracticeSet({ bank: fakeBank(), weak, dayKey: DAY, size: 10 });
+    const a = dppToCbtTest(set, NOW);
+    const b = dppToCbtTest(set, NOW + 5000);
+    expect(a?.questions.map((q) => q.id)).toEqual(b?.questions.map((q) => q.id));
   });
 });

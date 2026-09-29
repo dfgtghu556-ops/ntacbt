@@ -318,3 +318,77 @@ export function dppSubjects(set: DailyPracticeSet): Subject[] {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ *
+ * Launching a set as a real CBT test
+ *
+ * A DPP that cannot be started is a document, not practice. Converting it
+ * into the same `CbtTest` shape the PYQ browser produces means the student
+ * gets the full exam runtime — timer, palette, marking, negative marking,
+ * autosave and a result that feeds the mastery store — rather than a
+ * second, weaker practice surface.
+ * ------------------------------------------------------------------ */
+
+/** The minimum questions for a set worth timing. */
+export const MIN_DPP_SIZE = 6;
+
+/** Minutes per question. A DPP is a focused drill, not a three-hour paper. */
+export const DPP_SEC_PER_QUESTION = 90;
+
+/**
+ * Convert a daily set into a runnable `CbtTest`.
+ *
+ * Returns null when the set is too small to be worth a timed run — a
+ * three-question "test" would produce a result that looks like evidence and
+ * is not.
+ */
+export function dppToCbtTest(
+  set: DailyPracticeSet,
+  now: number,
+): {
+  id: string;
+  name: string;
+  createdAt: number;
+  durationSec: number;
+  practice: true;
+  questions: Array<{
+    id: string;
+    no: number;
+    subject: "Physics" | "Chemistry" | "Mathematics";
+    chapter: string;
+    topic: string;
+    type: "mcq" | "integer";
+    text: string;
+    options: Array<{ label: string; text: string }>;
+    answer: string;
+    sol?: string;
+  }>;
+} | null {
+  if (set.questions.length < MIN_DPP_SIZE) return null;
+  const questions = set.questions
+    .filter((q): q is DppQuestion & { subject: "Physics" | "Chemistry" | "Mathematics" } =>
+      isSubject(q.subject),
+    )
+    .map((q) => ({
+      id: `${dppQuestionId(set.dayKey, q.no)}`,
+      no: q.no,
+      subject: q.subject,
+      chapter: q.chapter,
+      topic: q.topic,
+      type: q.type,
+      text: q.text,
+      options: q.options,
+      answer: q.answer,
+      ...(q.sol ? { sol: q.sol } : {}),
+    }));
+  if (questions.length < MIN_DPP_SIZE) return null;
+  return {
+    id: dppQuestionId(set.dayKey, 0),
+    name: `Today's DPP · ${set.dayKey}`,
+    createdAt: now,
+    // A short, focused run: the whole point of a daily set is that it fits.
+    durationSec: questions.length * DPP_SEC_PER_QUESTION,
+    practice: true,
+    questions,
+  };
+}
