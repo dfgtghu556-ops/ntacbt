@@ -201,6 +201,7 @@ existing breaks.
 | A mandatory login wall                      | Breaks local-first students (§2.6)                                                                    |
 | Inventing teacher/video/rank data           | `docs/DATA-GOVERNANCE.md` forbids it; every number stays evidence-labelled                            |
 | Changing the Eklavya test schedule          | Explicitly out of scope per the user's earlier instruction in `.lovable/plan`                         |
+| A CBSE Class XI 2026-27 curriculum map     | Class XII is transcribed and published; Class XI resolves to `null` and says so, rather than borrowing Class XII chapters |
 
 ---
 
