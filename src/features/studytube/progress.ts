@@ -73,9 +73,28 @@ export function loadStudyTubeProgress(): StudyTubeProgressStore {
   }
 }
 
-function save(store: StudyTubeProgressStore) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STUDY_PROGRESS_KEY, JSON.stringify(store));
+/**
+ * Persist the store, and report whether it actually landed.
+ *
+ * `localStorage.setItem` throws rather than returning a status. It throws when
+ * the quota is exceeded, and in Safari private mode and with storage blocked by
+ * policy `localStorage` itself throws on access. Left unguarded, that exception
+ * unwound through `toggleWatchLater` into the click handler, so the button
+ * flipped to its new state and the write was silently lost - the student
+ * believed a lecture was saved when nothing had been stored.
+ *
+ * Every caller now checks the result and tells the student when a save failed,
+ * because a silent failure on a local-first app is indistinguishable from
+ * success until they come back later and find their notes gone.
+ */
+function save(store: StudyTubeProgressStore): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    localStorage.setItem(STUDY_PROGRESS_KEY, JSON.stringify(store));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function markWatched(videoId: string, title: string, finished = true): WatchRecord {
@@ -86,10 +105,11 @@ export function markWatched(videoId: string, title: string, finished = true): Wa
   return record;
 }
 
-export function setNote(videoId: string, text: string) {
+/** Save the student's own note. Returns false if the write did not land. */
+export function setNote(videoId: string, text: string): boolean {
   const store = loadStudyTubeProgress();
   store.notes[videoId] = { text, updatedAt: Date.now() };
-  save(store);
+  return save(store);
 }
 
 export function toggleWatchLater(videoId: string): boolean {
@@ -98,8 +118,8 @@ export function toggleWatchLater(videoId: string): boolean {
   store.watchLater = has
     ? store.watchLater.filter((x) => x !== videoId)
     : [...store.watchLater, videoId];
-  save(store);
-  return !has;
+  // Only report the new state if it was actually stored.
+  return save(store) ? !has : has;
 }
 
 export function saveHandshake(

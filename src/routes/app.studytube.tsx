@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock3, Flame, MonitorPlay, Play, Search, Target, TrendingUp } from "lucide-react";
 import { DataStore } from "@/lib/store";
@@ -362,7 +363,14 @@ function StudyTube() {
       return;
     }
     const has = toggleWatchLater(v.id);
-    setWatchLaterIds((prev) => (has ? [...prev, v.id] : prev.filter((x) => x !== v.id)));
+    // Only reflect the change in the UI if the write actually landed.
+    if (has) {
+      setWatchLaterIds((prev) => [...prev, v.id]);
+      toast.success("Saved to Watch later");
+    } else {
+      setWatchLaterIds((prev) => prev.filter((x) => x !== v.id));
+      toast.success("Removed from Watch later");
+    }
     setSavedVideos((prev) => {
       const next = { ...prev };
       if (has) next[v.id] = v;

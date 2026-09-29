@@ -227,9 +227,11 @@ describe("focus is never removed without a replacement", () => {
         if (!cls.includes("outline-none")) continue;
         if (/focus(?:-visible)?:(ring|border|outline)/.test(cls)) continue;
         // The ring may live on the enclosing element.
-        if (/focus(?:-within|-visible)?:(ring|border|outline)/.test(
-          enclosingClassName(src, m.index ?? 0),
-        )) {
+        if (
+          /focus(?:-within|-visible)?:(ring|border|outline)/.test(
+            enclosingClassName(src, m.index ?? 0),
+          )
+        ) {
           continue;
         }
         offenders.push(`${path}:${src.slice(0, m.index).split("\n").length}  ${cls.slice(0, 60)}`);

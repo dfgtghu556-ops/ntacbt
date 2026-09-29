@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -168,6 +169,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Mounted once here rather than per route. `sonner` was already a
+          dependency and `components/ui/sonner.tsx` already existed, but nothing
+          rendered it and nothing called `toast()` - so a failed save or a copied
+          link produced no feedback at all. Inline "Watch later" labels were the
+          only confirmation anywhere in the app. */}
+      <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
 }

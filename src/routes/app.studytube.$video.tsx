@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -85,7 +86,7 @@ function StudyTheater() {
     // unmapped rather than guessed into the nearest chapter.
     const subject = toSubject(search.subject);
     const chapter = subject ? chapterForTopic(studentScope, subject, search.topic) : null;
-    saveHandshake(video, {
+    const stored = saveHandshake(video, {
       recall,
       practice,
       mastery,
@@ -95,10 +96,13 @@ function StudyTheater() {
     });
     setFinished(true);
     setSaved(true);
+    if (stored) toast.success("Lecture marked complete");
+    else toast.error("Could not save your progress — this browser is blocking local storage");
   }
 
   function toggleNote() {
-    setNote(video, note);
+    if (setNote(video, note)) toast.success("Note saved");
+    else toast.error("Could not save your note — this browser is blocking local storage");
   }
 
   const tabs = useMemo(
@@ -124,7 +128,15 @@ function StudyTheater() {
         </Link>
         <button
           type="button"
-          onClick={() => setSaved(toggleWatchLater(video))}
+          onClick={() => {
+            const nowSaved = toggleWatchLater(video);
+            setSaved(nowSaved);
+            // A write that did not land used to flip the label anyway, so the
+            // student believed the lecture was saved when nothing was stored.
+            if (nowSaved) toast.success("Saved to Watch later");
+            else if (saved) toast.success("Removed from Watch later");
+            else toast.error("Could not save — this browser is blocking local storage");
+          }}
           className="ml-auto rounded-md border border-input px-2.5 py-1.5 text-xs text-muted-foreground"
         >
           {saved ? "✓ Watch later" : "Watch later"}
