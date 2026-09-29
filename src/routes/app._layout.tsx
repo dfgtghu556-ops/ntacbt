@@ -207,6 +207,26 @@ function AppLayout() {
           })}
         </div>
       </nav>
+      {/*
+        Legal links in the persistent footer. AdSense approval requires a
+        reachable privacy policy, and a policy a student cannot find is not a
+        policy — so this sits on every screen rather than only the marketing
+        routes. The exam runner is deliberately left without it: it is full-
+        screen and noindex, and its head links are already occupied.
+      */}
+      <div className="border-t px-4 py-3 text-center text-[11px] text-muted-foreground">
+        <Link to="/privacy" className="hover:text-foreground">
+          Privacy
+        </Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/terms" className="hover:text-foreground">
+          Terms
+        </Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/about" className="hover:text-foreground">
+          About
+        </Link>
+      </div>
       {needsOnboarding ? (
         <OnboardingWizard
           onDone={() => setNeedsOnboarding(false)}

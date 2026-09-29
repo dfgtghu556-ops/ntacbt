@@ -213,3 +213,47 @@ describe("structured data is present and parseable", () => {
     }
   });
 });
+
+describe("the legal pages exist as real routes", () => {
+  // AdSense will not approve a site without a privacy policy, and a student is
+  // owed an accurate one before they trust a predicted score.
+  it("ships privacy, terms and about", () => {
+    for (const r of ["privacy.tsx", "terms.tsx", "about.tsx"]) {
+      expect(read(`src/routes/${r}`), r).toContain('createFileRoute("/');
+    }
+  });
+
+  it("links them from each other and from the app shell", () => {
+    for (const r of ["privacy.tsx", "terms.tsx", "about.tsx"]) {
+      expect(read(`src/routes/${r}`), r).toContain('href="/');
+    }
+    // A policy nobody can find is not a policy. The shell links them on every
+    // screen, and the pages cross-link each other.
+    const layout = read("src/routes/app._layout.tsx");
+    expect(layout, "shell footer").toContain('to="/privacy"');
+    expect(layout, "shell footer").toContain('to="/terms"');
+    expect(layout, "shell footer").toContain('to="/about"');
+  });
+
+  it("does not promise anything the code does not do", () => {
+    const privacy = read("src/routes/privacy.tsx");
+    const terms = read("src/routes/terms.tsx");
+    // These are the two claims most often false in a template policy.
+    expect(privacy).toContain("local storage");
+    expect(terms).toContain("not affiliated");
+    expect(terms).toContain("official");
+  });
+
+  it("states plainly that a practice percentile is not an admission outcome", () => {
+    // The one claim that would actively mislead a student.
+    expect(read("src/routes/terms.tsx")).toMatch(/rank|percentile|admission/);
+  });
+
+  it("derives the About numbers from the data rather than typing them in", () => {
+    const about = read("src/routes/about.tsx");
+    // A hardcoded "375 questions" becomes a lie the moment the library grows.
+    expect(about).toContain("publishedCurricula()");
+    expect(about).toContain("questions,");
+    expect(about).not.toMatch(/"375|375 questions/);
+  });
+});
