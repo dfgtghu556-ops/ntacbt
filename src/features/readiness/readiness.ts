@@ -103,6 +103,17 @@ function topicAttemptData(
   return map;
 }
 
+/**
+ * Weak topics, at TOPIC granularity.
+ *
+ * Deliberately a lower bar than the mastery store's `MIN_SAMPLE` (3) and
+ * `WEAK_ACCURACY` (50%): this is an early-warning signal — "this looks weak,
+ * keep an eye on it" — whereas the mastery store decides whether a chapter is
+ * genuinely weak. The mastery store (`src/features/mastery`) is the
+ * chapter-level combined view the report renders; both read the same evidence
+ * but answer different questions, so the thresholds are intentionally not
+ * shared.
+ */
 function weakTopics(store: DataStore): WeakTopic[] {
   const data = topicAttemptData(store);
   const out: WeakTopic[] = [];

@@ -215,6 +215,33 @@ export function forScope(scope: ExamScope): AcademicRecord[] {
   );
 }
 
+/**
+ * Resolve a topic name to its chapter WITHIN a scope.
+ *
+ * Returns `null` when nothing matches. That is deliberate: a lesson whose
+ * chapter cannot be resolved is *missing* evidence in the mastery store, which
+ * is honest. Guessing the nearest chapter would put a watched lecture in the
+ * wrong row and inflate a chapter the student never studied.
+ */
+export function chapterForTopic(
+  scope: ExamScope,
+  subject: Subject,
+  topic: string | undefined,
+): string | null {
+  const wanted = (topic || "").trim().toLowerCase();
+  if (!wanted) return null;
+  const records = forScope(scope).filter((r) => r.subject === subject);
+  // Exact topic match first, then a record whose name contains the topic.
+  const exact = records.find(
+    (r) => (r.topic || "").toLowerCase() === wanted || r.name.toLowerCase() === wanted,
+  );
+  if (exact) return exact.chapter;
+  const partial = records.find(
+    (r) => (r.topic || "").toLowerCase().includes(wanted) || r.name.toLowerCase().includes(wanted),
+  );
+  return partial ? partial.chapter : null;
+}
+
 /** Catch accidental cross-scope leakage: every record must match exactly one scope. */
 export function assertNoCrossScopeMixing(scope: ExamScope): boolean {
   for (const record of forScope(scope)) {

@@ -11,7 +11,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { FileText, Loader2, Play, RefreshCw, Save, TestTube2 } from "lucide-react";
-import { DEFAULT_TEST_MINUTES, type CbtTest, type Subject } from "@/features/cbt/types";
+import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
+import { toSubject } from "@/features/academics/subject";
 import { loadCbtStore, saveCbtTest } from "@/features/cbt/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,12 +43,6 @@ interface PyqQuestion {
 export const Route = createFileRoute("/app/tests")({
   component: TestsPage,
 });
-
-function toSubject(s: string): Subject {
-  if (s === "Physics") return "Physics";
-  if (s === "Chemistry") return "Chemistry";
-  return "Mathematics";
-}
 
 function TestsPage() {
   const navigate = useNavigate();

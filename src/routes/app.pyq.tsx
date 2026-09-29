@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
-import { DEFAULT_TEST_MINUTES, type CbtTest, type Subject } from "@/features/cbt/types";
+import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
+import { toSubject } from "@/features/academics/subject";
 import { saveCbtTest } from "@/features/cbt/store";
 
 type PyqSource = "api" | "baked" | "error";
@@ -36,12 +37,6 @@ interface PyqQuestion {
   options: { label: string; text: string }[];
   answer: string;
   sol: string;
-}
-
-function toSubject(s: string): Subject {
-  if (s === "Physics") return "Physics";
-  if (s === "Chemistry") return "Chemistry";
-  return "Mathematics";
 }
 
 function Pyq() {

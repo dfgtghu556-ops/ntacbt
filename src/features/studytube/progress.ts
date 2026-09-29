@@ -24,6 +24,16 @@ export interface HandshakeRecord {
   practice: number | null;
   mastery: MasteryState;
   updatedAt: number;
+  /**
+   * The chapter this lesson teaches, recorded at write time so the mastery
+   * store can aggregate watched lessons by chapter without re-resolving the
+   * video id against the catalog. Optional because handshakes written before
+   * the mastery store existed carry none; the store skips those rather than
+   * guessing a chapter.
+   */
+  subject?: string | undefined;
+  chapter?: string | undefined;
+  topic?: string | undefined;
 }
 
 export interface StudyTubeProgressStore {
@@ -94,7 +104,8 @@ export function toggleWatchLater(videoId: string): boolean {
 
 export function saveHandshake(
   videoId: string,
-  handshake: Pick<HandshakeRecord, "recall" | "practice" | "mastery">,
+  handshake: Pick<HandshakeRecord, "recall" | "practice" | "mastery"> &
+    Partial<Pick<HandshakeRecord, "subject" | "chapter" | "topic">>,
 ): HandshakeRecord {
   const store = loadStudyTubeProgress();
   const record: HandshakeRecord = {
@@ -104,6 +115,11 @@ export function saveHandshake(
     mastery: handshake.mastery,
     updatedAt: Date.now(),
   };
+  // Only write the mapping when it is known — an empty string would make the
+  // mastery store treat the lesson as mapped to a blank chapter.
+  if (handshake.subject) record.subject = handshake.subject;
+  if (handshake.chapter) record.chapter = handshake.chapter;
+  if (handshake.topic) record.topic = handshake.topic;
   store.handshakes[videoId] = record;
   save(store);
   return record;

@@ -18,6 +18,9 @@ import {
   toggleWatchLater,
   type MasteryState,
 } from "@/features/studytube/progress";
+import { chapterForTopic } from "@/features/academics";
+import { scopeOf, useStudentContext } from "@/features/context";
+import { toSubject } from "@/features/academics/subject";
 
 export const Route = createFileRoute("/app/studytube/$video")({
   validateSearch: (search: Record<string, unknown>): TheaterSearch => {
@@ -48,6 +51,9 @@ interface TheaterSearch {
 
 function StudyTheater() {
   const { video } = Route.useParams();
+  // The lesson maps onto the student's own scope, so a CBSE student's watched
+  // lecture lands in a CBSE chapter and never in a JEE one.
+  const studentScope = scopeOf(useStudentContext());
   const search = useSearch({ from: Route.id }) as TheaterSearch;
   const title = search.title || "Video lesson";
   const duration = search.topic ? undefined : undefined;
@@ -76,7 +82,19 @@ function StudyTheater() {
 
   function completeHandshake() {
     markWatched(video, title, true);
-    saveHandshake(video, { recall, practice, mastery });
+    // Map the lesson onto its chapter so the mastery store can count a watched
+    // lecture against the chapter it teaches. Unresolvable topics are left
+    // unmapped rather than guessed into the nearest chapter.
+    const subject = toSubject(search.subject);
+    const chapter = subject ? chapterForTopic(studentScope, subject, search.topic) : null;
+    saveHandshake(video, {
+      recall,
+      practice,
+      mastery,
+      ...(subject ? { subject } : {}),
+      ...(chapter ? { chapter } : {}),
+      ...(search.topic ? { topic: search.topic } : {}),
+    });
     setFinished(true);
     setSaved(true);
   }
