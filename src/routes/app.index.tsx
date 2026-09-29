@@ -34,6 +34,7 @@ import { useLang, t } from "@/lib/lang";
 import { buildMicroDrill } from "@/features/cbt/microDrill";
 import { mistakeFromStore } from "@/features/cbt/mistake";
 import { adaptTasks } from "@/features/planner/adapt";
+import { achievements, type AchievementSummary } from "@/features/focus/achievements";
 import { saveCbtTest } from "@/features/cbt/store";
 import type { CbtTest } from "@/features/cbt/types";
 import { buildTodayPlan, type TodayPlan } from "@/features/planner/today";
@@ -141,6 +142,7 @@ function Dashboard() {
   const [absentDays, setAbsentDays] = useState(0);
   const [todayPlan, setTodayPlan] = useState<TodayPlan | null>(null);
   const [dpp, setDpp] = useState<DailyPracticeSet | null>(null);
+  const [awards, setAwards] = useState<AchievementSummary | null>(null);
 
   useEffect(() => {
     const store = new DataStore();
@@ -152,7 +154,11 @@ function Dashboard() {
     setFocusMin(Math.round(todayFocusSeconds(f.sessions, now) / 60));
 
     const streakStore = loadStreakStore();
-    setHumane(computeHumaneStreak(activeDays, now, { store: streakStore }));
+    // Capture the computed streak locally. Reading the `humane` STATE here would
+    // give the initial value, because the setState above has not applied yet —
+    // and the awards would be built on an empty streak.
+    const humaneNow = computeHumaneStreak(activeDays, now, { store: streakStore });
+    setHumane(humaneNow);
 
     const surv = computeSurvival(store, {
       streakDays: focusStreak(f.sessions, now),
@@ -177,6 +183,26 @@ function Dashboard() {
       }),
     );
     setAbsentDays(daysSinceLastVisit());
+
+    // A9 — XP, level and badges. Derived from the same evidence the rest of the
+    // dashboard shows, so the two can never disagree.
+    try {
+      const mastery = masteryFromStores(store, loadStudyTubeProgress(), Date.now());
+      const mastered = [...mastery.values()].filter((m) => m.state === "Mastered").length;
+      setAwards(
+        achievements({
+          focusSessions: f.sessions,
+          questionsAttempted: computeReadiness(store).attempts,
+          lessonsFinished: [...mastery.values()].reduce((n, m) => n + m.lessonsFinished, 0),
+          masteredChapters: mastered,
+          humane: humaneNow,
+          survival: surv,
+          personalBestDays: loadStreakStore().days,
+        }),
+      );
+    } catch {
+      setAwards(null);
+    }
 
     // Today's DPP: the same weak chapters the Today strip shows, turned into a
     // runnable set from the baked question bank. Built in the effect because it
@@ -336,6 +362,9 @@ function Dashboard() {
       {/* A4 — Today's DPP. Sits directly under the Today strip because it is the
           one-tap answer to "what should I practise right now". */}
       {dpp ? <DppCard set={dpp} /> : null}
+
+      {/* A9 — XP, level and badges. Earning-based, never guilt. */}
+      {awards ? <AwardsCard awards={awards} /> : null}
 
       {/* ─── Key stats ─── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1143,6 +1172,93 @@ function LoadingCards() {
         <div key={i} className="h-28 animate-pulse rounded-2xl border bg-muted/40" />
       ))}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * AwardsCard — XP, level and badges (A9)
+ *
+ * The rules this component exists to enforce, from the research doc:
+ * "earning-based, never guilt", "badges meaningful", "no ads/promos".
+ *
+ * So: every badge shown is one the student actually earned, or one with a real
+ * progress bar toward a completed act. There is no locked-badge wall, no
+ * countdown, no "you missed" copy, and nothing ranks a student against anyone
+ * but their own previous best.
+ * ------------------------------------------------------------------ */
+
+function AwardsCard({ awards }: { awards: AchievementSummary }) {
+  const pct = Math.round((awards.level.xpIntoLevel / awards.level.levelSpan) * 100);
+  // Show earned badges first, then the closest unearned ones with real progress.
+  const shown = [
+    ...awards.earned,
+    ...awards.badges.filter((b) => !b.earned && b.progress > 0).slice(0, 3),
+  ].slice(0, 8);
+
+  return (
+    <section className="rounded-2xl border p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 text-primary" /> Level {awards.level.level} ·{" "}
+            {awards.level.title}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {awards.xp.toLocaleString()} XP · {awards.level.toNext} to level{" "}
+            {awards.level.level + 1}
+          </p>
+        </div>
+        {awards.beatPersonalBest ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-50 px-3 py-1 text-[11px] font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+            <Flame className="h-3.5 w-3.5" /> Beat your own best
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+      </div>
+
+      <p className="mt-2 text-xs text-muted-foreground">{awards.note}</p>
+
+      {shown.length > 0 ? (
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {shown.map((b) => (
+            <li
+              key={b.id}
+              className={`rounded-md border px-3 py-2 text-xs ${
+                b.earned ? "border-primary/40 bg-primary/5" : ""
+              }`}
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="font-medium">{b.label}</span>
+                {b.earned ? (
+                  <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-green-600" />
+                ) : (
+                  <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                    {Math.round(b.progress * 100)}%
+                  </span>
+                )}
+              </span>
+              <span className="mt-0.5 block text-muted-foreground">{b.description}</span>
+              {!b.earned ? (
+                <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-muted">
+                  <span
+                    className="block h-full rounded-full bg-primary/60"
+                    style={{ width: `${Math.round(b.progress * 100)}%` }}
+                  />
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        XP is counted from your own focus sessions, attempts, lessons and mastered chapters — never
+        from anything you did not do. No badge here can be lost.
+      </p>
+    </section>
   );
 }
 
