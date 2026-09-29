@@ -23,6 +23,7 @@ import {
   type ChapterState,
   type SyllabusCoverage,
 } from "@/features/planner/coverage";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/planner")({
   head: () => ({
@@ -33,6 +34,14 @@ export const Route = createFileRoute("/app/planner")({
         content:
           "A daily study plan that orders chapters by your weak areas and their exam weightage, and carries a missed task forward exactly once.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Adaptive JEE Study Planner — Your Plan for Today",
+        "A daily JEE study planner that reads your real accuracy and time per question, then tells you the one thing to work on next.",
+        "/app/planner",
+      ),
     ],
   }),
   component: Planner,

@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { SITE_URL } from "@/config/site";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -125,7 +126,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
       {
         name: "twitter:title",
         content: "NTACBT | JEE & CBSE Learning OS",
@@ -137,14 +137,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/84a87eb0-1c9d-44bc-b9ff-278acebbcdb8",
+        content: `${SITE_URL}/og-image.png`,
+      },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "NTACBT — JEE Main and CBSE practice platform",
       },
       {
         name: "twitter:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/84a87eb0-1c9d-44bc-b9ff-278acebbcdb8",
+        content: `${SITE_URL}/og-image.png`,
       },
+      { name: "twitter:image:alt", content: "NTACBT — JEE Main and CBSE practice platform" },
       { name: "theme-color", content: "#2563eb" },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
@@ -160,23 +165,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@graph": [
             {
               "@type": "Organization",
-              "@id": "https://ntacbt.vercel.app/#organization",
+              "@id": `${SITE_URL}/#organization`,
               name: "NTACBT",
-              url: "https://ntacbt.vercel.app",
+              url: SITE_URL,
               description:
                 "A JEE Main and CBSE practice platform: previous-year papers, an adaptive planner, spaced repetition, focus sessions and honest progress analytics.",
             },
             {
               "@type": "WebSite",
-              "@id": "https://ntacbt.vercel.app/#website",
-              url: "https://ntacbt.vercel.app",
+              "@id": `${SITE_URL}/#website`,
+              url: SITE_URL,
               name: "NTACBT",
-              publisher: { "@id": "https://ntacbt.vercel.app/#organization" },
+              publisher: { "@id": `${SITE_URL}/#organization` },
               potentialAction: {
                 "@type": "SearchAction",
                 target: {
                   "@type": "EntryPoint",
-                  urlTemplate: "https://ntacbt.vercel.app/app/search?q={search_term_string}",
+                  urlTemplate: `${SITE_URL}/app/search?q={search_term_string}`,
                 },
                 "query-input": "required name=search_term_string",
               },

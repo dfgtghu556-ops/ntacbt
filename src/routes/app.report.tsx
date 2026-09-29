@@ -40,6 +40,7 @@ import {
   reportToText,
   type ShareableReport,
 } from "@/features/report/share";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/report")({
   head: () => ({
@@ -50,6 +51,14 @@ export const Route = createFileRoute("/app/report")({
         content:
           "A one-page report of what you have practised, where you are strong, and what to do next — shareable with a parent or mentor.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Your JEE Readiness Report",
+        "A one-page readiness report built from your real attempt history, with every number checkable.",
+        "/app/report",
+      ),
     ],
   }),
   component: Report,

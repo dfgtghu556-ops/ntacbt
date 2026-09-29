@@ -9,6 +9,7 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -19,6 +20,14 @@ export const Route = createFileRoute("/terms")({
         content:
           "The terms you agree to when using NTACBT, including how practice content relates to the official exam.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Terms of Service — NTACBT",
+        "The terms you agree to when using NTACBT, including how practice content relates to the official exam.",
+        "/terms",
+      ),
     ],
   }),
   component: Terms,

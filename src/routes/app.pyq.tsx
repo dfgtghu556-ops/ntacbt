@@ -12,6 +12,7 @@ import {
   type PaperMeta,
   type PyqQuestion,
 } from "@/features/pyq/store";
+import { socialMeta } from "@/config/site";
 
 type PyqSource = "api" | "baked" | "error";
 
@@ -53,6 +54,14 @@ export const Route = createFileRoute("/app/pyq")({
         content:
           "Practise real JEE Main 2026 questions shift by shift. 375 transcribed questions with answers and worked solutions, in an NTA-style CBT runner.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "JEE Main 2026 Previous Year Papers — 375 Solved Questions",
+        "Practise real JEE Main 2026 questions shift by shift. 375 transcribed questions with answers and worked solutions, in an NTA-style CBT runner.",
+        "/app/pyq",
+      ),
     ],
   }),
   loader: () => loadBakedPapers(),

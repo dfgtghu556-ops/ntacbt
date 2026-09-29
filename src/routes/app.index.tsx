@@ -63,6 +63,7 @@ import type {
   DualLaneReadiness,
   RankPrediction,
 } from "@/features/dashboard/types";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({
@@ -73,6 +74,14 @@ export const Route = createFileRoute("/app/")({
         content:
           "One place for JEE Main and CBSE practice: previous-year papers, an adaptive planner, spaced repetition, focus sessions and honest progress analytics.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "NTACBT — JEE Main & CBSE Practice Dashboard",
+        "One place for JEE Main and CBSE practice: previous-year papers, an adaptive planner, spaced repetition, focus sessions and honest progress analytics.",
+        "/app",
+      ),
     ],
   }),
   component: Dashboard,

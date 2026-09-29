@@ -14,6 +14,7 @@ import { DataStore } from "@/lib/store";
 import { loadFocusStore } from "@/features/focus/focus";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { buildMentorReport, mentorContextForAI } from "@/features/mentor/report";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/saarthi")({
   head: () => ({
@@ -24,6 +25,14 @@ export const Route = createFileRoute("/app/saarthi")({
         content:
           "Ask about a topic, a mistake, or what to revise next. Answers come from your own attempt history, not a generic script.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Saarthi — JEE Doubt Solving Tutor",
+        "Ask Saarthi a doubt about a JEE or CBSE concept and get a worked explanation.",
+        "/app/saarthi",
+      ),
     ],
   }),
   component: Saarthi,

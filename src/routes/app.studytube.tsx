@@ -32,6 +32,7 @@ import type {
   StudyTubeVideo,
 } from "@/features/studytube/types";
 import { VideoCard, ChannelCard, EmptyState } from "@/features/studytube/components/VideoCard";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/studytube")({
   head: () => ({
@@ -42,6 +43,14 @@ export const Route = createFileRoute("/app/studytube")({
         content:
           "Video lessons mapped to the CBSE and JEE syllabus, so a watched lecture counts towards the chapter it teaches.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "StudyTube — Curated JEE & CBSE Video Lectures",
+        "Hand-picked video lectures for JEE Main and CBSE, matched to your target, subject and weak topics.",
+        "/app/studytube",
+      ),
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { q?: string } => {

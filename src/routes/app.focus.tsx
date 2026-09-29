@@ -21,6 +21,7 @@ import {
   todayFocusSeconds,
   type FocusSession,
 } from "@/features/focus/focus";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/focus")({
   head: () => ({
@@ -31,6 +32,14 @@ export const Route = createFileRoute("/app/focus")({
         content:
           "A 25-minute focus timer that records what you worked on, so study time is counted in goals rather than hours.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Focus Timer — 25-Minute JEE Study Sessions",
+        "A 25-minute focus timer that records what you worked on, so study time is counted in goals rather than hours.",
+        "/app/focus",
+      ),
     ],
   }),
   component: Focus,

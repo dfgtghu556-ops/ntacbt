@@ -15,6 +15,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import type { PaperMeta } from "@/features/pyq/store";
 import { publishedCurricula } from "@/data/curriculum";
+import { socialMeta } from "@/config/site";
 
 /**
  * The paper library, read from the baked build artifact.
@@ -59,6 +60,14 @@ export const Route = createFileRoute("/about")({
         content:
           "NTACBT is a free, offline-first JEE Main practice platform: real previous-year questions, an NTA-style test runner, an adaptive planner and honest progress analytics.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "About NTACBT — A JEE Main Practice App",
+        "NTACBT is a free, offline-first JEE Main practice platform: real previous-year questions, an NTA-style test runner, an adaptive planner and honest progress analytics.",
+        "/about",
+      ),
     ],
   }),
   loader: () => loadLibraryStats(),

@@ -23,6 +23,7 @@ import {
 import { DataStore } from "@/lib/store";
 import { loadCbtStore } from "@/features/cbt/store";
 import { Badge } from "@/components/ui/badge";
+import { socialMeta } from "@/config/site";
 
 interface PaperMeta {
   id: string;
@@ -41,6 +42,14 @@ export const Route = createFileRoute("/app/search")({
         content:
           "Search across previous-year questions, syllabus chapters and topics, teachers, institutes and your own notes in one place.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Search Questions, Chapters and Lectures",
+        "Search every transcribed JEE Main question, syllabus chapter and lecture in NTACBT.",
+        "/app/search",
+      ),
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { q: string } => ({

@@ -12,6 +12,7 @@ import { authService } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/auth/register")({
   head: () => ({
@@ -22,6 +23,14 @@ export const Route = createFileRoute("/app/auth/register")({
         content:
           "Create an NTACBT account to sync your JEE practice across devices. Everything works without one too.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Create an account — NTACBT",
+        "Create a free NTACBT account to sync your practice history.",
+        "/app/auth/register",
+      ),
     ],
   }),
   component: RegisterPage,

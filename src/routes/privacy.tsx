@@ -13,6 +13,7 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -23,6 +24,14 @@ export const Route = createFileRoute("/privacy")({
         content:
           "What NTACBT stores on your device, what an optional account syncs, and what is never collected.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Privacy Policy — NTACBT",
+        "What NTACBT stores on your device, what an optional account syncs, and what is never collected.",
+        "/privacy",
+      ),
     ],
   }),
   component: Privacy,

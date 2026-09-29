@@ -24,6 +24,7 @@ import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { masteryFromStores } from "@/features/mastery/collect";
 import { buildSyllabusMap, type MapChapter } from "@/features/curriculum/map";
 import type { SyllabusMap } from "@/features/curriculum/map";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/map")({
   head: () => ({
@@ -34,6 +35,14 @@ export const Route = createFileRoute("/app/map")({
         content:
           "The complete rationalised CBSE Class 11 and Class 12 syllabus for Physics, Chemistry and Mathematics, unit by unit, with every topic listed.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "CBSE Class 11 & 12 Syllabus 2026-27 — Unit-wise Chapters and Topics",
+        "The complete rationalised CBSE Class 11 and Class 12 syllabus for Physics, Chemistry and Mathematics, unit by unit, with every topic listed.",
+        "/app/map",
+      ),
     ],
   }),
   component: SyllabusMapPage,

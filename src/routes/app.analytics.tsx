@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { DataStore, type AttemptSummary } from "@/lib/store";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/analytics")({
   head: () => ({
@@ -22,6 +23,14 @@ export const Route = createFileRoute("/app/analytics")({
         content:
           "See where your marks actually come from: accuracy by chapter, time per question, and which chapters to revise first.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "JEE Performance Analytics — Accuracy by Chapter",
+        "See where your marks actually come from: accuracy by chapter, time per question, and which chapters to revise first.",
+        "/app/analytics",
+      ),
     ],
   }),
   component: Analytics,

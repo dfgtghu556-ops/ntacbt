@@ -25,6 +25,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { BrainCircuit, Check, Layers, RotateCcw, Sparkles } from "lucide-react";
 import { useMemoryDeck } from "@/features/memory/use-deck";
 import { deckStats, retentionPct, type ReviewGrade } from "@/features/memory/srs";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/memory")({
   head: () => ({
@@ -35,6 +36,14 @@ export const Route = createFileRoute("/app/memory")({
         content:
           "A spaced-repetition locker built on SM-2, seeded automatically from the questions you got wrong.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Spaced Repetition Revision Cards for JEE",
+        "Revision cards scheduled with real spaced repetition, seeded from the questions you got wrong.",
+        "/app/memory",
+      ),
     ],
   }),
   component: MemoryLocker,

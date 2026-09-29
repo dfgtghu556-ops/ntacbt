@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { socialMeta } from "@/config/site";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -56,6 +57,16 @@ export const Route = createFileRoute("/app/studytube/$video")({
             ? `${title}. ${what}, taught by ${who}. Watch, then check your own recall.`
             : `${title}, taught by ${who}. Watch, then check your own recall.`,
         },
+        // The lesson's own card. A generic card on every lesson page is the same
+        // duplicate problem a shared title is, and this is the one route whose
+        // title is genuinely per-URL — so the card can be too.
+        ...socialMeta(
+          `${title} — ${who}`,
+          what
+            ? `${title}. ${what}, taught by ${who}. Watch, then check your own recall.`
+            : `${title}, taught by ${who}. Watch, then check your own recall.`,
+          match.fullPath,
+        ),
       ],
     };
   },

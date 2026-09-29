@@ -24,6 +24,7 @@ import { loadCbtStore, saveCbtTest } from "@/features/cbt/store";
 import { loadPaperIndex, loadPaperWithFallback, type PyqQuestion } from "@/features/pyq/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { socialMeta } from "@/config/site";
 
 interface PaperMeta {
   id: string;
@@ -45,6 +46,14 @@ export const Route = createFileRoute("/app/tests")({
         content:
           "Take full-length JEE Main mock tests or sectional practice, with the NTA interface, question palette and a detailed result analysis.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "JEE Main Mock Tests — NTA-Style CBT Practice",
+        "Take full-length and subject-wise JEE Main tests in an NTA-style computer-based test runner, with a question palette and honest scoring.",
+        "/app/tests",
+      ),
     ],
   }),
   component: TestsPage,

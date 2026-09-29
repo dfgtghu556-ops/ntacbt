@@ -11,6 +11,7 @@ import { useAuth } from "@/features/auth/hooks";
 import { authService } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/profile")({
   head: () => ({
@@ -21,6 +22,14 @@ export const Route = createFileRoute("/app/profile")({
         content:
           "Set your exam, class and daily study target once, and every surface adapts to your scope.",
       },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Your Study Profile",
+        "Set your exam target, class, subjects and daily study goal.",
+        "/app/profile",
+      ),
     ],
   }),
   component: ProfilePage,
