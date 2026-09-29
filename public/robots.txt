@@ -19,5 +19,6 @@ User-agent: *
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 Sitemap: https://ntacbt.vercel.app/sitemap.xml

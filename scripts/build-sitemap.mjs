@@ -59,6 +59,11 @@ function routePaths() {
     // The exam runner and the auth screens are deliberately not advertised.
     if (path === "/cbt") continue;
     if (path.startsWith("/app/auth/")) continue;
+    // A search interface is not content. `/app/search` also 307-redirects to
+    // `/app/search?q=` because the route validates its search params, and a
+    // sitemap entry that redirects is a URL a crawler is told to index but
+    // cannot read. Verified with `curl -w %{http_code}`.
+    if (path === "/app/search") continue;
 
     // Content routes students actually search for rank higher than personal
     // surfaces, because they are the ones worth crawling repeatedly.
@@ -132,6 +137,7 @@ User-agent: *
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;

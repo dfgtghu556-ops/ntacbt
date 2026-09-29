@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
 /** Entry point — opens the original orange CBT platform by default. */
 function Index() {
   useEffect(() => {
-    window.location.replace("/jee-cbt.html");
+    window.location.replace("/app");
   }, []);
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
