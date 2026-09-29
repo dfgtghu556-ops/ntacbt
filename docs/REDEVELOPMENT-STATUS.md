@@ -607,32 +607,99 @@ the display-mode media query and `navigator.standalone`.
 
 ---
 
+---
+
+## 19. Phase 6 — pagination + accessible controls
+
+- `src/features/ui/pagination.ts` + the PYQ browser's `PaperPager`.
+- The PYQ browser loaded the **full historical library** — potentially hundreds
+  of papers — and rendered every card at once. On the low-end hardware and poor
+  connectivity the research doc targets that is the difference between usable and
+  not.
+- A **page window** rather than full virtualization: virtualization needs a scroll
+  container with a known height and a measured row size, which a card grid with
+  wrapping text does not have. The window has neither requirement, degrades to
+  "load more" semantics if the caller wants, and keeps every card keyboard
+  reachable.
+- Pages **clamp** rather than error, so a stale deep link shows the last page
+  instead of a blank grid. A non-array yields an empty page rather than throwing.
+- **Bug the tests caught:** with five pages, the window on page 1 was
+  `1 · 2 · 3 · … · 5`, which made page 4 unreachable — there was no way to
+  navigate to it. A run of exactly one hidden page is now shown rather than
+  elided; a gap marker is only used when two or more pages are hidden.
+- Accessibility and pagination meet in the pager: a pager that only works with a
+  mouse excludes keyboard and screen-reader users from the library entirely. So
+  the controls are real buttons in a labelled `<nav>`, the summary is announced
+  through a polite live region, the current page carries `aria-current="page"`,
+  and elided gaps render as non-interactive text rather than a disabled button.
+
+---
+
+---
+
+## 20. Phase 6 — design-system measurement
+
+- `src/test/design-system.test.ts` measures B2/B4/B5 rather than asserting them.
+- **Touch targets.** The mobile bottom bar is the surface a student hits hundreds
+  of times a week on a phone, so it is the one that must clear 44px. The
+  measurement reads the Link's `className` **and** its icon sibling, because the
+  icon is not part of the className and measuring the className alone understates
+  the target by the icon's box size. It also guards the
+  `grid-template-columns` derivation — the fix for the bug where a hard-coded
+  `grid-cols-5` wrapped the sixth item onto a second row and hid it on phones.
+- **Card system — two real drifts found and fixed.** `app.planner.tsx` used
+  `rounded-xl` for its section cards; `app.pyq.tsx` used `rounded-xl` with no
+  `rounded-2xl` anywhere. Both now use the card radius. Inner chips and inputs
+  keep `rounded-md`, and a `rounded-xl` sub-card nested inside a `rounded-2xl`
+  parent is the deliberate convention, so only off-system radii count as drift.
+- **Recorded, not ignored.** ~24 interactive elements are under 44px. They are
+  dense grid controls (NTA calculator keypad, exam question palette, exam chrome)
+  where a 44px minimum fights the layout. They are listed as exceptions with
+  reasons so a future change confronts them deliberately. Bumping two dozen
+  layouts that cannot be visually verified in a test run would be worse than a
+  measured guard on what matters plus an honest exception list.
+
+---
+
 ## Open items for the user
 
-1. **A `.env` containing real Supabase credentials is committed to the repo.**
-   It is tracked (`git ls-files .env` returns it) and holds
-   `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, etc.
-   Anyone with clone access has these values, and they will be in the git history
-   even after removal. **Recommended:** rotate the Supabase keys, then
-   `git rm --cached .env`, add `.env` to `.gitignore`, and commit
-   `.env.example` only. This was **not** done unilaterally because removing a
-   tracked file could break an existing deployment.
-2. `src/data/video-engine.ts` still carries pre-existing `tsc` complaints in some
-   configurations; the current tree is clean, but the file is on the list for the
-   teacher/video verification pass described in the original rebuild plan.
-3. The Eklavya 96-test schedule is deliberately untouched (out of scope).
-4. The brief's "admin dashboard" was not built: NTACBT is a single-student,
-   local-first product, so an admin role exists in the type contract but there is
-   no multi-tenant admin surface to build one against. The mentor report
-   (`/app/report`) is the equivalent read-only "oversight" view.
-5. **CBSE Class XI 2026-27 has no published map.** `curriculumKeyForExam`
-   resolves `CBSE_11`, but no Class XI map has been transcribed yet, so a
-   `board11` student gets an honest "not published here" rather than the
-   Class XII chapters. Transcribing Class XI is the obvious next map.
-6. **No teacher record has a verifiable channel URL.** All 103 carry a display
-   name only (`channelName: "JEE Wallah"`), so every one is now recorded
-   `unverified` in the academic source-of-truth. Nothing filters on that yet,
-   so StudyTube is unaffected — but the rebuild plan's Phase 5 says unverifiable
-   entries should be _hidden_ from recommendations, which would empty the
-   teacher picker. Supplying the URLs (or accepting the labelling) is a
-   decision for you, not one to make unilaterally.
+Unchanged from earlier sections, plus what remains from the research doc:
+
+1. **`.env` is git-tracked with real Supabase credentials** (incl.
+   `SUPABASE_SERVICE_ROLE_KEY`). Rotate, then `git rm --cached .env` +
+   `.gitignore` — confirm first, removal may break their deploy pipeline.
+2. **`.github/workflows/deploy.yml` is written but untracked** (GitHub App
+   lacks the `workflows` permission). Grant it or paste via the web UI;
+   meanwhile run `lint`, `tsc --noEmit`, `validate:all` locally.
+3. **No teacher record has a verifiable channel URL** (open item 5). The
+   rebuild plan says unverifiable entries should be hidden from
+   recommendations, which would empty the teacher picker — supply URLs or
+   accept honest labelling.
+4. **CBSE Class XI 2026-27 has no published map.**
+   `curriculumKeyForExam` resolves `CBSE_11`, but no Class XI map is
+   transcribed, so a `board11` student gets an honest "not published here"
+   rather than the Class XII chapters.
+5. **`public/pyq` is gitignored and baked at build time.** This sandbox
+   cannot reach HuggingFace, so the bake falls back to its pinned baseline of
+   5 papers / 375 questions. The full historical library only appears in a
+   build with network access.
+6. **A1 Snap & Solve needs an API key.** The Saarthi surface already accepts
+   an uploaded image; the solve step needs a vision model key. Nothing was
+   faked to fill the gap.
+7. **B1 shell unification is not done.** `jee-cbt.html` and `/app` still have
+   different navigation. The React app is now the product, but the legacy
+   shell still ships and is linked from the header. Unifying them is a larger
+   change than a single session should make blind.
+8. **Phase 2 (transcribing the other 14 JEE 2026 papers)** is not started: the
+   source PDFs are gitignored and not present in this sandbox.
+
+## Verification
+
+Current gate on `HEAD`:
+
+- `tsc --noEmit` — 0 errors
+- `vitest run` — 518 passed / 518 (29 suites)
+- `npm run lint` — 0 errors, 9 pre-existing warnings
+- `npm run validate:all` — exit 0
+- `vite build` — exit 0
+- All 16 routes — HTTP 200
