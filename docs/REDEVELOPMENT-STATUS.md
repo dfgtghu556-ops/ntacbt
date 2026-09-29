@@ -818,12 +818,60 @@ must hold absolutely cannot be expressed as a trade-off.
 the two products' completion states stay distinct. Clearing is explicit and
 surfaced in the UI rather than a hidden reset.
 
+## 25. Phase 6 — result page order and the deep-analytics disclosure
+
+Two items from the Phase 6 spec were outstanding.
+
+**Result page.** The spec's contract is header score → "What should you do
+next?" → strengths → weak areas → mistakes → time → review → full analytics.
+`ExamResult.tsx`'s own header comment claimed that order while the code did
+something else: "Breakdown" and "Subject performance" sat between strengths and
+weak areas, weak areas and mistakes were swapped, and the "time" step was
+missing entirely.
+
+The new `TimePanel` fills the missing step. The bank carries no difficulty
+field, so nothing in it is called "too slow" — a question that took four minutes
+may have been the hardest on the paper, and saying otherwise would be a guess
+dressed as a measurement. It puts the numbers next to the outcome instead: time
+on questions that ended up blank bought nothing, time on questions answered
+wrong cost marks as well as time, and the average is quoted against the same
+flat per-question budget the classifier used. `idealTimeFor` is exported for
+exactly that reason — a budget quoted from a different formula than the one that
+graded them is a number the student cannot reconcile.
+
+**A real defect found on the way.** A skipped question was classified
+`slow-correct`, so the review line showed the badge "Skipped" next to the label
+"Slow + Correct" — a false claim on a single line — and the mistake-pattern
+counts were inflated with questions nobody got right. `skipped` is now a
+first-class `SpeedAccuracyClass`.
+
+`ExamResult.tsx` was also missing from the design-system surfaces list, so its
+sections had drifted to `rounded-xl` while every other page sat on the
+`rounded-2xl` card system. Added, and the radius standardised.
+
+**Dashboard.** The spec ends its sequence with "optional deep analytics behind
+disclosure". Everything after "continue learning" was laid out flat: key stats,
+dual-lane readiness, the rank estimate, quick actions and the micro-drill all sat
+expanded between the student and the one thing they had just been told to do. A
+"Keep going" surface now links to StudyTube and the planner, and a native
+`<details>` disclosure wraps the rest. Native rather than a JS toggle, so it is
+keyboard-operable and works with scripting off, and a collapsed disclosure
+cannot be broken by a state bug. The summary names what is inside rather than
+saying "show more".
+
+The new `src/test/dashboard-ia.test.ts` was checked against two deliberate
+regressions — replacing the disclosure with a plain `div` fails 4 tests, adding
+`open` fails the "collapsed by default" test. That check exposed a bug in the
+tests themselves: the explanatory comment contained a literal `<details>`, so
+`indexOf` matched the comment and the "not open by default" assertion was
+passing for the wrong reason. A test that cannot fail is worse than no test.
+
 ## Verification
 
-Current gate on `HEAD` (`efbc33f`):
+Current gate on `HEAD` (`a63726c`):
 
 - `tsc --noEmit` — 0 errors
-- `vitest run` — 616 passed (34 suites)
+- `vitest run` — 638 passed (36 suites)
 - `npm run lint` — 0 errors, 9 pre-existing warnings
 - `npm run validate:all` — exit 0
 - `vite build` — exit 0
