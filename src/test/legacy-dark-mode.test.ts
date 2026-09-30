@@ -213,4 +213,39 @@ describe("legacy dark mode", () => {
     expect(qfig, "the parser should find .qfig").toBeTruthy();
     expect(qfig!.line).toBeGreaterThan(5000);
   });
+
+  it("resets the button background, which the UA does not theme", () => {
+    // The bug the user reported twice. Browsers give every <button> a light-grey
+    // `buttonface` from the UA stylesheet, and it answers to
+    // `prefers-color-scheme`, never to a `.dark` class. So a button that sets no
+    // background of its own is a light slab on a dark page.
+    //
+    // Both tab bars are built from `.chip`, which set a border and nothing else:
+    // the dashboard's Aaj / Progress / Practice, and the AI planner's Aaj / Plan
+    // / Memory / Tools. In dark mode they rendered as grey pills carrying light
+    // text on a dark bar.
+    const reset = CSS.match(/button,\s*\n\s*input,\s*\n\s*select,\s*\n\s*textarea\s*\{([^}]*)\}/);
+    expect(reset, "the form-element reset should exist").toBeTruthy();
+    expect(reset![1], "the reset must clear the background").toMatch(
+      /background(-color)?\s*:\s*transparent/,
+    );
+  });
+
+  it("gives .chip its own background and ink, not the UA's", () => {
+    // `.chip` is the tab pill both bars are built from. Naming the surface here
+    // means it reads as a control in either theme rather than leaning on
+    // whatever the browser gives a bare button.
+    const chip = CSS.match(/\.chip\s*\{([^}]*)\}/);
+    expect(chip, ".chip should exist").toBeTruthy();
+    expect(chip![1]).toMatch(/background\s*:\s*var\(--panel\)/);
+    expect(chip![1]).toMatch(/color\s*:\s*var\(--ink\)/);
+  });
+
+  it("marks the selected tab with the accent, in either theme", () => {
+    // The JS sets `aria-selected` on the active tab plus an inline border colour.
+    // The class carries it so the colour is a token and the selected state is
+    // visible without depending on an inline style.
+    expect(CSS).toMatch(/\.chip\[aria-selected="true"\]\s*\{[^}]*border-color/);
+    expect(CSS).toMatch(/\.chip\[aria-selected="true"\]\s*\{[^}]*color/);
+  });
 });
