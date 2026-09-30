@@ -905,7 +905,15 @@ function StudyTube() {
   );
 }
 
-function Shelf({
+/**
+ * A horizontal shelf of lecture cards.
+ *
+ * Exported so the responsive behaviour can be asserted by rendering it: the
+ * carousel markup below `sm` is the one part of the StudyTube change that a
+ * string-match test cannot prove, because it has to show the component actually
+ * produces a scroller with one sized wrapper per card.
+ */
+export function Shelf({
   title,
   subtitle,
   icon: Icon,
