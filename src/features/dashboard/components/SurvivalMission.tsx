@@ -9,7 +9,7 @@ import { Play } from "lucide-react";
 import type { ReadinessSnapshot, SurvivalScore } from "@/features/dashboard/types";
 import { Link } from "@tanstack/react-router";
 import { SurvivalScoreRing } from "./SurvivalScoreRing";
-import { useLang, t } from "@/lib/lang";
+import { useLang, t, type Lang } from "@/lib/lang";
 
 export function SurvivalMission({
   score,
@@ -30,7 +30,7 @@ export function SurvivalMission({
   components: SurvivalScore["components"];
   mission: ReadinessSnapshot["nextMission"];
   missionIsTest: boolean;
-  lang: string;
+  lang: Lang;
 }) {
   return (
     <div className="relative z-10 mt-6 grid gap-4 rounded-2xl border bg-primary p-5 text-primary-foreground lg:grid-cols-[auto_1fr]">
@@ -41,14 +41,14 @@ export function SurvivalMission({
       </div>
       <div className="min-w-0">
         <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
-          {t("onTrack", lang as "hinglish")}
+          {t("onTrack", lang)}
         </div>
         <h2 className="mt-1 text-xl font-semibold">{headline}</h2>
 
         {/* The single executable next action */}
         <div className="mt-3 rounded-xl bg-primary-foreground/10 p-3">
           <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
-            {t("doThisNext", lang as "hinglish")}
+            {t("doThisNext", lang)}
           </div>
           <p className="mt-1 text-sm font-medium">{nextAction}</p>
         </div>
@@ -57,7 +57,7 @@ export function SurvivalMission({
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-primary-foreground/10 p-3">
             <div className="min-w-0 flex-1">
               <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
-                {t("nextMission", lang as "hinglish")}
+                {t("nextMission", lang)}
               </div>
               <div className="text-sm font-semibold">{mission.title}</div>
               <div className="text-xs opacity-90">

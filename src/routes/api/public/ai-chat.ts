@@ -351,7 +351,8 @@ export const Route = createFileRoute("/api/public/ai-chat")({
         if (rateLimited(ip)) {
           return Response.json(
             {
-              error: "Thoda dheere — bahut saare messages ek saath. 1 minute mein dobara try karo.",
+              error:
+                "Slow down a moment — too many messages at once. Please try again in a minute.",
             },
             { status: 429 },
           );
@@ -421,7 +422,7 @@ export const Route = createFileRoute("/api/public/ai-chat")({
               error:
                 status === 429
                   ? "The AI is getting a lot of questions right now — try again in a moment."
-                  : "The AI is busy right now — thoda ruk kar dobara try karo.",
+                  : "The AI is busy right now — please wait a moment and try again.",
             },
             { status },
           );

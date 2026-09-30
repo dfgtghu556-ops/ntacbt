@@ -102,7 +102,7 @@ function Saarthi() {
   function onFile(file: File | undefined) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Sirf image (photo/screenshot) daal sakte ho — text ke liye type karo.");
+      setError("Images only — for text, type your question instead.");
       return;
     }
     if (file.size > 8 * 1024 * 1024) {
@@ -114,7 +114,7 @@ function Saarthi() {
       const data = String(reader.result || "").split(",")[1] || "";
       setImage({ mimeType: file.type, data });
     };
-    reader.onerror = () => setError("Image read nahi ho payi — dobara try karo.");
+    reader.onerror = () => setError("That image could not be read — please try again.");
     reader.readAsDataURL(file);
   }
 

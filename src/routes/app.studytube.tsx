@@ -600,11 +600,20 @@ function StudyTube() {
               </p>
             </div>
           </div>
-          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-wrap">
+          {/*
+            Two selects whose option text is long - a teacher row reads
+            "Name · Channel — Board". As a 2-column grid between `sm` and `lg`
+            they truncated to unreadable stubs on a portrait tablet, and as
+            `w-auto` above `lg` they sized to the longest option and could push
+            past the container. One flex-wrap with a shared basis gives each a
+            sensible minimum and lets them stack when there isn't room, at every
+            width, instead of three different layouts.
+          */}
+          <div className="flex w-full flex-wrap gap-2">
             <select
               value={institute ?? ""}
               onChange={(e) => changeInstitute(e.target.value || undefined)}
-              className="w-full min-w-0 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring lg:w-auto lg:py-1.5"
+              className="min-w-[12rem] flex-1 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
               aria-label="Dream Team"
             >
               <option value="">Dream Team: Auto</option>
@@ -622,7 +631,7 @@ function StudyTube() {
                 if (t) toggleTeacher(t);
                 else setTeacher(undefined);
               }}
-              className="w-full min-w-0 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring lg:w-auto lg:py-1.5"
+              className="min-w-[12rem] flex-1 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
               aria-label="Dream Teacher"
             >
               <option value="">Dream Teacher: Auto</option>

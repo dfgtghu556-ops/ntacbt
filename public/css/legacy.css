@@ -2192,6 +2192,15 @@
         color: #1b1b4b;
         padding: 4px 9px;
       }
+      /* The white chip is the brand mark on the gradient card. Left white it
+         reads as a sticker rather than part of the card once the page goes dark,
+         so it takes the panel colour and the ink, with the hairline the card
+         itself no longer supplies. */
+      html.dark .sb-boost .brand b {
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
       .sb-boost .line {
         display: flex;
         gap: 12px;
@@ -3557,6 +3566,11 @@
       }
       .nba-start:active {
         transform: scale(0.985);
+      }
+      html.dark .nba-start {
+        background: var(--panel);
+        color: var(--accent-text);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
       }
       .mentor-card {
         border-left: 4px solid var(--accent-text) !important;
@@ -4974,6 +4988,11 @@
         transform-origin: top left;
         background: #fff;
         border-radius: 6px;
+      }
+      /* A question image is ink on paper, so it needs a light surround whatever
+         the theme — the same decision `.qfig` already makes. */
+      html.dark .imgzoom-body img {
+        background: #f2ece6;
       }
       img.qimg {
         cursor: zoom-in;

@@ -138,10 +138,19 @@ function targetLabel(target: string): string {
 function greeting(): { text: string; sub: string } {
   const h = new Date().getHours();
   if (h < 12)
-    return { text: "Good morning", sub: "Kal ki tarah aaj bhi ek clear goal — let's go." };
+    return {
+      text: "Good morning",
+      sub: "One clear goal today, same as yesterday — let's get it.",
+    };
   if (h < 17)
-    return { text: "Good afternoon", sub: "Aaj ka ek mission, aur har card bata raha hai why." };
-  return { text: "Good evening", sub: "Ek chhota sa step bhi progress hai — let's finish strong." };
+    return {
+      text: "Good afternoon",
+      sub: "One mission today, and every card tells you why.",
+    };
+  return {
+    text: "Good evening",
+    sub: "Even a small step counts — let's finish strong.",
+  };
 }
 
 /** Days since the student last opened the Learning OS (for reactivation). */
@@ -585,7 +594,7 @@ function Dashboard() {
               <p className="mt-3 text-sm text-muted-foreground">
                 {today.totalTasks > 0
                   ? `${today.doneTasks}/${today.totalTasks} tasks done today · ${today.completedMinutes}/${today.plannedMinutes} min`
-                  : "Planner se aaj ke tasks set karo, phir progress yahan dikhega."}
+                  : "Set today's tasks in the planner and your progress will show up here."}
               </p>
               <Link
                 to="/app/planner"
@@ -658,8 +667,9 @@ function Dashboard() {
                 <Rocket className="h-4 w-4 text-primary" /> NTA-style mock test
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Full-length ya diagnostic run. Marking NTA rules (+4/−1, numerical no penalty)
-                follow karta hai aur result aapke Mistake Doctor + readiness model me feed hota hai.
+                A full-length or diagnostic run, marked on NTA rules (+4/−1, no penalty for
+                numerical answers). The result feeds straight into your Mistake Doctor and readiness
+                model.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
