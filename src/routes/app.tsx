@@ -13,6 +13,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
+import { OfflineBanner } from "@/features/pwa/OfflineBanner";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { hasCompletedOnboarding, loadStudyProfile } from "@/features/onboarding/profile";
@@ -141,7 +142,27 @@ function AppLayout() {
         <NavPanel current={current} />
       </aside>
 
-      <main className="mx-auto w-full max-w-[1500px] flex-1 px-3 pt-6 pb-24 sm:px-5 lg:pl-60">
+      {/*
+        A skip link. Every page here starts with the header, then a fixed
+        sidebar, then a bottom bar, so a keyboard user tabs through all of it
+        before reaching the content they came for. One tab, on every page, and
+        they are in the content instead.
+      */}
+      <a
+        href="#ntacbt-main"
+        className="sr-only rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
+      >
+        Skip to content
+      </a>
+
+      {/* A10 — offline state, stated rather than guessed at. Never blocks
+          interaction: an attempt in progress keeps autosaving locally. */}
+      <OfflineBanner />
+
+      <main
+        id="ntacbt-main"
+        className="mx-auto w-full max-w-[1500px] flex-1 px-3 pt-6 pb-24 sm:px-5 lg:pl-60"
+      >
         {/* A10 — the install ask sits above the page, never over it. */}
         <InstallPrompt />
         <Outlet />

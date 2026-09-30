@@ -108,6 +108,7 @@ export function InstallPrompt() {
   return (
     <section
       data-testid="install-prompt"
+      data-print="hide"
       className="mx-3 mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm"
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
