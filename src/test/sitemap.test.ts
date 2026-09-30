@@ -93,3 +93,32 @@ describe("the sitemap only lists URLs that resolve", () => {
     expect(build.indexOf("build-sitemap")).toBeLessThan(build.indexOf("vite build"));
   });
 });
+
+/**
+ * A route that shows one student's own data must not be indexable.
+ *
+ * Leaving a URL out of the sitemap only stops it being *submitted* for
+ * crawling. If it is ever linked, shared or bookmarked it can still be indexed,
+ * and an indexed attempt page is a student's result sitting in a search engine
+ * for anyone to find. `/cbt` already carried the meta; the attempt-detail route
+ * did not, so an individual result was the one private page without it.
+ */
+describe("private routes are not indexable", () => {
+  it("marks the attempt-detail route noindex", () => {
+    const route = read("src/routes/app.attempts.$attemptId.tsx");
+    expect(route).toMatch(/name:\s*"robots",\s*content:\s*"noindex,\s*nofollow"/);
+  });
+
+  it("still marks the in-progress exam noindex", () => {
+    const route = read("src/routes/cbt.tsx");
+    expect(route).toMatch(/name:\s*"robots",\s*content:\s*"noindex,\s*nofollow"/);
+  });
+
+  it("keeps neither in the sitemap", () => {
+    const paths = sitemapPaths();
+    for (const p of paths) {
+      expect(p.startsWith("/app/attempts/"), `${p} is private`).toBe(false);
+      expect(p, `${p} is private`).not.toBe("/cbt");
+    }
+  });
+});

@@ -59,4 +59,13 @@ function AttemptPage() {
 
 export const Route = createFileRoute("/app/attempts/$attemptId")({
   component: AttemptPage,
+  head: () => ({
+    meta: [
+      { title: "Attempt result — NTACBT" },
+      // One student's result is not public content. Being absent from the
+      // sitemap only stops it being submitted for crawling; without this it can
+      // still be indexed if the URL is ever linked, shared or bookmarked.
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });

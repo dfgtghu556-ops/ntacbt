@@ -11,6 +11,29 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+
+    // NOTE: prerendering the content pages (/about, /privacy, /terms) was
+    // attempted here and deliberately removed. Two mechanisms exist and both
+    // are blocked in this stack combination, verified rather than assumed:
+    //
+    //   1. Nitro's own `prerender: { routes: [...] }`. It runs *before* the SSR
+    //      server bundle is built, so every route answers 404 and it silently
+    //      logs "Prerendered 0 routes" while the build still succeeds. A config
+    //      that looks right and does nothing is worse than no config.
+    //   2. TanStack Start's `prerender` + `pages`. It runs at the right time
+    //      (post-build), but its preview server imports a hardcoded
+    //      `dist/server/server.js` while Nitro emits `.output/server/index.mjs`,
+    //      so every page 500s and the build fails outright.
+    //
+    // Making either work means repointing Nitro's output at `dist/`, which is
+    // what `vercel.json` and the deploy workflow already assume and which the
+    // build does not produce - so it would trade a working deploy for ~100ms on
+    // three pages. Not worth it, and recorded here so it is not retried blind.
+    //
+    // The pages are server-rendered either way, which is what search engines
+    // actually need: full HTML per URL, with title, description and Open Graph
+    // already set by `socialMeta()`. Static versus server-rendered changes
+    // time-to-first-byte, not indexing.
   },
   nitro: {
     // The deploy target.
