@@ -3,6 +3,27 @@
 Research note and plan. **Nothing here has been implemented.** This is the plan for
 your approval, per the standing rule.
 
+## Status — all four phases shipped
+
+| Phase | What | Commit |
+|---|---|---|
+| A | Export/import, key manifest, `/app/profile` home | `a10671b` |
+| B | Exam keyboard shortcuts + six safety guards | `6d3ec2a` |
+| C | Print stylesheet, offline banner | `d46b8dd` |
+| D | Skip link; focus management confirmed via Radix | `d46b8dd` |
+
+Privacy-policy wording: **still deferred.** `src/routes/privacy.tsx` and the
+"Where your preparation lives" card on `/app/profile` both still claim an account
+syncs data. It does not. Phase A gives students real control over their data
+either way, but the two sentences remain inaccurate and should be revisited as
+their own decision.
+
+Tests went 774 → 865. Six bugs were caught by the new tests and would have
+shipped: a bare-string key restored unquoted, an absent key restored as the text
+`null`, a Rules of Hooks violation from a hook placed after an early return, a
+guard that threw when a keydown targeted `document`, an untested repeat guard, and
+a duplicate `/app` entry in the sitemap.
+
 ## Approved 2026-09-30
 
 - **Scope:** all four phases (A, B, C, D).
