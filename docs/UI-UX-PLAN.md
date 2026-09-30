@@ -1,127 +1,258 @@
-# UI/UX, theme and information design — corrected findings
+# UI/UX, theme and information design — findings
 
-Research pass, 2026-09-30, revised after the user's report.
+Research and remediation record. Started 2026-09-30; all three reported defects
+are now fixed and shipped.
+
+This document used to be a *plan* that proposed a redesign and a new brand
+colour. That proposal was rejected. It is kept as a findings record so the
+measurements behind the shipped fixes stay available, and so the next person
+does not re-propose the redesign.
 
 ---
 
-## The correction that matters
+## What was reported
 
-I originally concluded "dark mode is unreachable." That is true of the React app at
-`/app` — nothing applies the `.dark` class there and there is no toggle. But it is
-**not where the user is**.
+Three defects, in the user's words:
 
-`/` redirects to `jee-cbt.html` (`src/routes/index.tsx` does
-`window.location.replace("/jee-cbt.html")` on mount). That tool has a real theme
-toggle, and `public/js/app.js` shows how:
+1. **Device optimisation** — *"The YouTube section is not optimized for all
+   devices. In fact, the entire app needs to be optimized for every device."*
+2. **Dark mode** — *"some elements on the front remain white, making them
+   invisible. Similarly, in the planner section, certain elements also remain
+   white and cannot be seen when dark mode is on."*
+3. **Language toggle** — explain what it is, then implement.
+
+## The correction that shaped everything below
+
+The first draft of this document proposed a new brand colour, a token overhaul
+and a visual redesign. The user rejected it:
+
+> *"My goal for this re-development isn't to rip out the existing features and
+> start over; it's to improve what's already there and present it in a better
+> way."*
+
+> *"I don't want you to change everything completely. I just want improvements
+> on the elements that are not properly in place. Please keep them in place, but
+> represent them in a better way."*
+
+So there is no redesign here, no new brand system, and no token overhaul. Every
+change is a targeted fix to a specific broken element.
+
+---
+
+## Defect 1 — Dark mode left elements white and invisible
+
+### Where the dark mode actually lives
+
+The dark mode a student sees is **not** in the React app. `/` redirects to
+`public/jee-cbt.html`, and that tool has a real theme toggle in
+`public/js/app.js`:
 
 ```js
 function applyTheme() {
   const dark = st.theme === "dark" || (st.theme === "system" && systemDark());
   root.classList.toggle("dark", dark);
-  ...
 }
-// default: theme: "system"  (public/js/app.js:655)
+// default: theme: "system"
 ```
 
-`"system"` means it follows `prefers-color-scheme`. So the user did not enable dark
-mode — **their device did**, and the legacy tool went dark automatically. That is the
-screen they are looking at, and the one with the bugs.
+`"system"` means it follows `prefers-color-scheme`. **The user never turned dark
+mode on — their device did**, and the legacy tool followed automatically. That
+is the screen with the bugs.
+
+The React app at `/app` has no reachable dark mode at all: the `.dark` block in
+`src/styles.css` is dead, because nothing ever applies the class. Making `/app`
+themeable is a separate, larger piece of work and was not attempted.
+
+### The legacy tool themes through tokens
+
+`public/css/legacy.css` sets light values in `:root` and overrides them in
+`html.dark`, so any rule using `var(--panel)` / `var(--ink)` / `var(--line)`
+themes correctly. Any rule with a hardcoded light value does not — it stays a
+bright slab on a dark page.
+
+### Root cause of the reported bug
+
+The two tab bars the user named are `<button class="chip">` sitting on a bar
+whose background is inline `var(--bg)`:
+
+| Screen | Tabs |
+|---|---|
+| Dashboard (`data-dtab`) | ☀️ Aaj · 📈 Progress · 🎯 Practice |
+| Planner (`data-atab`) | 🎯 Aaj · 🗺️ Plan · 🧠 Memory · 🧰 Tools |
+
+`.chip` declared a border and **no background of its own**. A bare `<button>`
+therefore painted the browser's UA default `buttonface` — a light grey — and
+`buttonface` answers to `prefers-color-scheme`, **never to a `.dark` class**.
+
+That is the whole reason earlier sweeps found nothing: the light surface was
+never written in the stylesheet. It was in the browser. No amount of grepping
+`legacy.css` for `#fff` was ever going to find it.
+
+### The fix — CSS only, `public/js/app.js` untouched
+
+1. The global form reset now declares `background: transparent;
+   background-image: none;`. It had been setting font, size and colour and
+   stopping one property short.
+2. `.chip` names its own surface — `var(--panel)` for the background,
+   `var(--ink)` for the text — plus a `.chip[aria-selected="true"]` rule that
+   carries the accent border and ink the JS was previously setting inline.
+3. The same reset also covers `.swatch`, `.aip-budget` and `.mc-item`, the other
+   button classes that had no background of their own.
+
+Shipped in `4d14a2d` ("Fix the dark-mode tabs: browsers do not theme a bare
+button"). Pinned by `src/test/legacy-dark-mode.test.ts`, which was verified to
+bite: deleting the reset fails the suite with
+`AssertionError: the reset must clear the background`.
+
+### Deliberately exempt light surfaces — do not "fix" these
+
+- `@media print` — browsers print computed colours and ignore
+  `prefers-color-scheme`, so print is always light.
+- `html[data-nta="on"] #examView` — a faithful TCS-iON / NTA console replica.
+  The real exam console is white paper with black ink and Verdana.
+- Amber and red warning states — `.timer.warn`, `.timer.crit`, `.btn.warn`,
+  `.offline-bar`. Dark ink on a saturated light background is readable in both
+  themes.
+- `.live-thumb .lbadge` and its dot — white on the red LIVE badge; the red is
+  dark enough to carry white either way.
+- `.qfig`, `.qsvg svg`, `.imgzoom-body img` — a question image is ink on paper,
+  so it keeps a light surround.
 
 ---
 
-## What I need from you — answered
+## Defect 2 — The app is not optimised for every device
 
-**Brand colour.** You said: don't change everything, improve what isn't properly in
-place. Understood — the token set is fine, it just isn't reached. Dropped from scope.
+### The audit came back mostly clean, which is worth recording
 
-**The language toggle.** Plain version: the top-bar button cycles English / हिंदी /
-Hinglish and changes no words. `useLang()` is read in `src/routes/app.index.tsx:162`
-and `src/routes/app.tsx:33` and its value gates nothing; the only consumer in the
-codebase is `src/lib/speech.ts`, choosing a read-aloud voice. Two sentences are
-half-translated:
+Measured rather than guessed:
 
-```
-src/routes/app.index.tsx:662
-  "Full-length ya diagnostic run. Marking NTA rules (+4/−1, numerical no penalty)
-   follow karta hai aur result aapke Mistake Doctor + readiness model me feed hota hai."
-src/routes/app.saarthi.tsx:117
-  "Image read nahi ho payi — dobara try karo."
-```
+| Check | Result |
+|---|---|
+| All 42 multi-column grids in the React app | Every one has a `sm:`/`lg:` prefix or an explicit `grid-cols-1` base — no grid starts at 2+ columns on a phone |
+| YouTube iframes, legacy and React | `position:absolute; inset:0; width:100%; height:100%` — fully fluid |
+| Viewport meta | `width=device-width, initial-scale=1, maximum-scale=5` — pinch-zoom allowed |
+| Legacy StudyTube sidebar | Collapses to a horizontal strip at ≤900px |
+| Legacy question palette | Becomes a bottom sheet at ≤860px |
+| `.hero-stats` / `.ov-grid` | Step 4→2→1 columns correctly |
+| All 22 fixed widths ≥180px in `legacy.css` | 15 are `max-width` caps or decorative blur orbs inside `overflow:hidden` parents — harmless |
+| `100vw`, `w-screen`, `flex-nowrap` | Zero occurrences |
 
-Recommendation: remove the toggle, make those two sentences clean English. Making it
-real means translating the whole app.
+**No screen was found to break.** The method has a limit worth stating plainly:
+there is no browser in this environment, so this was a code-level audit against
+the markup, not a rendered one.
 
----
+### Three real defects, all phone-only, all in StudyTube
 
-## The two reported bugs
+**1. The legacy search-results grid was the one grid that was not a carousel.**
+`public/js/app.js` renders `<div data-searchResults class="yt-grid">` as a direct
+child of the `.yt-main` column, **outside every `.yt-shelf`**. The carousel rule
+is scoped `.yt-shelf .yt-grid`, so it never reached that element. On a phone,
+search results rendered as one full-width ~300px column sitting directly above
+seven compact swipeable carousels — the same component, two different phone
+layouts.
 
-### 1. Dark mode leaves white panels invisible
+It now gets the same density: two-up on phones, back to one-up below 380px where
+two thumbnails get unreadable. The results header carries an inline
+`grid-column: 1/-1`, so it keeps spanning the full row at each of those widths.
 
-The legacy tool themes through tokens. `public/css/legacy.css` defines light values in
-`:root` and overrides them in `html.dark`:
+**2. The carousels hid their scrollbar with no other cue that they swipe.**
+`.yt-shelf .yt-grid` sets `scrollbar-width: none` and
+`::-webkit-scrollbar { display: none }`, and left nothing else. On a phone you
+saw one card and a sliver with no indication there was more. Cards went from
+`min(250px, 72vw)` to `min(250px, 66vw)`, leaving ~60px of the next card peeking
+in on a 320px screen. Above ~380px the 250px cap wins, so tablets and large
+phones are untouched.
 
-```css
-:root    { --panel: #ffffff; --bg: #fbf7f4; --ink: #1b1b3a; --line: #eadfd7; }
-html.dark{ --panel: #1e1b29;  --bg: #14121c; --ink: #f2ece6; --line: #332e42; }
-```
+**3. The React StudyTube had no mobile carousel at all.** Each shelf was a
+single tall column while the legacy one swiped, so the same shelf behaved two
+ways depending on which StudyTube you were in. Below `sm` each React shelf is
+now a snap carousel with matching card sizing; from `sm` up it is the same
+2 / 3 / 4-column responsive grid it always was.
 
-So every rule using `var(--panel)` themes correctly. **Every rule with a hardcoded
-`#fff` / `white` / light hex does not** — it stays white on a dark background, which is
-the "invisible" symptom, on the front page and in the planner.
+### The fix
 
-The fix is CSS-only in `public/css/legacy.css`. The theme logic lives in
-`public/js/app.js`, which is off-limits, but nothing there needs to change: adding
-`html.dark` overrides is enough.
+`bf38d72` ("Make both StudyTubes behave the same on a phone") plus `97e94ea`
+("Fix the responsive test's `@media` lookup"). Pinned by
+`src/test/studytube-responsive.test.ts`.
 
-### 2. The YouTube section is not optimised for all devices
-
-Read the components. The pieces in place:
-
-- `src/features/studytube/components/VideoCard.tsx` — `Thumb` uses
-  `aspect-video w-full`, the title `line-clamp-2`, the row `flex gap-2.5` with
-  `min-w-0 flex-1`, buttons `flex-wrap`. This part is sound.
-- `src/routes/app.studytube.$video.tsx` — the player is
-  `<iframe className="aspect-video w-full">` inside
-  `grid gap-4 lg:grid-cols-[1fr_340px]`, collapsing to one column below `lg`. Sound.
-- `src/routes/app.studytube.tsx:950` — the grid is
-  `grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4`. Sound.
-
-What is **not** sound, and needs measuring rather than guessing:
-
-- Line 603, the filter bar:
-  `grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-wrap`.
-  It switches from a grid to a flex row at `lg`, so the control count and sizing
-  differ per breakpoint — the kind of thing that looks fine on a laptop and crowded
-  on a tablet.
-- `ChannelCard` is a fixed `w-44 shrink-0` in a horizontal strip — it does not reflow,
-  it scrolls.
-- The lesson page's tab strip (`Notes / Chapter / Formulae / PYQs`) and its panels
-  have not been checked at 360px.
-
-Needs a real check at 360 / 390 / 768 / 1024 / 1440 before anything is changed. There
-is no browser in this sandbox, so this has to be done by reading the breakpoints
-against the markup, and it should be verified against the production bundle.
+All legacy-side changes are CSS-only. **`public/js/app.js` is untouched** — it
+is on the do-not-edit list, and none of these fixes needed it.
 
 ---
 
-## Blocker — the sandbox shell is dead
+## Defect 3 — The language toggle
 
-Every bash call returns `shell_error` with no output, including `echo`, `git`,
-`python3` and `ls`. File reads and writes still work. Roughly fifteen attempts across
-several minutes, including waits.
+### What it actually is
 
-Consequence: I cannot run the type-check, the tests, the build, or commit. Anything I
-edited now would be unverified and unpushed, and a sandbox rollback would lose it.
-So no code changes were made this turn.
+A pill in the `/app` header, next to Search, labelled `Hinglish` / `English` /
+`हिंदी`. Clicking it cycles the three and persists the choice to
+`localStorage["ntacbt.lang"]` via `src/lib/lang.ts`.
 
-## Plan, for when the shell recovers
+### What it actually does — the complete list
 
-1. Sweep `public/css/legacy.css` for hardcoded light backgrounds and dark-on-light
-   text, and add `html.dark` overrides. Front page and planner first, since those are
-   the two the user named.
-2. Check the StudyTube breakpoints at 360 / 390 / 768 / 1024 / 1440 and fix what
-   actually breaks, starting with the line-603 filter bar.
-3. Remove the language toggle from `src/routes/app.tsx` and fix the two
-   half-translated strings.
-4. Full gate — type-check, tests, build — then commit and push.
-5. Nothing else. No redesign, no new brand colour, no token changes.
+1. **It changes the read-aloud voice.** `src/lib/speech.ts` maps `hi → hi-IN`
+   and everything else to `en-IN`, and sets `utterance.lang`. So it changes the
+   language **Saarthi, the AI mentor, speaks in**.
+2. **It changes three labels on one dashboard card.** `SurvivalMission.tsx`
+   reads `t("onTrack")`, `t("doThisNext")` and `t("nextMission")`.
+3. **Nothing else.** `useLang()` is consumed in exactly two files, `t()` in
+   exactly one component. The dictionary holds seven keys and four of them are
+   read by nothing.
+
+### The mismatch
+
+The button said "Change language", but a student who tapped हिंदी still got an
+English app. That is a half-finished feature rather than a bug in the usual
+sense — all the plumbing exists (it persists the choice, the dictionary holds
+three languages), but only three strings were ever connected to it. Wiring the
+whole app means translating hundreds of strings across ~30 screens, and a
+*partly* translated app is often worse than a clean single-language one.
+
+### The decision
+
+**Scope it honestly rather than promise what does not exist.** The button is
+relabelled to `aria-label="Change read-aloud language"` with the tooltip
+*"Saarthi's read-aloud voice: Hinglish / English / Hindi"*. The unused `t`
+import was removed from `app.index.tsx`, where the only `t` in scope was a
+local `.filter((t) => t.isWeakTarget)` arrow parameter shadowing it.
+
+Extending the dictionary to the high-traffic surfaces, or translating the whole
+app, are both still available as deliberate follow-ups. Neither was done,
+because a half-translated UI is a worse outcome than a clearly-scoped one.
+
+---
+
+## Standing design decisions from this work
+
+- **No redesign, no new brand colour, no token overhaul.** The existing token
+  set is fine; it just was not reached in the places that were broken.
+- **`public/js/app.js` is not edited.** The theme logic and the StudyTube
+  markup live there and none of these fixes required touching it.
+- **`public/css/legacy.css` is the place for legacy visual fixes.** It is not on
+  the do-not-touch list.
+- **Base UI copy is uniformly English.** Seven Hinglish fragments were fixed in
+  an earlier pass. Exempt from the one-language rule: `src/lib/lang.ts`, whose
+  dictionary is meant to hold Hinglish, and the AI mentor's system prompt in
+  `src/routes/api/public/ai-chat.ts`, whose voice is deliberately Hinglish.
+- **The React app's lack of dark mode is a known, separate gap**, not something
+  these fixes papered over.
+
+---
+
+## Open items
+
+- **`/app` has no dark mode.** The `.dark` block in `src/styles.css` is dead
+  because nothing applies the class. Students see the legacy tool's dark mode.
+- **`src/config/theme.ts` drifts.** It claims to mirror `styles.css` but uses
+  `hsl()` with different values. Its palette is dead code; only
+  `SUBJECT_COLORS` is live.
+- **`scripts/validate-survival.mjs` fails 2 checks** — "strong tier named" and
+  "jeeadv target returns a tier" in the rank / college predictor. This is
+  pre-existing and unrelated to any UI work; it also sits *outside* the
+  `validate:all` gate, which does not run that script.
+- **Privacy-policy wording remains deferred** — the user's decision, and not to
+  be edited unilaterally.
+- **`src/routes/app.studytube.$video.tsx`** was read and found sound (fluid
+  iframe, `lg:grid-cols-[1fr_340px]` collapsing to one column below `lg`), but
+  like the rest of the responsive audit it has not been verified on a real
+  rendered device.
