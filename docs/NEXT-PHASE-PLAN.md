@@ -203,6 +203,24 @@ their absence:
 | Render from today's copy of the paper | Contradicts the score if the paper was edited since | `never falls back to the current copy of the paper` |
 | Hide the attempt from the history | Silently loses the student's work — the failure E was fixed to stop | `is still in the history list` |
 
+**A bug the route introduced, and fixed in the same pass.** The history renders the
+merged view, so it links to legacy attempts - and the reopen route searched only the
+React store. Every legacy row navigated to "Attempt not found", which tells a student
+their work is not on a device that is holding it. Fixed by `findAttempt`, which
+searches both stores. Seven tests fail with the dual lookup removed.
+
+`findAttempt` is extracted from the route into `src/features/exams/attempt-lookup.ts`
+so it is testable without a router harness. It also reads the legacy blob directly
+rather than through `DataStore`, because `DataStore.attempts` returns
+`AttemptSummary` - which drops `responses`. Checked against `public/js/app.js` rather
+than assumed: the legacy tool *does* store per-question responses and a graded result,
+in the same shapes the React engine produces. Only the paper is missing, which is what
+routes a legacy attempt to the degraded screen. The blob is parsed with validation at
+every step - a non-JSON value, a non-array `attempts`, a row that is not an object, a
+missing `testId`, an unsubmitted attempt, a `result` that is not an object and an
+unknown response status all degrade to "no such attempt" rather than a crash or a
+fabricated result.
+
 **F3, not done.** `examService.getUserAttempts()` is still called by nothing. The
 reopen route reads `loadCbtStore().attempts` directly, because it needs the stored
 paper and `getUserAttempts()` returns `ExamAttempt` — a different shape that does not

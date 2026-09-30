@@ -24,6 +24,8 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { installStorage } from "./storage";
+import { findAttempt } from "@/features/exams/attempt-lookup";
+import { DataStore } from "@/lib/store";
 import { renderInRouter } from "./router";
 import { AttemptHistory } from "@/features/exams/components/AttemptHistory";
 import { AttemptDetail } from "@/features/exams/components/AttemptDetail";
@@ -377,5 +379,189 @@ describe("rendering", () => {
     delete a.test;
     const el = <AttemptDetail attempt={a} />;
     expect(el).toBeTruthy();
+  });
+});
+
+describe("a legacy attempt is not a dead link", () => {
+  // The history list renders the merged view, so it links to legacy attempts. A
+  // route that looked only in the React store turned every legacy row into
+  // "Attempt not found" - worse than no row at all, because it tells the student
+  // their work is not on a device that is holding it.
+  //
+  // The shape below is copied from what `public/js/app.js` actually pushes, not
+  // invented: the legacy tool stores `responses` and a `result` in the same shape
+  // the React engine produces, and never stores the paper.
+  const legacyBlob = (id: string, over: Record<string, unknown> = {}) => ({
+    "jeecbt.v1": JSON.stringify({
+      attempts: [
+        {
+          id,
+          testId: "legacy-t",
+          startedAt: 1_600_000_000_000 - 3_600_000,
+          submittedAt: 1_600_000_000_000,
+          responses: {
+            q1: { ans: "a", status: "answered", time: 30, changes: 1 },
+            q2: { ans: null, status: "notvisited", time: 0, changes: 0 },
+          },
+          tabSwitches: 0,
+          timeTaken: 180,
+          autoSubmitted: false,
+          result: {
+            all: {
+              correct: 10,
+              wrong: 5,
+              skipped: 60,
+              marks: 40,
+              neg: 5,
+              time: 180,
+              total: 75,
+              accuracy: 66.7,
+              percentage: 13.3,
+              max: 300,
+            },
+            per: {
+              Physics: {
+                correct: 4,
+                wrong: 2,
+                skipped: 19,
+                marks: 14,
+                total: 25,
+                time: 60,
+                accuracy: 66.7,
+                max: 100,
+              },
+              Chemistry: {
+                correct: 3,
+                wrong: 2,
+                skipped: 20,
+                marks: 10,
+                total: 25,
+                time: 60,
+                accuracy: 60,
+                max: 100,
+              },
+              Mathematics: {
+                correct: 3,
+                wrong: 1,
+                skipped: 21,
+                marks: 16,
+                total: 25,
+                time: 60,
+                accuracy: 75,
+                max: 100,
+              },
+            },
+          },
+          ...over,
+        },
+      ],
+    }),
+  });
+
+  it("is reachable through the merged view the history renders", () => {
+    installStorage(legacyBlob("old-1"));
+    expect(new DataStore().attempts.map((a) => a.id)).toEqual(["old-1"]);
+  });
+
+  it("is found by the reopen route, so the row is not a dead link", () => {
+    installStorage(legacyBlob("old-1"));
+    // This is the exact call the route makes. Before the dual lookup it returned
+    // null and the row navigated to "Attempt not found".
+    expect(findAttempt("old-1")?.id).toBe("old-1");
+  });
+
+  it("carries the score through, which the legacy tool did store", () => {
+    installStorage(legacyBlob("old-1"));
+    const a = findAttempt("old-1")!;
+    expect(a.result?.all.marks).toBe(40);
+    expect(a.result?.all.accuracy).toBe(66.7);
+    expect(a.result?.per.Physics?.marks).toBe(14);
+  });
+
+  it("carries the per-question responses through, because they are real", () => {
+    installStorage(legacyBlob("old-1"));
+    const a = findAttempt("old-1")!;
+    expect(a.responses["q1"]?.ans).toBe("a");
+    expect(a.responses["q2"]?.ans).toBeNull();
+  });
+
+  it("has no paper, which is what routes it to the degraded screen", () => {
+    installStorage(legacyBlob("old-1"));
+    expect(findAttempt("old-1")?.test).toBeUndefined();
+  });
+
+  it("renders the honest degraded screen, not a not-found", async () => {
+    installStorage(legacyBlob("old-1"));
+    await renderInRouter(<AttemptDetail attempt={findAttempt("old-1")!} />);
+    expect(screen.getByText(/question review not available/i)).toBeTruthy();
+    expect(screen.getByText("40/300")).toBeTruthy();
+    expect(screen.getByText("Physics")).toBeTruthy();
+  });
+
+  it("prefers the React store when an id exists in both", () => {
+    installStorage({
+      ...legacyBlob("dup-1"),
+      "ntacbt.cbt.v1": JSON.stringify({
+        schemaVersion: 1,
+        tests: [],
+        attempts: [stored("dup-1", 1_600_000_000_000)],
+      }),
+    });
+    expect(findAttempt("dup-1")?.test?.name).toBe("Kinematics Mock");
+  });
+
+  it("returns null for an id that is in neither store", () => {
+    installStorage(legacyBlob("old-1"));
+    expect(findAttempt("nope")).toBeNull();
+  });
+
+  describe("a corrupt legacy blob cannot become a crash or a fabricated result", () => {
+    it("survives a key that is not JSON", () => {
+      installStorage({ "jeecbt.v1": "{not json" });
+      expect(findAttempt("old-1")).toBeNull();
+    });
+
+    it("survives attempts that are not an array", () => {
+      installStorage({ "jeecbt.v1": JSON.stringify({ attempts: "nope" }) });
+      expect(findAttempt("old-1")).toBeNull();
+    });
+
+    it("survives an attempt row that is not an object", () => {
+      installStorage({ "jeecbt.v1": JSON.stringify({ attempts: [null, 7] }) });
+      expect(findAttempt("old-1")).toBeNull();
+    });
+
+    it("survives an attempt with no testId", () => {
+      installStorage(legacyBlob("old-1", { testId: undefined }));
+      expect(findAttempt("old-1")).toBeNull();
+    });
+
+    it("survives an attempt that was never submitted", () => {
+      installStorage(legacyBlob("old-1", { submittedAt: null }));
+      expect(findAttempt("old-1")).toBeNull();
+    });
+
+    it("survives a result that is not an object", () => {
+      installStorage(legacyBlob("old-1", { result: 42 }));
+      const a = findAttempt("old-1");
+      expect(a?.id).toBe("old-1");
+      // Null rather than a zeroed record: an attempt with no gradeable result
+      // must not be shown as "0 marks".
+      expect(a?.result).toBeUndefined();
+    });
+
+    it("survives a response with an unknown status", () => {
+      installStorage(
+        legacyBlob("old-1", {
+          responses: { q1: { ans: "a", status: "teleported", time: 1, changes: 0 } },
+        }),
+      );
+      expect(findAttempt("old-1")?.responses["q1"]?.status).toBe("notvisited");
+    });
+
+    it("survives a response row that is not an object", () => {
+      installStorage(legacyBlob("old-1", { responses: { q1: "a", q2: null } }));
+      expect(findAttempt("old-1")?.responses).toEqual({});
+    });
   });
 });
