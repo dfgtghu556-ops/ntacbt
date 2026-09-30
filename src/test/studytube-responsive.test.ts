@@ -150,3 +150,41 @@ describe("React StudyTube on a phone", () => {
     expect(SHELF).toMatch(/hover:border-primary hover:text-primary lg:flex/);
   });
 });
+
+describe("StudyTube filter row", () => {
+  // YouTube puts its chip row immediately above the content it filters. The
+  // React StudyTube used to bury it inside the hero card, below the brand, two
+  // selects, the focus chips and a paragraph - on a phone that is most of a
+  // screen of scrolling before a student can narrow anything.
+  it("sits above the shelves rather than inside the hero", () => {
+    // The old inline chip block, and its five-deep nested ternary, are gone.
+    expect(SHELF).not.toContain("{/* Quick subject chips */}");
+    expect(SHELF).not.toContain(': f === "oneshot"');
+    // The mapping now lives in one place and the row renders from it.
+    expect(SHELF).toMatch(/FILTERS\.map\(\(\[value, label\]\) =>/);
+  });
+
+  it("stays reachable while the shelves scroll past it", () => {
+    // Sticky under the shell's own 3.5rem header. `top-14` is not arbitrary: the
+    // shell header is `h-14` and `sticky top-0`, so anything sticky inside the
+    // content has to start below it or it tucks underneath and is lost.
+    expect(SHELF).toMatch(/sticky top-14 z-20/);
+    expect(SHELF).toMatch(/bg-background\/90 px-3 py-2 backdrop-blur/);
+  });
+
+  it("is a labelled group, not a bare row of buttons", () => {
+    // Without the role and label a screen reader announces six unlabelled
+    // toggles with no statement of what they filter.
+    expect(SHELF).toMatch(/role="group"\s*\n?\s*aria-label="Filter lectures"/);
+  });
+
+  it("keeps the same filter values and the same student-facing labels", () => {
+    // The mapping is unchanged from the inline ternary it replaced. "Mathematics"
+    // reads as "Maths" and "oneshot" as "One-shots"; renaming either silently
+    // changes what a student is filtering by.
+    expect(SHELF).toMatch(/\["all", "All"\]/);
+    expect(SHELF).toMatch(/\["Mathematics", "Maths"\]/);
+    expect(SHELF).toMatch(/\["oneshot", "One-shots"\]/);
+    expect(SHELF).toMatch(/\["revision", "Revision"\]/);
+  });
+});

@@ -72,6 +72,22 @@ export const Route = createFileRoute("/app/studytube")({
 
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;
 
+/**
+ * The subject filter row: the stored value, then the label a student reads.
+ *
+ * Extracted from a five-deep nested ternary that sat inline in the hero. The
+ * mapping is the same one it always was - "Mathematics" reads as "Maths" and
+ * "oneshot" as "One-shots" - it just lives somewhere a reader can find it.
+ */
+const FILTERS = [
+  ["all", "All"],
+  ["Physics", "Physics"],
+  ["Chemistry", "Chemistry"],
+  ["Mathematics", "Maths"],
+  ["oneshot", "One-shots"],
+  ["revision", "Revision"],
+] as const;
+
 interface ShelfState {
   loading: boolean;
   result: StudyTubeResult | null;
@@ -710,27 +726,6 @@ function StudyTube() {
             {open ? "Hide" : " Preferences"}
           </button>
         </div>
-
-        {/* Quick subject chips */}
-        <div className="scrollbar-none relative mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-          {(["all", "Physics", "Chemistry", "Mathematics", "oneshot", "revision"] as const).map(
-            (f) => (
-              <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
-                {f === "all"
-                  ? "All"
-                  : f === "Physics"
-                    ? "Physics"
-                    : f === "Chemistry"
-                      ? "Chemistry"
-                      : f === "Mathematics"
-                        ? "Maths"
-                        : f === "oneshot"
-                          ? "One-shots"
-                          : "Revision"}
-              </Chip>
-            ),
-          )}
-        </div>
       </section>
 
       {open ? (
@@ -787,6 +782,30 @@ function StudyTube() {
           </div>
         </section>
       ) : null}
+
+      {/*
+        The filter row, where YouTube puts it: immediately above the content it
+        filters, not buried in the hero. It used to sit under the subject chips
+        inside the hero card, so on a phone it was below the brand, two selects,
+        the focus chips and a paragraph before a student could narrow anything.
+
+        Sticky under the shell's own 3.5rem header, so it stays reachable while
+        the shelves scroll past it - the whole point of moving it out of a card
+        that scrolls away.
+      */}
+      <div className="sticky top-14 z-20 -mx-3 border-b border-border/60 bg-background/90 px-3 py-2 backdrop-blur sm:-mx-5 sm:px-5">
+        <div
+          className="scrollbar-none flex gap-2 overflow-x-auto pb-0.5"
+          role="group"
+          aria-label="Filter lectures"
+        >
+          {FILTERS.map(([value, label]) => (
+            <Chip key={value} active={filter === value} onClick={() => setFilter(value)}>
+              {label}
+            </Chip>
+          ))}
+        </div>
+      </div>
 
       {continueWatching.length ? (
         <Shelf
