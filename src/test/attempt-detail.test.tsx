@@ -565,3 +565,132 @@ describe("a legacy attempt is not a dead link", () => {
     });
   });
 });
+
+describe("the whole journey, end to end", () => {
+  // The scenario that was broken, run as one student would: sit a paper through
+  // the real submit path, then come back later and open it. Nothing is seeded and
+  // nothing is stubbed - if any layer drops the attempt, this fails.
+  it("a paper sat today can be reopened tomorrow", async () => {
+    installStorage();
+
+    // 1. Sit a paper.
+    await examService.submitExam(
+      {
+        id: "t1",
+        title: "Kinematics Mock",
+        description: "",
+        duration: 60,
+        totalQuestions: 2,
+        passingScore: 0,
+        questions: [
+          {
+            id: "q1",
+            subject: "Physics",
+            chapter: "Kinematics",
+            type: "mcq",
+            text: "Question 1",
+            options: [
+              { label: "a", text: "A" },
+              { label: "b", text: "B" },
+            ],
+            correctAnswer: "a",
+            explanation: "Because.",
+          },
+          {
+            id: "q2",
+            subject: "Physics",
+            chapter: "Kinematics",
+            type: "mcq",
+            text: "Question 2",
+            options: [
+              { label: "a", text: "A" },
+              { label: "b", text: "B" },
+            ],
+            correctAnswer: "b",
+            explanation: "Because.",
+          },
+        ],
+        createdAt: "",
+        updatedAt: "",
+      } as never,
+      {
+        q1: { ...emptyResponse(), ans: "a", status: "answered" },
+        q2: { ...emptyResponse(), ans: "a", status: "answered" },
+      },
+      Date.now() - 120_000,
+      120,
+    );
+
+    const id = loadCbtStore().attempts[0]!.id;
+    expect(id).toMatch(/^att-/);
+
+    // 2. The measurement layer sees it.
+    expect(new DataStore().attempts).toHaveLength(1);
+
+    // 3. The history list links to it, and the reopen route finds it.
+    const reopened = findAttempt(id);
+    expect(reopened).not.toBeNull();
+
+    // 4. It renders as the full result screen, with the question review.
+    await renderInRouter(<AttemptDetail attempt={reopened!} />);
+    expect(screen.getByText("Question 1")).toBeTruthy();
+    expect(screen.getByText("Question 2")).toBeTruthy();
+    expect(screen.queryByText(/question review not available/i)).toBeNull();
+  });
+
+  it("a legacy attempt from the old tool reopens as far as it honestly can", async () => {
+    installStorage({
+      "jeecbt.v1": JSON.stringify({
+        attempts: [
+          {
+            id: "legacy-uid-1",
+            testId: "legacy-t",
+            startedAt: 1_600_000_000_000,
+            submittedAt: 1_600_000_000_100,
+            responses: { q1: { ans: "a", status: "answered", time: 30, changes: 0 } },
+            tabSwitches: 0,
+            timeTaken: 180,
+            result: {
+              all: {
+                correct: 10,
+                wrong: 5,
+                skipped: 60,
+                marks: 40,
+                neg: 5,
+                time: 180,
+                total: 75,
+                accuracy: 66.7,
+                percentage: 13.3,
+                max: 300,
+              },
+              per: {
+                Physics: {
+                  correct: 4,
+                  wrong: 2,
+                  skipped: 19,
+                  marks: 14,
+                  total: 25,
+                  time: 60,
+                  accuracy: 66.7,
+                  max: 100,
+                },
+              },
+            },
+          },
+        ],
+      }),
+    });
+
+    // In the history, because the merge works.
+    expect(new DataStore().attempts.map((a) => a.id)).toEqual(["legacy-uid-1"]);
+
+    // Openable, because the route searches both stores.
+    const reopened = findAttempt("legacy-uid-1");
+    expect(reopened).not.toBeNull();
+
+    // Honest about what it cannot show.
+    await renderInRouter(<AttemptDetail attempt={reopened!} />);
+    expect(screen.getByText(/question review not available/i)).toBeTruthy();
+    expect(screen.getByText("40/300")).toBeTruthy();
+  });
+});
