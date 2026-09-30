@@ -102,28 +102,51 @@ describe("legacy StudyTube on a phone", () => {
 });
 
 describe("React StudyTube on a phone", () => {
-  const carousel =
-    /scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 2xl:grid-cols-4/;
+  // The shelf's scroller, pinned exactly. It is a flex snap row at EVERY width:
+  // there is no `sm:grid` handover, because a grid leaves the arrows with
+  // nothing to page.
+  const scroller =
+    /scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:gap-4 sm:px-0 sm:pb-0/;
 
-  it("renders each shelf as a snap carousel below sm", () => {
-    // Both the loading skeleton grid and the real items grid.
-    const matches = SHELF.match(new RegExp(carousel.source, "g")) ?? [];
+  it("renders each shelf as a snap carousel", () => {
+    // Both the loading skeleton row and the real items row.
+    const matches = SHELF.match(new RegExp(scroller.source, "g")) ?? [];
     expect(matches.length).toBe(2);
   });
 
-  it("sizes the carousel cards and lets the grid take over from sm up", () => {
-    // The wrapper carries the mobile width; `sm:w-auto` hands sizing back to the
-    // grid so nothing is capped once it is a grid again.
-    expect(SHELF).toMatch(/w-\[min\(250px,66vw\)\] shrink-0 snap-start sm:w-auto/);
+  it("sizes the carousel cards and keeps them sized from sm up", () => {
+    // The wrapper carries the phone width; `sm:w-[17rem]` gives the row a fixed
+    // card basis at every larger width, because the row no longer becomes a
+    // grid - an unsized card in a flex row would collapse.
+    expect(SHELF).toMatch(/w-\[min\(250px,72vw\)\] shrink-0 snap-start sm:w-\[17rem\]/);
     // The skeleton uses the same width so the loading state matches the result.
-    const skeleton = /h-52 w-\[min\(250px,66vw\)\] shrink-0 snap-start animate-pulse/;
+    const skeleton = /h-52 w-\[min\(250px,72vw\)\] shrink-0 snap-start animate-pulse/;
     expect(SHELF).toMatch(skeleton);
   });
 
-  it("keeps the responsive grid it always had from sm upwards", () => {
-    // The change is additive below `sm`; the tablet and desktop layout is the
-    // same 2 / 3 / 4 column progression as before.
-    expect(SHELF).toMatch(/sm:grid-cols-2 sm:gap-4 sm:overflow-visible/);
-    expect(SHELF).toMatch(/lg:grid-cols-3 2xl:grid-cols-4/);
+  it("keeps every shelf a horizontal row at all widths", () => {
+    // Scoped to the scroller string itself. A whole-file `not.toMatch(/sm:grid/)`
+    // would be wrong: the preferences panel elsewhere in this file legitimately
+    // uses `sm:grid-cols-2`, and the assertion has to check the shelf, not the
+    // file.
+    const rows = SHELF.match(new RegExp(scroller.source, "g")) ?? [];
+    expect(rows.length).toBe(2);
+    for (const row of rows) {
+      expect(row).not.toMatch(/grid/);
+    }
+    // `sm:w-auto` is the other tell. An unsized card in a flex row collapses, so
+    // it can only ever have belonged to a grid.
+    expect(SHELF).not.toMatch(/sm:w-auto/);
+  });
+
+  it("pages the row with arrows that are hidden until lg", () => {
+    // Arrows are `lg:flex` and `hidden` below that, because a phone swipes. The
+    // buttons must exist and be labelled, or the row is unreachable by keyboard
+    // on a desktop.
+    const left = SHELF.match(/aria-label=\{`Scroll \$\{title\} left`\}/g) ?? [];
+    const right = SHELF.match(/aria-label=\{`Scroll \$\{title\} right`\}/g) ?? [];
+    expect(left.length).toBe(2);
+    expect(right.length).toBe(2);
+    expect(SHELF).toMatch(/hover:border-primary hover:text-primary lg:flex/);
   });
 });

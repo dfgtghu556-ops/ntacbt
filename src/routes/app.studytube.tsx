@@ -1,7 +1,17 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clock3, Flame, MonitorPlay, Play, Search, Target, TrendingUp } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Flame,
+  MonitorPlay,
+  Play,
+  Search,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
 import { getLegacyTeachers } from "@/data/sot/legacy-inline";
@@ -938,6 +948,26 @@ export function Shelf({
   watchLaterIds: string[];
   watchedIds: Record<string, boolean>;
 }) {
+  const scroller = useRef<HTMLDivElement>(null);
+
+  /**
+   * Page the shelf by most of a viewport of cards. YouTube's home shelves are
+   * horizontal rows at every width with arrows to move through them, so a shelf
+   * keeps its header and its identity instead of dissolving into a grid.
+   *
+   * The arrows are `lg` and up only: below that the row is a touch carousel and
+   * swipe is the interaction, so an arrow would be decoration a thumb never
+   * uses. A keyboard user still reaches them through the tab order.
+   */
+  function nudge(dir: -1 | 1) {
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+  }
+
+  const arrow =
+    "absolute top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition-colors hover:border-primary hover:text-primary lg:flex";
+
   return (
     <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
       <div className="mb-4 flex items-center gap-3">
@@ -964,36 +994,82 @@ export function Shelf({
         </div>
       </div>
       {/*
-        Below `sm` each shelf is a snap carousel, matching the legacy tool's own
-        StudyTube shelves (`public/css/legacy.css`, `@media (max-width: 900px)`),
-        so the two StudyTubes behave the same on a phone instead of one being a
-        single tall column. Cards are `min(250px, 66vw)` so the next one peeks
-        in - the only cue a scroller is swipeable, because the scrollbar is
-        hidden. From `sm` up it is the same responsive grid it always was.
+        One horizontal snap row at every width, matching the legacy tool's own
+        StudyTube shelves and YouTube's home page. Cards are `min(250px, 72vw)`
+        on a phone so the next one peeks in - the only cue a scroller is
+        swipeable, because the scrollbar is hidden - and a fixed 17rem from `sm`
+        up, so a row on a tablet or desktop shows about four at a time.
+
+        This replaces the previous `sm:grid sm:grid-cols-2 lg:grid-cols-3
+        2xl:grid-cols-4` progression. That grid showed more cards per shelf on a
+        wide screen; this row keeps each shelf a shelf. The trade is deliberate,
+        and it is the reason the arrows exist.
       */}
       {loading ? (
-        <div className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 2xl:grid-cols-4">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="h-52 w-[min(250px,66vw)] shrink-0 snap-start animate-pulse rounded-2xl border bg-muted/40 sm:w-auto"
-            />
-          ))}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => nudge(-1)}
+            aria-label={`Scroll ${title} left`}
+            className={`${arrow} -left-3`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div
+            ref={scroller}
+            className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:gap-4 sm:px-0 sm:pb-0"
+          >
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-52 w-[min(250px,72vw)] shrink-0 snap-start animate-pulse rounded-2xl border bg-muted/40 sm:w-[17rem]"
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => nudge(1)}
+            aria-label={`Scroll ${title} right`}
+            className={`${arrow} -right-3`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       ) : items.length ? (
-        <div className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 2xl:grid-cols-4">
-          {items.map((v) => (
-            <div key={v.id} className="w-[min(250px,66vw)] shrink-0 snap-start sm:w-auto">
-              <VideoCard
-                video={v}
-                onPlay={onPlay}
-                onToggleWatchLater={onSave}
-                onComplete={onDone}
-                watchLater={watchLaterIds.includes(v.id)}
-                watched={!!watchedIds[v.id]}
-              />
-            </div>
-          ))}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => nudge(-1)}
+            aria-label={`Scroll ${title} left`}
+            className={`${arrow} -left-3`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div
+            ref={scroller}
+            className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:gap-4 sm:px-0 sm:pb-0"
+          >
+            {items.map((v) => (
+              <div key={v.id} className="w-[min(250px,72vw)] shrink-0 snap-start sm:w-[17rem]">
+                <VideoCard
+                  video={v}
+                  onPlay={onPlay}
+                  onToggleWatchLater={onSave}
+                  onComplete={onDone}
+                  watchLater={watchLaterIds.includes(v.id)}
+                  watched={!!watchedIds[v.id]}
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => nudge(1)}
+            aria-label={`Scroll ${title} right`}
+            className={`${arrow} -right-3`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       ) : (
         <EmptyState message="Nothing matches this filter — switch back to All or change the target." />

@@ -8,14 +8,20 @@
  *
  * So this renders the shelf for real and asserts on the DOM it produces:
  *
- *   - the container is a horizontal snap scroller below `sm`
+ *   - the container is a horizontal snap scroller, at every width
  *   - exactly one sized wrapper is emitted per card
- *   - the wrapper carries the mobile width and the `sm` reset
+ *   - the wrapper carries the phone width and the `sm` card basis
+ *   - the paging arrows exist and are labelled
  *
- * The point of the last two is regression-proofing the change itself. The old
- * markup passed `items.map(...)` straight into a grid, so there was no wrapper
- * to size; if someone reverts to that, the wrapper count drops to zero and this
- * fails rather than silently shipping a shelf that cannot scroll.
+ * The point of the wrapper count is regression-proofing the change itself. The
+ * old markup passed `items.map(...)` straight into a grid, so there was no
+ * wrapper to size; if someone reverts to that, the wrapper count drops to zero
+ * and this fails rather than silently shipping a shelf that cannot scroll.
+ *
+ * The row used to become a grid from `sm` up. It no longer does - YouTube's
+ * home is horizontal shelves with arrows, and a shelf that turns into a grid
+ * has nothing for the arrows to page. `sm:w-auto` is the tell: an unsized card
+ * in a flex row collapses, so it can only ever have belonged to a grid.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -68,7 +74,14 @@ describe("StudyTube shelf renders as a carousel", () => {
 
   it("emits one sized wrapper per card, so the shelf can scroll", () => {
     const { container } = renderShelf();
-    const wrappers = container.querySelectorAll("div.w-\\[min\\(250px\\,66vw\\)\\]");
+    const scroller = container.querySelector("div.overflow-x-auto");
+    expect(scroller).not.toBeNull();
+    // Count the sized wrappers by class name rather than by a CSS selector:
+    // `w-[min(250px,72vw)]` is not a legal class selector without escaping
+    // every bracket, paren and comma, and the escaping bought nothing.
+    const wrappers = [...(scroller?.children ?? [])].filter((el) =>
+      el.className.includes("w-[min(250px,72vw)]"),
+    );
     // One wrapper per card. Zero means the map is emitting bare cards into a
     // grid again, which is the regression this guards.
     expect(wrappers.length).toBe(3);
@@ -80,11 +93,25 @@ describe("StudyTube shelf renders as a carousel", () => {
     expect(scroller).not.toBeNull();
     expect(scroller?.className).toContain("snap-x");
     expect(scroller?.className).toContain("snap-mandatory");
-    // ...and it hands back to a grid from `sm` upwards.
-    expect(scroller?.className).toContain("sm:grid");
-    expect(scroller?.className).toContain("sm:grid-cols-2");
-    expect(scroller?.className).toContain("lg:grid-cols-3");
-    expect(scroller?.className).toContain("2xl:grid-cols-4");
+    // ...and it stays a scroller at every width. It must NOT hand back to a
+    // grid above `sm`: a grid leaves the arrows with nothing to page.
+    expect(scroller?.className).not.toMatch(/(^|\s)sm:grid(\s|$)/);
+    expect(scroller?.className).not.toContain("sm:grid-cols-2");
+    expect(scroller?.className).not.toContain("sm:overflow-visible");
+  });
+
+  it("pages the row with two labelled arrows", () => {
+    const { container } = renderShelf();
+    const labels = [...container.querySelectorAll("button[aria-label]")].map((b) =>
+      b.getAttribute("aria-label"),
+    );
+    expect(labels).toContain("Scroll Continue watching left");
+    expect(labels).toContain("Scroll Continue watching right");
+    // Hidden below lg, because a phone swipes.
+    for (const b of container.querySelectorAll("button[aria-label]")) {
+      expect(b.className).toContain("lg:flex");
+      expect(b.className).toContain("hidden");
+    }
   });
 
   it("renders the loading skeleton with the same card sizing", () => {
@@ -106,8 +133,10 @@ describe("StudyTube shelf renders as a carousel", () => {
     const skeletons = container.querySelectorAll("div.animate-pulse");
     expect(skeletons.length).toBe(6);
     for (const s of skeletons) {
-      expect(s.className).toContain("w-[min(250px,66vw)]");
-      expect(s.className).toContain("sm:w-auto");
+      // Same width as the real card, and the same `sm` basis - a skeleton that
+      // sizes differently from the result shifts the row when it resolves.
+      expect(s.className).toContain("w-[min(250px,72vw)]");
+      expect(s.className).toContain("sm:w-[17rem]");
     }
   });
 
