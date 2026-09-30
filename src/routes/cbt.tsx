@@ -37,6 +37,10 @@ import type {
 } from "@/features/cbt/types";
 import { emptyResponse, fromCbtQuestion, fromCbtTest, type Exam } from "@/types/exam.types";
 import { useExamStore } from "@/features/exams/store";
+import { EXAM_SHORTCUTS, useExamKeys } from "@/features/exams/use-exam-keys";
+
+/** Whether this device has dismissed the exam keyboard legend. */
+const LEGEND_KEY = "ntacbt.exam.legendDismissed";
 import { examService } from "@/services/exam.service";
 import {
   AUTOSAVE_INTERVAL_MS,
@@ -219,6 +223,9 @@ function Cbt() {
    */
   const attemptLive = mode === "exam";
 
+  /** Whether this device has dismissed the exam keyboard legend. */
+  const LEGEND_KEY = "ntacbt.exam.legendDismissed";
+
   // Leaving the tab or reloading mid-paper.
   //
   // The draft is autosaved every 30s and can be resumed, so the work is never
@@ -266,6 +273,39 @@ function Cbt() {
     hydrate,
     setCurrentExam,
   } = useExamStore();
+
+  // ─── Keyboard operation of the exam ───
+  //
+  // Called here, above every early return, because a hook after a conditional
+  // return is a Rules of Hooks violation: the hook order would change the
+  // moment a paper finished loading, which React treats as a crash.
+  //
+  // `attemptLive` is the same single source of truth the exit guard uses, so the
+  // shortcuts exist exactly when an attempt is in progress — never on the
+  // instructions or the result screen.
+  //
+  // The labels come from the question in front of the student, so a two-option
+  // question does not accept "c" and an integer question accepts nothing.
+  const liveQuestion = examQuestions[cur];
+  const optionLabels = liveQuestion ? liveQuestion.options.map((o) => o.label) : [];
+  useExamKeys(
+    {
+      // `setAns`, `move`, `markReview` and `clearAnswer` are function
+      // declarations further down, so they are hoisted and safe to close over
+      // here — they are only invoked on a keypress, long after this render.
+      onSelect: (label) => setAns(label),
+      onNext: () => move(1),
+      onPrevious: () => move(-1),
+      onSaveAndNext: () => move(1),
+      onMarkReview: markReview,
+      onClear: clearAnswer,
+    },
+    {
+      enabled: attemptLive,
+      optionLabels,
+      isMcq: liveQuestion?.type === "mcq",
+    },
+  );
 
   // How many questions carry a real answer. Derived from `answers`, which is
   // what the header already counts, so the submit dialog can never quote a
@@ -588,10 +628,73 @@ function Cbt() {
         />
       </div>
 
+      {/*
+        The legend, not a hidden feature. Keyboard shortcuts that are folklore
+        are shortcuts only the confident use, which is the opposite of what an
+        accessibility fix is for. Kept out of the way and dismissible, because a
+        student twenty minutes into a paper does not need it re-explained.
+      */}
+      <ShortcutLegend />
+
       <button type="button" onClick={reset} className="sr-only">
         Reset
       </button>
     </div>
+  );
+}
+
+/**
+ * A one-line summary of the exam shortcuts, collapsed by default.
+ *
+ * Uses a native `<details>` so it is keyboard-openable and works without JS.
+ * The state lives in `localStorage` under a device key rather than being
+ * remembered only in React, so dismissing it once holds across papers.
+ */
+function ShortcutLegend() {
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(LEGEND_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  if (dismissed) return null;
+
+  return (
+    <details className="border-t bg-background px-4 py-2 text-xs text-muted-foreground">
+      <summary className="cursor-pointer select-none">
+        Keyboard shortcuts — <span className="font-medium text-foreground">A–D</span> or{" "}
+        <span className="font-medium text-foreground">1–4</span> to choose,{" "}
+        <span className="font-medium text-foreground">← →</span> to move,{" "}
+        <span className="font-medium text-foreground">Enter</span> to save and continue
+      </summary>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+        {EXAM_SHORTCUTS.map((s) => (
+          <span key={s.keys}>
+            <kbd className="rounded border border-input bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+              {s.keys}
+            </kbd>{" "}
+            {s.what}
+          </span>
+        ))}
+        <button
+          type="button"
+          className="ml-auto underline hover:no-underline"
+          onClick={() => {
+            setDismissed(true);
+            try {
+              window.localStorage.setItem(LEGEND_KEY, "1");
+            } catch {
+              // A dismissed legend that comes back is a small annoyance, not a bug.
+            }
+          }}
+        >
+          Hide
+        </button>
+      </div>
+    </details>
   );
 }
 
