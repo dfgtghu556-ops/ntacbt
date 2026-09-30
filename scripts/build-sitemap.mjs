@@ -37,6 +37,12 @@ function routePaths() {
   for (const entry of readdirSync(routesDir)) {
     if (!entry.endsWith(".tsx")) continue;
     if (entry === "__root.tsx" || entry.endsWith("._layout.tsx")) continue;
+    // `app.tsx` is the /app shell — a layout that renders an <Outlet> and no
+    // page of its own. It used to be `app._layout.tsx`, which the line above
+    // skipped; the rename that fixed the missing mobile navigation made it
+    // contribute `/app` a second time, duplicating `app.index.tsx`. The URL is
+    // real, but a sitemap entry listed twice is a crawl-budget warning.
+    if (entry === "app.tsx") continue;
     if (entry.startsWith("api")) continue;
 
     const base = entry.replace(/\.tsx$/, "");
@@ -59,6 +65,12 @@ function routePaths() {
     // The exam runner and the auth screens are deliberately not advertised.
     if (path === "/cbt") continue;
     if (path.startsWith("/app/auth/")) continue;
+    // A search interface is not content. `/app/search` also 307-redirects to
+    // `/app/search?q=` because the route validates its search params, so the
+    // sitemap would advertise a URL a crawler is told to index but cannot read.
+    // Verified with `curl -w %{http_code}` against the production bundle: 307
+    // with no query, 200 with one.
+    if (path === "/app/search") continue;
 
     // Content routes students actually search for rank higher than personal
     // surfaces, because they are the ones worth crawling repeatedly.
@@ -116,11 +128,13 @@ User-agent: Googlebot
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 User-agent: Bingbot
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 User-agent: Twitterbot
 Allow: /
@@ -132,6 +146,7 @@ User-agent: *
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;

@@ -3,11 +3,13 @@ User-agent: Googlebot
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 User-agent: Bingbot
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 User-agent: Twitterbot
 Allow: /
@@ -19,5 +21,6 @@ User-agent: *
 Allow: /
 Disallow: /cbt
 Disallow: /app/auth/
+Disallow: /app/search
 
 Sitemap: https://ntacbt.vercel.app/sitemap.xml
