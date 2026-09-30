@@ -56,6 +56,21 @@ export interface CbtAttemptRecord {
   tabSwitches: number;
   timeTaken: number;
   result?: CbtResult;
+  /**
+   * The paper exactly as it was answered, if this attempt has it.
+   *
+   * Without it the result is unreadable: the score and subject totals are
+   * aggregates that survive, but the question-by-question review, the topic
+   * breakdown and the mistake analysis all read the paper. An attempt that only
+   * carries a score can never be reopened as a result page.
+   *
+   * Optional because two populations of existing attempts lack it: the legacy
+   * `jeecbt.v1` blob never stored the paper, and every attempt made before this
+   * field existed. Both are handled by degrading honestly at the point of use —
+   * the score is shown and the review is said to be missing, never faked. See
+   * `AttemptDetail`.
+   */
+  test?: CbtTest;
 }
 
 export interface CbtResult {

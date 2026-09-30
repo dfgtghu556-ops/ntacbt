@@ -19,22 +19,7 @@ import { loadCbtStore, saveCbtAttempt } from "@/features/cbt/store";
 import { examService } from "@/services/exam.service";
 import type { CbtResponseState } from "@/features/cbt/types";
 import { emptyResponse } from "@/types/exam.types";
-
-function installStorage(seed: Record<string, string> = {}) {
-  const map = new Map<string, string>(Object.entries(seed));
-  const storage = {
-    getItem: (k: string) => (map.has(k) ? map.get(k)! : null),
-    setItem: (k: string, v: string) => void map.set(k, v),
-    removeItem: (k: string) => void map.delete(k),
-    clear: () => map.clear(),
-    key: (i: number) => [...map.keys()][i] ?? null,
-    get length() {
-      return map.size;
-    },
-  };
-  vi.stubGlobal("localStorage", storage);
-  return map;
-}
+import { installStorage } from "./storage";
 
 /** A legacy attempt, as the old `jee-cbt.html` tool would have written it. */
 function legacyAttempt(id: string, submittedAt: number, marks = 40) {
@@ -210,7 +195,11 @@ describe("legacy attempts still count", () => {
   it("does not mutate the legacy blob", () => {
     const map = installStorage(seedLegacy([legacyAttempt("old-1", 1_600_000_000_000)]));
     const before = map.get("jeecbt.v1");
-    new DataStore().attempts;
+    // Assign it: reading `DataStore().attempts` must not write through to the
+    // legacy blob, and an unassigned read is an expression statement, which
+    // eslint rightly rejects.
+    const read = new DataStore().attempts;
+    expect(read).toHaveLength(1);
     expect(map.get("jeecbt.v1")).toBe(before);
   });
 });

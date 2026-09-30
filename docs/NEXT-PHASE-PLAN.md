@@ -16,6 +16,15 @@ your approval, per the standing rule.
   `/app/analytics` and `/app/tests`, so hiding that tool's results would contradict
   the app's own instructions — and `public/jee-cbt.html` is demoted, not deleted.
 
+## Status
+
+- **Phase E — shipped** (`d252ede`). Attempts from the React exam runner now reach
+  `DataStore.attempts`; 20 tests, 11 of which fail without the merge.
+- **Phase F — shipped** (see below). The paper is stored with each attempt, an
+  attempt list renders on `/app/analytics`, and `/app/attempts/$attemptId` reopens
+  a stored attempt as the full result screen. Attempts whose paper is absent
+  degrade honestly.
+
 ## The finding
 
 **Every attempt made in the modern exam runner is invisible to everything that
@@ -147,18 +156,61 @@ about the degraded paths: no test definition, a truncated attempt, a result with
 
 ---
 
-## What I need from you
+## Decisions taken 2026-09-30
 
-**1. The F2 decision above** — show-what-survives, store-the-questions, or both?
+1. **F2** — **both**: store the questions with each attempt, and degrade honestly if
+   they are absent. The storage estimate was checked rather than assumed: a
+   75-question paper is ~10 KB serialised, so 60 attempts is ~600 KB against the
+   ~5 MB budget. Affordable.
+2. **Scope** — E first, then F.
+3. **Legacy** — **merge both stores on read**, not react-only. The app still links
+   students to `jee-cbt.html` from `/app/analytics` and `/app/tests`, so hiding that
+   tool's results would contradict the app's own instructions.
 
-**2. Scope.** E alone is the highest-value change in this session: it is a data bug
-that silently disables the product's core measurement. E+F is the complete fix. I
-would not ship E without F, because E makes the analytics page start working and F
-is what makes it usable — but if you want E verified on its own first, that is a
-reasonable way to sequence it.
+## What shipped
 
-**3. Is the legacy `jee-cbt.html` still a supported path?** If it is, the merge in E1
-is right. If the React app is now the only exam runner that matters, I could instead
-make `DataStore` read *only* the React store and drop the legacy read — simpler, but
-it would hide any history a student built up in the old tool. I have assumed the
-merge.
+**Phase E** (`d252ede`) — `DataStore.attempts` merges both stores, dedupes on `id`
+with legacy winning a tie, preserves the ascending sort and the `submittedAt` filter,
+and returns copies. The React read is guarded: a non-JSON key, `attempts` that is not
+an array, an attempt with no result, or a null entry all fall back to "the legacy
+blob still works" rather than throwing, because the getter runs on every `DataStore`
+construction and a throw would take down the dashboard, not just the analytics card.
+20 tests; 11 fail with the merge removed.
+
+**Phase F** — three pieces:
+
+- **The paper travels with the attempt.** `CbtAttemptRecord` gains an optional
+  `test`; `exam.service.submitExam` writes the whole converted paper into it. This
+  is the part that makes a result reopenable at all: the question review, the topic
+  breakdown and the mistake doctor all read `test.questions`.
+- **An attempt list on `/app/analytics`**, newest first, paginated, linking each row
+  to its own reopen route. `AttemptSummary` carries no paper name, so the name is
+  looked up from the React store; a legacy attempt with no name is labelled by date
+  rather than given a fake one.
+- **`/app/attempts/$attemptId`** renders the stored attempt through the same
+  `ExamResult` the student saw at submit time.
+
+**The degraded path is the point.** Two populations of attempts have no stored
+paper: every attempt made before the field existed, and every attempt from the
+legacy tool, which never wrote it. `AttemptDetail` shows what is real — the score,
+the subject breakdown, when it was sat — and states plainly that the review is not
+available. The three tempting shortcuts are all refused, and the tests assert on
+their absence:
+
+| Shortcut | Why it is refused | Pinned by |
+| --- | --- | --- |
+| Render an empty review list | Reads as "0 questions" — the student concludes they answered nothing | `never renders an empty review list` |
+| Render from today's copy of the paper | Contradicts the score if the paper was edited since | `never falls back to the current copy of the paper` |
+| Hide the attempt from the history | Silently loses the student's work — the failure E was fixed to stop | `is still in the history list` |
+
+**F3, not done.** `examService.getUserAttempts()` is still called by nothing. The
+reopen route reads `loadCbtStore().attempts` directly, because it needs the stored
+paper and `getUserAttempts()` returns `ExamAttempt` — a different shape that does not
+carry it. Wiring the service up would mean either widening `ExamAttempt` or adding a
+second reader, and neither is needed while there is one caller. Left as a note
+rather than a half-used abstraction.
+
+**One storage note.** The snapshot is the *converted* `CbtTest`, not the `Exam` it
+came from — `toCbtQuestion` maps `correctAnswer` to `answer` and `explanation` to
+`sol`. That is the shape `ExamResult` consumes, which is the reason it is stored
+converted rather than raw.

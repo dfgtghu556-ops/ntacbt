@@ -150,6 +150,13 @@ export const examService = {
       tabSwitches: 0,
       timeTaken,
       result,
+      // The paper travels with the attempt, so the result can be reopened months
+      // later - after the paper has been edited, or deleted, or the student is on
+      // a different device entirely. Without this the score survives but the
+      // question review, the topic breakdown and the mistake doctor all read
+      // `test.questions`, so none of them can run. Storing the whole paper costs
+      // a few kilobytes; the store already caps at 60 attempts.
+      test,
     };
     saveCbtAttempt(record);
     return { attempt: record, examAttempt: fromCbtAttempt(record, "local") };

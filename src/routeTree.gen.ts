@@ -34,6 +34,7 @@ import { Route as ApiPublicLiveClassesRouteImport } from './routes/api/public/li
 import { Route as ApiPublicPdfReformatRouteImport } from './routes/api/public/pdf-reformat'
 import { Route as ApiPublicPyqPapersRouteImport } from './routes/api/public/pyq-papers'
 import { Route as ApiPublicStudyPlannerRouteImport } from './routes/api/public/study-planner'
+import { Route as AppAttemptsAttemptIdRouteImport } from './routes/app.attempts.$attemptId'
 import { Route as AppAuthLoginRouteImport } from './routes/app.auth.login'
 import { Route as AppAuthRegisterRouteImport } from './routes/app.auth.register'
 import { Route as AppStudytubeVideoRouteImport } from './routes/app.studytube.$video'
@@ -163,6 +164,11 @@ const ApiPublicStudyPlannerRoute = ApiPublicStudyPlannerRouteImport.update({
   path: '/api/public/study-planner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAttemptsAttemptIdRoute = AppAttemptsAttemptIdRouteImport.update({
+  id: '/attempts/$attemptId',
+  path: '/attempts/$attemptId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAuthLoginRoute = AppAuthLoginRouteImport.update({
   id: '/auth/login',
   path: '/auth/login',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/attempts/$attemptId': typeof AppAttemptsAttemptIdRoute
   '/app/auth/login': typeof AppAuthLoginRoute
   '/app/auth/register': typeof AppAuthRegisterRoute
   '/app/studytube/$video': typeof AppStudytubeVideoRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/attempts/$attemptId': typeof AppAttemptsAttemptIdRoute
   '/app/auth/login': typeof AppAuthLoginRoute
   '/app/auth/register': typeof AppAuthRegisterRoute
   '/app/studytube/$video': typeof AppStudytubeVideoRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/api/public/pdf-reformat': typeof ApiPublicPdfReformatRoute
   '/api/public/pyq-papers': typeof ApiPublicPyqPapersRoute
   '/api/public/study-planner': typeof ApiPublicStudyPlannerRoute
+  '/app/attempts/$attemptId': typeof AppAttemptsAttemptIdRoute
   '/app/auth/login': typeof AppAuthLoginRoute
   '/app/auth/register': typeof AppAuthRegisterRoute
   '/app/studytube/$video': typeof AppStudytubeVideoRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/attempts/$attemptId'
     | '/app/auth/login'
     | '/app/auth/register'
     | '/app/studytube/$video'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/attempts/$attemptId'
     | '/app/auth/login'
     | '/app/auth/register'
     | '/app/studytube/$video'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/public/pdf-reformat'
     | '/api/public/pyq-papers'
     | '/api/public/study-planner'
+    | '/app/attempts/$attemptId'
     | '/app/auth/login'
     | '/app/auth/register'
     | '/app/studytube/$video'
@@ -553,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStudyPlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/attempts/$attemptId': {
+      id: '/app/attempts/$attemptId'
+      path: '/attempts/$attemptId'
+      fullPath: '/app/attempts/$attemptId'
+      preLoaderRoute: typeof AppAttemptsAttemptIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/auth/login': {
       id: '/app/auth/login'
       path: '/auth/login'
@@ -603,6 +622,7 @@ interface AppRouteChildren {
   AppStudytubeRoute: typeof AppStudytubeRouteWithChildren
   AppTestsRoute: typeof AppTestsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAttemptsAttemptIdRoute: typeof AppAttemptsAttemptIdRoute
   AppAuthLoginRoute: typeof AppAuthLoginRoute
   AppAuthRegisterRoute: typeof AppAuthRegisterRoute
 }
@@ -621,6 +641,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppStudytubeRoute: AppStudytubeRouteWithChildren,
   AppTestsRoute: AppTestsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAttemptsAttemptIdRoute: AppAttemptsAttemptIdRoute,
   AppAuthLoginRoute: AppAuthLoginRoute,
   AppAuthRegisterRoute: AppAuthRegisterRoute,
 }

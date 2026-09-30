@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { DataStore, type AttemptSummary } from "@/lib/store";
+import { AttemptHistory } from "@/features/exams/components/AttemptHistory";
 import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/analytics")({
@@ -159,6 +160,8 @@ function Analytics() {
               </ResponsiveContainer>
             </div>
           </section>
+
+          <AttemptHistory attempts={attempts} />
 
           <section className="rounded-xl border p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
