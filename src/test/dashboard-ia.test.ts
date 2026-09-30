@@ -110,3 +110,52 @@ describe("the card system still holds on the new surfaces", () => {
     expect(src.slice(tagStart, src.indexOf(">", tagStart))).toMatch(/rounded-2xl border/);
   });
 });
+
+/**
+ * Every page that opens with a hero gets the same hero.
+ *
+ * There were two. The dashboard's was `rounded-2xl … p-6 sm:p-8`; StudyTube's
+ * was `rounded-3xl … p-5 sm:p-6`. Same job — the first thing you see, carrying
+ * the brand and the one action — rendered two different ways, so the app felt
+ * assembled rather than designed.
+ *
+ * Both are now `rounded-2xl … p-6 sm:p-8`. `rounded-2xl` is the radius the
+ * design-system test pins every `<section>` to, and `rounded-3xl` is explicitly
+ * treated as drift there — so this follows the existing decision rather than
+ * introducing a fourth radius for heroes. StudyTube was simply absent from that
+ * test's file list, which is how it drifted in the first place.
+ */
+describe("every page hero uses the same card", () => {
+  const heroes: Array<[string, string]> = [
+    ["src/routes/app.index.tsx", "bg-gradient-to-br from-blue-50"],
+    ["src/routes/app.studytube.tsx", "bg-gradient-to-br from-primary/12"],
+  ];
+
+  it("uses one radius and one padding", () => {
+    const seen = new Set<string>();
+    for (const [rel, marker] of heroes) {
+      const src = readFileSync(join(process.cwd(), rel), "utf8");
+      const at = src.indexOf(marker);
+      expect(at, `${rel} should still have a hero`).toBeGreaterThan(-1);
+      // The tag starts at the last `<section` before the gradient marker.
+      const start = src.lastIndexOf("<section", at);
+      const tag = src.slice(start, src.indexOf(">", start));
+      expect(tag, `${rel} hero radius`).toMatch(/\brounded-2xl\b/);
+      expect(tag, `${rel} hero radius`).not.toMatch(/\brounded-(?:lg|3xl|none)\b/);
+      expect(tag, `${rel} hero padding`).toMatch(/\bp-6\b/);
+      expect(tag, `${rel} hero padding`).toMatch(/\bsm:p-8\b/);
+      // Compare the *treatment* — radius, padding, border — not the colours.
+      // Strip every gradient token, including the `dark:` pair.
+      seen.add(
+        tag
+          .replace(/[">\n]/g, " ")
+          .split(/\s+/)
+          .filter((t) => t && !/(^|dark:)(from|via|to)-/.test(t))
+          .sort()
+          .join(" "),
+      );
+    }
+    // Same treatment, not merely a similar one.
+    expect([...seen], `hero treatments diverge:\n${[...seen].join("\n")}`).toHaveLength(1);
+  });
+});

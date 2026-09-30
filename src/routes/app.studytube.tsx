@@ -587,7 +587,7 @@ function StudyTube() {
   return (
     <div className="space-y-6">
       {/* ── HERO: brand + target balance + search ── */}
-      <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/12 via-card to-card p-5 sm:p-6">
+      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/12 via-card to-card p-6 sm:p-8">
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg">
@@ -922,7 +922,7 @@ function Shelf({
   watchedIds: Record<string, boolean>;
 }) {
   return (
-    <section className="rounded-2xl border border-border/60 bg-card/40 p-3 sm:rounded-3xl sm:p-5">
+    <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-4 w-4" />

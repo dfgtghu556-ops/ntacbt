@@ -167,6 +167,9 @@ describe("Phase 6 — the card system", () => {
       "src/routes/app.pyq.tsx",
       "src/routes/app.map.tsx",
       "src/routes/app.memory.tsx",
+      // StudyTube was missing here, which is how its hero came to sit on
+      // `rounded-3xl` while every other page's hero was on the card system.
+      "src/routes/app.studytube.tsx",
       // The result page is a full surface of its own and Phase 6 calls it out
       // by name. It was missing here, so its sections drifted to rounded-xl
       // while every other page was on the card system.

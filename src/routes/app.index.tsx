@@ -303,7 +303,7 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       {/* ─── Greeting / hero ─── */}
-      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-background to-violet-50 p-6 sm:p-8 dark:from-blue-950/40 dark:via-background dark:to-violet-950/40">
+      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-blue-50 via-background to-violet-50 p-6 sm:p-8 dark:from-blue-950/40 dark:via-background dark:to-violet-950/40">
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[11px] font-semibold text-primary">
