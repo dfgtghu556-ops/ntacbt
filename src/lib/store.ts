@@ -6,10 +6,18 @@
  * views. New NTACBT screens use this store so legacy progress, planner data,
  * attempts and settings remain the single source of truth during migration.
  *
+ * `attempts` is the one view that is **not** legacy-only: it also reads the React
+ * exam runner's own store (`ntacbt.cbt.v1`) and merges the two, because the
+ * current app writes there and nowhere else. See the getter for why both are read
+ * rather than one.
+ *
  * It also defines the forward path: `STORAGE_KEY_NEXT` (v2) with a
  * `schemaVersion` and migration hooks. Nothing writes to v2 yet — adding it
  * is intentional, so no existing student data is at risk.
  */
+
+import { loadCbtStore } from "@/features/cbt/store";
+import type { CbtAttemptRecord } from "@/features/cbt/types";
 
 export interface StatusMeta {
   /** Read (raw) or written (committed) view of the legacy state. */
@@ -175,6 +183,72 @@ export const LEGACY_STATE_KEY = "jeecbt.v1";
 /** Forward path for a typed, explicit versioned store. Not yet written. */
 export const STORAGE_KEY_NEXT = "ntacbt.v2";
 
+/** The `per` shape `AttemptSummary.result` carries. */
+type AttemptPerSubject = NonNullable<AttemptSummary["result"]>["per"];
+
+/**
+ * Convert a React-store attempt into the summary shape this module exposes.
+ *
+ * The two shapes are deliberately close, so this is a field mapping rather than a
+ * transformation. `responses` is dropped: `AttemptSummary` carries the graded
+ * result, not the per-question answers, and the consumers of this getter (trend
+ * charts, subject stats, readiness) want aggregates. The full record stays in
+ * `ntacbt.cbt.v1` for anything that needs it.
+ */
+function fromCbtAttempt(a: CbtAttemptRecord): AttemptSummary {
+  const per: AttemptPerSubject = {};
+  for (const [subject, s] of Object.entries(a.result?.per ?? {})) {
+    per[subject] = {
+      correct: s.correct,
+      wrong: s.wrong,
+      skipped: s.skipped,
+      marks: s.marks,
+      total: s.total,
+      time: s.time,
+    };
+  }
+  return {
+    id: a.id,
+    testId: a.testId,
+    submittedAt: a.submittedAt,
+    startedAt: a.startedAt,
+    timeTaken: a.timeTaken,
+    tabSwitches: a.tabSwitches,
+    ...(a.result
+      ? {
+          result: {
+            all: { ...a.result.all },
+            ...(Object.keys(per).length > 0 ? { per } : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+/**
+ * Submitted attempts from the React exam store, as summaries.
+ *
+ * Guarded, because this runs on every `DataStore` construction and a throw here
+ * would take down the dashboard rather than just the analytics page: the store may
+ * be absent (SSR), malformed (a hand-edited or truncated key), or from a future
+ * schema. Any of those yields an empty list rather than an exception — the legacy
+ * blob still works, so the page degrades instead of breaking.
+ */
+function reactAttempts(): AttemptSummary[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const store = loadCbtStore();
+    if (!Array.isArray(store.attempts)) return [];
+    return store.attempts.filter((a) => a && typeof a.submittedAt === "number").map(fromCbtAttempt);
+  } catch {
+    return [];
+  }
+}
+
+function clone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v)) as T;
+}
+
 export class DataStore {
   private readonly _raw: LegacyState;
 
@@ -202,12 +276,38 @@ export class DataStore {
     return JSON.parse(JSON.stringify(this._raw)) as LegacyState;
   }
 
+  /**
+   * Every submitted attempt on this device, oldest first.
+   *
+   * Reads **both** stores. `jeecbt.v1` is the legacy blob the old `jee-cbt.html`
+   * tool writes; `ntacbt.cbt.v1` is the React exam runner's own store, where
+   * `exam.service.submitExam` puts a full per-question record. Until now only the
+   * legacy blob was read, so every attempt made in the current app was invisible
+   * to analytics, the dashboard, readiness, rank prediction and the mentor
+   * report — the entire measurement layer was blind to the app's own exam runner.
+   *
+   * Both are read because the app still links students to `jee-cbt.html` from
+   * `/app/analytics` and `/app/tests`. Reading only one store would hide attempts
+   * the app itself told the student to make.
+   *
+   * Deduplicated by `id`: the two stores use different id schemes, so a collision
+   * is unlikely, but a merge that silently doubled a student's attempt count
+   * would be worse than the bug being fixed. The legacy entry wins a tie, since
+   * it is the one the student would have seen in the old UI.
+   */
   get attempts(): AttemptSummary[] {
-    const all = Array.isArray(this._raw.attempts) ? this._raw.attempts : [];
-    return all
-      .filter((a) => a && typeof a.submittedAt === "number")
-      .map((a) => JSON.parse(JSON.stringify(a)) as AttemptSummary)
-      .sort((a, b) => (a.submittedAt as number) - (b.submittedAt as number));
+    const legacy = Array.isArray(this._raw.attempts) ? this._raw.attempts : [];
+    const byId = new Map<string, AttemptSummary>();
+
+    // The React store first, so a legacy entry with the same id overwrites it.
+    for (const a of reactAttempts()) {
+      if (a && typeof a.submittedAt === "number") byId.set(a.id, clone(a));
+    }
+    for (const a of legacy) {
+      if (a && typeof a.submittedAt === "number") byId.set(a.id, clone(a));
+    }
+
+    return [...byId.values()].sort((a, b) => (a.submittedAt as number) - (b.submittedAt as number));
   }
 
   get tests(): LegacyTest[] {
