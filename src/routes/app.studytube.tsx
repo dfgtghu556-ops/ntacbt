@@ -612,16 +612,16 @@ function StudyTube() {
 
   return (
     <div className="space-y-6">
-      {/* ── HERO: brand + target balance + search ── */}
+      {/* ── HERO: brand + target balance ── */}
       <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/12 via-card to-card p-6 sm:p-8">
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg">
-              <Play className="h-5 w-5 fill-current" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow">
+              <Play className="h-4 w-4 fill-current" />
             </span>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">StudyTube</h1>
-              <p className="text-xs text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold tracking-tight text-foreground">StudyTube</h1>
+              <p className="truncate text-[11px] text-muted-foreground">
                 Study-first discovery · zero-distraction study hub
               </p>
             </div>
@@ -635,7 +635,7 @@ function StudyTube() {
             sensible minimum and lets them stack when there isn't room, at every
             width, instead of three different layouts.
           */}
-          <div className="flex w-full flex-wrap gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <select
               value={institute ?? ""}
               onChange={(e) => changeInstitute(e.target.value || undefined)}
@@ -672,7 +672,7 @@ function StudyTube() {
         </div>
 
         {/* Focus (target) balance — always visible */}
-        <div className="scrollbar-none relative mt-4 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="scrollbar-none relative mt-3 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
             Focus
           </span>
@@ -690,7 +690,7 @@ function StudyTube() {
             </Chip>
           ))}
         </div>
-        <p className="relative mt-2 text-[11px] text-muted-foreground">
+        <p className="relative mt-1.5 text-[11px] text-muted-foreground">
           {target === "jeemain"
             ? " JEE Main engine — concept + PYQ + speed. Board-level detail included for strong basics."
             : target === "jeeadv"

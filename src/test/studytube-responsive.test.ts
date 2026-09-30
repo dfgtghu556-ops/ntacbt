@@ -134,9 +134,11 @@ describe("React StudyTube on a phone", () => {
     for (const row of rows) {
       expect(row).not.toMatch(/grid/);
     }
-    // `sm:w-auto` is the other tell. An unsized card in a flex row collapses, so
-    // it can only ever have belonged to a grid.
-    expect(SHELF).not.toMatch(/sm:w-auto/);
+    // `sm:w-auto` on a card is the other tell: an unsized card in a flex row
+    // collapses, so it can only ever have belonged to a grid. Scoped to the card
+    // wrapper for the same reason - the hero's selects use `sm:w-auto`
+    // legitimately, to stop sizing to the longest option.
+    expect(SHELF).not.toMatch(/w-\[min\(250px,72vw\)\] shrink-0 snap-start sm:w-auto/);
   });
 
   it("pages the row with arrows that are hidden until lg", () => {
@@ -202,9 +204,69 @@ describe("StudyTube filter row", () => {
   });
 });
 
+describe("StudyTube hero", () => {
+  // YouTube has no hero: the top bar, the chip row, then content. StudyTube's
+  // hero carried the brand, two selects, the focus chips, the search and a
+  // paragraph of target description, which on a phone was most of a screen of
+  // scrolling before the first lecture appeared. The search and filter row have
+  // moved into the sticky toolbar; this pins what is left being compact.
+  it("keeps every control it had", () => {
+    // Compacting is allowed to change spacing, never to drop a feature. Each of
+    // these is a control a student uses, so losing one silently is the failure
+    // this guards.
+    expect(SHELF).toMatch(/aria-label="Dream Team"/);
+    expect(SHELF).toMatch(/aria-label="Dream Teacher"/);
+    expect(SHELF).toMatch(/changeTarget\(t\)/);
+    expect(SHELF).toContain("Study-first discovery · zero-distraction study hub");
+    // The target description, for all four targets it describes.
+    for (const line of [
+      "JEE Main engine — concept + PYQ + speed",
+      "JEE Advanced — deep problem solving",
+      "CBSE Class 12 boards — NCERT line-by-line",
+      "Class 11 foundation — build the base",
+    ]) {
+      expect(SHELF).toContain(line);
+    }
+  });
+
+  it("keeps the cross-page hero treatment, and compacts inside it instead", () => {
+    // The hero card's radius and padding are NOT StudyTube's to change.
+    // `dashboard-ia.test.ts` pins every page hero to `rounded-2xl … p-6 sm:p-8`
+    // precisely because the two heroes once drifted apart, and StudyTube was
+    // missing from that test's list, which is how it drifted. Shrinking the
+    // padding here alone would reintroduce exactly that.
+    //
+    // So the compaction happens inside the card - brand mark, title, row
+    // breakpoint, subtitle - and the card itself stays put.
+    expect(SHELF).toMatch(/bg-gradient-to-br from-primary\/12 via-card to-card p-6 sm:p-8/);
+    expect(SHELF).not.toMatch(/p-4 sm:p-5/);
+  });
+
+  it("puts the brand and the selects on one row from sm, not lg", () => {
+    // The row only stacked to its own line above `lg`, so on a portrait tablet
+    // the brand sat alone across the full width with the selects underneath.
+    // `sm` is where there is room for both.
+    expect(SHELF).toMatch(/sm:flex-row sm:items-center sm:justify-between/);
+    expect(SHELF).not.toMatch(/lg:flex-row lg:items-center/);
+  });
+
+  it("shrinks the brand mark to match the smaller card", () => {
+    // Was `h-11 w-11 rounded-2xl` with a `h-5 w-5` icon inside a card that is
+    // now one padding step smaller.
+    expect(SHELF).toMatch(/h-9 w-9 shrink-0 items-center justify-center rounded-xl/);
+    expect(SHELF).not.toMatch(/h-11 w-11/);
+  });
+
+  it("lets the subtitle truncate instead of pushing the selects down", () => {
+    // The subtitle is long and the brand block is now in a flex row with the
+    // selects. Without `min-w-0` on the wrappers and `truncate` on the text, a
+    // narrow phone gives the subtitle its full width and the row grows.
+    expect(SHELF).toMatch(/flex min-w-0 items-center gap-2\.5/);
+    expect(SHELF).toMatch(/<p className="truncate text-\[11px\] text-muted-foreground">/);
+  });
+});
+
 describe("StudyTube search toolbar", () => {
-  // The search used to be a bare input with an onKeyDown handler inside the
-  // hero, so it scrolled away and Enter was the only way to run it.
   it("submits through a form, so Enter and the button both work", () => {
     expect(SHELF).toMatch(/<form[\s\S]*?onSubmit=\{\(e\) => \{[\s\S]*?preventDefault\(\)/);
     // The button that runs it is a submit button, not a click handler.
