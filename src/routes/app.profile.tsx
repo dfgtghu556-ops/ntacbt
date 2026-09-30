@@ -8,6 +8,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CloudOff, LogIn, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks";
+import { BackupPanel } from "@/features/backup/BackupPanel";
 import { authService } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,6 +126,12 @@ function ProfilePage() {
           </p>
         </CardContent>
       </Card>
+
+      {/*
+        Sits directly under "where your preparation lives" because that card
+        states the limitation and this one is the answer to it.
+      */}
+      <BackupPanel />
     </div>
   );
 }
