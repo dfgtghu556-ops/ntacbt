@@ -64,6 +64,57 @@ has been corrected.
 
 ---
 
+## StudyTube made YouTube-shaped
+
+Four changes, each its own commit, each gate-green, each verified against the
+real production bundle rather than the dev server.
+
+| Commit    | Change                                                                      |
+| --------- | --------------------------------------------------------------------------- |
+| `5d84fb5` | Shelves stay horizontal at every width, with paging arrows from `lg`        |
+| `03ee943` | Filter row moved above the shelves, sticky, as a labelled group             |
+| `8d3d731` | Search moved out of the hero into the sticky toolbar, so it stays reachable |
+| `5f81666` | Hero compacted inside its card — brand, selects, focus chips                |
+
+### The two that turned out to be already done
+
+The approved plan called for a sticky top bar and a collapsible left sidebar.
+**Both already exist in the app shell** (`src/routes/app.tsx`): a
+`sticky top-0 z-30 h-14` header with a centred `max-w-xl` search, and a
+`fixed top-14 bottom-0 left-0 w-52` sidebar rendering `NavPanel`. Building
+StudyTube copies of either would have been duplication, not improvement, so they
+were not built.
+
+The search change was adapted accordingly. The shell bar searches the whole app
+(`/app/search`); StudyTube's search is section-scoped and now lives in the
+sticky toolbar above the shelves. Two identical centred searches on one screen
+would read as a bug.
+
+### What the production bundle actually serves
+
+Verified with `NITRO_PRESET=node-server npm run build` then
+`node .output/server/index.mjs`, curling `/app/studytube` (HTTP 200, 132,741
+bytes of real SSR HTML):
+
+- the sticky toolbar, with `sticky top-14 z-20` and a labelled filter group
+- 3 shelves rendered server-side, each with 2 labelled arrow buttons — 6 total
+- `sm:grid-cols-2`, `lg:grid-cols-3` and `2xl:grid-cols-4` all absent
+- the search input present exactly once, not duplicated
+
+### One thing I got wrong and reverted
+
+I first shrank the hero card's padding from `p-6 sm:p-8` to `p-4 sm:p-5`.
+`src/test/dashboard-ia.test.ts` failed, and it was right to. That test pins every
+page hero to `rounded-2xl … p-6 sm:p-8` because the two heroes once drifted
+apart and StudyTube was missing from the test's file list, which is how it
+drifted. Changing one page's hero alone reintroduces exactly that.
+
+The padding was reverted and the compaction happens inside the card instead. If
+smaller heroes are wanted, that is a decision for both pages, taken
+deliberately.
+
+---
+
 ## Must be done before deployment
 
 ### 1. Add `.vercel/` to `.gitignore`
