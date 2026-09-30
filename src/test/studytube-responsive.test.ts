@@ -169,7 +169,20 @@ describe("StudyTube filter row", () => {
     // shell header is `h-14` and `sticky top-0`, so anything sticky inside the
     // content has to start below it or it tucks underneath and is lost.
     expect(SHELF).toMatch(/sticky top-14 z-20/);
-    expect(SHELF).toMatch(/bg-background\/90 px-3 py-2 backdrop-blur/);
+    expect(SHELF).toMatch(/bg-background\/90 px-3 py-2\.5 backdrop-blur/);
+  });
+
+  it("shares the toolbar with the search, so both stay reachable", () => {
+    // One sticky container holds the search form and the filter row. If they
+    // were split into two sticky elements they would stack and eat the screen;
+    // if the search went back in the hero it would scroll away again.
+    const toolbar = /sticky top-14 z-20[^]*?role="group"/;
+    expect(SHELF).toMatch(toolbar);
+    // The search is inside that same block, above the filter row.
+    const at = SHELF.indexOf('aria-label="Search a topic, chapter or teacher"');
+    const filters = SHELF.indexOf('aria-label="Filter lectures"');
+    expect(at).toBeGreaterThan(-1);
+    expect(filters).toBeGreaterThan(at);
   });
 
   it("is a labelled group, not a bare row of buttons", () => {
@@ -186,5 +199,33 @@ describe("StudyTube filter row", () => {
     expect(SHELF).toMatch(/\["Mathematics", "Maths"\]/);
     expect(SHELF).toMatch(/\["oneshot", "One-shots"\]/);
     expect(SHELF).toMatch(/\["revision", "Revision"\]/);
+  });
+});
+
+describe("StudyTube search toolbar", () => {
+  // The search used to be a bare input with an onKeyDown handler inside the
+  // hero, so it scrolled away and Enter was the only way to run it.
+  it("submits through a form, so Enter and the button both work", () => {
+    expect(SHELF).toMatch(/<form[\s\S]*?onSubmit=\{\(e\) => \{[\s\S]*?preventDefault\(\)/);
+    // The button that runs it is a submit button, not a click handler.
+    expect(SHELF).toMatch(/type="submit"[\s\S]*?>\s*Search\s*</);
+    // The bare onKeyDown search trigger is gone - a form owns that now.
+    expect(SHELF).not.toContain('onKeyDown={(e) => e.key === "Enter" && openSearchQuery(query)}');
+  });
+
+  it("does not let the Preferences toggle submit the search form", () => {
+    // Both buttons now sit inside the form. Without an explicit type the
+    // Preferences toggle would default to submit and run a search every time a
+    // student opened their preferences.
+    const prefs = /<button\s+type="button"\s+onClick=\{\(\) => setOpen\(\(v\) => !v\)\}/;
+    expect(SHELF).toMatch(prefs);
+  });
+
+  it("is not a second copy of the shell's global search bar", () => {
+    // The shell header already searches the whole app. Duplicating its centred
+    // search inside StudyTube would read as a bug, so this one stays section
+    // scoped and keeps its own label.
+    expect(SHELF).toMatch(/aria-label="Search a topic, chapter or teacher"/);
+    expect(SHELF).not.toMatch(/aria-label="Search NTACBT"/);
   });
 });

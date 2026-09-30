@@ -699,33 +699,6 @@ function StudyTube() {
                 ? " CBSE Class 12 boards — NCERT line-by-line, derivations, board-pattern PYQ."
                 : " Class 11 foundation — build the base for JEE + boards."}
         </p>
-
-        {/* Hero search */}
-        <div className="relative mt-4 flex flex-col gap-2 sm:flex-row">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && openSearchQuery(query)}
-              aria-label="Search a topic, chapter or teacher"
-              placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
-              className="w-full rounded-2xl border border-border bg-background py-3 pr-4 pl-11 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <button
-            onClick={() => openSearchQuery(query)}
-            className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:shrink-0"
-          >
-            Search
-          </button>
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="rounded-2xl border border-border px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:shrink-0"
-          >
-            {open ? "Hide" : " Preferences"}
-          </button>
-        </div>
       </section>
 
       {open ? (
@@ -784,18 +757,64 @@ function StudyTube() {
       ) : null}
 
       {/*
-        The filter row, where YouTube puts it: immediately above the content it
-        filters, not buried in the hero. It used to sit under the subject chips
-        inside the hero card, so on a phone it was below the brand, two selects,
-        the focus chips and a paragraph before a student could narrow anything.
+        One sticky toolbar holding the search and the filter row.
 
-        Sticky under the shell's own 3.5rem header, so it stays reachable while
-        the shelves scroll past it - the whole point of moving it out of a card
-        that scrolls away.
+        The search used to live in the hero, so it scrolled away with it: a
+        student three shelves down who wanted a different topic had to scroll
+        all the way back up. It now sits directly above the content it searches,
+        which is where YouTube keeps it.
+
+        This is deliberately NOT a second copy of the shell's own top bar. The
+        shell bar searches the whole app (`/app/search`); this one searches
+        StudyTube, and duplicating the shell's centred search inside the section
+        would read as a bug. It is scoped to the section instead.
+
+        `top-14` clears the shell header, which is `h-14` and `sticky top-0`.
       */}
-      <div className="sticky top-14 z-20 -mx-3 border-b border-border/60 bg-background/90 px-3 py-2 backdrop-blur sm:-mx-5 sm:px-5">
+      <div className="sticky top-14 z-20 -mx-3 mb-4 border-y border-border/60 bg-background/90 px-3 py-2.5 backdrop-blur sm:-mx-5 sm:px-5">
+        <form
+          className="flex flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            openSearchQuery(query);
+          }}
+        >
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search a topic, chapter or teacher"
+              placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
+              className="w-full rounded-full border border-border bg-background py-2.5 pr-4 pl-10 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:shrink-0"
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-full border border-border px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:shrink-0"
+          >
+            {open ? "Hide" : " Preferences"}
+          </button>
+        </form>
+
+        {/*
+          The filter row, where YouTube puts it: immediately above the content it
+          filters, not buried in the hero. It used to sit under the subject chips
+          inside the hero card, so on a phone it was below the brand, two selects,
+          the focus chips and a paragraph before a student could narrow anything.
+
+          It shares the toolbar's sticky container, so search and filter stay
+          reachable together while the shelves scroll past.
+        */}
         <div
-          className="scrollbar-none flex gap-2 overflow-x-auto pb-0.5"
+          className="scrollbar-none mt-2 flex gap-2 overflow-x-auto pb-0.5"
           role="group"
           aria-label="Filter lectures"
         >
