@@ -3208,6 +3208,17 @@ textarea:focus-visible,
   .yt-main {
     padding: 8px 10px 20px;
   }
+  /* Search results are the one grid outside a `.yt-shelf`, so the carousel
+         rule below never reached them and they stayed a single full-width
+         column while all seven shelves beside them were compact swipeable
+         cards. Give them the same density instead: two-up on phones, back to
+         one-up on the smallest handsets where 2-up thumbnails get unreadable.
+         The results header carries an inline `grid-column: 1/-1`, so it keeps
+         spanning the full row at every one of these widths. */
+  .yt-main > .yt-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 10px;
+  }
   /* Slideable shelves: horizontal carousel with snap. Global app-swipe
            is disabled inside .yt-app so this scrolls smoothly. */
   .yt-shelf .yt-grid {
@@ -3223,15 +3234,25 @@ textarea:focus-visible,
   .yt-shelf .yt-grid::-webkit-scrollbar {
     display: none;
   }
+  /* 66vw rather than 72vw: on a 320px phone that leaves ~60px of the next
+         card peeking in, which is the only cue a scroller is swipeable - the
+         scrollbar itself is hidden. Above ~380px the cap wins and nothing
+         changes, so tablets and large phones keep the wider card. */
   .yt-shelf .yt-grid > .yt-card,
   .yt-shelf .yt-grid > .yt-note-card {
     flex: 0 0 auto;
-    width: min(250px, 72vw);
+    width: min(250px, 66vw);
     scroll-snap-align: start;
   }
   .yt-shelf .yt-grid > .yt-empty {
     width: 100%;
     flex: 0 0 100%;
+  }
+}
+/* Smallest handsets: one big readable card rather than two cramped ones. */
+@media (max-width: 380px) {
+  .yt-main > .yt-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

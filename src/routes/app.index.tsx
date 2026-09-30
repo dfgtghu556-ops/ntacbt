@@ -29,7 +29,7 @@ import { computeReadiness } from "@/features/readiness/readiness";
 import { computeSurvival, computeDualLane } from "@/features/readiness/survival";
 import { computeWellness } from "@/features/readiness/wellness";
 import { predictRank } from "@/features/readiness/predict";
-import { useLang, t } from "@/lib/lang";
+import { useLang } from "@/lib/lang";
 import { buildMicroDrill } from "@/features/cbt/microDrill";
 import { mistakeFromStore } from "@/features/cbt/mistake";
 import { adaptTasks } from "@/features/planner/adapt";

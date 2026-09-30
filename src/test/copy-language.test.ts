@@ -113,4 +113,23 @@ describe("copy language", () => {
     const mission = read("src/features/dashboard/components/SurvivalMission.tsx");
     expect(mission).not.toMatch(/lang as "hinglish"/);
   });
+
+  it("labels the language toggle for what it actually controls", () => {
+    // The toggle is real but narrow: its live consumers are the read-aloud voice
+    // in `src/lib/speech.ts` and the three SurvivalMission labels above. It does
+    // not translate the app. Calling it "Change language" promised a translated
+    // UI that does not exist, so the button now names the voice it switches.
+    const shell = read("src/routes/app.tsx");
+    expect(shell).toMatch(/aria-label="Change read-aloud language"/);
+    expect(shell).not.toMatch(/aria-label="Change language"/);
+    expect(shell).not.toMatch(/title="Switch language/);
+  });
+
+  it("does not import the dictionary where it is never called", () => {
+    // app.index.tsx imported `t` and never used it - the only `t` in scope was a
+    // local `.filter((t) => t.isWeakTarget)` arrow parameter shadowing it.
+    const dash = read("src/routes/app.index.tsx");
+    expect(dash).toMatch(/import \{ useLang \} from "@\/lib\/lang"/);
+    expect(dash).not.toMatch(/import \{ useLang, t \} from "@\/lib\/lang"/);
+  });
 });

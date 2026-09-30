@@ -94,6 +94,14 @@ function AppLayout() {
         </form>
 
         <div className="flex items-center gap-1.5">
+          {/*
+            This control is labelled for what it actually does. It persists a
+            language choice (`src/lib/lang.ts`) whose only live consumers are
+            the read-aloud voice in `src/lib/speech.ts` and three labels in
+            SurvivalMission - it does not translate the app. Calling it
+            "Change language" promised a translated UI that does not exist, so
+            the button now names the voice it really switches.
+          */}
           <button
             type="button"
             onClick={() => {
@@ -102,8 +110,8 @@ function AppLayout() {
               setLang(next);
             }}
             className="inline-flex items-center gap-1.5 rounded-full border border-input px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
-            aria-label="Change language"
-            title="Switch language (Hinglish / English / Hindi)"
+            aria-label="Change read-aloud language"
+            title="Saarthi's read-aloud voice: Hinglish / English / Hindi"
           >
             <Sparkles className="h-3.5 w-3.5" /> {LANG_LABEL[lang]}
           </button>

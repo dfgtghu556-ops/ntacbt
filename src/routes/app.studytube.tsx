@@ -955,24 +955,36 @@ function Shelf({
           ) : null}
         </div>
       </div>
+      {/*
+        Below `sm` each shelf is a snap carousel, matching the legacy tool's own
+        StudyTube shelves (`public/css/legacy.css`, `@media (max-width: 900px)`),
+        so the two StudyTubes behave the same on a phone instead of one being a
+        single tall column. Cards are `min(250px, 66vw)` so the next one peeks
+        in - the only cue a scroller is swipeable, because the scrollbar is
+        hidden. From `sm` up it is the same responsive grid it always was.
+      */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 2xl:grid-cols-4">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-52 animate-pulse rounded-2xl border bg-muted/40" />
+            <div
+              key={i}
+              className="h-52 w-[min(250px,66vw)] shrink-0 snap-start animate-pulse rounded-2xl border bg-muted/40 sm:w-auto"
+            />
           ))}
         </div>
       ) : items.length ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 2xl:grid-cols-4">
           {items.map((v) => (
-            <VideoCard
-              key={v.id}
-              video={v}
-              onPlay={onPlay}
-              onToggleWatchLater={onSave}
-              onComplete={onDone}
-              watchLater={watchLaterIds.includes(v.id)}
-              watched={!!watchedIds[v.id]}
-            />
+            <div key={v.id} className="w-[min(250px,66vw)] shrink-0 snap-start sm:w-auto">
+              <VideoCard
+                video={v}
+                onPlay={onPlay}
+                onToggleWatchLater={onSave}
+                onComplete={onDone}
+                watchLater={watchLaterIds.includes(v.id)}
+                watched={!!watchedIds[v.id]}
+              />
+            </div>
           ))}
         </div>
       ) : (
