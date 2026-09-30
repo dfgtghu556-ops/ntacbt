@@ -41,23 +41,33 @@ const APP = read("public/js/app.js");
 const SHELF = read("src/routes/app.studytube.tsx");
 
 /**
- * Pull a top-level `@media` block out of the stylesheet, matched by its query
- * text. Comments are blanked to spaces first so a `}` inside a comment cannot
- * end the block early - the same reason `legacy-dark-mode.test.ts` does it.
+ * Pull a `@media` block out of the stylesheet, matched by its query text *and*
+ * by a marker rule it must contain. The marker is not optional: this file has
+ * more than one `@media (max-width: 900px)`, so matching on the query alone
+ * silently returns the wrong block. Comments are blanked to spaces first so a
+ * `}` inside a comment cannot end the block early - the same reason
+ * `legacy-dark-mode.test.ts` does it.
  */
-function mediaBlock(query: string): string {
+function mediaBlock(query: string, marker: string): string {
   const src = CSS.replace(/\/\*[\s\S]*?\*\//g, (m) => " ".repeat(m.length));
-  const at = src.indexOf(`@media ${query}`);
-  if (at === -1) return "";
-  const open = src.indexOf("{", at);
-  if (open === -1) return "";
-  let depth = 1;
-  for (let i = open + 1; i < src.length; i++) {
-    if (src[i] === "{") depth++;
-    else if (src[i] === "}") depth--;
-    if (depth === 0) return src.slice(open + 1, i);
+  const needle = `@media ${query}`;
+  let from = 0;
+  for (;;) {
+    const at = src.indexOf(needle, from);
+    if (at === -1) return "";
+    const open = src.indexOf("{", at);
+    if (open === -1) return "";
+    let depth = 1;
+    let end = open + 1;
+    for (; end < src.length; end++) {
+      if (src[end] === "{") depth++;
+      else if (src[end] === "}") depth--;
+      if (depth === 0) break;
+    }
+    const body = src.slice(open + 1, end);
+    if (body.includes(marker)) return body;
+    from = end + 1;
   }
-  return "";
 }
 
 describe("legacy StudyTube on a phone", () => {
@@ -65,7 +75,7 @@ describe("legacy StudyTube on a phone", () => {
     // The grid at app.js is `<div data-searchResults class="yt-grid">`, a direct
     // child of the `.yt-main` column and outside every `.yt-shelf`. The rule
     // that matches exactly that is `.yt-main > .yt-grid`.
-    const block = mediaBlock("(max-width: 900px)");
+    const block = mediaBlock("(max-width: 900px)", ".yt-shelf .yt-grid");
     expect(block, "the 900px block vanished").not.toBe("");
     expect(block).toMatch(/\.yt-main\s*>\s*\.yt-grid\s*\{/);
     expect(block).toMatch(/repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
@@ -79,13 +89,13 @@ describe("legacy StudyTube on a phone", () => {
   });
 
   it("falls back to one readable column on the smallest handsets", () => {
-    const block = mediaBlock("(max-width: 380px)");
+    const block = mediaBlock("(max-width: 380px)", ".yt-main > .yt-grid");
     expect(block, "the 380px block vanished").not.toBe("");
     expect(block).toMatch(/\.yt-main\s*>\s*\.yt-grid\s*\{[^}]*minmax\(0,\s*1fr\)/);
   });
 
   it("leaves the next carousel card peeking in as the swipe cue", () => {
-    const block = mediaBlock("(max-width: 900px)");
+    const block = mediaBlock("(max-width: 900px)", ".yt-shelf .yt-grid");
     expect(block).toMatch(/width:\s*min\(250px,\s*66vw\)/);
     expect(block).not.toMatch(/width:\s*min\(250px,\s*72vw\)/);
   });
@@ -106,9 +116,8 @@ describe("React StudyTube on a phone", () => {
     // grid so nothing is capped once it is a grid again.
     expect(SHELF).toMatch(/w-\[min\(250px,66vw\)\] shrink-0 snap-start sm:w-auto/);
     // The skeleton uses the same width so the loading state matches the result.
-    expect(SHELF).toMatch(
-      /h-52 w-\[min\(250px,66vw\)\] shrink-0 snap-start animate-pulse/,
-    );
+    const skeleton = /h-52 w-\[min\(250px,66vw\)\] shrink-0 snap-start animate-pulse/;
+    expect(SHELF).toMatch(skeleton);
   });
 
   it("keeps the responsive grid it always had from sm upwards", () => {
