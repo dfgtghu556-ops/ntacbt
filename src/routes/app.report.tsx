@@ -4,22 +4,63 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BadgeCheck,
   BookOpen,
   BrainCircuit,
   CalendarCheck,
   CircleAlert,
   Flame,
   Gauge,
+  Layers,
   ListChecks,
+  Share2,
   Target,
   TrendingUp,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { DataStore } from "@/lib/store";
+import { getLang, type Lang } from "@/lib/lang";
 import { loadFocusStore } from "@/features/focus/focus";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { buildMentorReport, type MentorReport } from "@/features/mentor/report";
+import { mentorSpeechScript } from "@/features/mentor/speech";
+import {
+  hasVoiceFor,
+  isSpeechSupported,
+  speak,
+  speechLocale,
+  stopSpeaking,
+  whenVoicesReady,
+} from "@/lib/speech";
+import {
+  PRIVACY,
+  buildWeeklyReport,
+  reportToMarkdown,
+  reportToText,
+  type ShareableReport,
+} from "@/features/report/share";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/report")({
+  head: () => ({
+    meta: [
+      { title: "Shareable JEE Progress Report for Parents and Mentors" },
+      {
+        name: "description",
+        content:
+          "A one-page report of what you have practised, where you are strong, and what to do next — shareable with a parent or mentor.",
+      },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Your JEE Readiness Report",
+        "A one-page readiness report built from your real attempt history, with every number checkable.",
+        "/app/report",
+      ),
+    ],
+  }),
   component: Report,
 });
 
@@ -31,8 +72,9 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 
 const PRIORITY_COLOR: Record<string, string> = {
-  critical: "border-rose-300 bg-rose-50 text-rose-700",
-  high: "border-amber-300 bg-amber-50 text-amber-700",
+  critical:
+    "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
+  high: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
   medium: "border-sky-300 bg-sky-50 text-sky-700",
   low: "border-muted bg-muted text-muted-foreground",
 };
@@ -50,19 +92,75 @@ function pctBar(value: number, color?: string) {
 
 function Report() {
   const [report, setReport] = useState<MentorReport | null>(null);
+  const [weekly, setWeekly] = useState<ShareableReport | null>(null);
+  const [copied, setCopied] = useState<"text" | "markdown" | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [voiceReady, setVoiceReady] = useState(false);
+  const [lang, setLangState] = useState<Lang>("hinglish");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const store = new DataStore();
+    const focus = loadFocusStore();
+    const studytube = loadStudyTubeProgress();
     setReport(
       buildMentorReport({
         store,
-        focus: loadFocusStore(),
-        studytube: loadStudyTubeProgress(),
+        focus,
+        studytube,
       }),
     );
+    // The shareable one-pager is built from the same stores through an explicit
+    // allowlist, so it can never carry the private fields the mentor report has
+    // access to.
+    try {
+      setWeekly(buildWeeklyReport({ store, focus, studytube }));
+    } catch {
+      setWeekly(null);
+    }
     setLoaded(true);
   }, []);
+
+  // The voice list populates asynchronously on most browsers, so availability
+  // is checked once after mount rather than assumed during the first render.
+  useEffect(() => {
+    let alive = true;
+    setLangState(getLang());
+    void whenVoicesReady().then(() => {
+      if (alive) setVoiceReady(true);
+    });
+    // Leaving the page mid-sentence must not keep talking.
+    return () => {
+      alive = false;
+      stopSpeaking();
+    };
+  }, []);
+
+  function listen() {
+    if (!report) return;
+    if (speaking) {
+      stopSpeaking();
+      setSpeaking(false);
+      return;
+    }
+    const ok = speak(mentorSpeechScript(report), lang);
+    setSpeaking(ok);
+    if (!ok) setVoiceReady(true);
+  }
+
+  async function copy(label: "text" | "markdown") {
+    if (!weekly) return;
+    const body = label === "text" ? reportToText(weekly) : reportToMarkdown(weekly);
+    try {
+      await navigator.clipboard.writeText(body);
+      setCopied(label);
+      window.setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // Clipboard is unavailable (insecure context, denied permission). The
+      // textarea below is the fallback, so a failure here is not an error.
+      setCopied(null);
+    }
+  }
 
   if (!loaded || !report) {
     return <div className="h-96 animate-pulse rounded-xl border bg-muted/40" />;
@@ -107,8 +205,36 @@ function Report() {
             <p className="mt-1 text-xs capitalize text-muted-foreground">{report.readinessLevel}</p>
           </div>
         </div>
-        <p className="mt-4 text-sm text-muted-foreground">{report.summary}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <p className="min-w-0 flex-1 text-sm text-muted-foreground">{report.summary}</p>
+          <button
+            onClick={listen}
+            disabled={!isSpeechSupported() || (voiceReady && !hasVoiceFor(speechLocale(lang)))}
+            title={
+              isSpeechSupported()
+                ? voiceReady && !hasVoiceFor(speechLocale(lang))
+                  ? `No ${speechLocale(lang)} voice is installed on this device.`
+                  : "Read the summary aloud"
+                : "This browser has no speech support."
+            }
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+            {speaking ? "Stop" : "Listen"}
+          </button>
+        </div>
+        {/* Say why the button is dead rather than leaving a silent control. */}
+        {isSpeechSupported() && voiceReady && !hasVoiceFor(speechLocale(lang)) ? (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            No {speechLocale(lang)} voice is installed on this device, so the audio summary is
+            unavailable. The written report is unaffected.
+          </p>
+        ) : null}
       </section>
+
+      {/* A5 — shareable parent / mentee one-pager. Sits directly under the hero
+          because it is the thing a student came to this page to hand over. */}
+      {weekly ? <SharePanel weekly={weekly} copied={copied} onCopy={copy} /> : null}
 
       {/* KPI grid */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -172,7 +298,10 @@ function Report() {
           {report.risks.length ? (
             <div className="mt-3 space-y-2">
               {report.risks.map((r, i) => (
-                <div key={i} className="rounded-md border border-amber-200 bg-amber-50/50 p-3">
+                <div
+                  key={i}
+                  className="rounded-md border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/30"
+                >
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <CircleAlert className="h-4 w-4 text-amber-600" /> {r.title}
                   </div>
@@ -258,6 +387,93 @@ function Report() {
         )}
       </section>
 
+      {/* My preparation — the combined per-chapter row the report exists for:
+          syllabus progress, videos done, PYQs attempted and accuracy in one
+          place, with the next action attached. */}
+      <section className="rounded-xl border p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Layers className="h-4 w-4 text-primary" /> My preparation, chapter by chapter
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {report.preparation.chaptersTouched === 0
+            ? "Nothing tracked yet — sit a test or finish a lesson and this fills in."
+            : `${report.preparation.chaptersTouched} chapter${report.preparation.chaptersTouched === 1 ? "" : "s"} touched · ${report.preparation.questionsAttempted} questions · ${report.preparation.pyqAttempts} from previous-year papers · ${report.preparation.lessonsFinished} lesson${report.preparation.lessonsFinished === 1 ? "" : "s"} finished${report.preparation.accuracy === null ? "" : ` · ${report.preparation.accuracy}% mean accuracy over judged chapters`}`}
+        </p>
+        {report.preparation.rows.length ? (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="pb-2 pr-3 font-medium">Chapter</th>
+                  <th className="pb-2 pr-3 font-medium">State</th>
+                  <th className="pb-2 pr-3 text-right font-medium">Accuracy</th>
+                  <th className="pb-2 pr-3 text-right font-medium">Qs</th>
+                  <th className="pb-2 pr-3 text-right font-medium">PYQ</th>
+                  <th className="pb-2 pr-3 text-right font-medium">Videos</th>
+                  <th className="pb-2 font-medium">Next</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.preparation.rows.slice(0, 10).map((r) => (
+                  <tr key={`${r.subject}|${r.chapter}`} className="border-t align-top">
+                    <td className="py-2 pr-3">
+                      <span className="font-medium">{r.chapter}</span>
+                      <span className="ml-1 text-xs text-muted-foreground">{r.subject}</span>
+                      <p className="text-xs text-muted-foreground">{r.reason}</p>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span
+                        className={
+                          "whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium " +
+                          masteryTone(r.state)
+                        }
+                      >
+                        {r.state}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 text-right font-semibold">
+                      {r.accuracy === null ? (
+                        <span className="text-xs font-normal text-muted-foreground">too few</span>
+                      ) : (
+                        `${r.accuracy}%`
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-right">{r.attempts}</td>
+                    <td className="py-2 pr-3 text-right">{r.pyqAttempts}</td>
+                    <td className="py-2 pr-3 text-right">{r.lessonsFinished}</td>
+                    <td className="py-2 text-xs text-muted-foreground">{r.nextAction}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">
+            No chapter evidence yet. A test attempt or a finished lesson creates the first row.
+          </p>
+        )}
+      </section>
+
+      {/* Strengths — previously always empty because strongTopics was never
+          filled. Now read from the mastery store. */}
+      {report.mastery.strongTopics.length ? (
+        <section className="rounded-xl border p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <BadgeCheck className="h-4 w-4 text-primary" /> What is already working
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {report.mastery.strongTopics.map((t, i) => (
+              <span
+                key={`${t.subject}|${t.chapter}|${i}`}
+                className="rounded-full border px-3 py-1 text-xs font-medium"
+              >
+                {t.chapter} · {t.accuracy}%
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         <Link
           to="/app/planner"
@@ -274,6 +490,22 @@ function Report() {
       </div>
     </div>
   );
+}
+
+/** A chapter's state, coloured by whether it needs attention. */
+function masteryTone(state: string): string {
+  switch (state) {
+    case "Mastered":
+      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+    case "Strong":
+      return "bg-blue-500/15 text-blue-700 dark:text-blue-300";
+    case "Improving":
+      return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+    case "Learning":
+      return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
 }
 
 function Kpi({
@@ -315,6 +547,136 @@ function StatBox({ label, value, tone }: { label: string; value: string; tone?: 
     <div className="rounded-lg border p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`mt-1 text-xl font-bold ${tone === "warn" ? "text-amber-600" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * SharePanel — the A5 parent / mentee one-pager.
+ *
+ * Two rules shape this component:
+ *
+ *  1. **It shows the student what will be shared BEFORE they share it.** The
+ *     full one-pager is rendered inline, so nobody has to trust that the
+ *     clipboard copy matches what they read.
+ *  2. **It states the privacy boundary out loud.** The allowlist is printed
+ *     under the copy, because "no private data" is a claim the student should be
+ *     able to check rather than take on faith.
+ * ------------------------------------------------------------------ */
+
+function SharePanel({
+  weekly,
+  copied,
+  onCopy,
+}: {
+  weekly: ShareableReport;
+  copied: "text" | "markdown" | null;
+  onCopy: (label: "text" | "markdown") => void;
+}) {
+  const [showRaw, setShowRaw] = useState(false);
+  const raw = showRaw ? reportToMarkdown(weekly) : reportToText(weekly);
+
+  return (
+    <section className="rounded-2xl border p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Share2 className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Share with a parent or mentor</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              A read-only one-pager: attendance, completion, weak chapters and the next step.{" "}
+              {weekly.window.from} → {weekly.window.to}.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => onCopy("text")}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"
+          >
+            <Share2 className="h-3.5 w-3.5" /> {copied === "text" ? "Copied" : "Copy as text"}
+          </button>
+          <button
+            onClick={() => onCopy("markdown")}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input px-3 py-2 text-xs font-medium"
+          >
+            {copied === "markdown" ? "Copied" : "Copy as Markdown"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ShareStat
+          label="Days studied"
+          value={`${weekly.attendance.daysStudied}/${weekly.attendance.daysInWindow}`}
+        />
+        <ShareStat label="Focus time" value={`${weekly.effort.focusMinutes} min`} />
+        <ShareStat
+          label="Tasks done"
+          value={`${weekly.completion.tasksDone}/${weekly.completion.tasksPlanned}`}
+        />
+        <ShareStat
+          label="Mean accuracy"
+          value={
+            weekly.evidence.accuracy === null ? "not enough data" : `${weekly.evidence.accuracy}%`
+          }
+        />
+      </div>
+
+      <div className="mt-4 rounded-xl border bg-muted/30 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Exactly what gets shared
+          </h3>
+          <button onClick={() => setShowRaw((v) => !v)} className="text-xs text-primary underline">
+            {showRaw ? "Show plain text" : "Show Markdown"}
+          </button>
+        </div>
+        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed">
+          {raw}
+        </pre>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border p-3">
+          <h4 className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400">
+            <BadgeCheck className="h-3.5 w-3.5" /> Included
+          </h4>
+          <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+            {PRIVACY.included.map((item) => (
+              <li key={item}>· {item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-xl border p-3">
+          <h4 className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
+            <CircleAlert className="h-3.5 w-3.5" /> Never included
+          </h4>
+          <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+            {PRIVACY.excluded.map((item) => (
+              <li key={item}>· {item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        The one-pager is built from an explicit allowlist, so a field that is not listed above is
+        never read — it cannot leak even by accident.
+      </p>
+    </section>
+  );
+}
+
+function ShareStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

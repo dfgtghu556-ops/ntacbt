@@ -111,7 +111,7 @@ work).
 
 ### Tier 1 — build these first (they fix the real problems)
 
-**F1. Goal-based To-Do engine instead of rigid timetable**
+**F1. Goal-based To-Do engine instead of rigid timetable** ✅ DONE (§24)
 Replace/augment the hour-by-hour planner with a **daily priority to-do list**
 (the research: "make a to-do list, complete it whenever"). Each item = a goal
 with effort minutes, auto-sorted by weakness + weightage. The student checks off
@@ -121,7 +121,7 @@ goals (goal-based progress), not "sat for X hours."
 **F2. "Am I on track?" Mission + Survival Score** (see §2)
 → Dashboard. `app.index.tsx` + `readiness.ts` + `planner/adapt.ts`.
 
-**F3. Auto re-plan on missed/overrun (guilt-free recovery)**
+**F3. Auto re-plan on missed/overrun (guilt-free recovery)** ✅ DONE (§24)
 Extend the existing rebalance: missed a day → automatically slot missed tasks +
 rebalance; finished early → auto-pull the next task. This kills pain #3 (the
 #1 quitting trigger).
@@ -193,7 +193,7 @@ are correct (real watch-minutes already fixed) and show *how* each is computed.
 ## 5. Prioritised 30/60/90 roadmap
 
 **Week 1 — trust & no dead-ends:**
-- F3 auto re-plan + F1 to-do engine (fixes the top quitting trigger).
+- F3 auto re-plan + F1 to-do engine (fixes the top quitting trigger). ✅ DONE
 - F10 correct, always-visible progress (real watch-minutes).
 - Unify card design; fix empty states; consolidate nav shell.
 

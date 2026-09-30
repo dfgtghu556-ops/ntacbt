@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — NTACBT</title>
+    <meta name="theme-color" content="#1b1b4b" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: #1b1b4b;
+        color: #fff;
+      }
+      .card {
+        max-width: 30rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+      }
+      p {
+        margin: 0 0 0.75rem;
+        line-height: 1.6;
+        opacity: 0.85;
+      }
+      .hint {
+        font-size: 0.8125rem;
+        opacity: 0.7;
+      }
+      a {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        background: #fff;
+        color: #1b1b4b;
+        font-weight: 600;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>You're offline</h1>
+      <p>This page hasn't been saved on your device yet, and there's no connection to fetch it.</p>
+      <p class="hint">
+        Anything you've already studied is safe — your attempts, plan and progress are stored on
+        this device, not in the cloud. Open the app once while online and it will be available
+        offline next time.
+      </p>
+      <a href="/app">Open NTACBT</a>
+    </div>
+  </body>
+</html>

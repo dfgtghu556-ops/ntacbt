@@ -1,8 +1,15 @@
+# NTACBT — https://github.com/dfgtghu556-ops/ntacbt
 User-agent: Googlebot
 Allow: /
+Disallow: /cbt
+Disallow: /app/auth/
+Disallow: /app/search
 
 User-agent: Bingbot
 Allow: /
+Disallow: /cbt
+Disallow: /app/auth/
+Disallow: /app/search
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +19,8 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /cbt
+Disallow: /app/auth/
+Disallow: /app/search
+
+Sitemap: https://ntacbt.vercel.app/sitemap.xml

@@ -1,12 +1,70 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { pageSummary, pageWindow, paginate } from "@/features/ui/pagination";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, FileText, TestTube2 } from "lucide-react";
-import { DEFAULT_TEST_MINUTES, type CbtTest, type Subject } from "@/features/cbt/types";
+import { DEFAULT_TEST_MINUTES, type CbtTest } from "@/features/cbt/types";
+import { toSubject } from "@/features/academics/subject";
 import { saveCbtTest } from "@/features/cbt/store";
+import {
+  loadPaperIndex,
+  loadPaperWithFallback,
+  type PaperMeta,
+  type PyqQuestion,
+} from "@/features/pyq/store";
+import { socialMeta } from "@/config/site";
 
 type PyqSource = "api" | "baked" | "error";
 
+/**
+ * The paper list, read on the server at request time.
+ *
+ * This is the fix for the app's biggest publishing gap. Every data route used to
+ * fetch in `useEffect`, so the HTML shipped with a spinner and no content —
+ * verified with `curl /app/pyq`, which returned the heading and the literal
+ * string "Loading papers" and none of the 375 questions. A crawler therefore saw
+ * an empty page, and the entire value of the app — real previous-year questions
+ * — did not exist as far as search was concerned.
+ *
+ * The baked files are build artifacts on disk, so reading them in a loader costs
+ * nothing and needs no network. The client effect below still runs afterwards
+ * and upgrades to the live library API when it can reach the upstream snapshot,
+ * so this only ever *seeds* the render; it never removes the fuller list.
+ */
+const loadBakedPapers = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const raw = readFileSync(join(process.cwd(), "public", "pyq", "index.json"), "utf8");
+    const data = JSON.parse(raw) as { papers?: PaperMeta[]; index?: PaperMeta[] };
+    return data.papers ?? data.index ?? [];
+  } catch {
+    // A missing or partial bake is a normal state. Return nothing and let the
+    // client effect show its own error rather than failing the whole render.
+    return [];
+  }
+});
+
 export const Route = createFileRoute("/app/pyq")({
+  head: () => ({
+    meta: [
+      { title: "JEE Main 2026 Previous Year Papers — 375 Solved Questions" },
+      {
+        name: "description",
+        content:
+          "Practise real JEE Main 2026 questions shift by shift. 375 transcribed questions with answers and worked solutions, in an NTA-style CBT runner.",
+      },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "JEE Main 2026 Previous Year Papers — 375 Solved Questions",
+        "Practise real JEE Main 2026 questions shift by shift. 375 transcribed questions with answers and worked solutions, in an NTA-style CBT runner.",
+        "/app/pyq",
+      ),
+    ],
+  }),
+  loader: () => loadBakedPapers(),
   component: Pyq,
 });
 
@@ -26,31 +84,25 @@ interface PaperFile {
   questions?: PyqQuestion[];
 }
 
-interface PyqQuestion {
-  no: number;
-  subject: string;
-  chapter: string;
-  topic: string;
-  type: "mcq" | "integer";
-  text: string;
-  options: { label: string; text: string }[];
-  answer: string;
-  sol: string;
-}
-
-function toSubject(s: string): Subject {
-  if (s === "Physics") return "Physics";
-  if (s === "Chemistry") return "Chemistry";
-  return "Mathematics";
-}
-
 function Pyq() {
   const navigate = useNavigate();
-  const [papers, setPapers] = useState<Paper[]>([]);
+  // Seeded from the server so the first HTML already lists the papers.
+  const baked = Route.useLoaderData();
+  const [papers, setPapers] = useState<Paper[]>(() => (baked as Paper[]) ?? []);
   const [source, setSource] = useState<PyqSource>("baked");
-  const [loading, setLoading] = useState(true);
+  // Only show the spinner when there is nothing to show. The loader has already
+  // put the baked papers in `papers`, so gating the render on this flag would
+  // hide them on the server and ship a spinner instead of content — which is
+  // the exact defect this loader was added to fix.
+  const [loading, setLoading] = useState(baked.length === 0);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Paper | null>(null);
+  /**
+   * The paper list is paginated because the full historical library can be
+   * hundreds of papers, and rendering every card at once is the difference
+   * between usable and not on a low-end phone.
+   */
+  const [paperPage, setPaperPage] = useState(1);
   const [questions, setQuestions] = useState<PyqQuestion[]>([]);
   const [qLoading, setQLoading] = useState(false);
 
@@ -74,10 +126,7 @@ function Pyq() {
     }
     // 2) Offline fallback: papers baked into the build (public/pyq/).
     try {
-      const r = await fetch("/pyq/index.json", { cache: "no-store" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as { index?: Paper[]; papers?: Paper[] };
-      const list = data.index ?? data.papers ?? [];
+      const list = await loadPaperIndex();
       if (!list.length) throw new Error("No papers baked yet.");
       setPapers(list);
       setSource("baked");
@@ -100,26 +149,8 @@ function Pyq() {
     // fall back to the baked per-paper file when the server can't reach the
     // upstream snapshot (offline builds, preview sandboxes, etc.).
     try {
-      const r = await fetch(`/api/public/pyq-papers?paper=${encodeURIComponent(paper.id)}`, {
-        cache: "no-store",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as { paper?: { questions?: PyqQuestion[] } };
-      const qs = data.paper?.questions ?? [];
-      if (qs.length) {
-        setQuestions(qs);
-        setQLoading(false);
-        return;
-      }
-      throw new Error("No questions in API payload.");
-    } catch {
-      /* fall through to baked paper */
-    }
-    try {
-      const r = await fetch(`/pyq/${paper.id}.json`, { cache: "no-store" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as PaperFile;
-      setQuestions(data.questions ?? data.paper?.questions ?? []);
+      const qs = await loadPaperWithFallback(paper.id);
+      setQuestions(qs);
     } catch {
       setQuestions([]);
     } finally {
@@ -152,6 +183,11 @@ function Pyq() {
     void navigate({ to: "/cbt", search: { testId: test.id, name: test.name } });
   }
 
+  // One page of papers at a time. The full historical library can be hundreds
+  // of papers, and rendering every card at once is the difference between usable
+  // and not on a low-end phone.
+  const page = paginate(papers, { page: paperPage, pageSize: 24 });
+
   return (
     <div className="space-y-6">
       <section>
@@ -160,7 +196,7 @@ function Pyq() {
           Official-style previous-year papers from the verified academic snapshot. Answers carry the
           exact NTA keys (including ranges, accepted values and bonus questions).
         </p>
-        <div className="mt-3 rounded-xl border border-primary/30 bg-accent/40 p-4 text-sm">
+        <div className="mt-3 rounded-2xl border border-primary/30 bg-accent/40 p-4 text-sm">
           <p className="font-medium">
             {source === "api"
               ? `Full historical PYQ library loaded — ${papers.length} papers, every available session, shift and year.`
@@ -197,7 +233,7 @@ function Pyq() {
           <Loader2 className="h-4 w-4 animate-spin" /> Loading papers…
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-dashed p-6 text-center">
+        <div className="rounded-2xl border border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">{error}</p>
           <button
             onClick={loadIndex}
@@ -207,28 +243,31 @@ function Pyq() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {papers.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => open(p)}
-              className="rounded-xl border p-4 text-left transition-colors hover:bg-accent/60"
-            >
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <FileText className="h-4 w-4" /> {p.year} · {p.label}
-              </div>
-              <p className="mt-2 text-lg font-semibold">{p.total} questions</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Phy {p.counts.Physics} · Chem {p.counts.Chemistry} · Math {p.counts.Mathematics} ·{" "}
-                {p.mcq} MCQ · {p.integer} integer
-              </p>
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {page.items.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => open(p)}
+                className="rounded-2xl border p-4 text-left transition-colors hover:bg-accent/60"
+              >
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FileText className="h-4 w-4" /> {p.year} · {p.label}
+                </div>
+                <p className="mt-2 text-lg font-semibold">{p.total} questions</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Phy {p.counts.Physics} · Chem {p.counts.Chemistry} · Math {p.counts.Mathematics} ·{" "}
+                  {p.mcq} MCQ · {p.integer} integer
+                </p>
+              </button>
+            ))}
+          </div>
+          <PaperPager page={page} onGo={setPaperPage} noun="papers" />
+        </>
       )}
 
       {selected ? (
-        <section className="rounded-xl border p-4">
+        <section className="rounded-2xl border p-4">
           <h2 className="text-sm font-semibold">
             {selected.label} — {selected.total} questions
           </h2>
@@ -279,5 +318,86 @@ function Pyq() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * PaperPager — accessible pagination controls for the paper grid.
+ *
+ * Phase 6 asks for pagination *and* accessibility, and the two meet here: a
+ * pager that only works with a mouse excludes keyboard and screen-reader users
+ * from navigating the library at all.
+ *
+ * So the controls are real `<button>` elements in a labelled `<nav>`, the
+ * summary is announced through a live region, the current page carries
+ * `aria-current="page"`, and elided gaps render as "…" text rather than a
+ * disabled button that invites a pointless click.
+ */
+function PaperPager({
+  page,
+  onGo,
+  noun,
+}: {
+  page: ReturnType<typeof paginate>;
+  onGo: (page: number) => void;
+  noun: string;
+}) {
+  if (page.totalPages <= 1) {
+    return (
+      <p className="mt-3 text-xs text-muted-foreground" role="status">
+        {pageSummary(page, noun)}
+      </p>
+    );
+  }
+
+  return (
+    <nav aria-label="Paper pages" className="mt-4 flex flex-wrap items-center gap-2">
+      <button
+        onClick={() => onGo(page.page - 1)}
+        disabled={!page.hasPrev}
+        className="rounded-md border border-input px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Previous
+      </button>
+
+      <ul className="flex flex-wrap items-center gap-1">
+        {pageWindow(page.page, page.totalPages).map((p, i) =>
+          p === null ? (
+            <li key={`gap-${i}`} aria-hidden="true" className="px-1 text-xs text-muted-foreground">
+              …
+            </li>
+          ) : (
+            <li key={p}>
+              <button
+                onClick={() => onGo(p)}
+                aria-current={p === page.page ? "page" : undefined}
+                aria-label={`Page ${p} of ${page.totalPages}`}
+                className={
+                  p === page.page
+                    ? "min-w-8 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground"
+                    : "min-w-8 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent/60"
+                }
+              >
+                {p}
+              </button>
+            </li>
+          ),
+        )}
+      </ul>
+
+      <button
+        onClick={() => onGo(page.page + 1)}
+        disabled={!page.hasNext}
+        className="rounded-md border border-input px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+      </button>
+
+      {/* Announced when the page changes, so a screen-reader user knows the
+          grid below is a different set of papers. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {pageSummary(page, noun)}
+      </p>
+    </nav>
   );
 }

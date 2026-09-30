@@ -91,15 +91,45 @@ export interface DualLaneReadiness {
   split: string;
 }
 
+/**
+ * Mirrors `readiness/predict.ts`. Kept as a local shape so the dashboard does
+ * not have to import the readiness engine just to type one prop.
+ */
 export interface RankPrediction {
   marks: number;
   maxMarks: number;
   percentile: number;
+  /** An ESTIMATE — 0 when `reliable` is false. */
   rank: number;
+  /** Coarse evidence-based band. Empty when `reliable` is false. */
   tier: string;
   expectation: string;
   topFix: string;
   basis: string;
+  /** False when the sample is too thin — show `fallback`, never the rank. */
+  reliable: boolean;
+  confidence: "insufficient" | "low" | "medium" | "high";
+  evidence: {
+    percentileSource: {
+      source: string;
+      sourceUrl: string;
+      verificationStatus: string;
+      fetchedAt: string;
+      version: string;
+    };
+    rankSource: {
+      source: string;
+      sourceUrl: string;
+      verificationStatus: string;
+      fetchedAt: string;
+      version: string;
+    };
+    attempts: number;
+    percentileVerified: boolean;
+    rankIsProvisional: boolean;
+  };
+  /** Shown instead of the rank when `reliable` is false. */
+  fallback: string;
 }
 
 /** One active-recall card in a Mistake-DNA micro-drill (flip to self-check). */

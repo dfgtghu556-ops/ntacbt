@@ -170,3 +170,111 @@
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Print                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The result page is worth keeping.
+ *
+ * A student who has just sat a three-hour paper gets a page telling them what to
+ * do next, and until now the only way to keep it was to read it and remember.
+ * "Save as PDF" from the print dialog is the answer every student already knows,
+ * but it needs the page to be *built* for paper rather than merely not broken by
+ * it — and browsers print light themes and hide backgrounds regardless of the
+ * on-screen theme, so a dark-mode result page comes out unreadable without this.
+ *
+ * The rules are deliberately blunt: hide the chrome, drop to one column, force
+ * light colours, and keep every number. Nothing here changes the screen.
+ */
+@media print {
+  /* Force the light scheme: browsers ignore `prefers-color-scheme` here and
+     print whatever the computed colours are, which in dark mode is dark ink on
+     a dark background. */
+  :root,
+  .dark {
+    color-scheme: light;
+    --color-background: #ffffff;
+    --color-foreground: #111827;
+    --color-card: #ffffff;
+    --color-card-foreground: #111827;
+    --color-muted: #f3f4f6;
+    --color-muted-foreground: #4b5563;
+    --color-border: #d1d5db;
+    --color-primary: #1d4ed8;
+    --color-primary-foreground: #ffffff;
+    --color-accent: #f3f4f6;
+    --color-accent-foreground: #111827;
+    --color-secondary: #f3f4f6;
+    --color-secondary-foreground: #111827;
+    --color-destructive: #b91c1c;
+    --color-destructive-foreground: #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+    color: #111827;
+  }
+
+  /* The app shell: header, sidebar, bottom bar, install prompt, toasts. None of
+     it is information a student wants on paper. */
+  header,
+  aside,
+  nav,
+  [data-slot="sidebar"],
+  [data-print="hide"],
+  .toaster,
+  [role="status"],
+  [role="alertdialog"] {
+    display: none !important;
+  }
+
+  /* The shell's left padding exists to clear the fixed sidebar; with the
+     sidebar gone it just pushes everything off the page. */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Cards keep their borders but lose their shadows, which print as grey smears
+     and cost ink without adding anything. */
+  [class*="rounded-"] {
+    box-shadow: none !important;
+  }
+
+  /* Gradients are dropped: several browsers rasterise them at low resolution
+     and they read as muddy bands on paper. */
+  [class*="bg-gradient"] {
+    background-image: none !important;
+    background-color: #f9fafb !important;
+  }
+
+  /* A page break in the middle of a question's analysis is worse than a break
+     between two cards. */
+  [class*="rounded-"],
+  tr,
+  li {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  /* Show where a link goes, because a URL on paper cannot be clicked. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.75em;
+    color: #4b5563;
+    word-break: break-all;
+  }
+
+  /* Internal navigation is noise on paper. */
+  a[href^="/"]::after {
+    content: "";
+  }
+}

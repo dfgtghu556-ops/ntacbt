@@ -1,12 +1,40 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, Loader2, Send, ShieldAlert, Sparkles, X } from "lucide-react";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Send,
+  ShieldAlert,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { loadFocusStore } from "@/features/focus/focus";
 import { loadStudyTubeProgress } from "@/features/studytube/progress";
 import { buildMentorReport, mentorContextForAI } from "@/features/mentor/report";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/saarthi")({
+  head: () => ({
+    meta: [
+      { title: "Saarthi — JEE Mentor for Doubts and What to Revise" },
+      {
+        name: "description",
+        content:
+          "Ask about a topic, a mistake, or what to revise next. Answers come from your own attempt history, not a generic script.",
+      },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "Saarthi — JEE Doubt Solving Tutor",
+        "Ask Saarthi a doubt about a JEE or CBSE concept and get a worked explanation.",
+        "/app/saarthi",
+      ),
+    ],
+  }),
   component: Saarthi,
 });
 
@@ -74,7 +102,7 @@ function Saarthi() {
   function onFile(file: File | undefined) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Sirf image (photo/screenshot) daal sakte ho — text ke liye type karo.");
+      setError("Images only — for text, type your question instead.");
       return;
     }
     if (file.size > 8 * 1024 * 1024) {
@@ -86,7 +114,7 @@ function Saarthi() {
       const data = String(reader.result || "").split(",")[1] || "";
       setImage({ mimeType: file.type, data });
     };
-    reader.onerror = () => setError("Image read nahi ho payi — dobara try karo.");
+    reader.onerror = () => setError("That image could not be read — please try again.");
     reader.readAsDataURL(file);
   }
 
@@ -300,6 +328,7 @@ function Saarthi() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
+            aria-label="Ask Saarthi about a topic, a mistake, or what to revise"
             placeholder="Ask about a topic, a mistake, or what to revise…"
             className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />

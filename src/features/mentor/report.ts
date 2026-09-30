@@ -21,6 +21,7 @@ import type { DataStore, PlannerTaskRow } from "../../lib/store";
 import type { FocusStore, FocusSession } from "../focus/focus";
 import type { StudyTubeProgressStore, HandshakeRecord } from "../studytube/progress";
 import { computeReadiness, realMinutes } from "../readiness/readiness";
+import { MIN_SAMPLE, masteryFromStores, preparationRows, summariseMastery } from "../mastery";
 import type { ReadinessSnapshot, WeakTopic } from "../dashboard/types";
 
 /* ------------------------------------------------------------------ */
@@ -94,6 +95,34 @@ export interface MentorReport {
     masteryDistribution: Record<string, number>;
     practiceToMastery: number; // share of handshakes that reached Strong/Mastered
     completionRate: number; // watched-vs-later ratio-ish (lecture completion signal)
+  };
+  /**
+   * The combined per-chapter view — the one thing this report exists to answer.
+   * One row per chapter carrying syllabus progress, videos done, PYQs
+   * attempted and accuracy together, with the next action attached.
+   */
+  preparation: {
+    chaptersTouched: number;
+    chaptersWithEvidence: number;
+    questionsAttempted: number;
+    pyqAttempts: number;
+    lessonsFinished: number;
+    /** Mean accuracy over chapters with a real sample, or null. */
+    accuracy: number | null;
+    distribution: Record<string, number>;
+    rows: Array<{
+      subject: string;
+      chapter: string;
+      state: string;
+      /** Null when the sample is too thin to state an accuracy. */
+      accuracy: number | null;
+      attempts: number;
+      pyqAttempts: number;
+      lessonsFinished: number;
+      reason: string;
+      nextAction: string;
+      lastActivityAt: number;
+    }>;
   };
   mistakes: {
     topTag: string;
@@ -441,6 +470,28 @@ export function buildMentorReport(input: {
   const syllabus = clamp(num(readiness.syllabusCompletionPct), 0, 100);
 
   const study = studyEngagement(studytube);
+
+  // The learning loop: one mastery map over test attempts (CBT and PYQ papers
+  // are both CbtTests) and watched lessons, so a chapter's videos, PYQs and
+  // accuracy can be reported in the same row.
+  const chapterMastery = masteryFromStores(store, studytube, now);
+  const masterySummary = summariseMastery(chapterMastery);
+  const preparation = {
+    ...masterySummary,
+    rows: preparationRows(chapterMastery).map((r) => ({
+      subject: r.subject,
+      chapter: r.chapter,
+      state: r.state,
+      accuracy: r.accuracy,
+      attempts: r.attempts,
+      pyqAttempts: r.pyqAttempts,
+      lessonsFinished: r.lessonsFinished,
+      reason: r.reason,
+      nextAction: r.nextAction,
+      lastActivityAt: r.lastActivityAt,
+    })),
+  };
+
   const foc = focusConsistency(arr<FocusSession>(focus.sessions), now);
   const plan = plannerMetrics(planner, now);
 
@@ -493,7 +544,14 @@ export function buildMentorReport(input: {
   const mastery = {
     syllabusCompletionPct: syllabus,
     weakTopics: arr<WeakTopic>(readiness.weakTopics),
-    strongTopics: [], // filled below from chapter accuracy >= 70
+    // Previously hard-coded to [] with a "filled below" comment that never
+    // filled it, so the report's strengths section was always empty. The
+    // mastery store has the real per-chapter accuracy, so read it from there.
+    strongTopics: [...chapterMastery.values()]
+      .filter((m) => m.attempts >= MIN_SAMPLE && m.accuracy >= 70)
+      .sort((a, b) => b.accuracy - a.accuracy)
+      .slice(0, 5)
+      .map((m) => ({ subject: m.subject, chapter: m.chapter, accuracy: m.accuracy })),
   };
 
   // Build actions + risks (explainable, evidence-based)
@@ -596,6 +654,7 @@ export function buildMentorReport(input: {
     performance,
     mastery,
     study,
+    preparation,
     mistakes: {
       topTag: mistakes.top.tag,
       topLabel: mistakes.top.label,
@@ -698,7 +757,9 @@ const NTA: Array<[number, number]> = [
   [300, 99.99999],
 ];
 function ntaPercentile(marks: number): number {
-  const m = clamp(marks, 0, 300);
+  // See the comment on the engine's copy: a NaN must not fall through to the
+  // top percentile. Two implementations of the same curve, one invariant.
+  const m = Number.isNaN(marks) ? 0 : clamp(marks, 0, 300);
   for (let i = 1; i < NTA.length; i++) {
     const [m1, p1] = NTA[i] as [number, number];
     const [m0, p0] = NTA[i - 1] as [number, number];

@@ -8,6 +8,10 @@
  */
 
 import { DataStore, type AttemptSummary, type PlannerTaskRow } from "../../lib/store";
+// Imported from the module, not the `../context` barrel: the barrel also
+// re-exports the React binding, and this engine is bundled for Node by
+// `scripts/validate-planner.mjs`. A pure engine must not pull React in.
+import { loadStudentContext, studyTubeTarget } from "../context/student-context";
 import type { MissionSummary, ReadinessSnapshot, TodayPlan, WeakTopic } from "../dashboard/types";
 
 const MEANINGFUL_ACCURACY_THRESHOLD = 0.35;
@@ -99,6 +103,17 @@ function topicAttemptData(
   return map;
 }
 
+/**
+ * Weak topics, at TOPIC granularity.
+ *
+ * Deliberately a lower bar than the mastery store's `MIN_SAMPLE` (3) and
+ * `WEAK_ACCURACY` (50%): this is an early-warning signal — "this looks weak,
+ * keep an eye on it" — whereas the mastery store decides whether a chapter is
+ * genuinely weak. The mastery store (`src/features/mastery`) is the
+ * chapter-level combined view the report renders; both read the same evidence
+ * but answer different questions, so the thresholds are intentionally not
+ * shared.
+ */
 function weakTopics(store: DataStore): WeakTopic[] {
   const data = topicAttemptData(store);
   const out: WeakTopic[] = [];
@@ -125,8 +140,7 @@ function weakTopics(store: DataStore): WeakTopic[] {
  * Pending tasks use the planned `estMin`.
  */
 export function realMinutes(t: PlannerTaskRow): number {
-  if (t.status === "done" && typeof t.actualMin === "number" && t.actualMin > 0)
-    return t.actualMin;
+  if (t.status === "done" && typeof t.actualMin === "number" && t.actualMin > 0) return t.actualMin;
   return t.estMin || 45;
 }
 
@@ -240,7 +254,10 @@ export function computeReadiness(store: DataStore): ReadinessSnapshot {
   const today = todayPlan(store);
   const messages = recentMessages(store, weak, totals);
   const trendData = trend(store);
-  const target = planner?.profile?.target || (totals.attempts ? "jeemain" : "jeemain");
+  // The student's own persisted goal wins; the planner profile is the legacy
+  // fallback. Both branches used to be the hard-coded string "jeemain", which
+  // is how a CBSE student's readiness was reported on a JEE Main scale.
+  const target = planner?.profile?.target || studyTubeTarget(loadStudentContext());
 
   return {
     examTarget: target,

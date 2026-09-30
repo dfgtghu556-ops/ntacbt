@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { socialMeta } from "@/config/site";
+import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -18,6 +20,9 @@ import {
   toggleWatchLater,
   type MasteryState,
 } from "@/features/studytube/progress";
+import { chapterForTopic } from "@/features/academics";
+import { scopeOf, useStudentContext } from "@/features/context";
+import { toSubject } from "@/features/academics/subject";
 
 export const Route = createFileRoute("/app/studytube/$video")({
   validateSearch: (search: Record<string, unknown>): TheaterSearch => {
@@ -35,6 +40,36 @@ export const Route = createFileRoute("/app/studytube/$video")({
     if (channel) out.channel = channel;
     return out;
   },
+  // The lesson identity lives in the search params, so the title has to be
+  // derived from them. A generic "Video lesson" title on every lesson page is
+  // the duplicate-title problem the metadata pass exists to fix.
+  head: ({ match }) => {
+    const search = match.search as TheaterSearch;
+    const title = search.title || "Video lesson";
+    const who = search.channel || search.teacher || "Verified educator";
+    const what = [search.subject, search.topic].filter(Boolean).join(" · ");
+    return {
+      meta: [
+        { title: `${title} — ${who} | NTACBT` },
+        {
+          name: "description",
+          content: what
+            ? `${title}. ${what}, taught by ${who}. Watch, then check your own recall.`
+            : `${title}, taught by ${who}. Watch, then check your own recall.`,
+        },
+        // The lesson's own card. A generic card on every lesson page is the same
+        // duplicate problem a shared title is, and this is the one route whose
+        // title is genuinely per-URL — so the card can be too.
+        ...socialMeta(
+          `${title} — ${who}`,
+          what
+            ? `${title}. ${what}, taught by ${who}. Watch, then check your own recall.`
+            : `${title}, taught by ${who}. Watch, then check your own recall.`,
+          match.fullPath,
+        ),
+      ],
+    };
+  },
   component: StudyTheater,
 });
 
@@ -48,10 +83,11 @@ interface TheaterSearch {
 
 function StudyTheater() {
   const { video } = Route.useParams();
+  // The lesson maps onto the student's own scope, so a CBSE student's watched
+  // lecture lands in a CBSE chapter and never in a JEE one.
+  const studentScope = scopeOf(useStudentContext());
   const search = useSearch({ from: Route.id }) as TheaterSearch;
   const title = search.title || "Video lesson";
-  const duration = search.topic ? undefined : undefined;
-  void duration;
 
   const [tab, setTab] = useState("notes");
   const [note, setNoteText] = useState("");
@@ -76,13 +112,28 @@ function StudyTheater() {
 
   function completeHandshake() {
     markWatched(video, title, true);
-    saveHandshake(video, { recall, practice, mastery });
+    // Map the lesson onto its chapter so the mastery store can count a watched
+    // lecture against the chapter it teaches. Unresolvable topics are left
+    // unmapped rather than guessed into the nearest chapter.
+    const subject = toSubject(search.subject);
+    const chapter = subject ? chapterForTopic(studentScope, subject, search.topic) : null;
+    const stored = saveHandshake(video, {
+      recall,
+      practice,
+      mastery,
+      ...(subject ? { subject } : {}),
+      ...(chapter ? { chapter } : {}),
+      ...(search.topic ? { topic: search.topic } : {}),
+    });
     setFinished(true);
     setSaved(true);
+    if (stored) toast.success("Lecture marked complete");
+    else toast.error("Could not save your progress — this browser is blocking local storage");
   }
 
   function toggleNote() {
-    setNote(video, note);
+    if (setNote(video, note)) toast.success("Note saved");
+    else toast.error("Could not save your note — this browser is blocking local storage");
   }
 
   const tabs = useMemo(
@@ -108,7 +159,15 @@ function StudyTheater() {
         </Link>
         <button
           type="button"
-          onClick={() => setSaved(toggleWatchLater(video))}
+          onClick={() => {
+            const nowSaved = toggleWatchLater(video);
+            setSaved(nowSaved);
+            // A write that did not land used to flip the label anyway, so the
+            // student believed the lecture was saved when nothing was stored.
+            if (nowSaved) toast.success("Saved to Watch later");
+            else if (saved) toast.success("Removed from Watch later");
+            else toast.error("Could not save — this browser is blocking local storage");
+          }}
           className="ml-auto rounded-md border border-input px-2.5 py-1.5 text-xs text-muted-foreground"
         >
           {saved ? "✓ Watch later" : "Watch later"}
@@ -236,6 +295,7 @@ function StudyTheater() {
               <textarea
                 value={note}
                 onChange={(e) => setNoteText(e.target.value)}
+                aria-label="Your active-recall notes for this lecture"
                 placeholder="Write your own active-recall notes here — in your own words."
                 rows={10}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"

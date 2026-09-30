@@ -95,7 +95,7 @@ export function computeHumaneStreak(
   let frozen = false;
 
   // Build the contiguous run backward from today (or yesterday if today not active).
-  let cursor = todayActive ? today : yesterdayActive ? yesterday : null;
+  const cursor = todayActive ? today : yesterdayActive ? yesterday : null;
   let run = 0;
   if (cursor) {
     let c = cursor;
@@ -122,14 +122,14 @@ export function computeHumaneStreak(
   const autoProtected = store.days >= 7 && atRiskToday;
   const canFreeze = store.freezesLeft > 0 && atRiskToday;
 
-  const nudge = atRiskToday && (autoProtected || canFreeze)
-    ? `${days} day streak: do the 5-minute micro-win before midnight and keep it. A freeze protects you once.`
-    : null;
+  const nudge =
+    atRiskToday && (autoProtected || canFreeze)
+      ? `${days} day streak: do the 5-minute micro-win before midnight and keep it. A freeze protects you once.`
+      : null;
 
-  const microWin =
-    todayActive
-      ? "Great — you've shown up today. Lock in one more recall."
-      : "Do a 5-minute micro-win: one formula recall or 3 quick questions. That keeps the habit alive.";
+  const microWin = todayActive
+    ? "Great — you've shown up today. Lock in one more recall."
+    : "Do a 5-minute micro-win: one formula recall or 3 quick questions. That keeps the habit alive.";
 
   return {
     days,

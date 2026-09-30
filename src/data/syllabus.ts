@@ -30,6 +30,8 @@ export interface SyllabusDataset {
   sourceType: "official_pdf" | "nta_bulletin" | "cbse_curriculum";
   sourceUrl: string;
   fetchedAt: string;
+  /** Dataset version, so a future syllabus refresh is diffable. */
+  version: string;
   verificationStatus: "verified" | "provisional";
   subjects: SyllabusSubject[];
 }
@@ -41,6 +43,7 @@ export const JEE_MAIN_2026_SYLLABUS: SyllabusDataset = {
   sourceType: "nta_bulletin",
   sourceUrl: "https://jeemain.nta.nic.in",
   fetchedAt: "2026-01-15T00:00:00Z",
+  version: "2025-26",
   verificationStatus: "verified",
   subjects: [
     {

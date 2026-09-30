@@ -11,7 +11,12 @@
  */
 
 import { DataStore } from "../../lib/store";
-import type { ReadinessSnapshot, SurvivalComponent, SurvivalScore, DualLaneReadiness } from "../dashboard/types";
+import type {
+  ReadinessSnapshot,
+  SurvivalComponent,
+  SurvivalScore,
+  DualLaneReadiness,
+} from "../dashboard/types";
 
 interface SurvivalExtras {
   streakDays: number;
@@ -37,7 +42,7 @@ function mistakeSeverity(store: DataStore): { rating: number; how: string; count
   }
   const wrongRate = wrong / attempted;
   // Wrong-rate drives the severity: below 15% = healthy, above 45% = heavy bleed.
-  const severity = clamp(100 - Math.round((wrongRate - 0.15) / 0.3 * 100));
+  const severity = clamp(100 - Math.round(((wrongRate - 0.15) / 0.3) * 100));
   return {
     rating: severity,
     how: `${wrong} of ${attempted} attempted answers were wrong (${Math.round(wrongRate * 100)}%). This is the real leak the Mistake Doctor targets.`,
@@ -48,7 +53,10 @@ function mistakeSeverity(store: DataStore): { rating: number; how: string; count
 function planCompletion(store: DataStore): { rating: number; how: string } {
   const p = store.planner;
   if (!p?.tasks?.length) {
-    return { rating: 100, how: "No plan yet — this signal doesn't lower the score; start a plan to see real completion." };
+    return {
+      rating: 100,
+      how: "No plan yet — this signal doesn't lower the score; start a plan to see real completion.",
+    };
   }
   const total = p.tasks.length;
   const done = p.tasks.filter((t) => t.status === "done").length;
@@ -59,18 +67,25 @@ function planCompletion(store: DataStore): { rating: number; how: string } {
 function accuracySignal(store: DataStore): { rating: number; how: string } {
   const t = store.totals();
   if (t.attempted === 0) {
-    return { rating: 40, how: "No attempts yet — do a short diagnostic to get a real accuracy number." };
+    return {
+      rating: 40,
+      how: "No attempts yet — do a short diagnostic to get a real accuracy number.",
+    };
   }
-  return { rating: clamp(t.accuracy), how: `${Math.round((t.correct / t.attempted) * 100)}% accuracy across ${t.attempted} attempted questions.` };
+  return {
+    rating: clamp(t.accuracy),
+    how: `${Math.round((t.correct / t.attempted) * 100)}% accuracy across ${t.attempted} attempted questions.`,
+  };
 }
 
 function weaknessSignal(weakCount: number, attempts: number): { rating: number; how: string } {
   if (weakCount === 0) {
     return {
       rating: attempts >= 3 ? 100 : 80,
-      how: attempts >= 3
-        ? "No topic is below 50% accuracy — strong evidence base."
-        : "Not enough attempts to confirm weaknesses yet; keep drilling.",
+      how:
+        attempts >= 3
+          ? "No topic is below 50% accuracy — strong evidence base."
+          : "Not enough attempts to confirm weaknesses yet; keep drilling.",
     };
   }
   const rating = clamp(100 - weakCount * 14);
@@ -80,7 +95,11 @@ function weaknessSignal(weakCount: number, attempts: number): { rating: number; 
   };
 }
 
-function consistencySignal(streakDays: number, focusMinutesToday: number, frozen?: boolean): { rating: number; how: string } {
+function consistencySignal(
+  streakDays: number,
+  focusMinutesToday: number,
+  frozen?: boolean,
+): { rating: number; how: string } {
   const todayBonus = focusMinutesToday >= 25 ? 10 : focusMinutesToday > 0 ? 5 : 0;
   const base = Math.min(90, streakDays * 9 + todayBonus);
   const rating = clamp(streakDays > 0 ? base : 30);
@@ -91,7 +110,11 @@ function consistencySignal(streakDays: number, focusMinutesToday: number, frozen
   };
 }
 
-function proximitySignal(store: DataStore): { rating: number; how: string; daysLeft: number | null } {
+function proximitySignal(store: DataStore): {
+  rating: number;
+  how: string;
+  daysLeft: number | null;
+} {
   const p = store.planner;
   const profDays = p?.profile?.days;
   const start = p?.profile?.startDate;
@@ -101,9 +124,15 @@ function proximitySignal(store: DataStore): { rating: number; how: string; daysL
     const e = s + (profDays - 1) * 24 * 3600 * 1000;
     daysToEnd = Math.max(0, Math.round((e - Date.now()) / (24 * 3600 * 1000)));
   }
-  const completion = p?.tasks?.length ? p.tasks.filter((t) => t.status === "done").length / p.tasks.length : 0;
+  const completion = p?.tasks?.length
+    ? p.tasks.filter((t) => t.status === "done").length / p.tasks.length
+    : 0;
   if (daysToEnd == null) {
-    return { rating: 100, how: "No exam/plan end date set — no time-pressure penalty.", daysLeft: null };
+    return {
+      rating: 100,
+      how: "No exam/plan end date set — no time-pressure penalty.",
+      daysLeft: null,
+    };
   }
   // Closer to end + less completion = more pressure. A tight timeline with a
   // nearly-complete plan reads as fine; a tight timeline with lots left reads
@@ -130,20 +159,40 @@ export function computeSurvival(store: DataStore, extra?: SurvivalExtras): Survi
   const acc = accuracySignal(store);
   const weakSig = weaknessSignal(weak.length, store.totals().attempted);
   const mis = mistakeSeverity(store);
-  const cons = consistencySignal(extra?.streakDays ?? 0, extra?.focusMinutesToday ?? 0, extra?.streakFrozen);
+  const cons = consistencySignal(
+    extra?.streakDays ?? 0,
+    extra?.focusMinutesToday ?? 0,
+    extra?.streakFrozen,
+  );
   const prox = proximitySignal(store);
 
   const components: SurvivalComponent[] = [
-    { key: "plan", label: "Plan completion", contribution: 0.25, rating: plan.rating, how: plan.how },
+    {
+      key: "plan",
+      label: "Plan completion",
+      contribution: 0.25,
+      rating: plan.rating,
+      how: plan.how,
+    },
     { key: "accuracy", label: "Accuracy", contribution: 0.25, rating: acc.rating, how: acc.how },
-    { key: "weakness", label: "Weak-topic health", contribution: 0.2, rating: weakSig.rating, how: weakSig.how },
+    {
+      key: "weakness",
+      label: "Weak-topic health",
+      contribution: 0.2,
+      rating: weakSig.rating,
+      how: weakSig.how,
+    },
     { key: "mistake", label: "Mistake leak", contribution: 0.15, rating: mis.rating, how: mis.how },
-    { key: "consistency", label: "Consistency", contribution: 0.15, rating: cons.rating, how: cons.how },
+    {
+      key: "consistency",
+      label: "Consistency",
+      contribution: 0.15,
+      rating: cons.rating,
+      how: cons.how,
+    },
   ];
 
-  const score = clamp(
-    components.reduce((s, c) => s + c.rating * c.contribution, 0),
-  );
+  const score = clamp(components.reduce((s, c) => s + c.rating * c.contribution, 0));
 
   // Resolve to ONE actionable next step — pick the weakest signal.
   const lowest = [...components].sort((a, b) => a.rating - b.rating)[0]!;
@@ -155,7 +204,8 @@ export function computeSurvival(store: DataStore, extra?: SurvivalExtras): Survi
         : "Open the planner and complete today's top task — every task you check off raises your on-track score.";
       break;
     case "accuracy":
-      nextAction = "Run a 10-question diagnostic on your weakest topic to get a real accuracy number, then attack it.";
+      nextAction =
+        "Run a 10-question diagnostic on your weakest topic to get a real accuracy number, then attack it.";
       break;
     case "weakness":
       nextAction = weak[0]
@@ -163,12 +213,14 @@ export function computeSurvival(store: DataStore, extra?: SurvivalExtras): Survi
         : "Do a short practice drill to surface any weak topics with evidence.";
       break;
     case "mistake":
-      nextAction = "Open the Mistake Doctor on your last test and re-attempt 3 of your wrong questions slowly.";
+      nextAction =
+        "Open the Mistake Doctor on your last test and re-attempt 3 of your wrong questions slowly.";
       break;
     case "consistency":
-      nextAction = extra?.focusMinutesToday && extra.focusMinutesToday < 25
-        ? "Do the 5-minute micro-win now — one quick recall keeps your consistency alive."
-        : "Do a 5-minute micro-win to keep your streak going today.";
+      nextAction =
+        extra?.focusMinutesToday && extra.focusMinutesToday < 25
+          ? "Do the 5-minute micro-win now — one quick recall keeps your consistency alive."
+          : "Do a 5-minute micro-win to keep your streak going today.";
       break;
     default:
       nextAction = "Complete today's next mission.";
@@ -193,7 +245,13 @@ export function computeSurvival(store: DataStore, extra?: SurvivalExtras): Survi
 /** Inline (duplicate-free) weak-topic computation so survival.ts stays lean and
  *  does not create a circular import with readiness.ts. Mirrors its threshold. */
 function weakTopicsInline(store: DataStore) {
-  interface Cell { subject: string; chapter: string; topic: string; attempt: number; correct: number }
+  interface Cell {
+    subject: string;
+    chapter: string;
+    topic: string;
+    attempt: number;
+    correct: number;
+  }
   const map = new Map<string, Cell>();
   for (const test of store.tests) {
     const attempts = store.attempts.filter((a) => a.testId === test.id);
@@ -210,7 +268,13 @@ function weakTopicsInline(store: DataStore) {
         return isRightInline(q, r?.ans ?? null);
       }).length;
       const key = `${q.subject}|${q.chapter}|${q.topic || "all"}`;
-      const cell = map.get(key) ?? { subject: q.subject, chapter: q.chapter, topic: q.topic || "", attempt: 0, correct: 0 };
+      const cell = map.get(key) ?? {
+        subject: q.subject,
+        chapter: q.chapter,
+        topic: q.topic || "",
+        attempt: 0,
+        correct: 0,
+      };
       cell.attempt += attempted.length;
       cell.correct += correct;
       map.set(key, cell);
@@ -267,15 +331,13 @@ export function computeDualLane(store: DataStore, snapshot: ReadinessSnapshot): 
 
   const label = (s: number) => (s >= 70 ? "Strong" : s >= 45 ? "Building" : "Needs focus");
 
-  const jeeNote =
-    isBoardTarget
-      ? "Board-first student — JEE is your practice lane right now. Keep it sharp, don't over-stretch."
-      : "Your primary lane, with full conceptual depth on Physics, Chemistry, Maths.";
+  const jeeNote = isBoardTarget
+    ? "Board-first student — JEE is your practice lane right now. Keep it sharp, don't over-stretch."
+    : "Your primary lane, with full conceptual depth on Physics, Chemistry, Maths.";
 
-  const boardNote =
-    isBoardTarget
-      ? "Your primary lane — theory, derivations and NCERT coverage matter most here."
-      : "A strong board lane keeps your CBSE marks safe alongside JEE. Don't let it slip.";
+  const boardNote = isBoardTarget
+    ? "Your primary lane — theory, derivations and NCERT coverage matter most here."
+    : "A strong board lane keeps your CBSE marks safe alongside JEE. Don't let it slip.";
 
   const split = isBoardTarget
     ? "Board-first plan (weekdays = your board lane, weekends = JEE practice)."

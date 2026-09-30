@@ -12,8 +12,28 @@ import {
   YAxis,
 } from "recharts";
 import { DataStore, type AttemptSummary } from "@/lib/store";
+import { AttemptHistory } from "@/features/exams/components/AttemptHistory";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/analytics")({
+  head: () => ({
+    meta: [
+      { title: "JEE Progress Analytics — Accuracy, Speed and Weak Chapters" },
+      {
+        name: "description",
+        content:
+          "See where your marks actually come from: accuracy by chapter, time per question, and which chapters to revise first.",
+      },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "JEE Performance Analytics — Accuracy by Chapter",
+        "See where your marks actually come from: accuracy by chapter, time per question, and which chapters to revise first.",
+        "/app/analytics",
+      ),
+    ],
+  }),
   component: Analytics,
 });
 
@@ -140,6 +160,8 @@ function Analytics() {
               </ResponsiveContainer>
             </div>
           </section>
+
+          <AttemptHistory attempts={attempts} />
 
           <section className="rounded-xl border p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">

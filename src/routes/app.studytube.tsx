@@ -1,6 +1,17 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Clock3, Flame, MonitorPlay, Play, Search, Target, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Flame,
+  MonitorPlay,
+  Play,
+  Search,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 import { DataStore } from "@/lib/store";
 import { computeReadiness } from "@/features/readiness/readiness";
 import { getLegacyTeachers } from "@/data/sot/legacy-inline";
@@ -11,6 +22,12 @@ import {
   teachersForTarget,
   findInstituteById,
 } from "@/data/teachers";
+import {
+  goalForTarget,
+  studyTubeTarget,
+  useStudentContext,
+  useStudentContextActions,
+} from "@/features/context";
 import { discover } from "@/features/studytube/service";
 import { dreamChannels, offlineCatalog } from "@/features/studytube/catalog";
 import {
@@ -25,8 +42,27 @@ import type {
   StudyTubeVideo,
 } from "@/features/studytube/types";
 import { VideoCard, ChannelCard, EmptyState } from "@/features/studytube/components/VideoCard";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/app/studytube")({
+  head: () => ({
+    meta: [
+      { title: "JEE & CBSE Video Lectures — Curated by Subject and Topic" },
+      {
+        name: "description",
+        content:
+          "Video lessons mapped to the CBSE and JEE syllabus, so a watched lecture counts towards the chapter it teaches.",
+      },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "StudyTube — Curated JEE & CBSE Video Lectures",
+        "Hand-picked video lectures for JEE Main and CBSE, matched to your target, subject and weak topics.",
+        "/app/studytube",
+      ),
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): { q?: string } => {
     const q = typeof search["q"] === "string" && search["q"].trim() ? search["q"] : undefined;
     return q ? { q } : {};
@@ -36,9 +72,64 @@ export const Route = createFileRoute("/app/studytube")({
 
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;
 
+/**
+ * The subject filter row: the stored value, then the label a student reads.
+ *
+ * Extracted from a five-deep nested ternary that sat inline in the hero. The
+ * mapping is the same one it always was - "Mathematics" reads as "Maths" and
+ * "oneshot" as "One-shots" - it just lives somewhere a reader can find it.
+ */
+const FILTERS = [
+  ["all", "All"],
+  ["Physics", "Physics"],
+  ["Chemistry", "Chemistry"],
+  ["Mathematics", "Maths"],
+  ["oneshot", "One-shots"],
+  ["revision", "Revision"],
+] as const;
+
 interface ShelfState {
   loading: boolean;
   result: StudyTubeResult | null;
+  /**
+   * Offline picks shown until the live fetch resolves.
+   *
+   * Present only in the synchronously seeded state. It is what makes the page
+   * server-render real lecture shelves instead of an empty shell, and it is
+   * replaced by `result` the moment the live fetch lands.
+   */
+  seed?: StudyTubeVideo[];
+}
+
+/**
+ * The objective seeded into the shelves when the student has no context yet.
+ *
+ * Deliberately the app's primary objective rather than an empty string: a
+ * shelf built for "unknown" would render generic picks that a crawler cannot
+ * connect to anything, and a JEE Main student with no saved profile still
+ * wants JEE Main lectures.
+ */
+const DEFAULT_STUDY_TARGET: StudyTubeRequest["target"] = "jeemain";
+
+/**
+ * A shelf's videos: the live result once it lands, the offline seed before.
+ *
+ * The seed exists so the first render has real content, which is what makes the
+ * page server-renderable. It is never additive — a live result replaces it
+ * outright rather than being appended to, so a student never sees the same
+ * lecture twice under two different headings.
+ */
+function shelfItems(sections: Record<string, ShelfState>, id: string): StudyTubeVideo[] {
+  const shelf = sections[id];
+  if (!shelf) return [];
+  return shelf.result?.items ?? shelf.seed ?? [];
+}
+
+/** A seeded shelf already has content, so it must not render as loading. */
+function shelfLoading(sections: Record<string, ShelfState>, id: string): boolean {
+  const shelf = sections[id];
+  if (!shelf) return false;
+  return shelf.result ? shelf.loading : false;
 }
 
 function sectionForWeak(
@@ -208,15 +299,62 @@ function Chip({
 function StudyTube() {
   const search = useSearch({ from: Route.id });
   const navigate = useNavigate();
-  const [target, setTarget] = useState<StudyTubeRequest["target"]>("jeemain");
-  const [language, setLanguage] = useState<StudyTubeRequest["language"]>("hinglish");
+  // Seeded from the persisted StudentContext, NOT a hard-coded "jeemain".
+  // Before this, a CBSE student who had never touched the planner was shown
+  // JEE Main content by default — the cross-scope leak this fixes.
+  const student = useStudentContext();
+  const studentActions = useStudentContextActions();
+  // Captured at mount so the seeding effect below stays mount-only: re-running it
+  // when the context changes would undo a target the student just picked.
+  const studentAtMount = useRef(student);
+  const [target, setTarget] = useState<StudyTubeRequest["target"]>(
+    studyTubeTarget(studentAtMount.current),
+  );
+  const [language, setLanguage] = useState<StudyTubeRequest["language"]>(student.lang);
   const [teacher, setTeacher] = useState<string | undefined>(undefined);
   const [institute, setInstitute] = useState<string | undefined>(undefined);
   const [weak, setWeak] = useState<{ subject: string; chapter: string; topic: string }>();
   const [query, setQuery] = useState("");
   const [manual, setManual] = useState<StudyTubeResult | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
-  const [sections, setSections] = useState<Record<string, ShelfState>>({});
+  const [sections, setSections] = useState<Record<string, ShelfState>>(() => {
+    // Seeded synchronously from the offline catalog.
+    //
+    // This is the fix for the page's publishing problem. The shelves were only
+    // filled by an effect that awaited a live fetch, so the server shipped an
+    // empty page and every section rendered "Finding lectures…". A crawler
+    // therefore saw a shell with no lectures on the app's study-video surface.
+    //
+    // The offline catalog is a pure function over the request, so it needs no
+    // network and runs during SSR. The fetch effect below still runs and
+    // replaces each shelf with the live result, so this only ever *seeds* the
+    // shelves; it never removes a fuller list.
+    const defs = sectionForWeak(
+      undefined,
+      DEFAULT_STUDY_TARGET,
+      "en",
+      undefined,
+      undefined,
+      undefined,
+    );
+    const seeded: Record<string, ShelfState> = {};
+    for (const d of defs)
+      seeded[d.id] = { loading: false, result: null, seed: offlineCatalog(d.request) };
+    if (search.q?.trim())
+      seeded["search"] = {
+        loading: false,
+        result: null,
+        seed: offlineCatalog({
+          topic: search.q,
+          subject: "Physics",
+          language: "en",
+          kind: "learn",
+          depth: "lecture",
+          target: DEFAULT_STUDY_TARGET,
+        }),
+      };
+    return seeded;
+  });
   const [filter, setFilter] = useState("all");
   const [todayTopic, setTodayTopic] = useState<{
     subject: string;
@@ -231,6 +369,9 @@ function StudyTube() {
   function changeTarget(t: StudyTubeRequest["target"]) {
     setTarget(t);
     setTeacher((prev) => (teacherSupportsTarget(prev, t) ? prev : undefined));
+    // Persist the choice so the next visit (and every other surface) agrees.
+    const goal = goalForTarget(t);
+    if (goal && goal !== student.goal) studentActions.setGoal(goal);
   }
 
   function changeInstitute(id: string | undefined) {
@@ -251,7 +392,8 @@ function StudyTube() {
     const store = new DataStore();
     const planner = store.planner;
     const profile = planner?.profile;
-    const loadedTarget = (profile?.target || "jeemain") as StudyTubeRequest["target"];
+    const loadedTarget = (profile?.target ||
+      studyTubeTarget(studentAtMount.current)) as StudyTubeRequest["target"];
     if (profile?.target) setTarget(loadedTarget);
     if (profile?.language) setLanguage(profile.language as StudyTubeRequest["language"]);
     const profileTeachers = (profile as Record<string, unknown> | undefined)?.["teachers"] as
@@ -342,7 +484,14 @@ function StudyTube() {
       return;
     }
     const has = toggleWatchLater(v.id);
-    setWatchLaterIds((prev) => (has ? [...prev, v.id] : prev.filter((x) => x !== v.id)));
+    // Only reflect the change in the UI if the write actually landed.
+    if (has) {
+      setWatchLaterIds((prev) => [...prev, v.id]);
+      toast.success("Saved to Watch later");
+    } else {
+      setWatchLaterIds((prev) => prev.filter((x) => x !== v.id));
+      toast.success("Removed from Watch later");
+    }
     setSavedVideos((prev) => {
       const next = { ...prev };
       if (has) next[v.id] = v;
@@ -463,25 +612,34 @@ function StudyTube() {
 
   return (
     <div className="space-y-6">
-      {/* ── HERO: brand + target balance + search ── */}
-      <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/12 via-card to-card p-5 sm:p-6">
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg">
-              <Play className="h-5 w-5 fill-current" />
+      {/* ── HERO: brand + target balance ── */}
+      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/12 via-card to-card p-6 sm:p-8">
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow">
+              <Play className="h-4 w-4 fill-current" />
             </span>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">StudyTube</h1>
-              <p className="text-xs text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold tracking-tight text-foreground">StudyTube</h1>
+              <p className="truncate text-[11px] text-muted-foreground">
                 Study-first discovery · zero-distraction study hub
               </p>
             </div>
           </div>
-          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-wrap">
+          {/*
+            Two selects whose option text is long - a teacher row reads
+            "Name · Channel — Board". As a 2-column grid between `sm` and `lg`
+            they truncated to unreadable stubs on a portrait tablet, and as
+            `w-auto` above `lg` they sized to the longest option and could push
+            past the container. One flex-wrap with a shared basis gives each a
+            sensible minimum and lets them stack when there isn't room, at every
+            width, instead of three different layouts.
+          */}
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <select
               value={institute ?? ""}
               onChange={(e) => changeInstitute(e.target.value || undefined)}
-              className="w-full min-w-0 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring lg:w-auto lg:py-1.5"
+              className="min-w-[12rem] flex-1 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
               aria-label="Dream Team"
             >
               <option value="">Dream Team: Auto</option>
@@ -499,7 +657,7 @@ function StudyTube() {
                 if (t) toggleTeacher(t);
                 else setTeacher(undefined);
               }}
-              className="w-full min-w-0 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring lg:w-auto lg:py-1.5"
+              className="min-w-[12rem] flex-1 truncate rounded-full border border-input bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
               aria-label="Dream Teacher"
             >
               <option value="">Dream Teacher: Auto</option>
@@ -514,7 +672,7 @@ function StudyTube() {
         </div>
 
         {/* Focus (target) balance — always visible */}
-        <div className="scrollbar-none relative mt-4 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="scrollbar-none relative mt-3 -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
             Focus
           </span>
@@ -532,7 +690,7 @@ function StudyTube() {
             </Chip>
           ))}
         </div>
-        <p className="relative mt-2 text-[11px] text-muted-foreground">
+        <p className="relative mt-1.5 text-[11px] text-muted-foreground">
           {target === "jeemain"
             ? " JEE Main engine — concept + PYQ + speed. Board-level detail included for strong basics."
             : target === "jeeadv"
@@ -541,53 +699,6 @@ function StudyTube() {
                 ? " CBSE Class 12 boards — NCERT line-by-line, derivations, board-pattern PYQ."
                 : " Class 11 foundation — build the base for JEE + boards."}
         </p>
-
-        {/* Hero search */}
-        <div className="relative mt-4 flex flex-col gap-2 sm:flex-row">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && openSearchQuery(query)}
-              placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
-              className="w-full rounded-2xl border border-border bg-background py-3 pr-4 pl-11 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <button
-            onClick={() => openSearchQuery(query)}
-            className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:shrink-0"
-          >
-            Search
-          </button>
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="rounded-2xl border border-border px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:shrink-0"
-          >
-            {open ? "Hide" : " Preferences"}
-          </button>
-        </div>
-
-        {/* Quick subject chips */}
-        <div className="scrollbar-none relative mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-          {(["all", "Physics", "Chemistry", "Mathematics", "oneshot", "revision"] as const).map(
-            (f) => (
-              <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
-                {f === "all"
-                  ? "All"
-                  : f === "Physics"
-                    ? "Physics"
-                    : f === "Chemistry"
-                      ? "Chemistry"
-                      : f === "Mathematics"
-                        ? "Maths"
-                      : f === "oneshot"
-                        ? "One-shots"
-                        : "Revision"}
-              </Chip>
-            ),
-          )}
-        </div>
       </section>
 
       {open ? (
@@ -645,6 +756,76 @@ function StudyTube() {
         </section>
       ) : null}
 
+      {/*
+        One sticky toolbar holding the search and the filter row.
+
+        The search used to live in the hero, so it scrolled away with it: a
+        student three shelves down who wanted a different topic had to scroll
+        all the way back up. It now sits directly above the content it searches,
+        which is where YouTube keeps it.
+
+        This is deliberately NOT a second copy of the shell's own top bar. The
+        shell bar searches the whole app (`/app/search`); this one searches
+        StudyTube, and duplicating the shell's centred search inside the section
+        would read as a bug. It is scoped to the section instead.
+
+        `top-14` clears the shell header, which is `h-14` and `sticky top-0`.
+      */}
+      <div className="sticky top-14 z-20 -mx-3 mb-4 border-y border-border/60 bg-background/90 px-3 py-2.5 backdrop-blur sm:-mx-5 sm:px-5">
+        <form
+          className="flex flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            openSearchQuery(query);
+          }}
+        >
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search a topic, chapter or teacher"
+              placeholder="Search a topic, chapter or teacher — e.g. Ray Optics Boards"
+              className="w-full rounded-full border border-border bg-background py-2.5 pr-4 pl-10 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:shrink-0"
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-full border border-border px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:shrink-0"
+          >
+            {open ? "Hide" : " Preferences"}
+          </button>
+        </form>
+
+        {/*
+          The filter row, where YouTube puts it: immediately above the content it
+          filters, not buried in the hero. It used to sit under the subject chips
+          inside the hero card, so on a phone it was below the brand, two selects,
+          the focus chips and a paragraph before a student could narrow anything.
+
+          It shares the toolbar's sticky container, so search and filter stay
+          reachable together while the shelves scroll past.
+        */}
+        <div
+          className="scrollbar-none mt-2 flex gap-2 overflow-x-auto pb-0.5"
+          role="group"
+          aria-label="Filter lectures"
+        >
+          {FILTERS.map(([value, label]) => (
+            <Chip key={value} active={filter === value} onClick={() => setFilter(value)}>
+              {label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+
       {continueWatching.length ? (
         <Shelf
           title="Continue watching"
@@ -666,8 +847,8 @@ function StudyTube() {
           title="Today's planned lecture"
           subtitle="From your planner"
           icon={MonitorPlay}
-          items={(sections["today"].result?.items ?? []).filter(matches)}
-          loading={sections["today"].loading}
+          items={shelfItems(sections, "today").filter(matches)}
+          loading={shelfLoading(sections, "today")}
           fallback={!!sections["today"].result?.fallback}
           onPlay={openVideo}
           onSave={saveVideo}
@@ -696,8 +877,8 @@ function StudyTube() {
           title={weak ? "Weak topic — fix this first" : "Weak topic"}
           subtitle={weak ? `${weak.subject} — ${weak.chapter}` : "From your evidence"}
           icon={Flame}
-          items={(sections["weak"].result?.items ?? []).filter(matches)}
-          loading={sections["weak"].loading}
+          items={shelfItems(sections, "weak").filter(matches)}
+          loading={shelfLoading(sections, "weak")}
           fallback={!!sections["weak"].result?.fallback}
           onPlay={openVideo}
           onSave={saveVideo}
@@ -726,8 +907,8 @@ function StudyTube() {
           title="Revision due"
           subtitle="Spaced recall for recently learned topics"
           icon={Clock3}
-          items={(sections["revision"].result?.items ?? []).filter(matches)}
-          loading={sections["revision"].loading}
+          items={shelfItems(sections, "revision").filter(matches)}
+          loading={shelfLoading(sections, "revision")}
           fallback={!!sections["revision"].result?.fallback}
           onPlay={openVideo}
           onSave={saveVideo}
@@ -772,7 +953,15 @@ function StudyTube() {
   );
 }
 
-function Shelf({
+/**
+ * A horizontal shelf of lecture cards.
+ *
+ * Exported so the responsive behaviour can be asserted by rendering it: the
+ * carousel markup below `sm` is the one part of the StudyTube change that a
+ * string-match test cannot prove, because it has to show the component actually
+ * produces a scroller with one sized wrapper per card.
+ */
+export function Shelf({
   title,
   subtitle,
   icon: Icon,
@@ -797,8 +986,28 @@ function Shelf({
   watchLaterIds: string[];
   watchedIds: Record<string, boolean>;
 }) {
+  const scroller = useRef<HTMLDivElement>(null);
+
+  /**
+   * Page the shelf by most of a viewport of cards. YouTube's home shelves are
+   * horizontal rows at every width with arrows to move through them, so a shelf
+   * keeps its header and its identity instead of dissolving into a grid.
+   *
+   * The arrows are `lg` and up only: below that the row is a touch carousel and
+   * swipe is the interaction, so an arrow would be decoration a thumb never
+   * uses. A keyboard user still reaches them through the tab order.
+   */
+  function nudge(dir: -1 | 1) {
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+  }
+
+  const arrow =
+    "absolute top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition-colors hover:border-primary hover:text-primary lg:flex";
+
   return (
-    <section className="rounded-2xl border border-border/60 bg-card/40 p-3 sm:rounded-3xl sm:p-5">
+    <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-4 w-4" />
@@ -822,25 +1031,83 @@ function Shelf({
           ) : null}
         </div>
       </div>
+      {/*
+        One horizontal snap row at every width, matching the legacy tool's own
+        StudyTube shelves and YouTube's home page. Cards are `min(250px, 72vw)`
+        on a phone so the next one peeks in - the only cue a scroller is
+        swipeable, because the scrollbar is hidden - and a fixed 17rem from `sm`
+        up, so a row on a tablet or desktop shows about four at a time.
+
+        This replaces the previous `sm:grid sm:grid-cols-2 lg:grid-cols-3
+        2xl:grid-cols-4` progression. That grid showed more cards per shelf on a
+        wide screen; this row keeps each shelf a shelf. The trade is deliberate,
+        and it is the reason the arrows exist.
+      */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-52 animate-pulse rounded-2xl border bg-muted/40" />
-          ))}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => nudge(-1)}
+            aria-label={`Scroll ${title} left`}
+            className={`${arrow} -left-3`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div
+            ref={scroller}
+            className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:gap-4 sm:px-0 sm:pb-0"
+          >
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-52 w-[min(250px,72vw)] shrink-0 snap-start animate-pulse rounded-2xl border bg-muted/40 sm:w-[17rem]"
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => nudge(1)}
+            aria-label={`Scroll ${title} right`}
+            className={`${arrow} -right-3`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       ) : items.length ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
-          {items.map((v) => (
-            <VideoCard
-              key={v.id}
-              video={v}
-              onPlay={onPlay}
-              onToggleWatchLater={onSave}
-              onComplete={onDone}
-              watchLater={watchLaterIds.includes(v.id)}
-              watched={!!watchedIds[v.id]}
-            />
-          ))}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => nudge(-1)}
+            aria-label={`Scroll ${title} left`}
+            className={`${arrow} -left-3`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div
+            ref={scroller}
+            className="scrollbar-none -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:gap-4 sm:px-0 sm:pb-0"
+          >
+            {items.map((v) => (
+              <div key={v.id} className="w-[min(250px,72vw)] shrink-0 snap-start sm:w-[17rem]">
+                <VideoCard
+                  video={v}
+                  onPlay={onPlay}
+                  onToggleWatchLater={onSave}
+                  onComplete={onDone}
+                  watchLater={watchLaterIds.includes(v.id)}
+                  watched={!!watchedIds[v.id]}
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => nudge(1)}
+            aria-label={`Scroll ${title} right`}
+            className={`${arrow} -right-3`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       ) : (
         <EmptyState message="Nothing matches this filter — switch back to All or change the target." />

@@ -33,6 +33,8 @@ import {
   type SourceRef,
   type Subject,
 } from "./types";
+import { SOURCE_RECORDS, type Source } from "./source";
+import { curriculumChapterName, hasCurriculumMap } from "./curriculum-bridge";
 
 /** The official JEE Main 2026 scope in `src/data/syllabus.ts`. */
 export const JEE_MAIN_2026_SCOPE: ExamScope = {
@@ -43,10 +45,16 @@ export const JEE_MAIN_2026_SCOPE: ExamScope = {
 /** Source metadata attached to the structured NTA syllabus dataset. */
 export const JEE_SYLLABUS_SOURCE: SourceRef = {
   category: "official",
-  source: JEE_MAIN_2026_SYLLABUS?.source ?? "National Testing Agency (NTA)",
-  sourceUrl: JEE_MAIN_2026_SYLLABUS?.sourceUrl,
-  sourceType: JEE_MAIN_2026_SYLLABUS?.sourceType ?? "nta_bulletin",
-  verificationStatus: JEE_MAIN_2026_SYLLABUS?.verificationStatus ?? "provisional",
+  ...SOURCE_RECORDS.JEE_SYLLABUS,
+  // The dataset's own header wins where it has one, so a refreshed syllabus
+  // file cannot be silently outvoted by the registry.
+  source: JEE_MAIN_2026_SYLLABUS?.source ?? SOURCE_RECORDS.JEE_SYLLABUS.source,
+  sourceUrl: JEE_MAIN_2026_SYLLABUS?.sourceUrl || SOURCE_RECORDS.JEE_SYLLABUS.sourceUrl,
+  sourceType: JEE_MAIN_2026_SYLLABUS?.sourceType ?? SOURCE_RECORDS.JEE_SYLLABUS.sourceType,
+  verificationStatus:
+    JEE_MAIN_2026_SYLLABUS?.verificationStatus ?? SOURCE_RECORDS.JEE_SYLLABUS.verificationStatus,
+  fetchedAt: JEE_MAIN_2026_SYLLABUS?.fetchedAt || SOURCE_RECORDS.JEE_SYLLABUS.fetchedAt,
+  version: JEE_MAIN_2026_SYLLABUS?.version || SOURCE_RECORDS.JEE_SYLLABUS.version,
   verifiedAt: JEE_MAIN_2026_SYLLABUS?.fetchedAt,
 };
 
@@ -55,10 +63,27 @@ export const JEE_SYLLABUS_SOURCE: SourceRef = {
  *  repo's curated list, but its per-record source is the legacy app itself. */
 export const LEGACY_PLANNER_SOURCE: SourceRef = {
   category: "verified",
-  source: "NTACBT legacy planner catalog (public/jee-cbt.html)",
-  sourceType: "verified_curated",
-  verificationStatus: "provisional",
+  ...SOURCE_RECORDS.LEGACY_PLANNER,
 };
+
+/**
+ * A teacher record's provenance. Unverifiable metadata stays EMPTY rather than
+ * invented — a teacher with no channel URL is recorded as `unverified` and the
+ * recommendation engine hides it, which is the rule Phase 1 asks for.
+ */
+function teacherSource(teacher: TeacherRecord): SourceRef {
+  const url = typeof teacher.channelUrl === "string" ? teacher.channelUrl : "";
+  return {
+    category: "verified",
+    source: teacher.source || `${teacher.institute} faculty listing`,
+    sourceType: "verified_curated",
+    sourceUrl: url,
+    fetchedAt: SOURCE_RECORDS.LEGACY_PLANNER.fetchedAt,
+    version: SOURCE_RECORDS.LEGACY_PLANNER.version,
+    verificationStatus: url ? (teacher.verified ? "verified" : "provisional") : "unverified",
+    verifiedAt: SOURCE_RECORDS.LEGACY_PLANNER.fetchedAt,
+  };
+}
 
 function legacyTopicRecords(): AcademicRecord[] {
   const records: AcademicRecord[] = [];
@@ -152,13 +177,7 @@ function toAcademicRecords(): AcademicRecord[] {
         chapter: teacher.supportedTopics?.join(" · ") || "All supported chapters",
         topic: teacher.specialization,
         name: teacher.name,
-        source: {
-          category: "verified",
-          source: teacher.source ?? "",
-          sourceUrl: teacher.channelName,
-          sourceType: "verified_curated",
-          verificationStatus: teacher.verified ? "verified" : "provisional",
-        },
+        source: teacherSource(teacher),
         note: `Faculty match: ${teacher.institute}`,
       });
     }
@@ -195,6 +214,43 @@ export function forScope(scope: ExamScope): AcademicRecord[] {
   return ACADEMIC_RECORDS.filter(
     (r) => r.exam === scope.exam && r.academicYear === scope.academicYear,
   );
+}
+
+/**
+ * Resolve a topic name to its chapter WITHIN a scope.
+ *
+ * Returns `null` when nothing matches. That is deliberate: a lesson whose
+ * chapter cannot be resolved is *missing* evidence in the mastery store, which
+ * is honest. Guessing the nearest chapter would put a watched lecture in the
+ * wrong row and inflate a chapter the student never studied.
+ */
+export function chapterForTopic(
+  scope: ExamScope,
+  subject: Subject,
+  topic: string | undefined,
+): string | null {
+  const wanted = (topic || "").trim().toLowerCase();
+  if (!wanted) return null;
+
+  // A published curriculum map is the authority on what a chapter IS, so it is
+  // consulted first. Without this, a CBSE scope resolves against the legacy
+  // teacher catalog, whose `chapter` field holds playlist marketing strings
+  // ("Organic Chemistry Maestro") and whose nearest-string fallback could match
+  // a teacher's name instead of the chapter the student asked about.
+  if (hasCurriculumMap(scope.exam, scope.academicYear)) {
+    return curriculumChapterName(scope.exam, scope.academicYear, subject, wanted);
+  }
+
+  const records = forScope(scope).filter((r) => r.subject === subject);
+  // Exact topic match first, then a record whose name contains the topic.
+  const exact = records.find(
+    (r) => (r.topic || "").toLowerCase() === wanted || r.name.toLowerCase() === wanted,
+  );
+  if (exact) return exact.chapter;
+  const partial = records.find(
+    (r) => (r.topic || "").toLowerCase().includes(wanted) || r.name.toLowerCase().includes(wanted),
+  );
+  return partial ? partial.chapter : null;
 }
 
 /** Catch accidental cross-scope leakage: every record must match exactly one scope. */

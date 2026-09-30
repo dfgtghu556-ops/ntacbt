@@ -8,6 +8,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { SITE_URL } from "@/config/site";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -34,10 +36,39 @@ function NotFoundComponent() {
   );
 }
 
+/**
+ * The 500 page.
+ *
+ * The boundary already existed and already did the right things — log, report,
+ * offer a retry — but it rendered HTTP 200. A server that answers a crash with
+ * "200 OK" is lying to every monitor watching it, and it tells a student's
+ * browser the page loaded correctly, so a broken page can sit in a cache looking
+ * healthy. Setting the status is the difference between an error boundary and a
+ * 500 page.
+ *
+ * It is set in an effect rather than during render because the boundary also
+ * renders on the client, and calling `setResponseStatus` while rendering is not
+ * safe. On a client-side failure there is no response to set and the call is a
+ * no-op, which is the correct behaviour there.
+ */
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    // The tab title on a failed render.
+    //
+    // The status code is already right — a throwing route loader returns HTTP
+    // 500, verified against the production build. But the `<title>` keeps
+    // whatever the route set, because the head was rendered before the error
+    // surfaced. So a crashed page's tab reads "Focus Timer for JEE
+    // Preparation", which tells a student the page loaded and is merely broken
+    // rather than that the request failed.
+    //
+    // `document.title` is the right tool here precisely because the error can
+    // arrive after hydration: this runs on both the server pass and on any
+    // client navigation that fails, and there is no server response to set at
+    // that point.
+    document.title = "Something went wrong — NTACBT";
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -95,7 +126,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
       {
         name: "twitter:title",
         content: "NTACBT | JEE & CBSE Learning OS",
@@ -107,16 +137,74 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/84a87eb0-1c9d-44bc-b9ff-278acebbcdb8",
+        content: `${SITE_URL}/og-image.png`,
+      },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "NTACBT — JEE Main and CBSE practice platform",
       },
       {
         name: "twitter:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/84a87eb0-1c9d-44bc-b9ff-278acebbcdb8",
+        content: `${SITE_URL}/og-image.png`,
       },
+      { name: "twitter:image:alt", content: "NTACBT — JEE Main and CBSE practice platform" },
       { name: "theme-color", content: "#2563eb" },
       { name: "mobile-web-app-capable", content: "yes" },
+    ],
+    scripts: [
+      // Structured data. Without it a search result is a blue link; with it the
+      // site can appear as an organisation, a sitelinks search box, and — on the
+      // content routes — as learning resources. Nothing here claims anything
+      // the app does not do: the feature list is the shipped one.
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": `${SITE_URL}/#organization`,
+              name: "NTACBT",
+              url: SITE_URL,
+              description:
+                "A JEE Main and CBSE practice platform: previous-year papers, an adaptive planner, spaced repetition, focus sessions and honest progress analytics.",
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE_URL}/#website`,
+              url: SITE_URL,
+              name: "NTACBT",
+              publisher: { "@id": `${SITE_URL}/#organization` },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: `${SITE_URL}/app/search?q={search_term_string}`,
+                },
+                "query-input": "required name=search_term_string",
+              },
+            },
+            {
+              "@type": "WebApplication",
+              name: "NTACBT",
+              applicationCategory: "EducationalApplication",
+              operatingSystem: "Any",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+              featureList: [
+                "JEE Main previous-year papers with worked solutions",
+                "NTA-style computer-based test runner",
+                "Adaptive daily study planner",
+                "CBSE Class 11 and 12 syllabus map",
+                "Spaced repetition revision cards",
+                "Focus timer",
+                "Progress analytics",
+              ],
+            },
+          ],
+        }),
+      },
     ],
     links: [
       {
@@ -168,6 +256,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Mounted once here rather than per route. `sonner` was already a
+          dependency and `components/ui/sonner.tsx` already existed, but nothing
+          rendered it and nothing called `toast()` - so a failed save or a copied
+          link produced no feedback at all. Inline "Watch later" labels were the
+          only confirmation anywhere in the app. */}
+      <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
 }

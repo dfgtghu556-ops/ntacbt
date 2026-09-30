@@ -7,8 +7,14 @@
 import type { CbtQuestion, CbtResult, CbtTest } from "./types";
 import { isRight } from "./engine";
 
+/**
+ * How a question went. `skipped` is a first-class class because a question the
+ * student left blank is neither correct nor wrong, and filing it under
+ * "slow-correct" claimed something that did not happen — it also inflated the
+ * "slow-correct" count in the mistake pattern with questions nobody got right.
+ */
 export type SpeedAccuracyClass =
-  "fast-correct" | "slow-correct" | "fast-wrong" | "slow-wrong" | "wasted" | "lucky";
+  "fast-correct" | "slow-correct" | "fast-wrong" | "slow-wrong" | "wasted" | "lucky" | "skipped";
 
 export interface QuestionInsight {
   questionId: string;
@@ -23,8 +29,14 @@ export interface QuestionInsight {
   note: string;
 }
 
-/** Ideal time budget: total time / total questions (flat model, explainable). */
-function idealTimeFor(test: CbtTest): number {
+/**
+ * Ideal time budget: total time / total questions (flat model, explainable).
+ *
+ * Exported so the result page can show the student the *same* budget the
+ * classifier used. A per-question figure quoted from a different formula than
+ * the one that graded them is a number the student cannot reconcile.
+ */
+export function idealTimeFor(test: CbtTest): number {
   return (test.durationSec || 10800) / Math.max(1, test.questions.length);
 }
 
@@ -45,13 +57,15 @@ export function analyseQuestions(
     let note: string;
 
     if (!answered) {
+      // Skipped is never "correct". The two branches differ only in how much
+      // time was spent before giving up, which is what the note should say.
       if (time > ideal * 1.5) {
         className = "wasted";
         note =
           "Spent a long time and skipped — re-check the concept, then practice shorter decisions.";
       } else {
-        className = "slow-correct"; // skipped; label handled by UI as "Skipped"
-        note = "Skipped. Not answered — no marks lost, but review the topic before the next test.";
+        className = "skipped";
+        note = "Skipped. Not answered, so no marks lost — review the topic before the next test.";
       }
     } else if (correct) {
       if (time <= ideal) {
@@ -257,6 +271,7 @@ export function classLabel(className: SpeedAccuracyClass | string): string {
     "slow-wrong": "Slow + Wrong",
     wasted: "Wasted Time",
     lucky: "Lucky Guess",
+    skipped: "Skipped",
   };
   return map[className] ?? className;
 }

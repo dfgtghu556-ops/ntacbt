@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { socialMeta } from "@/config/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,6 +22,14 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+
+      // Open Graph + Twitter + canonical. Without this every route inherits
+      // the root card, so sharing this page previews the root title.
+      ...socialMeta(
+        "NTACBT | JEE & CBSE CBT Platform",
+        "NTA-style JEE Main & CBSE computer based test platform with AI planning, StudyTube, PYQ, analytics and revision.",
+        "/",
+      ),
     ],
   }),
   component: Index,
