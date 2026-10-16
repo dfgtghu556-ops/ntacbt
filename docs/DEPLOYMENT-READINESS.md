@@ -201,6 +201,50 @@ That is the whole point of the section: the local environment lies about these
 things, so each one was found by measuring a real build rather than by reading
 code.
 
+### The Vercel project never gets as far as the code
+
+The deployments fail in about eleven seconds from the merge, which is before
+an install can finish (`npm ci` alone takes twelve) and long before a build
+could fail. That places the failure before the repository is even built, and
+the evidence agrees:
+
+- The build works from a **clean clone of `main`**: `npm ci` exits 0 in 12 s,
+  `npm run build` exits 0 in 11 s, and the artifact is a valid Build Output
+  API v3 directory with the baked question bank in `static/pyq/`.
+- The last commit before the failures began was a **pure front-end change** to
+  `public/js/app.js` and `public/css/legacy.css`. It cannot break a build.
+- Every **Preview** deployment fails, and **Production** succeeded exactly once
+  (2026-09-30T14:35:38Z, `febf77c9`) and failed for every attempt after.
+- This repository has 298 recorded deployments, up to 58 in a single day.
+
+So the cause is on the Vercel side of the line, not in the repository. Three
+things were fixed in the repository anyway, because each one is a way for the
+platform to choose a path other than the one that was verified here:
+
+| Setting           | Before                                        | After                         | Why                                                                                                                                                                                                                                                                                    |
+| ----------------- | --------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `installCommand`  | inferred from whichever lockfile Vercel finds | `npm ci --no-audit --no-fund` | The repo carries both `package-lock.json` and `bun.lock`. Vercel's documented table pairs them with different install commands, and there are open reports of the Bun path being taken and the lockfile failing to parse. Pinning it guarantees the verified lockfile is the one used. |
+| `framework`       | inherited from the project preset             | `null` ("Other")              | A leftover framework preset in the project settings makes Vercel look for an output directory this build does not produce. `null` is the documented way to override the preset.                                                                                                        |
+| `outputDirectory` | unset                                         | unset, on purpose             | The build emits the Build Output API layout, which Vercel detects from `.vercel/output/`. Naming a directory would make it look there instead.                                                                                                                                         |
+
+**What to check in the Vercel dashboard.** The deployment page and the REST
+API both require a login, and this environment has no Vercel credentials, so
+the build log could not be read from here. In the dashboard, in this order:
+
+1. **The team's usage and limits.** A Hobby account allows 100 deployments a
+   day, and a deployment that exceeds a limit fails immediately without
+   running a build — which is exactly the eleven-second signature. 298
+   deployments for this repository is a lot of build minutes.
+2. **Whether the project is paused.** A paused project refuses every build the
+   same way.
+3. **Project → Settings → Build & Deployment Settings.** Check the Install
+   Command, Build Command, Output Directory, Root Directory and Node.js
+   Version overrides, and the Framework Preset. Any _Override_ toggle that is
+   on in the dashboard wins over `vercel.json`.
+4. **Project → Settings → Git.** Check that the connected repository and
+   branch are still `dfgtghu556-ops/ntacbt` and `main`, and that the Vercel
+   GitHub App still has access.
+
 ### The deploy could not install
 
 `npm install` fails on a clean checkout. `@testing-library/react@14` declares

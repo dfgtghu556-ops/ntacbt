@@ -100,6 +100,33 @@ describe("a clean checkout can be installed and built", () => {
     const ignored = read(".gitignore");
     expect(ignored).toMatch(/^\.vercel\/?$/m);
   });
+
+  it("Vercel is told exactly how to install and what to build", () => {
+    // The repository carries two lockfiles. Vercel infers the package manager
+    // from whichever lockfile it finds, and the inference is not the same
+    // rule everywhere: the documented table pairs `package-lock.json` with
+    // `npm install` and `bun.lock` with `bun install`, and there are open
+    // reports of the Bun path being taken and the lockfile failing to
+    // parse. Pinning the install command removes the guess entirely and
+    // guarantees the lockfile that is actually verified here is the one that
+    // is used.
+    const vercel = JSON.parse(read("vercel.json")) as {
+      installCommand?: string;
+      buildCommand?: string;
+      framework?: string | null;
+      outputDirectory?: string;
+    };
+    expect(vercel.installCommand).toMatch(/^npm ci\b/);
+    expect(vercel.buildCommand).toBe("npm run build");
+    // "Other" — the preset that serves whatever the build emits. A framework
+    // preset left over in the project settings would make Vercel look for a
+    // directory this build does not produce.
+    expect(vercel.framework).toBeNull();
+    // The build emits the Build Output API layout, which Vercel detects from
+    // `.vercel/output/`. Naming an output directory would make it look
+    // there instead.
+    expect(vercel.outputDirectory).toBeUndefined();
+  });
 });
 
 describe("every absolute URL points at the host that serves the app", () => {

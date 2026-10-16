@@ -308,11 +308,29 @@ Ordered by severity. All were reproduced in this session unless marked.
 
 ### G-1 — Every Vercel deployment is failing · **Severity: Critical** · **ROOT CAUSE FOUND AND FIXED (D.2 #1)**
 
-> **Resolved in the repository, 2026-10-16.** The cause was not the build and
-> not the Vercel configuration: `npm install` could not complete on a clean
-> checkout, so every deploy died before the build started. `.npmrc` fixes it
-> and a fresh-clone `npm ci` was verified to exit 0. What is left is to
-> confirm the next deployment actually succeeds — see section I.
+> **Partly resolved in the repository, 2026-10-16.** `npm install` genuinely
+> could not complete on a clean checkout — a peer-dependency conflict that
+> aborts the install — and `.npmrc` fixes it; a fresh-clone `npm ci` is
+> verified to exit 0.
+>
+> **But the evidence now says the peer conflict is not what the Vercel
+> failures are.** The failures happen about **eleven seconds** after the
+> merge, which is before an install can finish (`npm ci` alone takes 12 s) and
+> long before a build could fail. The build itself is proven good from a
+> clean clone of `main`. The last commit before the failures began was a pure
+> front-end change to `public/js/app.js`. Every Preview fails; Production
+> succeeded once and failed for every attempt after. This repository has 298
+> recorded deployments, up to 58 in a day.
+>
+> So the cause is on the Vercel side — most likely a plan/usage limit, a
+> paused project, or a dashboard setting override — and it cannot be read
+> from here: the deployment page and the REST API both require a login and
+> this environment has no Vercel credentials. Three repo-side variables were
+> removed anyway so the next attempt is as deterministic as possible:
+> `installCommand` is pinned to `npm ci`, `framework` is pinned to `null`, and
+> no `outputDirectory` is named. **The dashboard checklist is in
+> `docs/DEPLOYMENT-READINESS.md` §"The Vercel project never gets as far as
+> the code".**
 
 - **Description.** The GitHub deployment record for this repo shows Vercel
   builds that all end in `state: "failure"`, including the Production
@@ -556,8 +574,21 @@ revalidate`, then measure a cold page load on the deployed host.
 
 > **Do this first, in this order, and stop before changing product code:**
 >
-> **Confirm the deployment actually happened, and that the live host now
-> serves the current build.**
+> **Open the Vercel project (`some12/ntacbt`) and read the build log for the
+> newest deployment.** `npx vercel login && npx vercel inspect <id> --logs`
+> if you have the CLI, or the deployment page in the dashboard.
+>
+> The repository is now in the best state it can be in: the install works on
+> a clean clone, the build produces a valid artifact, the production bundle
+> serves every route from a filesystem with no `public/` in it, and
+> `vercel.json` pins the install command and the framework preset so the
+> platform cannot choose a different path. The remaining failure is
+> dashboard-side and cannot be diagnosed from here. The checklist, in order,
+> is in `docs/DEPLOYMENT-READINESS.md` §"The Vercel project never gets as far
+> as the code": team usage and limits, whether the project is paused, the
+> Build & Deployment Settings overrides, and the Git connection.
+>
+> **Then confirm the deployment and the live host:**
 >
 > ```sh
 > # 1. Has a deployment been recorded for the merge commit?
