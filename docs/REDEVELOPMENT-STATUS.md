@@ -665,12 +665,24 @@ the display-mode media query and `navigator.standalone`.
 
 Unchanged from earlier sections, plus what remains from the research doc:
 
-1. **`.env` is git-tracked with real Supabase credentials** (incl.
-   `SUPABASE_SERVICE_ROLE_KEY`). Rotate, then `git rm --cached .env` +
-   `.gitignore` — confirm first, removal may break their deploy pipeline.
-2. **`.github/workflows/deploy.yml` is written but untracked** (GitHub App
-   lacks the `workflows` permission). Grant it or paste via the web UI;
-   meanwhile run `lint`, `tsc --noEmit`, `validate:all` locally.
+1. **`.env` is git-tracked** — but the tracked file holds only publishable
+   values: `SUPABASE_PROJECT_ID`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`
+   and their `VITE_` mirrors. There is **no** `SUPABASE_SERVICE_ROLE_KEY` in
+   it, so the rotation advice in earlier revisions of this list was wrong and
+   has been corrected here and in `docs/DEPLOYMENT-READINESS.md`. The anon
+   key is designed to be client-visible and the app is local-first, so the
+   practical exposure is low. Untracking it is still worth doing
+   (`git rm --cached .env` + `.gitignore`) — but only after confirming the
+   deploy pipeline does not read it from the repository.
+2. **`.github/workflows/deploy.yml` is written but untracked** — retried
+   2026-10-16 and still refused: the push credential is a GitHub App
+   installation token, and App tokens carry no `workflows` scope, so `git
+push` rejects any commit touching that path and the Contents API answers
+   `403 Resource not accessible by integration`. **Add it by hand** through
+   the GitHub web UI. The design decision is settled: the workflow is a
+   _gate_, not a deploy — it runs the full gate on every push and PR, while
+   deployment stays with Vercel's Git integration so there is one deploy
+   path and no race.
 3. **No teacher record has a verifiable channel URL** (open item 5). The
    rebuild plan says unverifiable entries should be hidden from
    recommendations, which would empty the teacher picker — supply URLs or
@@ -1095,17 +1107,23 @@ route fetched in a `useEffect`, so the HTML shipped a spinner and no content,
 and a crawler reading markup saw an empty page. This round closed the gap
 against the publishing checklist, working in the priority order the prompt set.
 
-| #   | Item                                                                 | State   | Commit    |
-| --- | -------------------------------------------------------------------- | ------- | --------- |
-| 1   | Content server-rendered (`/app/pyq`)                                 | ✅ done | `166e33b` |
-| 2   | Per-route title + description (18 routes)                            | ✅ done | `9c3c064` |
-| 3   | Sitemap generated at build time + robots directive                   | ✅ done | `aa3c908` |
-| 4   | JSON-LD (`Organization`, `WebSite`+`SearchAction`, `WebApplication`) | ✅ done | `aa3c908` |
-| 5   | Legal routes `/privacy` `/terms` `/about`                            | ✅ done | `e60edab` |
-| 6   | 500 page — status verified, tab title fixed                          | ✅ done | `95f6646` |
-| 7   | Social cards — real image, per-route, no duplicate canonical         | ✅ done | `ca53e4a` |
-| 8   | `/app/map` + `/app/studytube` server-rendered                        | ✅ done | `66059be` |
-| 9   | Site root is real content, not a redirect                            | ✅ done | `7db4549` |
+| #   | Item                                                                 | State                                     | Commit                 |
+| --- | -------------------------------------------------------------------- | ----------------------------------------- | ---------------------- |
+| 1   | Content server-rendered (`/app/pyq`)                                 | ✅ done                                   | `166e33b`              |
+| 2   | Per-route title + description (18 routes)                            | ✅ done                                   | `9c3c064`              |
+| 3   | Sitemap generated at build time + robots directive                   | ✅ done                                   | `aa3c908`              |
+| 4   | JSON-LD (`Organization`, `WebSite`+`SearchAction`, `WebApplication`) | ✅ done                                   | `aa3c908`              |
+| 5   | Legal routes `/privacy` `/terms` `/about`                            | ✅ done                                   | `e60edab`              |
+| 6   | 500 page — status verified, tab title fixed                          | ✅ done                                   | `95f6646`              |
+| 7   | Social cards — real image, per-route, no duplicate canonical         | ✅ done                                   | `ca53e4a`              |
+| 8   | `/app/map` + `/app/studytube` server-rendered                        | ✅ done                                   | `66059be`              |
+| 9   | Site root is real content, not a redirect                            | ↩️ reverted — the redirect is intentional | `7db4549` → `a1b90627` |
+
+> **Corrected 2026-10-16.** This row was written at 15:54Z and the revert
+> landed 12 minutes later at 16:06Z, so it was never caught. The change was
+> reverted because it stopped the CBT window opening — the root redirect into
+> `jee-cbt.html` is the intended behaviour and is what `src/routes/index.tsx`
+> does in `HEAD` today.
 
 ### Measured, not asserted
 

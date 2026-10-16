@@ -45,3 +45,11 @@ data/jee2026/*.pdf
 data/jee2026/ocr/
 data/jee2026/working/
 data/jee2026/scripts/
+
+# The quality-gate workflow is written and ready at .github/workflows/deploy.yml,
+# but it cannot be pushed from a GitHub App session: App installation tokens
+# carry no `workflows` scope, so `git push` refuses any commit that creates or
+# updates a file under .github/workflows/ and the Contents API answers 403.
+# Keeping it out of the index means a `git add -A` cannot break a push. Add it
+# through the GitHub web UI, then delete this line.
+.github/workflows/deploy.yml

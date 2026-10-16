@@ -12,9 +12,10 @@ import {
   type PaperMeta,
   type PyqQuestion,
 } from "@/features/pyq/store";
+import { loadBakedIndex, originFromContext } from "@/features/pyq/baked-index.server";
 import { socialMeta } from "@/config/site";
 
-type PyqSource = "api" | "baked" | "error";
+type PyqSource = "api" | "baked" | "seeded" | "error";
 
 /**
  * The paper list, read on the server at request time.
@@ -26,23 +27,22 @@ type PyqSource = "api" | "baked" | "error";
  * an empty page, and the entire value of the app — real previous-year questions
  * — did not exist as far as search was concerned.
  *
- * The baked files are build artifacts on disk, so reading them in a loader costs
+ * The baked files are build artifacts, so reading them in a loader costs
  * nothing and needs no network. The client effect below still runs afterwards
  * and upgrades to the live library API when it can reach the upstream snapshot,
  * so this only ever *seeds* the render; it never removes the fuller list.
+ *
+ * How the index is read matters. It used to be `readFileSync(process.cwd() +
+ * "/public/pyq/index.json")`, which works in dev and in a repo-root run but
+ * **not** on a deployed build: the Vercel function bundle contains no
+ * `public/` directory, because static assets are served by the CDN from
+ * beside it. On the live site that read threw, the loader returned an empty
+ * list, and the page rendered "Loading papers" with none of the papers — the
+ * exact defect this loader was written to fix, reappearing in production.
+ * `loadBakedIndex` reads the same bytes by whichever route actually has them.
  */
-const loadBakedPapers = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const { readFileSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const raw = readFileSync(join(process.cwd(), "public", "pyq", "index.json"), "utf8");
-    const data = JSON.parse(raw) as { papers?: PaperMeta[]; index?: PaperMeta[] };
-    return data.papers ?? data.index ?? [];
-  } catch {
-    // A missing or partial bake is a normal state. Return nothing and let the
-    // client effect show its own error rather than failing the whole render.
-    return [];
-  }
+const loadBakedPapers = createServerFn({ method: "GET" }).handler(async (ctx) => {
+  return loadBakedIndex(originFromContext(ctx));
 });
 
 export const Route = createFileRoute("/app/pyq")({
@@ -89,7 +89,7 @@ function Pyq() {
   // Seeded from the server so the first HTML already lists the papers.
   const baked = Route.useLoaderData();
   const [papers, setPapers] = useState<Paper[]>(() => (baked as Paper[]) ?? []);
-  const [source, setSource] = useState<PyqSource>("baked");
+  const [source, setSource] = useState<PyqSource>("seeded");
   // Only show the spinner when there is nothing to show. The loader has already
   // put the baked papers in `papers`, so gating the render on this flag would
   // hide them on the server and ship a spinner instead of content — which is
@@ -111,8 +111,19 @@ function Pyq() {
     setError("");
     // 1) Full historical library: same server endpoint used by the full
     //    platform (snapshot backed by official keys/solutions, all years).
+    //
+    //    The fetch uses the browser's default cache, deliberately. The
+    //    endpoint answers with `cache-control: public, max-age=3600`, and
+    //    `cache: "no-store"` threw that away: every visit to the page asked
+    //    the server to rebuild the whole upstream snapshot again. On a cold
+    //    instance that means re-fetching and re-parsing the dataset, which is
+    //    slow enough that the request can time out — and a timed-out request
+    //    is exactly what dropped the live page back to the baked five papers
+    //    even though the library itself was reachable. The index it returns
+    //    is a build artifact of the same upstream snapshot, so an hour-old
+    //    copy is the same data.
     try {
-      const r = await fetch("/api/public/pyq-papers", { cache: "no-store" });
+      const r = await fetch("/api/public/pyq-papers");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = (await r.json()) as { papers?: Paper[]; source?: string };
       const list = data.papers ?? [];
@@ -202,12 +213,16 @@ function Pyq() {
               ? `Full historical PYQ library loaded — ${papers.length} papers, every available session, shift and year.`
               : source === "baked"
                 ? "Full library is temporarily unreachable — showing the papers baked into this build."
-                : "PYQ library unavailable right now."}
+                : source === "seeded"
+                  ? `${papers.length} papers are baked into this build — the full historical library loads as soon as the network answers.`
+                  : "PYQ library unavailable right now."}
           </p>
           <p className="mt-1 text-muted-foreground">
             {source === "api"
               ? "Paper keys and solutions come from the same verified academic snapshot used by the full platform. You can solve any paper as an NTA-style CBT."
-              : "Searching the full snapshot failed on this network, so these offline papers are shown. Try again in a moment — the full historical library (all sessions, shifts and older years) is served by the platform API."}
+              : source === "seeded"
+                ? "These are the same papers, with the same official keys and solutions, shipped inside the app. The full library — every session, shift and older year — is served by the platform API and replaces this list the moment it answers."
+                : "Searching the full snapshot failed on this network, so these offline papers are shown. Try again in a moment — the full historical library (all sessions, shifts and older years) is served by the platform API."}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {source !== "api" ? (
