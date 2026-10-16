@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { loadBakedIndex, originFromContext } from "@/features/pyq/baked-index.server";
 
 /**
  * JEE MAIN PYQ PAPERS — FALLBACK API behind the "PYQ Papers" tab.
@@ -314,6 +315,19 @@ export const Route = createFileRoute("/api/public/pyq-papers")({
         const u = new URL(request.url);
         const data = await ensureData();
         if (!data) {
+          // The upstream snapshot is unreachable. The baked store is not: it
+          // shipped with this build, and it holds the same papers with the
+          // same official keys. Answering with it — and saying so — is
+          // strictly better than a 503, which left the page with a spinner
+          // and no papers at all even though a usable library was sitting in
+          // the deployment.
+          const baked = await loadBakedIndex(originFromContext({ request }));
+          if (baked.length) {
+            return Response.json(
+              { papers: baked, source: "baked" },
+              { headers: { "cache-control": "public, max-age=900" } },
+            );
+          }
           return Response.json(
             {
               error:

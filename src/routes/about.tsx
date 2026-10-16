@@ -13,42 +13,37 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import type { PaperMeta } from "@/features/pyq/store";
+import { loadBakedIndex, originFromContext } from "@/features/pyq/baked-index.server";
 import { publishedCurricula } from "@/data/curriculum";
 import { socialMeta } from "@/config/site";
 
 /**
  * The paper library, read from the baked build artifact.
  *
- * Same reasoning as the PYQ route: reading a file on disk costs nothing, keeps
- * the page server-rendered, and means the figure in the prose is the figure
- * actually being served.
+ * Same reasoning as the PYQ route: reading the build output costs nothing,
+ * keeps the page server-rendered, and means the figure in the prose is the
+ * figure actually being served.
+ *
+ * The reading itself goes through `loadBakedIndex`, which does not assume the
+ * index is on the filesystem — a deployed build serves it from the CDN, not
+ * from the function's disk. See that module for the measurement that
+ * established it.
  */
-const loadLibraryStats = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const { readFileSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const raw = readFileSync(join(process.cwd(), "public", "pyq", "index.json"), "utf8");
-    const data = JSON.parse(raw) as { papers?: PaperMeta[]; index?: PaperMeta[] };
-    const papers = data.papers ?? data.index ?? [];
+const loadLibraryStats = createServerFn({ method: "GET" }).handler(async (ctx) => {
+  const papers = await loadBakedIndex(originFromContext(ctx));
 
-    let questions = 0;
-    const years = new Set<number>();
-    for (const p of papers) {
-      questions += p.total ?? 0;
-      if (p.year) years.add(p.year);
-    }
-
-    return {
-      papers: papers.length,
-      questions,
-      years: [...years].sort((a, b) => b - a),
-    };
-  } catch {
-    // A missing bake is normal before the first build. Say nothing rather than
-    // inventing a count.
-    return { papers: 0, questions: 0, years: [] as number[] };
+  let questions = 0;
+  const years = new Set<number>();
+  for (const p of papers) {
+    questions += p.total ?? 0;
+    if (p.year) years.add(p.year);
   }
+
+  return {
+    papers: papers.length,
+    questions,
+    years: [...years].sort((a, b) => b - a),
+  };
 });
 
 export const Route = createFileRoute("/about")({

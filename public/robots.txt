@@ -23,4 +23,4 @@ Disallow: /cbt
 Disallow: /app/auth/
 Disallow: /app/search
 
-Sitemap: https://ntacbt.vercel.app/sitemap.xml
+Sitemap: https://ntacbt.lovable.app/sitemap.xml

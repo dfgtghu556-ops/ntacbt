@@ -8,9 +8,16 @@
  * the page it is reading is not the one it should index.
  *
  * Overridable for a custom domain: set `VITE_SITE_URL` at build time.
+ *
+ * The default is the host students actually use. It used to be
+ * `https://ntacbt.vercel.app`, which was wrong on both counts: that domain
+ * serves a different, older build of this app (its `/app/*` routes 404), so
+ * every canonical, every `og:url` and all sixteen sitemap entries were
+ * pointing a crawler at pages that do not exist there. Keep this and
+ * `scripts/build-sitemap.mjs` in step with wherever the app is deployed.
  */
 
-const FALLBACK = "https://ntacbt.vercel.app";
+const FALLBACK = "https://ntacbt.lovable.app";
 
 export const SITE_URL = (import.meta.env["VITE_SITE_URL"] || FALLBACK).replace(/\/$/, "");
 

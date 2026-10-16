@@ -31,6 +31,19 @@ import { describe, expect, it } from "vitest";
 
 const read = (rel: string) => readFileSync(join(process.cwd(), rel), "utf8");
 
+/**
+ * Source with its comments removed.
+ *
+ * These routes explain the defects they used to have, and an explanation
+ * necessarily quotes the old code — `readFileSync(process.cwd() + …)` appears
+ * in a comment precisely because that is what was removed. A guard that reads
+ * raw text would either trip over the comment or, worse, be satisfied by it.
+ */
+const code = (rel: string) =>
+  read(rel)
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
 describe("the PYQ route renders its content on the server", () => {
   const src = read("src/routes/app.pyq.tsx");
 
@@ -40,11 +53,22 @@ describe("the PYQ route renders its content on the server", () => {
     expect(src).toContain("loader:");
   });
 
-  it("reads the baked index off disk rather than fetching it", () => {
-    // The baked files are build artifacts; reading them costs no round-trip and
-    // works with no network, which is the point.
-    expect(src).toMatch(/readFileSync/);
-    expect(src).toMatch(/public.*pyq.*index\.json/);
+  it("reads the baked index through the shared loader rather than fetching it", () => {
+    // The baked files are build artifacts; reading them costs no round-trip
+    // and works with no network, which is the point.
+    //
+    // It used to be `readFileSync(process.cwd() + "/public/pyq/index.json")`
+    // inline in this file. That works in dev and in a repo-root run and
+    // **not** on a deployed build, because the Vercel function bundle contains
+    // no `public/` directory — the static assets are served by the CDN from
+    // beside it. The live site rendered "Loading papers" and none of the
+    // papers because of it. The reading now lives in one place that knows
+    // where the bytes actually are.
+    expect(src).toContain("loadBakedIndex");
+    // And the route itself must not go back to reading the filesystem.
+    const source = code("src/routes/app.pyq.tsx");
+    expect(source).not.toMatch(/readFileSync/);
+    expect(source).not.toMatch(/process\.cwd\(\)/);
   });
 
   it("seeds the paper list from the loader", () => {
@@ -66,8 +90,13 @@ describe("the PYQ route renders its content on the server", () => {
   });
 
   it("degrades to nothing when the bake is absent, rather than throwing", () => {
-    // A missing or partial bake is a normal state on a fresh clone.
-    expect(src).toMatch(/catch\s*{\s*\/\/[\s\S]*?return \[\];/);
+    // A missing or partial bake is a normal state on a fresh clone. The
+    // degradation now lives in the shared loader, which is where the route's
+    // own try/catch used to be.
+    const loader = read("src/features/pyq/baked-index.server.ts");
+    expect(loader).toMatch(/catch\s*\{[\s\S]*?return \[\];/);
+    // And the route must not throw if the loader ever does.
+    expect(src).not.toMatch(/throw new Error\("Failed to load PYQ index/);
   });
 });
 

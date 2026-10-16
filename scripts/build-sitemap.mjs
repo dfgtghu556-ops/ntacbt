@@ -19,12 +19,21 @@
 import { readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const routesDir = join(root, "src", "routes");
 
-/** The site's public origin, used for absolute URLs in the sitemap. */
-const SITE_URL = (process.env.VITE_SITE_URL || "https://ntacbt.vercel.app").replace(/\/$/, "");
+/**
+ * The site's public origin, used for absolute URLs in the sitemap.
+ *
+ * Must match `FALLBACK` in `src/config/site.ts` — a canonical in one place
+ * and a sitemap in another pointing at different hosts is exactly the mistake
+ * this script exists to prevent. It was `https://ntacbt.vercel.app`, a host
+ * that serves a different, older build of the app; the live host is
+ * `https://ntacbt.lovable.app`.
+ */
+const SITE_URL = (process.env.VITE_SITE_URL || "https://ntacbt.lovable.app").replace(/\/$/, "");
 
 /**
  * Route file → URL path, following TanStack's file conventions.
@@ -51,11 +60,11 @@ function routePaths() {
     if (base.includes("$")) continue;
 
     if (base === "index") {
-      out.push({ path: "/", changefreq: "weekly", priority: "1.0" });
+      out.push({ path: "/", changefreq: "weekly", priority: "1.0", file: entry });
       continue;
     }
     if (base === "app.index") {
-      out.push({ path: "/app", changefreq: "daily", priority: "0.9" });
+      out.push({ path: "/app", changefreq: "daily", priority: "0.9", file: entry });
       continue;
     }
 
@@ -79,6 +88,7 @@ function routePaths() {
       path,
       changefreq: content.includes(path) ? "weekly" : "monthly",
       priority: content.includes(path) ? "0.8" : "0.6",
+      file: entry,
     });
   }
   return out.sort((a, b) => a.path.localeCompare(b.path));
@@ -91,14 +101,50 @@ if (routes.length === 0) {
   process.exit(1);
 }
 
-const today = new Date().toISOString().slice(0, 10);
+/**
+ * `lastmod` for a route, from git rather than from the clock.
+ *
+ * It used to be today's date, written on every build. Two problems with that:
+ * `lastmod` is supposed to say when the page's *content* last changed, not
+ * when the build ran — a crawler reading a fresh date on unchanged pages
+ * learns nothing; and because the file is committed, every build dirtied the
+ * working tree with a 16-line date-only diff that looked like a real change.
+ *
+ * The route's own last commit date is the honest answer. A shallow clone has
+ * no per-file history, so the branch's HEAD date is the fallback, and today's
+ * date only if git cannot answer at all. Either way the value is stable for a
+ * given commit, so rebuilding the same commit writes the same file.
+ */
+function gitDate(file) {
+  const run = (args) => {
+    try {
+      return execFileSync("git", args, {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+    } catch {
+      return "";
+    }
+  };
+  const perFile = run(["log", "-1", "--format=%cs", "--", file]);
+  if (perFile) return perFile;
+  if (headDate === undefined) {
+    headDate = run(["log", "-1", "--format=%cs"]) || new Date().toISOString().slice(0, 10);
+  }
+  return headDate;
+}
 
+/** The branch's own commit date, resolved once and reused. */
+let headDate;
+
+/** The sitemap entries, one per public route. */
 const urls = routes
   .map(
     (r) =>
       `  <url>\n` +
       `    <loc>${SITE_URL}${r.path}</loc>\n` +
-      `    <lastmod>${today}</lastmod>\n` +
+      `    <lastmod>${gitDate(join("src", "routes", r.file))}</lastmod>\n` +
       `    <changefreq>${r.changefreq}</changefreq>\n` +
       `    <priority>${r.priority}</priority>\n` +
       `  </url>`,
