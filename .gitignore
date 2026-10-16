@@ -16,6 +16,10 @@ dist-ssr
 .nitro
 *.local
 
+# Vercel Build Output API artifact (the whole server bundle + static assets).
+# `npm run build` writes it; one `git add -A` would commit megabytes.
+.vercel/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
