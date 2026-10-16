@@ -45,7 +45,7 @@ filled with plausible-sounding values. Section I holds exactly one action.
 | Current branch           | `arena/0dfc5fa9-ntacbt` (session branch), forked from `main` @ `041ff13`                                                                                                                                                                                                         |
 | Latest verified commit   | `041ff139681edc094a51f7e3fe40ac268b3d9117` — "Merge pull request #14 from dfgtghu556-ops/arena/01a0e8ab-ntacbt", authored 2026-09-30T19:27:07Z                                                                                                                                   |
 | Working tree             | **clean** (verified `git status --short` empty at end of session)                                                                                                                                                                                                                |
-| Current deployed version | **Not HEAD.** The fixes in D.3 are committed on `arena/0dfc5fa9-ntacbt` and merged to `main`, but the live host is rebuilt from a push and has not yet been re-verified after them. See the three rows below.                                                                    |
+| Current deployed version | **Not HEAD.** The fixes are merged to `main`, but the deploy is refused in about **one second** — before the repository is built at all. See the three rows below.                                                                                                               |
 | Build status             | **PASS.** `npm run build` → exit 0, emits `.vercel/output/` (Vercel Build Output API v3). `NITRO_PRESET=node-server npx vite build` → exit 0, 24 routes 200 / 1× 307 / 1× 404, SSR HTML 32–133 KB per route                                                                      |
 | Automated test status    | **PASS** — full table below. 990 unit tests across 57 files (was 979/56; 11 new deployment-integrity guards)                                                                                                                                                                     |
 | Manual test status       | **NOT DONE — no browser in this sandbox.** Verified: no `chromium` / `chromrome` / `google-chrome` / Playwright / Puppeteer binary. Nothing has ever been visually confirmed at any viewport width (also stated in `docs/DEPLOYMENT-READINESS.md` §"What could NOT be verified") |
@@ -80,17 +80,24 @@ filled with plausible-sounding values. Section I holds exactly one action.
 
 ### B.2 Current deployed version — three separate facts, all verified
 
-| Host                         | What it actually serves                                                                                                                                                                                                                                 | Evidence                                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `https://ntacbt.lovable.app` | **The app, but a build from before 2026-09-29T08:00:20Z** — roughly 17 days behind HEAD                                                                                                                                                                 | `/app/memory` → **404** (route created 2026-09-29T08:00:20Z, `9c329851`); `/app/map` → **404** (created 2026-09-29T08:51:25Z, `32675bc9`); `/sitemap.xml` → **404**; `/robots.txt` is the pre-2026-09-29 version (no `Disallow`, no `Sitemap:` directive); `/app/studytube` still renders the pre-PR-14 layout with "Open in YouTube" outbound links, not the YouTube-shaped theater |
-| `https://ntacbt.vercel.app`  | **A completely different, older app** — the "JEE CBT Dashboard — Premium Education" single-page build (Telegram channel credit, `dashboard-cleanup-23.preview.emergentagent.com` image). `/app/analytics` → **404**. Not this repository's current code | `fetch_page` on `/` and `/app/analytics`                                                                                                                                                                                                                                                                                                                                             |
-| GitHub deployment records    | **Every Vercel deployment is recorded as `failure`** — including Production for `041ff13` and three Previews                                                                                                                                            | `gh api repos/…/deployments` + `/deployments/{id}/statuses` → `state: "failure"`, "Deployment has failed — run this Vercel CLI command: npx vercel inspect dpl_9AKNmNgwFDuhQ3NK4mCy4n6HDdZr --logs"                                                                                                                                                                                  |
+| Host                         | What it actually serves                                                                                                                                                                                                                                                                                        | Evidence                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `https://ntacbt.lovable.app` | **The app, but a build from before 2026-09-29T08:00:20Z** — roughly 17 days behind HEAD                                                                                                                                                                                                                        | `/app/memory` → **404** (route created 2026-09-29T08:00:20Z, `9c329851`); `/app/map` → **404** (created 2026-09-29T08:51:25Z, `32675bc9`); `/sitemap.xml` → **404**; `/robots.txt` is the pre-2026-09-29 version (no `Disallow`, no `Sitemap:` directive); `/app/studytube` still renders the pre-PR-14 layout with "Open in YouTube" outbound links, not the YouTube-shaped theater |
+| `https://ntacbt.vercel.app`  | **A completely different, older app** — the "JEE CBT Dashboard — Premium Education" single-page build (Telegram channel credit, `dashboard-cleanup-23.preview.emergentagent.com` image). `/app/analytics` → **404**. Not this repository's current code                                                        | `fetch_page` on `/` and `/app/analytics`                                                                                                                                                                                                                                                                                                                                             |
+| GitHub deployment records    | **Every Vercel deployment is recorded as `failure`.** The most recent Production deployment (`e9fb03a`) was created at 18:59:51Z and marked failed at 18:59:52Z — **one second**. The merge that triggered it landed at 18:59:50Z. A one-second failure is a refusal before any build work, not a build error. | `gh api repos/…/deployments` + `/deployments/{id}/statuses` → `state: "failure"`, "Deployment has failed — run this Vercel CLI command: npx vercel inspect dpl_9AKNmNgwFDuhQ3NK4mCy4n6HDdZr --logs"                                                                                                                                                                                  |
 
 **What works on the live Lovable host (verified by fetching it):** `/` (redirects
 to `jee-cbt.html#dash`), `/app`, `/app/analytics`, `/app/pyq`, `/app/focus`,
 `/app/report`, `/app/studytube`, and `/api/public/pyq-papers` (returns the full
 historical library). The legacy `jee-cbt.html` dashboard renders with all its
 feature surfaces.
+
+**Lovable's own builds are invisible from here.** Every deployment record in
+this repository is created by `vercel[bot]`; Lovable posts none, so a Lovable
+build can only be observed by fetching the site. As of 19:00Z on 2026-10-16 it
+is still the pre-2026-09-29 build — `/app/memory` and `/app/map` still 404. A
+Lovable rebuild is triggered from the Lovable dashboard, not by a push within
+any known window.
 
 **What HEAD serves that the live host does not:** `/app/map`, `/app/memory`,
 `/sitemap.xml`, the new `robots.txt`, the YouTube-shaped StudyTube, the
@@ -572,70 +579,79 @@ revalidate`, then measure a cold page load on the deployed host.
 
 ## I. Exact next action
 
-> **Do this first, in this order, and stop before changing product code:**
+> **Do this first, in this order. The first two need a human with dashboard
+> access; nothing in the repository can substitute for them.**
 >
-> **Open the Vercel project (`some12/ntacbt`) and read the build log for the
-> newest deployment.** `npx vercel login && npx vercel inspect <id> --logs`
-> if you have the CLI, or the deployment page in the dashboard.
+> ### 1. Open the Vercel project `some12/ntacbt` and read the newest deployment
 >
-> The repository is now in the best state it can be in: the install works on
-> a clean clone, the build produces a valid artifact, the production bundle
-> serves every route from a filesystem with no `public/` in it, and
-> `vercel.json` pins the install command and the framework preset so the
-> platform cannot choose a different path. The remaining failure is
-> dashboard-side and cannot be diagnosed from here. The checklist, in order,
-> is in `docs/DEPLOYMENT-READINESS.md` §"The Vercel project never gets as far
-> as the code": team usage and limits, whether the project is paused, the
-> Build & Deployment Settings overrides, and the Git connection.
+> The newest Production deployment (`e9fb03a`) was **created at 18:59:51Z and
+> marked failed at 18:59:52Z** — one second. The merge that triggered it
+> landed at 18:59:50Z. A one-second failure means the deployment was refused
+> before any build work began, so **the repository is not the cause**; the
+> build from a clean clone of `main` exits 0 and produces a valid artifact.
 >
-> **Then confirm the deployment and the live host:**
+> In the dashboard, in this order:
 >
-> ```sh
-> # 1. Has a deployment been recorded for the merge commit?
-> gh api repos/dfgtghu556-ops/ntacbt/deployments \
->   --jq '.[0:3][] | {sha: .sha[0:8], env: .environment, created: .created_at}'
+> 1. **Team → Usage / Limits.** A Hobby account allows 100 deployments a day
+>    and a monthly build-minute allowance. Exceeding a limit refuses every
+>    build immediately, with no build log, which is exactly this signature.
+>    This repository alone has 298 recorded deployments, up to 58 in a day.
+> 2. **Is the project paused?** A paused project refuses every build the same
+>    way, and keeps serving the last successful deployment — which is what
+>    `https://ntacbt.vercel.app` is doing.
+> 3. **Project → Settings → Build & Deployment Settings.** Check every
+>    **Override** toggle: Install Command, Build Command, Output Directory,
+>    Root Directory, Node.js Version, and the Framework Preset. An override
+>    that is on in the dashboard **wins over `vercel.json`**. The repository
+>    now pins `installCommand: npm ci`, `framework: null` and no
+>    `outputDirectory`; the dashboard must not contradict them.
+> 4. **Project → Settings → Git.** Confirm the connected repository is
+>    `dfgtghu556-ops/ntacbt`, the branch is `main`, and the Vercel GitHub App
+>    still has access.
 >
-> # 2. Does it say success, or failure?
-> gh api repos/dfgtghu556-ops/ntacbt/deployments/<id>/statuses \
->   --jq '.[] | {state, description}'
+> ### 2. Trigger a Lovable rebuild of `main`
+>
+> **The Lovable host is the one students actually visit**, and it is the
+> fastest route to the new build being live. Lovable posts no deployment
+> records to GitHub, so its builds cannot be observed from a repository — it
+> has to be done from the Lovable dashboard. As of 19:00Z on 2026-10-16 it is
+> still serving the pre-2026-09-29 build.
+>
+> ### 3. Then verify, on the live host
+>
+> ```
+> https://ntacbt.lovable.app/app/memory     → must be 200 (it is 404 now)
+> https://ntacbt.lovable.app/app/map        → must be 200 (it is 404 now)
+> https://ntacbt.lovable.app/sitemap.xml    → must be 200 (it is 404 now)
+> https://ntacbt.lovable.app/robots.txt     → must carry "Sitemap: https://ntacbt.lovable.app/sitemap.xml"
+> https://ntacbt.lovable.app/app/pyq        → must show "21 Jan · Evening Shift" as a text node
+> https://ntacbt.lovable.app/app            → og:url and canonical must be https://ntacbt.lovable.app/app
 > ```
 >
-> Then fetch the live host and check the three routes that were 404ing:
+> ### 4. Add `.github/workflows/deploy.yml` through the GitHub web UI
 >
-> ```
-> https://ntacbt.lovable.app/app/map       → must be 200
-> https://ntacbt.lovable.app/app/memory     → must be 200
-> https://ntacbt.lovable.app/sitemap.xml    → must be 200
-> https://ntacbt.lovable.app/robots.txt     → must carry the Sitemap: line
-> https://ntacbt.lovable.app/app/pyq        → must show the paper labels
-> ```
+> It cannot be pushed from an App-token session — `refusing to allow a GitHub
+App to create or update workflow .github/workflows/deploy.yml without
+workflows permission`. The file is written, correct and ready at
+> `.github/workflows/deploy.yml`; the link to add it is in
+> `docs/DEPLOYMENT-READINESS.md` §3. It is a **gate**, not a deploy:
+> deployment stays with Vercel's Git integration so there is one deploy path.
 >
-> **Why this and not something else:** every defect that stood between the
+> ---
+>
+> **Why these and not something else.** Every defect that stood between the
 > repository and a working live site has been found and fixed (D.2). The
-> build installs on a clean clone, the artifact is correct, the gate is
-> green, and the production bundle serves every route from a filesystem that
-> contains no `public/` — the deployment's actual condition. The only thing
-> left is to see the deploy land.
+> install works on a clean clone, the build produces a valid artifact, the
+> production bundle serves every route from a filesystem that contains no
+> `public/` — the deployment's actual condition — and the deploy
+> configuration can no longer be interpreted two ways. What remains is
+> refused by the platform before the code is read, and that needs the
+> dashboard.
 >
-> **If the deployment still says `failure`,** read the log — the Vercel CLI
-> needs credentials this environment does not have:
->
-> ```sh
-> npx vercel login          # or export VERCEL_TOKEN
-> npx vercel inspect dpl_<new-id> --logs
-> ```
->
-> **If the deployment says `success` but the live host is still stale,** then
-> the live host is not built from `main` and the next diagnostic is the
-> Lovable project's connected branch and build command — read them in the
-> Lovable dashboard, because they are not visible from the repository.
->
-> **Then, and only then, revisit the decisions in section C.** C-1 is now
-> made by default rather than by instruction: the canonical host is
-> `https://ntacbt.lovable.app`, because that is the URL the project was
-> handed with. C-2 through C-8 are still genuinely open.
-
----
+> **And the decisions in section C.** C-1 is made by default rather than by
+> instruction: the canonical host is `https://ntacbt.lovable.app`, because
+> that is the URL the project was handed with. C-3 through C-9 are still
+> genuinely open and are listed in section C.
 
 ## J. Instructions for the next ChatGPT session
 
